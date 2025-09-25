@@ -56,6 +56,7 @@ ASCII‑схема слоёв и потоков:
 - Уведомления: Firebase Cloud Messaging (FCM), топики/токены (см. `/notifications.tokens`).
 - OTA: клиент к эндпоинтам `/ota/*`, верификация checksum, прогресс‑репорт `/devices/{deviceId}/firmware/report`.
 - Аналитика/Телеметрия: клиент к `/telemetry/events`, локальные очереди/батчинг.
+- CI/CD: GitHub Actions (сборка, линтинг, тесты, подпись, деплой в Firebase App Distribution/Test Lab).
 
 
 ### 3. Стратегия модульности (Modularization Strategy)
@@ -99,6 +100,8 @@ ASCII‑схема слоёв и потоков:
  │               └─ :core:telemetry
  └─ DI wires implementations (Hilt)
 ```
+
+Навигация между фичами осуществляется через type‑safe роуты Navigation Compose, определённые в модуле `:app`. Каждая `:feature:*` предоставляет свой навигационный граф/entry‑destinations (и аргументы) как расширения навигации, которые регистрируются в `:app` через DI/функции‑поставщики.
 
 
 ### 4. Потоки данных и управление состоянием (Data Flow & State Management)
