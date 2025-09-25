@@ -147,6 +147,53 @@ abstract class DataModule {
 Навигация между фичами осуществляется через type‑safe роуты Navigation Compose, определённые в модуле `:app`. Каждая `:feature:*` предоставляет свой навигационный граф/entry‑destinations (и аргументы) как расширения навигации, которые регистрируются в `:app` через DI/функции‑поставщики.
 
 
+**Абстракция над BLE (`:core:ble`)**
+
+Работа с Bluetooth Low Energy на Android сложна (различия устройств/прошивок, особенности стека, разрывы связи). Абстракция в `:core:ble` должна быть железобетонной и предоставлять стабильный, реактивный контракт:
+
+- Реактивный API:
+  - `Flow<ConnectionState>` — состояния подключения (Disconnected, Connecting, Connected, ServicesDiscovered, Reconnecting, Failed(cause)).
+  - `Flow<Int>` для метрик (например, `BatteryLevel`), `Flow<DeviceStatus>` для агрегированных статусов.
+  - Горячие потоки с replay где нужно, backpressure‑безопасность.
+- Управление жизненным циклом и отказами:
+  - Встроенные политики переподключения с экспоненциальным бэкофом и джиттером.
+  - Таймауты на операции GATT (connect, discover, read/write, notify/indicate), перевод в чёткие доменные ошибки.
+  - Авто‑повтор безопасных идемпотентных операций.
+- Очередь команд:
+  - Сериализация write/read запросов (single in‑flight), гарантии порядка, отмена по контексту корутин.
+  - Приоритеты (высокий для критичных команд, низкий для фоновых), коалесинг схожих команд.
+  - Буферизация при кратковременном оффлайне и сброс по политике времени/объёма.
+- Инкапсуляция специфик:
+  - UUID сервисов/характеристик, MTU negotiation, настройки PHY, включение уведомлений/индикаций.
+  - Конвертация высокоуровневых паттернов и жестов в низкоуровневые команды (см. конвертер из `:core:ble`).
+
+Пример контракта (упрощённо):
+
+```kotlin
+interface AmuletBleClient {
+    val connectionState: StateFlow<ConnectionState>
+    val batteryLevel: Flow<Int>
+
+    suspend fun connect(deviceId: String, autoReconnect: Boolean = true)
+    suspend fun disconnect()
+
+    suspend fun sendCommand(command: AmuletCommand): BleResult
+    fun observeNotifications(type: NotificationType): Flow<ByteArray>
+}
+
+sealed interface ConnectionState {
+    data object Disconnected : ConnectionState
+    data object Connecting : ConnectionState
+    data object Connected : ConnectionState
+    data object ServicesDiscovered : ConnectionState
+    data class Reconnecting(val attempt: Int) : ConnectionState
+    data class Failed(val cause: Throwable?) : ConnectionState
+}
+```
+
+Внутри клиента — отдельная корутина‑воркер, обрабатывающая очередь команд с гарантиями последовательности и таймаутами; все ошибки GATT маппятся в доменные ошибки `AppError.Network/Timeout/PreconditionFailed` по политике.
+
+
 ### 4. Потоки данных и управление состоянием (Data Flow & State Management)
 
 Однонаправленный поток данных (UDF):
