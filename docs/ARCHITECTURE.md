@@ -194,6 +194,70 @@ sealed interface ConnectionState {
 Внутри клиента — отдельная корутина‑воркер, обрабатывающая очередь команд с гарантиями последовательности и таймаутами; все ошибки GATT маппятся в доменные ошибки `AppError.Network/Timeout/PreconditionFailed` по политике.
 
 
+**Конвертер Pattern → BLE‑команды**
+
+OpenAPI определяет богатую модель `PatternSpec`/`PatternElement*` (градиенты, пульс, дыхание и пр.). Для исполнения на устройстве требуется трансляция в компактные wire‑команды (строки/байты), например `BREATHING:00FF00:8000ms` или бинарный формат.
+
+- Размещение:
+  - Ядро преобразования (pure function) — в `:shared` (KMP): `PatternSpec` → `DeviceCommandPlan` (абстрактное представление последовательности команд, не привязанное к BLE/HTTP). Это обеспечивает переиспользование на iOS.
+  - Транспортный адаптер — в `:core:ble`: `DeviceCommandPlan` → `ByteArray`/`List<ByteArray>` с учётом MTU/PHY, чанкинга, CRC/Checksum, префиксов сервиса/характеристик.
+- Контракты:
+```kotlin
+// :shared
+interface PatternCompiler {
+    fun compile(spec: PatternSpec, hardwareVersion: Int, firmwareVersion: String): DeviceCommandPlan
+}
+
+data class DeviceCommandPlan(
+    val commands: List<DeviceCommand>,
+    val estimatedDurationMs: Long
+)
+
+sealed interface DeviceCommand {
+    data class Breathing(val color: Rgb, val durationMs: Int) : DeviceCommand
+    data class Pulse(val color: Rgb, val speed: Int, val repeats: Int) : DeviceCommand
+    // ... другие высокоуровневые команды
+}
+
+// :core:ble
+interface BleCommandEncoder {
+    fun encode(plan: DeviceCommandPlan, mtu: Int): List<ByteArray>
+}
+```
+
+- Правила компиляции:
+  - Учитывать `hardwareVersion` (100 — 1 LED, 200 — кольцо 12 LED): деградация/апгрейд эффектов.
+  - Учитывать `firmwareVersion` (например, `2.1.0`): поддержка новых команд (например, `Sparkle`), обратная совместимость, миграция устаревших команд.
+  - Нормализация параметров (скорости, интенсивности) в допустимые диапазоны прошивки.
+  - Валидация и фолбэки для неподдерживаемых `PatternElement`.
+- Отладка и тестирование:
+  - Snapshot‑тесты компилятора (входной `PatternSpec` → стабильный `DeviceCommandPlan`).
+  - Golden‑тесты кодировщика BLE (план → bytes) и проверка MTU‑чанкинга.
+  - Превью в UI использует тот же компилятор для консистентности визуализации и реального вывода.
+
+**Версионирование команд:**
+
+- Команды версионируются по `firmwareVersion` (семантическое версионирование). Компилятор выбирает подходящий набор команд и их параметры.
+- Примеры:
+  - `firmwareVersion < 2.1.0` — `Sparkle` не поддерживается, заменяется на `Pulse` с fallback‑параметрами.
+  - `firmwareVersion >= 2.1.0` — доступны новые команды, расширенные параметры (например, `Sparkle(count, color, spread)`).
+- Регистр команд: в `:shared` хранится мапа `firmwareVersion → Set<CommandType>`, компилятор проверяет поддержку перед генерацией.
+
+**Атомарность и транзакции:**
+
+- Проблема: разрыв соединения во время отправки `DeviceCommandPlan` из N команд может оставить устройство в промежуточном состоянии.
+- Решение — транзакционная отправка:
+  - `BleCommandEncoder` оборачивает план в транзакцию: `BEGIN_TRANSACTION` → команды → `COMMIT_TRANSACTION` (или `ROLLBACK` при ошибке).
+  - Прошивка буферизует команды до `COMMIT`; при разрыве до `COMMIT` — автоматический откат.
+  - Таймаут транзакции: если `COMMIT` не пришёл в течение T, прошивка откатывает изменения.
+- Альтернатива — чанкинг с подтверждениями:
+  - Разбивка большого плана на чанки, подтверждение каждого чанка устройством.
+  - При потере подтверждения — повтор отправки чанка или откат всей анимации.
+- UI‑обратная связь:
+  - Статус «Загружается анимация…» с прогрессом (чанки/команды).
+  - При ошибке — возможность повтора с того же чанка или отмены.
+
+
 ### 4. Потоки данных и управление состоянием (Data Flow & State Management)
 
 Однонаправленный поток данных (UDF):
@@ -356,7 +420,7 @@ sealed interface AppError {
 - Offline‑first: Room как источник истины для кэшируемых данных; стратегии «stale‑while‑revalidate», курсоры (`nextCursor`) для пагинации.
 - Гибридные каналы устройства: BLE для команд реального времени, HTTPS для долгоживущих операций и синхронизаций, FCM для пуш‑сигналов.
 - OTA: проверка `/ota/firmware/latest` с `hardware` и `currentFirmware`, последующий отчёт `/devices/{deviceId}/firmware/report`.
-- Конструктор анимаций: модели паттернов совместимы со схемами `/components/schemas/Pattern*`; адаптация по `hardwareVersion` (100/200). Конвертер в низкоуровневые BLE‑команды инкапсулирован в `:core:ble`.
+- Конструктор анимаций: модели паттернов совместимы со схемами `/components/schemas/Pattern*`; адаптация по `hardwareVersion` (100/200). Компилятор `PatternSpec → DeviceCommandPlan` расположен в `:shared`; кодировщик wire‑формата и MTU‑чанкинг в `:core:ble`.
 - Телеметрия: батч‑отправка `/telemetry/events` с бэкофом; частичная устойчивость при офлайне через локальные очереди.
 - Приватность: единый поток удаления/экспорта аккаунта через `/privacy/*`; UI предоставляет понятные статусы и сроки готовности.
 
