@@ -66,12 +66,19 @@ ASCII‑схема слоёв и потоков:
 Типы модулей (планируемая структура):
 
 - `:app` — Android entrypoint, DI‑композиция, навигация, разрешения.
-- `:shared` — KMP Domain: use case’ы, модели, интерфейсы репозиториев, бизнес‑правила.
+- `:shared` — KMP Domain: use case'ы, модели, интерфейсы репозиториев, бизнес‑правила.
 - `:core:network` — Retrofit/OkHttp, авторизация, App Check, сериализация.
 - `:core:database` — Room/DAO, миграции, DataStore.
 - `:core:ble` — BLE/NFC абстракции, GATT‑профили, конверсия паттернов → команды.
 - `:core:telemetry` — сбор, батчинг, отправка телеметрии.
 - `:core:design` — Compose design system (themes, typography, components).
+- `:data:user` — реализация `UserRepository` (профиль, настройки, консенсы).
+- `:data:devices` — реализация `DevicesRepository` (привязка, OTA, статус).
+- `:data:hugs` — реализация `HugsRepository` («объятия», пары, история).
+- `:data:practices` — реализация `PracticesRepository` (каталог, сессии, статистика).
+- `:data:patterns` — реализация `PatternsRepository` (CRUD, модерация, preview).
+- `:data:rules` — реализация `RulesRepository` (триггеры, интеграции, вебхуки).
+- `:data:privacy` — реализация `PrivacyRepository` (экспорт, удаление, аудит).
 - `:feature:dashboard` — экран состояния устройства/быстрых действий.
 - `:feature:library` — каталог практик `/practices`.
 - `:feature:hugs` — «объятия» `/hugs`, пары `/pairs`.
@@ -82,9 +89,10 @@ ASCII‑схема слоёв и потоков:
 
 Правила зависимостей:
 
-- `:feature:*` → зависит только от `:shared`, `:core:*`, `:core:design`. Запрещены прямые зависимости `feature ↔ feature`.
+- `:feature:*` → зависит от `:shared`, `:core:*`, `:core:design` и соответствующего `:data:*` модуля. Запрещены прямые зависимости `feature ↔ feature`.
+- `:data:*` → зависит от `:shared` (интерфейсы, DTO), `:core:network`, `:core:database`, `:core:ble` (по необходимости). Не зависит от `:feature:*`.
 - `:shared` не зависит от Android/Compose/Retrofit/Room. Только Kotlin stdlib, kotlinx.serialization, Koin (опционально).
-- `:core:*` могут зависеть от Android SDK, но не от `:feature:*`.
+- `:core:*` могут зависеть от Android SDK, но не от `:feature:*` или `:data:*`.
 - Направление: Presentation → Domain → Data (через интерфейсы). Инверсия: реализации регистрируются DI на Android слое.
 
 Диаграмма зависимостей (упрощённо):
@@ -94,11 +102,46 @@ ASCII‑схема слоёв и потоков:
  ├─ :feature:* ──┐
  │               ├─ :shared
  │               ├─ :core:design
- │               ├─ :core:network
- │               ├─ :core:database
- │               ├─ :core:ble
- │               └─ :core:telemetry
+ │               └─ :data:* ──┐
+ │                           ├─ :shared (interfaces, DTO)
+ │                           ├─ :core:network
+ │                           ├─ :core:database
+ │                           └─ :core:ble (if needed)
  └─ DI wires implementations (Hilt)
+```
+
+**Преимущества data-слоя:**
+
+- **Изоляция ответственности:** Модуль `:data:hugs` знает только о том, как работать с «объятиями». Он зависит от `:core:network` (Retrofit-клиент), `:core:database` (DAO) и `:shared` (интерфейс `HugsRepository`, DTO-модели).
+- **Чёткие зависимости:** Фича-модуль `:feature:hugs` зависит от `:data:hugs`, чтобы Hilt мог предоставить `HugsRepositoryImpl` для `SendHugUseCase`.
+- **Масштабируемость:** Добавление новой сущности (например, «Достижения») требует только создания интерфейса в `:shared`, DTO/DAO в `:core:*` и реализации в новом модуле `:data:achievements`.
+
+**Пример структуры `:data:hugs` модуля:**
+```
+:data:hugs/
+├── src/main/java/
+│   └── com/example/amulet/data/hugs/
+│       ├── HugsRepositoryImpl.kt
+│       ├── HugsApiService.kt
+│       ├── HugsDao.kt
+│       ├── HugsMapper.kt
+│       └── HugsCachePolicy.kt
+└── build.gradle.kts
+```
+
+**DI-регистрация в `:app`:**
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class DataModule {
+    @Binds
+    abstract fun bindHugsRepository(impl: HugsRepositoryImpl): HugsRepository
+    
+    @Binds
+    abstract fun bindDevicesRepository(impl: DevicesRepositoryImpl): DevicesRepository
+    
+    // ... другие репозитории
+}
 ```
 
 Навигация между фичами осуществляется через type‑safe роуты Navigation Compose, определённые в модуле `:app`. Каждая `:feature:*` предоставляет свой навигационный граф/entry‑destinations (и аргументы) как расширения навигации, которые регистрируются в `:app` через DI/функции‑поставщики.
