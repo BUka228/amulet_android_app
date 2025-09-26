@@ -257,6 +257,96 @@ interface BleCommandEncoder {
   - Статус «Загружается анимация…» с прогрессом (чанки/команды).
   - При ошибке — возможность повтора с того же чанка или отмены.
 
+**Стратегия разрешения конфликтов для редактора паттернов:**
+
+Проблема: политика «server wins» может уничтожить 20 минут работы пользователя при редактировании паттерна в офлайне.
+
+**Оптимистическая блокировка + Разрешение конфликта пользователем:**
+
+- **Бэкенд:**
+  - В модель `Pattern` добавлено поле `version: Int` (атомарно инкрементируется при каждом `PATCH`).
+  - `PATCH /patterns/{id}` требует заголовок `If-Match: version` или параметр `editingVersion`.
+  - Логика: `ЕСЛИ editingVersion == currentVersion, ТО обновить и version++, ИНАЧЕ 409 Conflict`.
+- **Клиент:**
+  - При открытии паттерна сохраняется `editingVersion`.
+  - При сохранении отправляется `editingVersion` в запросе.
+  - При `409 Conflict` — показ диалога разрешения конфликта с опциями:
+    - «Сохранить мою версию» (перезаписать серверную)
+    - «Использовать новую с сервера» (отменить локальные изменения)
+    - «Сохранить как копию» (создать новый паттерн с локальными правками)
+    - «Отмена» (вернуться к редактированию)
+
+**Альтернативы:**
+
+- **Трёхстороннее слияние:** автоматическое объединение изменений через `diff3`-алгоритм. Сложно в реализации для JSON-структур, избыточно для редких одновременных правок.
+- **Операционные трансформации:** для real-time коллаборации. Избыточно для асинхронного редактирования.
+
+**Реализация в архитектуре:**
+
+- `:data:patterns` содержит логику обнаружения конфликтов и UI-состояния для диалогов.
+- `:feature:patterns` обрабатывает пользовательский выбор в диалоге конфликта.
+- `:core:network` поддерживает заголовки `If-Match`/`If-None-Match` для оптимистической блокировки.
+
+**Пример реализации:**
+
+```kotlin
+// :shared
+data class Pattern(
+    val id: String,
+    val version: Int, // для optimistic locking
+    val spec: PatternSpec,
+    // ... другие поля
+)
+
+// :data:patterns
+class PatternsRepositoryImpl {
+    suspend fun updatePattern(
+        id: String, 
+        editingVersion: Int, 
+        updates: PatternUpdateRequest
+    ): Result<Pattern, AppError> {
+        return try {
+            val response = apiService.updatePattern(id, editingVersion, updates)
+            Result.success(response.pattern)
+        } catch (e: HttpException) {
+            when (e.code()) {
+                409 -> Result.failure(AppError.Conflict("Pattern was modified by another user"))
+                else -> Result.failure(AppError.Server(e.code(), e.message()))
+            }
+        }
+    }
+}
+
+// :feature:patterns
+class PatternEditViewModel {
+    private var editingVersion: Int = 0
+    
+    fun startEditing(pattern: Pattern) {
+        editingVersion = pattern.version
+        // ... инициализация UI
+    }
+    
+    fun savePattern() {
+        viewModelScope.launch {
+            when (val result = patternsRepository.updatePattern(patternId, editingVersion, updates)) {
+                is Result.Success -> {
+                    // Обновить UI, показать успех
+                }
+                is Result.Failure -> when (result.error) {
+                    is AppError.Conflict -> {
+                        // Показать диалог разрешения конфликта
+                        showConflictResolutionDialog()
+                    }
+                    else -> {
+                        // Показать общую ошибку
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
 
 ### 4. Потоки данных и управление состоянием (Data Flow & State Management)
 
