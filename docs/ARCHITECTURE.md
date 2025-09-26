@@ -284,6 +284,38 @@ interface BleCommandEncoder {
   - Статус «Загружается анимация…» с прогрессом (чанки/команды).
   - При ошибке — возможность повтора с того же чанка или отмены.
 
+Статусы загрузки для UX:
+
+- `:core:ble` предоставляет реактивный поток прогресса загрузки анимации `Flow<UploadProgress>` для чёткой обратной связи в UI.
+- Контракт прогресса (упрощённо):
+```kotlin
+// :core:ble
+data class UploadProgress(
+    val totalChunks: Int,
+    val sentChunks: Int,
+    val percent: Int,
+    val state: UploadState
+)
+
+sealed interface UploadState {
+    data object Preparing : UploadState
+    data object Uploading : UploadState
+    data object Committing : UploadState
+    data object Completed : UploadState
+    data class Failed(val cause: Throwable?) : UploadState
+}
+
+interface BleCommandEncoder {
+    fun encode(plan: DeviceCommandPlan, mtu: Int): List<ByteArray>
+    fun upload(plan: DeviceCommandPlan, mtu: Int): Flow<UploadProgress>
+}
+```
+
+- Поведение:
+  - В случае ошибки на N‑м чанке поток эмитит `Failed(cause)`; ViewModel показывает ошибку и кнопку «Повторить» (ре‑вызов `upload`).
+  - При успешном завершении — `Completed`, UI переводится в «Готово» и может предложить предпросмотр.
+  - Поток «горячий» на время операции; отмена корутины пользователем прерывает передачу и отправляет `ROLLBACK`.
+
 **Стратегия разрешения конфликтов для редактора паттернов:**
 
 Проблема: политика «server wins» может уничтожить 20 минут работы пользователя при редактировании паттерна в офлайне.
