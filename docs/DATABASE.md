@@ -22,7 +22,6 @@ erDiagram
     USERS ||--o{ PAIRS : "member (via PAIR_MEMBERS)"
     USERS ||--o{ PRACTICE_SESSIONS : "participant"
     USERS ||--o{ RULES : "owner"
-    USERS ||--o{ FCM_TOKENS : "owner"
     USERS ||--o{ TELEMETRY_EVENTS : "source"
     USERS ||--o{ PRIVACY_JOBS : "requester"
 
@@ -64,6 +63,7 @@ erDiagram
         long leased_until
         string lease_token
         int priority
+        string targetEntityId
     }
 ```
 
@@ -241,10 +241,12 @@ enum class OutboxActionType(val apiEndpoint: String) {
 - `priority: Int (INTEGER) NOT NULL DEFAULT 0` — выше — раньше (heap‑очередь в запросах DAO).
 - `lease_token: String? (TEXT)` — «замок» обработчика (GUID).
 - `leased_until: Long? (INTEGER)` — TTL блокировки (обработчик обязан продлевать или отпускать).
+- `targetEntityId: String? (TEXT)` — ID целевой сущности для быстрого поиска связанных действий (например, `patternId` для `PATTERN_UPDATE`).
 
 Индексы и ограничения:
 - `IDX_outbox_status_available_priority` на `(status, available_at, priority DESC)` — извлечение ближайших к исполнению.
 - `IDX_outbox_type_status` на `(type, status)` — выборка по типам для UI.
+- `IDX_outbox_targetEntityId` на `targetEntityId` — быстрый поиск действий для конкретной сущности.
 - `UNQ_outbox_idempotency` уникальный на `idempotency_key` (WHERE `idempotency_key IS NOT NULL`).
 
 Протокол обработки (рекомендация):
@@ -254,6 +256,21 @@ enum class OutboxActionType(val apiEndpoint: String) {
 4) На не‑ретраибельную — `status=FAILED`, сохранить `last_error`.
 
 DAO должны предоставлять удобные `Flow` для отображения прогресса в UI.
+
+**Примечание о разделении очередей:**
+Таблицы `outbox_actions` и `telemetry_events` представляют собой две отдельные очереди исходящих действий, каждая со своей спецификой:
+
+- **`outbox_actions`** — критичные операции пользователя (отправка объятий, обновление паттернов, управление устройствами). Требуют гарантированной доставки, сложной логики ретраев, идемпотентности и приоритизации.
+
+- **`telemetry_events`** — аналитические события (клики, время сессий, ошибки). Обрабатываются по принципу "fire-and-forget", могут быть отброшены при переполнении, не требуют сложной логики ретраев.
+
+Разделение обеспечивает изоляцию ответственности и позволяет оптимизировать каждую очередь под её специфические требования.
+
+**Примечание об FCM токенах:**
+Таблица `fcm_tokens` исключена из схемы для упрощения. Логика управления FCM токенами реализуется через `DataStore`:
+- При получении нового токена от Firebase SDK — сравнение с сохранённым в `DataStore`
+- Отправка на сервер только при изменении токена
+- Хранение последнего токена в `EncryptedSharedPreferences` для безопасности
 
 #### 6) `pairs` — пары пользователей для «объятий»
 - `id: String (TEXT, PK)`
@@ -324,19 +341,7 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `IDX_rules_ownerId` на `ownerId`
 - `IDX_rules_enabled` на `enabled`
 
-#### 11) `fcm_tokens` — FCM токены для push-уведомлений
-- `id: String (TEXT, PK)`
-- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
-- `token: String (TEXT) NOT NULL`
-- `platform: String (TEXT)` — `ios|android|web`
-- `registeredAt: Long (INTEGER) NOT NULL`
-- `lastUsedAt: Long? (INTEGER)`
-
-Индексы:
-- `UNQ_fcm_tokens_token` уникальный на `token`
-- `IDX_fcm_tokens_userId` на `userId`
-
-#### 12) `telemetry_events` — локальная очередь событий телеметрии
+#### 11) `telemetry_events` — локальная очередь событий телеметрии
 - `id: String (TEXT, PK)`
 - `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
 - `type: String (TEXT) NOT NULL`
@@ -353,7 +358,7 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `IDX_telemetry_events_timestamp` на `timestamp DESC`
 - `IDX_telemetry_events_sentAt` на `sentAt` (для поиска неотправленных)
 
-#### 13) `privacy_jobs` — задачи экспорта/удаления данных (GDPR)
+#### 12) `privacy_jobs` — задачи экспорта/удаления данных (GDPR)
 - `id: String (TEXT, PK)`
 - `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
 - `type: String (TEXT)` — `export|delete`
@@ -372,7 +377,7 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `IDX_privacy_jobs_type` на `type`
 - `IDX_privacy_jobs_status` на `status`
 
-#### 14) `firmware_info` — кэш информации о прошивках (OTA)
+#### 13) `firmware_info` — кэш информации о прошивках (OTA)
 - `id: String (TEXT, PK)` — составной: `${hardwareVersion}_${version}`
 - `hardwareVersion: Int (INTEGER) NOT NULL`
 - `version: String (TEXT) NOT NULL`
@@ -389,7 +394,7 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `IDX_firmware_hardwareVersion` на `hardwareVersion`
 - `IDX_firmware_updateAvailable` на `updateAvailable`
 
-#### 15) `remote_keys` — ключи для пагинации (Paging 3)
+#### 14) `remote_keys` — ключи для пагинации (Paging 3)
 Единая таблица для разных коллекций с партиционированием по `table`/`scope`.
 
 Структура:
@@ -435,11 +440,10 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `practices(type)`, `practices(durationSec)`
 - `practice_sessions(userId)`, `practice_sessions(practiceId)`, `practice_sessions(status)`, `practice_sessions(startedAt DESC)`
 - `rules(ownerId)`, `rules(enabled)`
-- `fcm_tokens(token)` UNIQUE, `fcm_tokens(userId)`
 - `telemetry_events(userId)`, `telemetry_events(type)`, `telemetry_events(timestamp DESC)`, `telemetry_events(sentAt)`
 - `privacy_jobs(userId)`, `privacy_jobs(type)`, `privacy_jobs(status)`
 - `firmware_info(hardwareVersion)`, `firmware_info(updateAvailable)`
-- `outbox_actions(status, available_at, priority DESC)`, `(type, status)`, `idempotency_key` UNIQUE (nullable)
+- `outbox_actions(status, available_at, priority DESC)`, `(type, status)`, `targetEntityId`, `idempotency_key` UNIQUE (nullable)
 - `remote_keys(table, partition)` UNIQUE
 
 Рекомендации по производительности:
@@ -572,6 +576,10 @@ fun pagingSourceReceived(uid: String): PagingSource<Int, HugEntity>
   "LIMIT :limit"
 )
 suspend fun findDue(now: Long, limit: Int): List<OutboxActionEntity>
+
+// Поиск действий для конкретной сущности (например, для отображения статуса синхронизации)
+@Query("SELECT * FROM outbox_actions WHERE targetEntityId = :entityId AND status != 'COMPLETED'")
+fun getActionsForEntity(entityId: String): Flow<List<OutboxActionEntity>>
 ```
 
 ---
