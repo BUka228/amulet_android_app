@@ -142,11 +142,70 @@ erDiagram
 - `pattern_shares` — список UID, с кем «поделен» паттерн: `patternId TEXT FK`, `userId TEXT FK`, PK `(patternId, userId)`.
 
 #### 5) `outbox_actions` — очередь исходящих действий (критично)
-Обеспечивает устойчивость команд к офлайну и сбоям. Обрабатывается Dispatcher’ом (WorkManager) с backoff’ом и лизингом для единовременной обработки.
+Обеспечивает устойчивость команд к офлайну и сбоям. Обрабатывается Dispatcher'ом (WorkManager) с backoff'ом и лизингом для единовременной обработки.
+
+**Enum типов действий (`OutboxActionType`):**
+
+```kotlin
+enum class OutboxActionType(val apiEndpoint: String) {
+    // Пользователь и профиль
+    USER_INIT("/users.me.init"),
+    USER_UPDATE("/users.me"),
+    USER_DELETE("/privacy/delete"),
+    
+    // Устройства
+    DEVICE_CLAIM("/devices.claim"),
+    DEVICE_UPDATE("/devices/{id}"),
+    DEVICE_UNCLAIM("/devices/{id}/unclaim"),
+    DEVICE_FIRMWARE_REPORT("/devices/{deviceId}/firmware/report"),
+    
+    // Социальные функции
+    HUG_SEND("/hugs.send"),
+    PAIR_INVITE("/pairs.invite"),
+    PAIR_ACCEPT("/pairs.accept"),
+    PAIR_BLOCK("/pairs/{pairId}/block"),
+    PAIR_UNBLOCK("/pairs/{pairId}/unblock"),
+    
+    // Паттерны и контент
+    PATTERN_CREATE("/patterns"),
+    PATTERN_UPDATE("/patterns/{id}"),
+    PATTERN_DELETE("/patterns/{id}"),
+    PATTERN_SHARE("/patterns/{patternId}/share"),
+    PATTERN_PREVIEW("/patterns/preview"),
+    
+    // Сессии и практики
+    PRACTICE_START("/practices/{practiceId}/start"),
+    PRACTICE_STOP("/practices.session/{sessionId}/stop"),
+    
+    // Уведомления и токены
+    FCM_TOKEN_ADD("/notifications.tokens"),
+    FCM_TOKEN_DELETE("/notifications.tokens"),
+    
+    // Правила и автоматизация
+    RULE_CREATE("/rules"),
+    RULE_UPDATE("/rules/{ruleId}"),
+    RULE_DELETE("/rules/{ruleId}"),
+    
+    // Приватность и GDPR
+    PRIVACY_EXPORT("/privacy/export"),
+    PRIVACY_DELETE("/privacy/delete"),
+    
+    // Телеметрия
+    TELEMETRY_EVENTS("/telemetry/events"),
+    
+    // OTA обновления
+    OTA_CHECK("/ota/firmware/latest")
+}
+```
+
+**Приоритеты обработки (по умолчанию):**
+- `HIGH (100)`: `HUG_SEND`, `FCM_TOKEN_ADD/DELETE` — критичные для UX
+- `NORMAL (50)`: `USER_UPDATE`, `DEVICE_CLAIM/UNCLAIM`, `PRACTICE_START/STOP`
+- `LOW (10)`: `TELEMETRY_EVENTS`, `OTA_CHECK` — фоновые операции
 
 Обязательные поля:
 - `id: String (TEXT, PK)` — стабильно‑уникальный ID (например, ULID/UUID). Позволяет привязку UI к конкретной операции.
-- `type: String (TEXT) NOT NULL` — тип действия. Рекомендуемые значения: `SEND_HUG`, `UPDATE_PATTERN`, `CLAIM_DEVICE`, `UNCLAIM_DEVICE`, `START_SESSION`, `STOP_SESSION`, `REGISTER_FCM_TOKEN`, и др. Список расширяем.
+- `type: String (TEXT) NOT NULL` — тип действия из enum выше.
 - `payload_json: String (TEXT) NOT NULL` — сериализованный контракт запроса. В payload обязательно включать любой внешний идемпотентный ключ, если применимо.
 - `status: String (TEXT) NOT NULL` — `PENDING`, `IN_FLIGHT`, `FAILED`, `COMPLETED`.
 - `retry_count: Int (INTEGER) NOT NULL DEFAULT 0`
