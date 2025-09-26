@@ -88,13 +88,13 @@ ASCII‑схема слоёв и потоков:
 - `:feature:devices` — привязка/управление устройствами `/devices.*`.
 - `:feature:settings` — профиль, уведомления, приватность `/privacy.*`.
 
-Правила зависимостей:
+ Правила зависимостей (строгая изоляция — выбранный подход):
 
-- `:feature:*` → зависит от `:shared`, `:core:*`, `:core:design` и соответствующего `:data:*` модуля. Запрещены прямые зависимости `feature ↔ feature`.
+- `:feature:*` → зависит только от `:shared`, `:core:design`. Запрещены прямые зависимости `feature ↔ feature` и зависимости на `:data:*`/`:core:*`.
 - `:data:*` → зависит от `:shared` (интерфейсы, DTO), `:core:network`, `:core:database`, `:core:ble` (по необходимости). Не зависит от `:feature:*`.
 - `:shared` не зависит от Android/Compose/Retrofit/Room. Только Kotlin stdlib, kotlinx.serialization, Koin (опционально).
 - `:core:*` могут зависеть от Android SDK, но не от `:feature:*` или `:data:*`.
-- Направление: Presentation → Domain → Data (через интерфейсы). Инверсия: реализации регистрируются DI на Android слое.
+- Направление: Presentation → Domain → Data (через интерфейсы). Инверсия: реализации регистрируются DI на уровне `:app`.
 
 
 Вариант повышенной изоляции (идеалистический для эталонного приложения):
@@ -138,10 +138,10 @@ abstract class RepositoryBindingsModule {
 }
 ```
 
-**Преимущества data-слоя:**
+**Преимущества data-слоя (при строгой изоляции фич):**
 
 - **Изоляция ответственности:** Модуль `:data:hugs` знает только о том, как работать с «объятиями». Он зависит от `:core:network` (Retrofit-клиент), `:core:database` (DAO) и `:shared` (интерфейс `HugsRepository`, DTO-модели).
-- **Чёткие зависимости:** Фича-модуль `:feature:hugs` зависит от `:data:hugs`, чтобы Hilt мог предоставить `HugsRepositoryImpl` для `SendHugUseCase`.
+- **Чёткие зависимости:** Фича‑модуль `:feature:hugs` зависит только от `:shared`; привязка `HugsRepositoryImpl` к `HugsRepository` выполняется в `:app` через DI (Hilt/Koin‑мост), поэтому изменения в `:data:hugs` не пересобирают `:feature:hugs`.
 - **Масштабируемость:** Добавление новой сущности (например, «Достижения») требует только создания интерфейса в `:shared`, DTO/DAO в `:core:*` и реализации в новом модуле `:data:achievements`.
 
 **Пример структуры `:data:hugs` модуля:**
