@@ -95,19 +95,46 @@ ASCII‑схема слоёв и потоков:
 - `:core:*` могут зависеть от Android SDK, но не от `:feature:*` или `:data:*`.
 - Направление: Presentation → Domain → Data (через интерфейсы). Инверсия: реализации регистрируются DI на Android слое.
 
-Диаграмма зависимостей (упрощённо):
+
+Вариант повышенной изоляции (идеалистический для эталонного приложения):
+
+Идея — `:feature:*` зависят только от `:shared` и `:core:design`. Реализации репозиториев из `:data:*` подключаются на уровне `:app` через DI (Hilt), а фичи получают лишь интерфейсы.
+
+- Обновлённые правила зависимостей (строгая изоляция):
+  - `:feature:*` → зависит от `:shared`, `:core:design` (без прямой зависимости от `:data:*` и `:core:*`).
+  - `:data:*` → зависит от `:shared`, `:core:network`, `:core:database`, `:core:ble` (по необходимости). Не зависит от `:feature:*`.
+  - `:app` → единственное место, где сводятся `:feature:*` + `:data:*` (через Hilt‑модули биндингов).
+
+Преимущества:
+
+- Ещё быстрее инкрементальные сборки: изменение в `:data:*` не триггерит пересборку `:feature:*`.
+- Лучшая тестируемость фич: легко подменять репозитории моками через DI без зависимостей на реализацию.
+- Максимальная независимость фич от источников данных (сеть/БД/моки).
+
+Диаграмма (строгая изоляция):
 
 ```
 :app
- ├─ :feature:* ──┐
- │               ├─ :shared
- │               ├─ :core:design
- │               └─ :data:* ──┐
- │                           ├─ :shared (interfaces, DTO)
- │                           ├─ :core:network
- │                           ├─ :core:database
- │                           └─ :core:ble (if needed)
- └─ DI wires implementations (Hilt)
+ ├─ :feature:* ──┐        (интерфейсы из :shared)
+ │               └─ :shared
+ ├─ :data:* ──────┐
+ │                ├─ :shared (interfaces, DTO)
+ │                ├─ :core:network
+ │                ├─ :core:database
+ │                └─ :core:ble (if needed)
+ └─ DI: bind(HugsRepositoryImpl as HugsRepository), ...
+```
+
+Пример биндинга (в `:app`):
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryBindingsModule {
+    @Binds abstract fun bindHugs(impl: HugsRepositoryImpl): HugsRepository
+    @Binds abstract fun bindDevices(impl: DevicesRepositoryImpl): DevicesRepository
+    // ... другие биндинги
+}
 ```
 
 **Преимущества data-слоя:**
