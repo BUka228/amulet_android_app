@@ -19,9 +19,17 @@ erDiagram
     USERS ||--o{ HUGS : "sends (fromUserId)"
     USERS ||--o{ HUGS : "receives (toUserId)"
     USERS ||--o{ PATTERNS : "author (ownerId)"
+    USERS ||--o{ PAIRS : "member (via PAIR_MEMBERS)"
+    USERS ||--o{ PRACTICE_SESSIONS : "participant"
+    USERS ||--o{ RULES : "owner"
+    USERS ||--o{ FCM_TOKENS : "owner"
+    USERS ||--o{ TELEMETRY_EVENTS : "source"
+    USERS ||--o{ PRIVACY_JOBS : "requester"
 
     DEVICES ||--o{ HUGS : "device context (optional)"
+    DEVICES ||--o{ PRACTICE_SESSIONS : "used_device"
     PATTERNS ||--o{ HUGS : "emotion.patternId (optional)"
+    PRACTICES ||--o{ PRACTICE_SESSIONS : "session_type"
 
     PATTERNS ||--o{ PATTERN_TAGS : has
     PATTERN_TAGS }o--|| TAGS : maps
@@ -29,10 +37,17 @@ erDiagram
     PATTERNS ||--o{ PATTERN_SHARES : shared_with
     USERS ||--o{ PATTERN_SHARES : recipient
 
+    PAIRS ||--o{ PAIR_MEMBERS : contains
+    USERS ||--o{ PAIR_MEMBERS : "member_of"
+
     REMOTE_KEYS ||--|| USERS : partition_via_table
     REMOTE_KEYS ||--|| DEVICES : partition_via_table
     REMOTE_KEYS ||--|| HUGS : partition_via_table
     REMOTE_KEYS ||--|| PATTERNS : partition_via_table
+    REMOTE_KEYS ||--|| PAIRS : partition_via_table
+    REMOTE_KEYS ||--|| PRACTICES : partition_via_table
+    REMOTE_KEYS ||--|| PRACTICE_SESSIONS : partition_via_table
+    REMOTE_KEYS ||--|| RULES : partition_via_table
 
     OUTBOX_ACTIONS {
         string id PK
@@ -194,7 +209,13 @@ enum class OutboxActionType(val apiEndpoint: String) {
     TELEMETRY_EVENTS("/telemetry/events"),
     
     // OTA обновления
-    OTA_CHECK("/ota/firmware/latest")
+    OTA_CHECK("/ota/firmware/latest"),
+    
+    // Статистика и аналитика
+    STATS_OVERVIEW("/stats/overview"),
+    
+    // Вебхуки и интеграции
+    WEBHOOK_TRIGGER("/webhooks/{integrationKey}")
 }
 ```
 
@@ -234,7 +255,141 @@ enum class OutboxActionType(val apiEndpoint: String) {
 
 DAO должны предоставлять удобные `Flow` для отображения прогресса в UI.
 
-#### 6) `remote_keys` — ключи для пагинации (Paging 3)
+#### 6) `pairs` — пары пользователей для «объятий»
+- `id: String (TEXT, PK)`
+- `status: String (TEXT)` — `active|pending|blocked`
+- `blockedBy: String? (TEXT, FK → users.id ON DELETE SET NULL)` — кто заблокировал
+- `blockedAt: Long? (INTEGER)`
+- `createdAt: Long (INTEGER) NOT NULL`
+
+Индексы:
+- `IDX_pairs_status` на `status`
+- `IDX_pairs_createdAt` на `createdAt DESC`
+
+#### 7) `pair_members` — участники пар (M:N)
+- `pairId: String (TEXT, FK → pairs.id ON DELETE CASCADE)`
+- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `joinedAt: Long (INTEGER) NOT NULL`
+
+Индексы:
+- `PK_pair_members` на `(pairId, userId)` — составной первичный ключ
+- `IDX_pair_members_userId` на `userId`
+
+#### 8) `practices` — каталог практик (дыхание, медитации, звуки)
+- `id: String (TEXT, PK)`
+- `type: String (TEXT)` — `breath|meditation|sound`
+- `title: String (TEXT)`
+- `description: String? (TEXT)`
+- `durationSec: Int? (INTEGER)`
+- `patternId: String? (TEXT, FK → patterns.id ON DELETE SET NULL)`
+- `audioUrl: String? (TEXT)`
+- `localesJson: String (TEXT)` — локализованные версии
+- `createdAt: Long? (INTEGER)`
+- `updatedAt: Long? (INTEGER)`
+
+Индексы:
+- `IDX_practices_type` на `type`
+- `IDX_practices_duration` на `durationSec`
+
+#### 9) `practice_sessions` — активные и завершённые сессии практик
+- `id: String (TEXT, PK)`
+- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `practiceId: String (TEXT, FK → practices.id ON DELETE CASCADE)`
+- `deviceId: String? (TEXT, FK → devices.id ON DELETE SET NULL)`
+- `status: String (TEXT)` — `active|completed|cancelled`
+- `startedAt: Long (INTEGER) NOT NULL`
+- `completedAt: Long? (INTEGER)`
+- `durationSec: Int? (INTEGER)` — фактическая длительность
+- `completed: Boolean (INTEGER) NOT NULL DEFAULT 0`
+- `intensity: Double? (REAL)` — настройки сессии
+- `brightness: Double? (REAL)`
+
+Индексы:
+- `IDX_practice_sessions_userId` на `userId`
+- `IDX_practice_sessions_practiceId` на `practiceId`
+- `IDX_practice_sessions_status` на `status`
+- `IDX_practice_sessions_startedAt` на `startedAt DESC`
+
+#### 10) `rules` — пользовательские правила автоматизации (IFTTT)
+- `id: String (TEXT, PK)`
+- `ownerId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `triggerJson: String (TEXT)` — сериализованный `RuleTrigger`
+- `actionJson: String (TEXT)` — сериализованный `RuleAction`
+- `enabled: Boolean (INTEGER) NOT NULL DEFAULT 1`
+- `scheduleJson: String? (TEXT)` — расписание выполнения
+- `createdAt: Long? (INTEGER)`
+- `updatedAt: Long? (INTEGER)`
+
+Индексы:
+- `IDX_rules_ownerId` на `ownerId`
+- `IDX_rules_enabled` на `enabled`
+
+#### 11) `fcm_tokens` — FCM токены для push-уведомлений
+- `id: String (TEXT, PK)`
+- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `token: String (TEXT) NOT NULL`
+- `platform: String (TEXT)` — `ios|android|web`
+- `registeredAt: Long (INTEGER) NOT NULL`
+- `lastUsedAt: Long? (INTEGER)`
+
+Индексы:
+- `UNQ_fcm_tokens_token` уникальный на `token`
+- `IDX_fcm_tokens_userId` на `userId`
+
+#### 12) `telemetry_events` — локальная очередь событий телеметрии
+- `id: String (TEXT, PK)`
+- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `type: String (TEXT) NOT NULL`
+- `timestamp: Long (INTEGER) NOT NULL`
+- `paramsJson: String? (TEXT)` — параметры события
+- `sessionId: String? (TEXT)`
+- `practiceId: String? (TEXT)`
+- `sentAt: Long? (INTEGER)` — когда отправлено на сервер
+- `createdAt: Long (INTEGER) NOT NULL`
+
+Индексы:
+- `IDX_telemetry_events_userId` на `userId`
+- `IDX_telemetry_events_type` на `type`
+- `IDX_telemetry_events_timestamp` на `timestamp DESC`
+- `IDX_telemetry_events_sentAt` на `sentAt` (для поиска неотправленных)
+
+#### 13) `privacy_jobs` — задачи экспорта/удаления данных (GDPR)
+- `id: String (TEXT, PK)`
+- `userId: String (TEXT, FK → users.id ON DELETE CASCADE)`
+- `type: String (TEXT)` — `export|delete`
+- `status: String (TEXT)` — `pending|processing|completed|failed`
+- `jobId: String? (TEXT)` — ID задачи на сервере
+- `estimatedCompletionTime: String? (TEXT)`
+- `downloadUrl: String? (TEXT)` — для экспорта
+- `fileSize: Long? (INTEGER)` — размер файла экспорта
+- `errorMessage: String? (TEXT)`
+- `expiresAt: Long? (INTEGER)` — срок действия ссылки
+- `createdAt: Long (INTEGER) NOT NULL`
+- `updatedAt: Long (INTEGER) NOT NULL`
+
+Индексы:
+- `IDX_privacy_jobs_userId` на `userId`
+- `IDX_privacy_jobs_type` на `type`
+- `IDX_privacy_jobs_status` на `status`
+
+#### 14) `firmware_info` — кэш информации о прошивках (OTA)
+- `id: String (TEXT, PK)` — составной: `${hardwareVersion}_${version}`
+- `hardwareVersion: Int (INTEGER) NOT NULL`
+- `version: String (TEXT) NOT NULL`
+- `notes: String? (TEXT)`
+- `url: String (TEXT)`
+- `checksum: String (TEXT)`
+- `size: Long (INTEGER)`
+- `updateAvailable: Boolean (INTEGER) NOT NULL DEFAULT 0`
+- `minFirmwareVersion: String? (TEXT)`
+- `maxFirmwareVersion: String? (TEXT)`
+- `cachedAt: Long (INTEGER) NOT NULL`
+
+Индексы:
+- `IDX_firmware_hardwareVersion` на `hardwareVersion`
+- `IDX_firmware_updateAvailable` на `updateAvailable`
+
+#### 15) `remote_keys` — ключи для пагинации (Paging 3)
 Единая таблица для разных коллекций с партиционированием по `table`/`scope`.
 
 Структура:
@@ -275,6 +430,15 @@ DAO должны предоставлять удобные `Flow` для ото�
 - `patterns(ownerId)`, `(public, hardwareVersion, kind)`
 - `pattern_tags(tagId)`, `pattern_tags(patternId, tagId)` UNIQUE
 - `pattern_shares(patternId, userId)` UNIQUE
+- `pairs(status)`, `pairs(createdAt DESC)`
+- `pair_members(pairId, userId)` UNIQUE, `pair_members(userId)`
+- `practices(type)`, `practices(durationSec)`
+- `practice_sessions(userId)`, `practice_sessions(practiceId)`, `practice_sessions(status)`, `practice_sessions(startedAt DESC)`
+- `rules(ownerId)`, `rules(enabled)`
+- `fcm_tokens(token)` UNIQUE, `fcm_tokens(userId)`
+- `telemetry_events(userId)`, `telemetry_events(type)`, `telemetry_events(timestamp DESC)`, `telemetry_events(sentAt)`
+- `privacy_jobs(userId)`, `privacy_jobs(type)`, `privacy_jobs(status)`
+- `firmware_info(hardwareVersion)`, `firmware_info(updateAvailable)`
 - `outbox_actions(status, available_at, priority DESC)`, `(type, status)`, `idempotency_key` UNIQUE (nullable)
 - `remote_keys(table, partition)` UNIQUE
 
