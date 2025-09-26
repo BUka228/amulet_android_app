@@ -580,6 +580,26 @@ suspend fun findDue(now: Long, limit: Int): List<OutboxActionEntity>
 // Поиск действий для конкретной сущности (например, для отображения статуса синхронизации)
 @Query("SELECT * FROM outbox_actions WHERE targetEntityId = :entityId AND status != 'COMPLETED'")
 fun getActionsForEntity(entityId: String): Flow<List<OutboxActionEntity>>
+
+// Очистка завершённых действий (старше 7 дней)
+@Query("DELETE FROM outbox_actions WHERE status = 'COMPLETED' AND created_at < :cutoffTime")
+suspend fun cleanupCompletedActions(cutoffTime: Long): Int
+
+// Очистка неудачных действий (старше 30 дней, исчерпали попытки)
+@Query("DELETE FROM outbox_actions WHERE status = 'FAILED' AND retry_count >= max_retries AND updated_at < :cutoffTime")
+suspend fun cleanupFailedActions(cutoffTime: Long): Int
+
+// Очистка отправленных телеметрических событий (старше 3 дней)
+@Query("DELETE FROM telemetry_events WHERE sentAt IS NOT NULL AND createdAt < :cutoffTime")
+suspend fun cleanupSentTelemetryEvents(cutoffTime: Long): Int
+
+// Очистка устаревшего кэша прошивок (старше 30 дней)
+@Query("DELETE FROM firmware_info WHERE cachedAt < :cutoffTime")
+suspend fun cleanupFirmwareCache(cutoffTime: Long): Int
+
+// Очистка устаревших ключей пагинации (старше 90 дней)
+@Query("DELETE FROM remote_keys WHERE updatedAt < :cutoffTime")
+suspend fun cleanupRemoteKeys(cutoffTime: Long): Int
 ```
 
 ---
@@ -595,6 +615,79 @@ fun getActionsForEntity(entityId: String): Flow<List<OutboxActionEntity>>
 - Добавление таблиц: `achievements`, `sessions` и др. — без влияния на существующие FK.
 - Расширение `patterns` для новых `PatternElement*` — прозрачно, так как `specJson` хранит сериализованную схему.
 - Перенос FTS/индексов — через ручные миграции с бэкапом данных во временные таблицы.
+
+---
+
+### Стратегии очистки и синхронизации
+
+#### Очистка очередей исходящих действий (WorkManager)
+
+**`outbox_actions` — очистка завершённых и неудачных операций:**
+- **COMPLETED записи:** Удаляются записи со статусом `COMPLETED`, созданные более 7 дней назад
+- **FAILED записи:** Удаляются записи со статусом `FAILED`, которые исчерпали все попытки (`retry_count >= max_retries`) и были обновлены более 30 дней назад
+- **Периодичность:** Ежедневно через `WorkManager` с `OneTimeWorkRequest` и `setBackoffCriteria`
+
+**`telemetry_events` — очистка отправленных событий:**
+- **Отправленные события:** Удаляются события с `sentAt IS NOT NULL`, созданные более 3 дней назад
+- **Периодичность:** Ежедневно через `WorkManager`
+- **Приоритет:** Низкий приоритет, выполняется в фоне
+
+#### Синхронизация удалений с сервера
+
+**Стратегия "полной очистки при ручном обновлении":**
+- **Применяется к:** Коллекциям, принадлежащим пользователю (`patterns` где `ownerId = currentUserId`, `rules`, `practice_sessions`)
+- **Триггер:** Действие пользователя "pull-to-refresh" в соответствующем списке
+- **Процесс:**
+  1. Полное удаление локальных данных для целевой коллекции
+  2. Очистка соответствующих `remote_keys` для этой коллекции
+  3. Загрузка свежих данных с первой страницы пагинации
+  4. Вставка новых данных в локальную БД
+- **Преимущества:** Гарантирует удаление записей, удалённых на других устройствах
+- **Ограничения:** Не применяется к системным/публичным данным (`patterns` где `ownerId IS NULL`)
+
+#### Очистка устаревшего кэша (TTL)
+
+**`firmware_info` — принудительное обновление прошивок:**
+- **TTL:** 30 дней с момента `cachedAt`
+- **Действие:** Удаление записей для принудительного обновления информации о прошивках
+- **Периодичность:** Еженедельно через `WorkManager`
+
+**`remote_keys` — очистка устаревших ключей пагинации:**
+- **TTL:** 90 дней с момента `updatedAt`
+- **Действие:** Удаление ключей, что вызовет полную перезагрузку соответствующей ленты при следующем доступе
+- **Периодичность:** Еженедельно через `WorkManager`
+- **Исключения:** Ключи для активных пользовательских коллекций не удаляются
+
+#### Реализация через WorkManager
+
+**Конфигурация задач очистки:**
+```kotlin
+// Пример конфигурации (концептуально)
+class DatabaseCleanupWorker : CoroutineWorker(context, params) {
+    // Очистка outbox_actions
+    suspend fun cleanupOutboxActions() { /* ... */ }
+    
+    // Очистка telemetry_events  
+    suspend fun cleanupTelemetryEvents() { /* ... */ }
+    
+    // Очистка firmware_info
+    suspend fun cleanupFirmwareCache() { /* ... */ }
+    
+    // Очистка remote_keys
+    suspend fun cleanupRemoteKeys() { /* ... */ }
+}
+```
+
+**Планирование задач:**
+- **Ежедневно:** Очистка `outbox_actions` и `telemetry_events`
+- **Еженедельно:** Очистка `firmware_info` и `remote_keys`
+- **Условия выполнения:** Только при наличии Wi-Fi и зарядке устройства (опционально)
+
+**Мониторинг и метрики:**
+- **Логирование:** Количество удалённых записей по каждой таблице
+- **Телеметрия:** Отправка метрик очистки в `telemetry_events` для мониторинга
+- **Ошибки:** Обработка исключений при очистке с записью в `last_error`
+- **Производительность:** Измерение времени выполнения операций очистки
 
 ---
 
