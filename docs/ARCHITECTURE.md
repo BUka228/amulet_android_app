@@ -254,6 +254,38 @@ sealed interface ConnectionState {
 Внутри клиента — отдельная корутина‑воркер, обрабатывающая очередь команд с гарантиями последовательности и таймаутами; все ошибки GATT маппятся в доменные ошибки `AppError.Network/Timeout/PreconditionFailed` по политике.
 
 
+### Управление жизненным циклом BLE (Foreground Service)
+
+Требование: BLE‑соединение и сессии (например, медитация) должны переживать уничтожение UI и сворачивание приложения. Для этого используется Foreground Service, владеющий `AmuletBleClient` и отображающий постоянное уведомление.
+
+- Поток запуска:
+  1. Пользователь запускает практику/операцию, требующую стабильного канала.
+  2. ViewModel/UseCase вызывает `StartBleForegroundServiceUseCase`.
+  3. ForegroundService стартует, поднимает уведомление и инициализирует/получает экземпляр `AmuletBleClient` из DI.
+  4. Сервис подписывается на `connectionState`, управляет переподключениями и выполняет команды (в т.ч. загрузки анимаций через `upload(plan)`).
+  5. UI‑экраны биндятся к сервису для получения `Flow`‑состояний и отправки команд, но сервис не зависит от присутствия UI.
+
+- Взаимодействия (упрощённо):
+
+```
+UI (Compose/ViewModel)
+   │ start/stop, commands, observe progress
+   ▼
+ForegroundService (lifecycle owner of BLE)
+   │ holds
+   ▼
+AmuletBleClient (:core:ble)
+   │ emits state, executes queue
+   ▼
+Repositories (:data:devices/:data:sessions) ↔ Room/Network
+```
+
+- Принципы:
+  - Единственная точка владения BLE — сервис. ViewModel никогда не создаёт BLE‑клиента.
+  - Сервис предоставляет binder/IPC‑фасад с методами: `observeConnection()`, `observeUpload()`, `sendCommand()`, `startSession()`, `stopSession()`.
+  - Безопасное восстановление после process‑death: при рестарте сервис перечитывает контекст активной сессии из БД/DataStore и восстанавливает состояние.
+  - Разрешения/фоновые ограничения: сервис использует Foreground‑ограничения Android (channel, importance), уважает энергополитику, корректно останавливается.
+
 **Конвертер Pattern → BLE‑команды**
 
 OpenAPI определяет богатую модель `PatternSpec`/`PatternElement*` (градиенты, пульс, дыхание и пр.). Для исполнения на устройстве требуется трансляция в компактные wire‑команды (строки/байты), например `BREATHING:00FF00:8000ms` или бинарный формат.
