@@ -615,6 +615,40 @@ DI в `:shared` (KMP‑совместимо):
 
 - Биндинг репозиториев делается Hilt‑модулем, который делегирует в Koin.
 
+Мост Hilt ↔ Koin (в `:app`):
+
+```kotlin
+@Module
+@InstallIn(SingletonComponent::class)
+object KoinBridgeModule {
+
+    @Provides
+    @Singleton
+    fun provideKoin(app: Application): Koin {
+        val koinApp = startKoin {
+            androidContext(app)
+            modules(
+                sharedKoinModules() +
+                listOf(androidDataModules)
+            )
+        }
+        return koinApp.koin
+    }
+
+    @Provides
+    fun provideSendHugUseCase(koin: Koin): SendHugUseCase = koin.get()
+
+    @Provides
+    fun provideHugsRepository(koin: Koin): HugsRepository = koin.get()
+}
+```
+
+Пояснения:
+
+- Единый источник биндингов UseCase/Repo — Koin в `:shared` (+ платформенные модули). Hilt «поднимает» эти зависимости в свой граф через мост.
+- ViewModel под Hilt получает зависимости через обычные `@Inject`/`@HiltViewModel`, инстансы берутся из Koin.
+- Подход сохраняет строгую изоляцию фич и упрощает тестирование (можно запускать Koin‑модули отдельно).
+
 iOS:
 
 - `startKoin { modules(sharedKoinModules() + iosModules) }` вызывается на старте приложения, где `iosModules` предоставляет реализации репозиториев под iOS.
