@@ -72,6 +72,7 @@ ASCII‑схема слоёв и потоков:
 - `:core:ble` — BLE/NFC абстракции, GATT‑профили, конверсия паттернов → команды.
 - `:core:telemetry` — сбор, батчинг, отправка телеметрии.
 - `:core:design` — Compose design system (themes, typography, components).
+- `:core:config` — удалённая конфигурация и фича‑флаги (Firebase Remote Config, кэш/дефолты).
 - `:data:user` — реализация `UserRepository` (профиль, настройки, консенсы).
 - `:data:devices` — реализация `DevicesRepository` (привязка, OTA, статус).
 - `:data:hugs` — реализация `HugsRepository` («объятия», пары, история).
@@ -617,6 +618,7 @@ sealed interface AppError {
 - Конструктор анимаций: модели паттернов совместимы со схемами `/components/schemas/Pattern*`; адаптация по `hardwareVersion` (100/200). Компилятор `PatternSpec → DeviceCommandPlan` расположен в `:shared`; кодировщик wire‑формата и MTU‑чанкинг в `:core:ble`.
 - Телеметрия: батч‑отправка `/telemetry/events` с бэкофом; частичная устойчивость при офлайне через локальные очереди.
 - Приватность: единый поток удаления/экспорта аккаунта через `/privacy/*`; UI предоставляет понятные статусы и сроки готовности.
+- Feature Toggles и удалённая конфигурация: `:core:config` оборачивает Firebase Remote Config; значения по умолчанию зашиты в приложение; UseCase’ы зависят от интерфейса `ConfigRepository`.
 
 
 ### Нефункциональные требования (SLO/SLA ориентиры)
@@ -654,6 +656,33 @@ sealed interface AppError {
 - Новая фича — отдельный `:feature:*` модуль, публичные контракты в `:shared`.
 - Диаграмма зависимостей проверяется static‑линтером (Forbidden APIs/deps rules).
 - Добавляйте тесты: unit для UseCase/редьюсеров, интеграционные для источников данных, UI для основных сценариев.
+
+### Удалённая конфигурация и Feature Toggles
+
+Задача: включать/выключать фичи без релиза, проводить A/B тесты, иметь «kill‑switches» на случай инцидентов.
+
+- Модуль: `:core:config`.
+- Контракты:
+```kotlin
+interface ConfigRepository {
+    fun observe(): Flow<AppConfig>
+    suspend fun getBoolean(key: String, default: Boolean = false): Boolean
+    suspend fun getString(key: String, default: String = ""): String
+    suspend fun refresh(force: Boolean = false)
+}
+
+data class AppConfig(
+    val flags: Map<String, Boolean>,
+    val strings: Map<String, String>,
+    val lastFetchedAt: Long
+)
+```
+
+- Реализация: Firebase Remote Config + локальный кэш (DataStore). Значения по умолчанию жёстко зашиваются в приложении (res/raw или hardcoded в `DefaultsProvider`).
+- Поведение при первом запуске/офлайне: используются дефолты; фетч откладывается до появления сети.
+- Интеграция с UseCase: специализированные UseCase’ы читают флаги, например `IsCrystalShellsFeatureEnabledUseCase`.
+- A/B тесты: ключи флагов и вариантов определяются на стороне Remote Config; клиент получает ветку как обычное значение; аналитика учитывает вариацию.
+- Kill‑switches: критичные флаги (например, `hugs_sending_enabled`) читаются синхронно/раньше и используются в проверках до выполнения действий.
 
 
 ### Глоссарий
