@@ -86,31 +86,31 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
         Ok(apiCall())
     } catch (e: CancellationException) {
         throw e // Пробрасываем, чтобы корутина отменилась корректно
-    } catch (e: HttpException) {
-        // Детальное логирование HTTP-ошибок для отладки
-        val errorBody = e.response()?.errorBody()?.string()?.takeIf { it.isNotBlank() }
-        Log.w("SafeApiCall", 
-            "HTTP error: ${e.code()} ${e.message()}" +
-            if (errorBody != null) "\nResponse body: $errorBody" else ""
-        )
-        val appError = mapHttpExceptionToAppError(e)
-        Err(appError)
-    } catch (e: SocketTimeoutException) {
-        Log.w("SafeApiCall", "Request timeout", e)
-        Err(AppError.Timeout)
-    } catch (e: ConnectException) {
-        Log.w("SafeApiCall", "Connection failed", e)
-        Err(AppError.Network)
-    } catch (e: UnknownHostException) {
-        Log.w("SafeApiCall", "Unknown host", e)
-        Err(AppError.Network)
-    } catch (e: IOException) {
-        Log.w("SafeApiCall", "IO error", e)
-        Err(AppError.Network)
     } catch (e: Exception) {
-        // Логируем неожиданные исключения для отладки
-        Log.w("SafeApiCall", "Unexpected exception", e)
-        Err(AppError.Unknown)
+        // Логируем исключение для отладки
+        logException(e)
+        // Делегируем маппинг в централизованную функцию
+        Err(mapExceptionToAppError(e))
+    }
+}
+
+/**
+ * Централизованное логирование исключений с учетом их типа
+ */
+private fun logException(exception: Throwable) {
+    when (exception) {
+        is HttpException -> {
+            val errorBody = exception.response()?.errorBody()?.string()?.takeIf { it.isNotBlank() }
+            Log.w("SafeApiCall", 
+                "HTTP error: ${exception.code()} ${exception.message()}" +
+                if (errorBody != null) "\nResponse body: $errorBody" else ""
+            )
+        }
+        is SocketTimeoutException -> Log.w("SafeApiCall", "Request timeout", exception)
+        is ConnectException -> Log.w("SafeApiCall", "Connection failed", exception)
+        is UnknownHostException -> Log.w("SafeApiCall", "Unknown host", exception)
+        is IOException -> Log.w("SafeApiCall", "IO error", exception)
+        else -> Log.w("SafeApiCall", "Unexpected exception", exception)
     }
 }
 ```
@@ -398,6 +398,48 @@ init {
 }
 ```
 
+**Альтернативный стиль с использованием `.onEach`:**
+
+```kotlin
+// В ProfileViewModel.kt (альтернативный подход)
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+
+private val _uiState = MutableStateFlow(ProfileState(isLoading = true))
+val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
+
+init {
+    viewModelScope.launch {
+        getUserProfileUseCase()
+            .onEach { result ->
+                _uiState.update { currentState ->
+                    when (result) {
+                        is Ok -> currentState.copy(
+                            isLoading = false,
+                            user = result.value,
+                            error = null
+                        )
+                        is Err -> currentState.copy(
+                            isLoading = false,
+                            user = null,
+                            error = result.error
+                        )
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+}
+```
+
+**Сравнение подходов:**
+
+| Подход | Преимущества | Недостатки |
+|--------|-------------|------------|
+| `.map` + `.collect` | Функциональный стиль, immutable | Больше объектов создается |
+| `.onEach` + `.update` | Более читаемый для сложной логики | Мутабельный подход |
+
 ### 4.3. Дополнительные утилиты для ViewModel
 
 ```kotlin
@@ -596,6 +638,30 @@ suspend fun processAction(action: OutboxActionEntity): Result<Unit, AppError> {
         Result.failure(appError)
     }
 }
+```
+
+### 7.1. Логика диспетчера WorkManager на основе AppError
+
+**Правило 1 (Retry):** Если `processAction` возвращает временные ошибки, диспетчер планирует повторное выполнение.
+
+**Правило 2 (Fail):** Постоянные ошибки переводят задачу в статус `FAILED`:
+
+| AppError | Действие | Причина |
+|----------|----------|---------|
+| `Network`, `Timeout`, `Server` | Retry с backoff | Временные проблемы |
+| `Unauthorized`, `Forbidden` | Fail | Проблемы авторизации |
+| `Validation`, `PreconditionFailed` | Fail | Некорректные данные |
+| `Conflict`, `RateLimited` | Fail | Бизнес-логика |
+| `BleError`, `OtaError` | Fail | Аппаратные проблемы |
+
+**Правило 3 (Serialization):** В поле `lastError: String?` сохраняется результат `appError.toString()`:
+
+```kotlin
+// Примеры сохранения ошибок в БД
+"Network" // AppError.Network.toString()
+"Server(500, Internal Server Error)" // AppError.Server.toString()
+"Validation(errors={email=[Invalid format]})" // AppError.Validation.toString()
+"BleError.DeviceNotFound" // AppError.BleError.DeviceNotFound.toString()
 ```
 
 ## 8. Логирование и телеметрия
