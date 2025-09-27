@@ -37,9 +37,12 @@
 | `BREATHING` | `BREATHING:RRGGBB:DURATIONms` | Дыхательная анимация | `BREATHING:00FF00:8000ms` |
 | `PULSE` | `PULSE:RRGGBB:SPEED:REPEATS` | Пульсация | `PULSE:FF0000:500:5` |
 | `SPARKLE` | `SPARKLE:RRGGBB:COUNT:SPREAD` | Мерцание (v2.0+) | `SPARKLE:FFFF00:10:3` |
-| `GRADIENT` | `GRADIENT:RRGGBB1:RRGGBB2:SPEED` | Градиент (v2.0+) | `GRADIENT:FF0000:0000FF:1000` |
-| `RAINBOW` | `RAINBOW:SPEED:REPEATS` | Радуга (v2.0+) | `RAINBOW:2000:3` |
+| `GRADIENT` | `GRADIENT:RRGGBB1:RRGGBB2:SPEED` | Градиент | `GRADIENT:FF0000:0000FF:1000` |
+| `RAINBOW` | `RAINBOW:SPEED:REPEATS` | Радуга | `RAINBOW:2000:3` |
+| `CHASE` | `CHASE:RRGGBB:SPEED:DIRECTION` | Бегущие огни (v2.0+) | `CHASE:00FF00:1000:1` |
 | `CLEAR` | `CLEAR` | Очистить экран | `CLEAR` |
+
+**Примечание:** Эффекты, предназначенные для кольца светодиодов (например, `CHASE`), на устройствах с `hardwareVersion < 200` адаптируются `PatternCompiler`-ом в совместимый аналог (например, `PULSE`).
 
 #### 1.2.3. Команды управления устройством
 
@@ -227,6 +230,7 @@ sealed interface AmuletCommand {
     data class Sparkle(val color: Rgb, val count: Int, val spread: Int) : AmuletCommand
     data class Gradient(val color1: Rgb, val color2: Rgb, val speed: Int) : AmuletCommand
     data class Rainbow(val speed: Int, val repeats: Int) : AmuletCommand
+    data class Chase(val color: Rgb, val speed: Int, val direction: Int) : AmuletCommand
     data object Clear : AmuletCommand
     
     // Управление устройством
@@ -264,6 +268,7 @@ sealed interface DeviceCommand {
     data class Sparkle(val color: Rgb, val count: Int, val spread: Int) : DeviceCommand
     data class Gradient(val color1: Rgb, val color2: Rgb, val speed: Int) : DeviceCommand
     data class Rainbow(val speed: Int, val repeats: Int) : DeviceCommand
+    data class Chase(val color: Rgb, val speed: Int, val direction: Int) : DeviceCommand
     data object Clear : DeviceCommand
 }
 ```
@@ -455,6 +460,36 @@ class PatternCompiler {
                             color = element.color.toRgb(),
                             speed = 200,
                             repeats = element.count
+                        ))
+                    }
+                }
+                is PatternElement.Gradient -> {
+                    commands.add(DeviceCommand.Gradient(
+                        color1 = element.color1.toRgb(),
+                        color2 = element.color2.toRgb(),
+                        speed = element.speed
+                    ))
+                }
+                is PatternElement.Rainbow -> {
+                    commands.add(DeviceCommand.Rainbow(
+                        speed = element.speed,
+                        repeats = element.repeats
+                    ))
+                }
+                is PatternElement.Chase -> {
+                    if (hardwareVersion >= 200) {
+                        // Реализация для кольца светодиодов
+                        commands.add(DeviceCommand.Chase(
+                            color = element.color.toRgb(),
+                            speed = element.speed,
+                            direction = element.direction
+                        ))
+                    } else {
+                        // Fallback для одного светодиода - простая пульсация
+                        commands.add(DeviceCommand.Pulse(
+                            color = element.color.toRgb(),
+                            speed = element.speed,
+                            repeats = 3
                         ))
                     }
                 }
