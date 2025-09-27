@@ -49,26 +49,32 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
         Result.success(apiCall())
     } catch (e: CancellationException) {
         throw e // Пробрасываем, чтобы корутина отменилась корректно
-    } catch (e: HttpException) {
-        val appError = when (e.code()) {
-            401 -> AppError.Unauthorized
-            403 -> AppError.Forbidden
-            404 -> AppError.NotFound
-            409 -> AppError.Conflict
-            429 -> AppError.RateLimited
-            412 -> {
-                // Пример парсинга деталей ошибки
-                val reason = parsePreconditionFailedReason(e.response()?.errorBody())
-                AppError.PreconditionFailed(reason)
-            }
-            in 400..499 -> AppError.Validation(/* parse details */)
-            else -> AppError.Server(e.code(), e.message())
-        }
+    } catch (e: Throwable) {
+        val appError = mapExceptionToAppError(e)
         Result.failure(appError)
+    }
+}
+
+// Альтернативный подход с более детальной обработкой в самом safeApiCall
+suspend fun <T> safeApiCallDetailed(apiCall: suspend () -> T): Result<T, AppError> {
+    return try {
+        Result.success(apiCall())
+    } catch (e: CancellationException) {
+        throw e // Пробрасываем, чтобы корутина отменилась корректно
+    } catch (e: HttpException) {
+        val appError = mapHttpExceptionToAppError(e)
+        Result.failure(appError)
+    } catch (e: SocketTimeoutException) {
+        Result.failure(AppError.Timeout)
+    } catch (e: ConnectException) {
+        Result.failure(AppError.Network)
+    } catch (e: UnknownHostException) {
+        Result.failure(AppError.Network)
     } catch (e: IOException) {
         Result.failure(AppError.Network)
     } catch (e: Exception) {
         // Логируем e для отладки
+        Log.w("SafeApiCall", "Unexpected exception", e)
         Result.failure(AppError.Unknown)
     }
 }
@@ -92,16 +98,110 @@ fun <T> Flow<T>.asResult(): Flow<Result<T, AppError>> {
     return this
         .map<T, Result<T, AppError>> { Result.success(it) }
         .catch { e ->
-            // Здесь можно добавить более сложную логику маппинга, если нужно
-            val error = when(e) {
-                is IOException -> AppError.Network
-                is SQLiteException -> AppError.DatabaseError
-                // ... другие типы
-                else -> AppError.Unknown
-            }
+            val error = mapExceptionToAppError(e)
             emit(Result.failure(error))
         }
 }
+
+// Централизованная функция маппинга исключений в AppError
+fun mapExceptionToAppError(exception: Throwable): AppError {
+    return when (exception) {
+        // BLE-специфичные исключения (самые специфичные)
+        is BleConnectionException -> AppError.BleError.DeviceNotFound
+        is BleServiceDiscoveryException -> AppError.BleError.ServiceDiscoveryFailed
+        is BleWriteException -> AppError.BleError.WriteFailed
+        is BleReadException -> AppError.BleError.ReadFailed
+        is BleTimeoutException -> AppError.BleError.CommandTimeout(exception.command)
+        is BleDisconnectedException -> AppError.BleError.DeviceDisconnected
+        
+        // OTA-специфичные исключения
+        is OtaChecksumException -> AppError.OtaError.ChecksumMismatch(exception.expected, exception.actual)
+        is OtaSpaceException -> AppError.OtaError.InsufficientSpace
+        is OtaInterruptedException -> AppError.OtaError.UpdateInterrupted
+        is OtaCorruptedException -> AppError.OtaError.FirmwareCorrupted(exception.reason)
+        
+        // HTTP-исключения
+        is HttpException -> mapHttpExceptionToAppError(exception)
+        
+        // Сетевые исключения
+        is IOException -> AppError.Network
+        is SocketTimeoutException -> AppError.Timeout
+        is ConnectException -> AppError.Network
+        is UnknownHostException -> AppError.Network
+        
+        // База данных
+        is SQLiteException -> AppError.DatabaseError
+        is RoomDatabaseException -> AppError.DatabaseError
+        
+        // Отмена корутин (не обрабатываем как ошибку)
+        is CancellationException -> throw exception
+        
+        // Все остальные исключения
+        else -> AppError.Unknown
+    }
+}
+
+// Дополнительная функция для HTTP-исключений
+fun mapHttpExceptionToAppError(httpException: HttpException): AppError {
+    return when (httpException.code()) {
+        401 -> AppError.Unauthorized
+        403 -> AppError.Forbidden
+        404 -> AppError.NotFound
+        409 -> AppError.Conflict
+        412 -> {
+            val reason = parsePreconditionFailedReason(httpException.response()?.errorBody())
+            AppError.PreconditionFailed(reason)
+        }
+        429 -> AppError.RateLimited
+        in 400..499 -> {
+            val validationErrors = parseValidationErrors(httpException.response()?.errorBody())
+            AppError.Validation(validationErrors)
+        }
+        in 500..599 -> AppError.Server(httpException.code(), httpException.message())
+        else -> AppError.Unknown
+    }
+}
+
+// Вспомогательные функции для парсинга деталей ошибок
+private fun parsePreconditionFailedReason(errorBody: ResponseBody?): String? {
+    return try {
+        errorBody?.string()?.let { body ->
+            // Парсинг JSON ответа для получения reason
+            // Например: {"error": {"reason": "self_send"}}
+            Json.decodeFromString<ErrorResponse>(body).error?.reason
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun parseValidationErrors(errorBody: ResponseBody?): Map<String, String> {
+    return try {
+        errorBody?.string()?.let { body ->
+            // Парсинг JSON ответа для получения validation errors
+            // Например: {"errors": {"email": ["Invalid email format"]}}
+            Json.decodeFromString<ValidationErrorResponse>(body).errors
+        } ?: emptyMap()
+    } catch (e: Exception) {
+        emptyMap()
+    }
+}
+
+// DTO для парсинга ошибок
+@Serializable
+private data class ErrorResponse(
+    val error: ErrorDetail?
+)
+
+@Serializable
+private data class ErrorDetail(
+    val reason: String?
+)
+
+@Serializable
+private data class ValidationErrorResponse(
+    val errors: Map<String, List<String>>
+)
 ```
 
 **Использование в репозитории:**
@@ -377,6 +477,14 @@ sealed interface BleError : AppError {
     data class CommandTimeout(val command: String) : BleError
     data object DeviceDisconnected : BleError
 }
+
+// BLE-специфичные исключения
+class BleConnectionException(message: String) : Exception(message)
+class BleServiceDiscoveryException(message: String) : Exception(message)
+class BleWriteException(message: String) : Exception(message)
+class BleReadException(message: String) : Exception(message)
+class BleTimeoutException(val command: String, message: String) : Exception(message)
+class BleDisconnectedException(message: String) : Exception(message)
 ```
 
 ### 6.2. OTA-специфичные ошибки
@@ -389,6 +497,12 @@ sealed interface OtaError : AppError {
     data object UpdateInterrupted : OtaError
     data class FirmwareCorrupted(val reason: String) : OtaError
 }
+
+// OTA-специфичные исключения
+class OtaChecksumException(val expected: String, val actual: String) : Exception("Checksum mismatch: expected $expected, got $actual")
+class OtaSpaceException(message: String) : Exception(message)
+class OtaInterruptedException(message: String) : Exception(message)
+class OtaCorruptedException(val reason: String) : Exception("Firmware corrupted: $reason")
 ```
 
 ### 6.3. Hugs-специфичные ошибки
@@ -498,6 +612,51 @@ class AppErrorTest {
 6. **Тестируйте обработку ошибок** в unit-тестах
 7. **Используйте retry-логику** для временных ошибок (сеть, BLE)
 8. **Не показывайте технические детали** ошибок пользователю
+
+### 10.1. Иерархия исключений в catch-блоках
+
+При обработке исключений в `catch`-блоках важно соблюдать правильную иерархию - от самых специфичных к самым общим:
+
+```kotlin
+.catch { e ->
+    val error = when (e) {
+        // 1. Самые специфичные исключения (конкретные типы)
+        is BleConnectionException -> AppError.BleError.DeviceNotFound
+        is BleTimeoutException -> AppError.BleError.CommandTimeout(e.command)
+        is OtaChecksumException -> AppError.OtaError.ChecksumMismatch(e.expected, e.actual)
+        
+        // 2. Специфичные исключения по доменам
+        is BleException -> AppError.BleError.ConnectionFailed
+        is OtaException -> AppError.OtaError.UpdateInterrupted
+        
+        // 3. HTTP-исключения
+        is HttpException -> mapHttpExceptionToAppError(e)
+        
+        // 4. Сетевые исключения (более общие)
+        is SocketTimeoutException -> AppError.Timeout
+        is ConnectException -> AppError.Network
+        is UnknownHostException -> AppError.Network
+        is IOException -> AppError.Network
+        
+        // 5. Исключения базы данных
+        is SQLiteException -> AppError.DatabaseError
+        is RoomDatabaseException -> AppError.DatabaseError
+        
+        // 6. Отмена корутин (не обрабатываем как ошибку)
+        is CancellationException -> throw e
+        
+        // 7. Все остальные (самые общие)
+        else -> AppError.Unknown
+    }
+    emit(Result.failure(error))
+}
+```
+
+**Правила иерархии:**
+- **Специфичные исключения** должны быть обработаны первыми
+- **Наследники** должны быть обработаны раньше родительских классов
+- **CancellationException** всегда пробрасывается (не обрабатывается как ошибка)
+- **Общие исключения** (Exception, Throwable) должны быть в конце
 
 ## 11. Примеры использования в разных сценариях
 
