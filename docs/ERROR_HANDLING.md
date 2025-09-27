@@ -85,7 +85,9 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
     return try {
         Ok(apiCall())
     } catch (e: CancellationException) {
-        throw e // Пробрасываем, чтобы корутина отменилась корректно
+        // Пробрасываем CancellationException без изменений, чтобы не нарушать 
+        // механизм структурированной конкурентности корутин
+        throw e
     } catch (e: Exception) {
         // Логируем исключение для отладки
         logException(e)
@@ -173,6 +175,8 @@ fun mapExceptionToAppError(exception: Throwable): AppError {
         is RoomDatabaseException -> AppError.DatabaseError
         
         // Отмена корутин (не обрабатываем как ошибку)
+        // Пробрасываем CancellationException без изменений, чтобы не нарушать 
+        // механизм структурированной конкурентности корутин
         is CancellationException -> throw exception
         
         // Все остальные исключения
@@ -852,6 +856,8 @@ Log.w("SafeApiCall", "Unexpected exception", IllegalStateException("Unexpected s
         is RoomDatabaseException -> AppError.DatabaseError
         
         // 6. Отмена корутин (не обрабатываем как ошибку)
+        // Пробрасываем CancellationException без изменений, чтобы не нарушать 
+        // механизм структурированной конкурентности корутин
         is CancellationException -> throw e
         
         // 7. Все остальные (самые общие)
