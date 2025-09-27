@@ -73,7 +73,7 @@ sealed interface AppError {
 
 ### 2.1. Для `suspend` функций (одиночные запросы)
 
-В модуле `:core:network` создается `suspend` extension-функция, которая оборачивает все вызовы к Retrofit API.
+В модуле `:core:network` создается единая `suspend` extension-функция `safeApiCall`, которая оборачивает все вызовы к Retrofit API с детальной обработкой исключений.
 
 ```kotlin
 // В :core:network/util/SafeApiCall.kt
@@ -82,18 +82,6 @@ import com.michaelbull.result.Ok
 import com.michaelbull.result.Err
 
 suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
-    return try {
-        Ok(apiCall())
-    } catch (e: CancellationException) {
-        throw e // Пробрасываем, чтобы корутина отменилась корректно
-    } catch (e: Throwable) {
-        val appError = mapExceptionToAppError(e)
-        Err(appError)
-    }
-}
-
-// Альтернативный подход с более детальной обработкой в самом safeApiCall
-suspend fun <T> safeApiCallDetailed(apiCall: suspend () -> T): Result<T, AppError> {
     return try {
         Ok(apiCall())
     } catch (e: CancellationException) {
