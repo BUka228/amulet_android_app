@@ -192,12 +192,16 @@ fun mapHttpExceptionToAppError(httpException: HttpException): AppError {
 }
 
 // Вспомогательные функции для парсинга деталей ошибок
+// Используем JsonElement для большей устойчивости к изменениям формата ошибки от бэкенда
 private fun parsePreconditionFailedReason(errorBody: ResponseBody?): String? {
     return try {
         errorBody?.string()?.let { body ->
-            // Парсинг JSON ответа для получения reason
-            // Например: {"error": {"reason": "self_send"}}
-            Json.decodeFromString<ErrorResponse>(body).error?.reason
+            val jsonElement = Json.decodeFromString<JsonElement>(body)
+            // Пробуем разные варианты структуры ответа
+            jsonElement.jsonObject["error"]?.jsonObject?.get("reason")?.jsonPrimitive?.contentOrNull
+                ?: jsonElement.jsonObject["reason"]?.jsonPrimitive?.contentOrNull
+                ?: jsonElement.jsonObject["message"]?.jsonPrimitive?.contentOrNull
+                ?: jsonElement.jsonObject["error"]?.jsonPrimitive?.contentOrNull
         }
     } catch (e: Exception) {
         null
@@ -207,30 +211,46 @@ private fun parsePreconditionFailedReason(errorBody: ResponseBody?): String? {
 private fun parseValidationErrors(errorBody: ResponseBody?): Map<String, String> {
     return try {
         errorBody?.string()?.let { body ->
-            // Парсинг JSON ответа для получения validation errors
-            // Например: {"errors": {"email": ["Invalid email format"]}}
-            Json.decodeFromString<ValidationErrorResponse>(body).errors
+            val jsonElement = Json.decodeFromString<JsonElement>(body)
+            val errors = jsonElement.jsonObject["errors"]
+            
+            when {
+                // Формат: { "errors": { "field1": "message1", "field2": "message2" } }
+                errors is JsonObject -> {
+                    errors.entries.associate { (field, value) ->
+                        field to when (value) {
+                            is JsonPrimitive -> value.contentOrNull ?: ""
+                            is JsonArray -> value.joinToString(", ") { it.jsonPrimitive.contentOrNull ?: "" }
+                            else -> ""
+                        }
+                    }
+                }
+                // Формат: { "errors": [{"field": "field1", "message": "message1"}] }
+                errors is JsonArray -> {
+                    errors.mapNotNull { errorElement ->
+                        if (errorElement is JsonObject) {
+                            val field = errorElement["field"]?.jsonPrimitive?.contentOrNull
+                            val message = errorElement["message"]?.jsonPrimitive?.contentOrNull
+                            if (field != null && message != null) field to message else null
+                        } else null
+                    }.toMap()
+                }
+                // Формат: { "field1": ["message1"], "field2": ["message2"] }
+                else -> {
+                    jsonElement.jsonObject.entries.associate { (field, value) ->
+                        field to when (value) {
+                            is JsonArray -> value.joinToString(", ") { it.jsonPrimitive.contentOrNull ?: "" }
+                            is JsonPrimitive -> value.contentOrNull ?: ""
+                            else -> ""
+                        }
+                    }
+                }
+            }
         } ?: emptyMap()
     } catch (e: Exception) {
         emptyMap()
     }
 }
-
-// DTO для парсинга ошибок
-@Serializable
-private data class ErrorResponse(
-    val error: ErrorDetail?
-)
-
-@Serializable
-private data class ErrorDetail(
-    val reason: String?
-)
-
-@Serializable
-private data class ValidationErrorResponse(
-    val errors: Map<String, List<String>>
-)
 ```
 
 **Использование в репозитории:**
@@ -621,14 +641,44 @@ class AppErrorTest {
 
 1. **Всегда используйте `Result<T, AppError>`** для операций, которые могут завершиться ошибкой
 2. **Не пробрасывайте исключения** из Data слоя в Domain/Presentation
-3. **Логируйте все ошибки** для отладки, но не в продакшене
-4. **Учитывайте согласия пользователя** при отправке телеметрии
-5. **Предоставляйте понятные сообщения** пользователю на основе `AppError`
-6. **Тестируйте обработку ошибок** в unit-тестах
-7. **Используйте retry-логику** для временных ошибок (сеть, BLE)
-8. **Не показывайте технические детали** ошибок пользователю
+3. **Используйте `JsonElement` для парсинга ошибок** - это обеспечивает устойчивость к изменениям формата от бэкенда
+4. **Логируйте все ошибки** для отладки, но не в продакшене
+5. **Учитывайте согласия пользователя** при отправке телеметрии
+6. **Предоставляйте понятные сообщения** пользователю на основе `AppError`
+7. **Тестируйте обработку ошибок** в unit-тестах
+8. **Используйте retry-логику** для временных ошибок (сеть, BLE)
+9. **Не показывайте технические детали** ошибок пользователю
 
-### 10.1. Иерархия исключений в catch-блоках
+### 10.1. Использование JsonElement для парсинга ошибок
+
+Для парсинга ошибок от бэкенда рекомендуется использовать `JsonElement` вместо строго типизированных DTO:
+
+**Преимущества:**
+- **Устойчивость к изменениям** - бэкенд может изменить структуру ошибки без поломки клиента
+- **Гибкость** - можно обрабатывать разные форматы ошибок в одном коде
+- **Отказоустойчивость** - отсутствие поля не приводит к краху парсинга
+
+**Пример использования:**
+```kotlin
+// Вместо строгой типизации
+@Serializable
+data class ErrorResponse(val message: String)
+
+// Используем JsonElement
+val jsonElement = Json.decodeFromString<JsonElement>(body)
+val message = jsonElement.jsonObject["message"]?.jsonPrimitive?.contentOrNull
+    ?: jsonElement.jsonObject["error"]?.jsonPrimitive?.contentOrNull
+    ?: "Unknown error"
+```
+
+**Поддерживаемые форматы ошибок:**
+- `{"message": "Error text"}`
+- `{"error": {"reason": "self_send"}}`
+- `{"errors": {"field1": "message1", "field2": "message2"}}`
+- `{"errors": [{"field": "field1", "message": "message1"}]}`
+- `{"field1": ["message1"], "field2": ["message2"]}`
+
+### 10.2. Иерархия исключений в catch-блоках
 
 При обработке исключений в `catch`-блоках важно соблюдать правильную иерархию - от самых специфичных к самым общим:
 
