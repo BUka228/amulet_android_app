@@ -546,25 +546,9 @@ enum class NotificationType {
 
 ### 1. Централизованная обработка
 
-```kotlin
-// :core:network/SafeApiCall.kt
-suspend fun <T> safeApiCall(
-    apiCall: suspend () -> T,
-    errorMapper: ErrorMapper = DefaultErrorMapper()
-): Result<T, AppError> {
-    return try {
-        Result.success(apiCall())
-    } catch (e: CancellationException) {
-        throw e // Пробрасываем отмену корутин
-    } catch (e: HttpException) {
-        Result.failure(errorMapper.mapHttpException(e))
-    } catch (e: IOException) {
-        Result.failure(AppError.Network)
-    } catch (e: Exception) {
-        Result.failure(AppError.Unknown)
-    }
-}
-```
+Реализация `safeApiCall` уже описана в документе [ERROR_HANDLING.md](ERROR_HANDLING.md). 
+
+**Важно**: Мы используем библиотеку [Result](https://github.com/michaelbull/kotlin-result) от Michael Bull, поэтому используем `Ok(value)` и `Err(error)` вместо `Result.success()` и `Result.failure()`.
 
 ### 2. Retry стратегии
 
@@ -587,8 +571,8 @@ class ExponentialBackoffRetryStrategy : RetryStrategy {
         var currentDelay = baseDelay
         repeat(maxRetries) { attempt ->
             when (val result = operation()) {
-                is Result.Success -> return result
-                is Result.Failure -> {
+                is Ok -> return result
+                is Err -> {
                     if (shouldRetry(result.error)) {
                         delay(currentDelay)
                         currentDelay = (currentDelay * 2).coerceAtMost(30000L) // Max 30 seconds
@@ -671,7 +655,7 @@ class HealthCheckerImpl(
         
         val overallHealth = determineOverallHealth(components.values)
         
-        return Result.success(
+        return Ok(
             HealthStatus(
                 overall = overallHealth,
                 components = components,
