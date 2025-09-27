@@ -87,18 +87,28 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
     } catch (e: CancellationException) {
         throw e // Пробрасываем, чтобы корутина отменилась корректно
     } catch (e: HttpException) {
+        // Детальное логирование HTTP-ошибок для отладки
+        val errorBody = e.response()?.errorBody()?.string()?.takeIf { it.isNotBlank() }
+        Log.w("SafeApiCall", 
+            "HTTP error: ${e.code()} ${e.message()}" +
+            if (errorBody != null) "\nResponse body: $errorBody" else ""
+        )
         val appError = mapHttpExceptionToAppError(e)
         Err(appError)
     } catch (e: SocketTimeoutException) {
+        Log.w("SafeApiCall", "Request timeout", e)
         Err(AppError.Timeout)
     } catch (e: ConnectException) {
+        Log.w("SafeApiCall", "Connection failed", e)
         Err(AppError.Network)
     } catch (e: UnknownHostException) {
+        Log.w("SafeApiCall", "Unknown host", e)
         Err(AppError.Network)
     } catch (e: IOException) {
+        Log.w("SafeApiCall", "IO error", e)
         Err(AppError.Network)
     } catch (e: Exception) {
-        // Логируем e для отладки
+        // Логируем неожиданные исключения для отладки
         Log.w("SafeApiCall", "Unexpected exception", e)
         Err(AppError.Unknown)
     }
@@ -682,6 +692,9 @@ class AppErrorTest {
 2. **Не пробрасывайте исключения** из Data слоя в Domain/Presentation
 3. **Используйте `JsonElement` для парсинга ошибок** - это обеспечивает устойчивость к изменениям формата от бэкенда
 4. **Логируйте все ошибки** для отладки, но не в продакшене
+   - HTTP-ошибки: код, сообщение и тело ответа
+   - Сетевые ошибки: тип и детали подключения
+   - Неожиданные исключения: полный stack trace
 5. **Учитывайте согласия пользователя** при отправке телеметрии
 6. **Предоставляйте понятные сообщения** пользователю на основе `AppError`
 7. **Тестируйте обработку ошибок** в unit-тестах
@@ -717,7 +730,33 @@ val message = jsonElement.jsonObject["message"]?.jsonPrimitive?.contentOrNull
 - `{"errors": [{"field": "field1", "message": "message1"}]}`
 - `{"field1": ["message1"], "field2": ["message2"]}`
 
-### 11.2. Иерархия исключений в catch-блоках
+### 11.2. Логирование ошибок
+
+**Примеры логов для разных типов ошибок:**
+
+```kotlin
+// HTTP-ошибки
+Log.w("SafeApiCall", 
+    "HTTP error: 400 Bad Request\nResponse body: {\"errors\":{\"email\":[\"Invalid email format\"]}}"
+)
+
+// Сетевые ошибки
+Log.w("SafeApiCall", "Connection failed", ConnectException("Connection refused"))
+
+// Таймауты
+Log.w("SafeApiCall", "Request timeout", SocketTimeoutException("Read timed out"))
+
+// Неожиданные исключения
+Log.w("SafeApiCall", "Unexpected exception", IllegalStateException("Unexpected state"))
+```
+
+**Рекомендации по логированию:**
+- Используйте уровень `WARN` для ошибок, которые могут быть важны для отладки
+- Включайте контекст: HTTP-код, тело ответа, тип исключения
+- Не логируйте в продакшене без согласия пользователя
+- Используйте структурированное логирование для анализа
+
+### 11.3. Иерархия исключений в catch-блоках
 
 При обработке исключений в `catch`-блоках важно соблюдать правильную иерархию - от самых специфичных к самым общим:
 
