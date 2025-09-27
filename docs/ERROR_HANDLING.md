@@ -6,6 +6,19 @@
 
 Ядром системы является `sealed interface AppError`, который моделирует все возможные бизнес-ошибки в приложении.
 
+**Важно:** Поскольку стандартный `kotlin.Result` использует `Throwable` в качестве типа ошибки, мы используем библиотеку [Result](https://github.com/michaelbull/kotlin-result) от Michael Bull, которая предоставляет `Result<Success, Failure>` с произвольными типами.
+
+### 1.1. Зависимости
+
+```kotlin
+// В :shared/build.gradle.kts
+dependencies {
+    implementation("com.michael-bull.kotlin-result:kotlin-result:2.0.0")
+}
+```
+
+### 1.2. Доменная модель AppError
+
 ```kotlin
 // В :shared/domain/model/AppError.kt
 sealed interface AppError {
@@ -34,6 +47,26 @@ sealed interface AppError {
 }
 ```
 
+### 1.3. Преимущества использования библиотеки Result
+
+**Почему мы используем библиотеку Result от Michael Bull:**
+
+1. **Type Safety**: `Result<T, AppError>` вместо `Result<T, Throwable>` - более строгая типизация
+2. **Готовые extension-функции**: `onSuccess`, `onFailure`, `map`, `flatMap`, `combine` и многие другие
+3. **KMP-совместимость**: Работает на всех платформах Kotlin Multiplatform
+4. **Производительность**: Inline-функции без накладных расходов
+5. **Функциональный стиль**: Чистый, декларативный код
+6. **Тестируемость**: Легко мокать и тестировать
+7. **Документация**: Хорошо документированная библиотека с примерами
+
+**Встроенные функции библиотеки:**
+- `onSuccess`, `onFailure` - выполнение действий
+- `map`, `mapError` - трансформация значений и ошибок
+- `flatMap` - цепочка операций
+- `combine` - комбинирование нескольких Result
+- `getOrElse`, `getOrNull` - безопасное извлечение значений
+- `isSuccess`, `isFailure` - проверка состояния
+
 ## 2. Централизованный обработчик в `Data` слое
 
 Вместо `try-catch` в каждом репозитории, мы используем централизованные обертки, которые инкапсулируют логику преобразования исключений в `AppError`.
@@ -44,38 +77,42 @@ sealed interface AppError {
 
 ```kotlin
 // В :core:network/util/SafeApiCall.kt
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+
 suspend fun <T> safeApiCall(apiCall: suspend () -> T): Result<T, AppError> {
     return try {
-        Result.success(apiCall())
+        Ok(apiCall())
     } catch (e: CancellationException) {
         throw e // Пробрасываем, чтобы корутина отменилась корректно
     } catch (e: Throwable) {
         val appError = mapExceptionToAppError(e)
-        Result.failure(appError)
+        Err(appError)
     }
 }
 
 // Альтернативный подход с более детальной обработкой в самом safeApiCall
 suspend fun <T> safeApiCallDetailed(apiCall: suspend () -> T): Result<T, AppError> {
     return try {
-        Result.success(apiCall())
+        Ok(apiCall())
     } catch (e: CancellationException) {
         throw e // Пробрасываем, чтобы корутина отменилась корректно
     } catch (e: HttpException) {
         val appError = mapHttpExceptionToAppError(e)
-        Result.failure(appError)
+        Err(appError)
     } catch (e: SocketTimeoutException) {
-        Result.failure(AppError.Timeout)
+        Err(AppError.Timeout)
     } catch (e: ConnectException) {
-        Result.failure(AppError.Network)
+        Err(AppError.Network)
     } catch (e: UnknownHostException) {
-        Result.failure(AppError.Network)
+        Err(AppError.Network)
     } catch (e: IOException) {
-        Result.failure(AppError.Network)
+        Err(AppError.Network)
     } catch (e: Exception) {
         // Логируем e для отладки
         Log.w("SafeApiCall", "Unexpected exception", e)
-        Result.failure(AppError.Unknown)
+        Err(AppError.Unknown)
     }
 }
 ```
@@ -94,12 +131,16 @@ override suspend fun getUserProfile(): Result<User, AppError> {
 
 ```kotlin
 // В :shared/domain/util/FlowExtensions.kt (KMP-friendly)
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+
 fun <T> Flow<T>.asResult(): Flow<Result<T, AppError>> {
     return this
-        .map<T, Result<T, AppError>> { Result.success(it) }
+        .map<T, Result<T, AppError>> { Ok(it) }
         .catch { e ->
             val error = mapExceptionToAppError(e)
-            emit(Result.failure(error))
+            emit(Err(error))
         }
 }
 
@@ -228,68 +269,75 @@ override fun observePractices(): Flow<Result<List<Practice>, AppError>> {
 
 ### 4.1. Extension-функции для Result
 
-Для удобства работы с `Result` создаются inline extension-функции:
+Библиотека Result от Michael Bull уже предоставляет большинство необходимых extension-функций. Дополнительно создаем специфичные для нашего приложения:
 
 ```kotlin
 // В :shared/domain/util/ResultExtensions.kt
-inline fun <T> Result<T, AppError>.onSuccess(action: (T) -> Unit): Result<T, AppError> {
-    if (this is Result.Success) {
-        action(value)
-    }
-    return this
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+import com.michaelbull.result.onSuccess
+import com.michaelbull.result.onFailure
+import com.michaelbull.result.map
+import com.michaelbull.result.mapError
+import com.michaelbull.result.getOrElse
+import com.michaelbull.result.getOrNull
+import com.michaelbull.result.isSuccess
+import com.michaelbull.result.isFailure
+
+// Дополнительные extension-функции для удобства работы с AppError
+inline fun <T> Result<T, AppError>.onAppError(action: (AppError) -> Unit): Result<T, AppError> {
+    return onFailure(action)
 }
 
-inline fun <T> Result<T, AppError>.onFailure(action: (AppError) -> Unit): Result<T, AppError> {
-    if (this is Result.Failure) {
-        action(error)
-    }
-    return this
-}
-
-inline fun <T, R> Result<T, AppError>.map(transform: (T) -> R): Result<R, AppError> {
-    return when (this) {
-        is Result.Success -> Result.success(transform(value))
-        is Result.Failure -> Result.failure(error)
-    }
-}
-
-inline fun <T> Result<T, AppError>.mapError(transform: (AppError) -> AppError): Result<T, AppError> {
-    return when (this) {
-        is Result.Success -> this
-        is Result.Failure -> Result.failure(transform(error))
+inline fun <T> Result<T, AppError>.onNetworkError(action: (AppError) -> Unit): Result<T, AppError> {
+    return onFailure { error ->
+        if (error is AppError.Network || error is AppError.Timeout) {
+            action(error)
+        }
     }
 }
 
-inline fun <T> Result<T, AppError>.getOrElse(defaultValue: (AppError) -> T): T {
-    return when (this) {
-        is Result.Success -> value
-        is Result.Failure -> defaultValue(error)
+inline fun <T> Result<T, AppError>.onValidationError(action: (AppError.Validation) -> Unit): Result<T, AppError> {
+    return onFailure { error ->
+        if (error is AppError.Validation) {
+            action(error)
+        }
     }
 }
 
-inline fun <T> Result<T, AppError>.getOrNull(): T? {
-    return when (this) {
-        is Result.Success -> value
-        is Result.Failure -> null
-    }
-}
-
-inline fun <T> Result<T, AppError>.isSuccess(): Boolean = this is Result.Success
-inline fun <T> Result<T, AppError>.isFailure(): Boolean = this is Result.Failure
-
-// Для Flow<Result>
+// Для Flow<Result> - используем встроенные функции библиотеки
 inline fun <T> Flow<Result<T, AppError>>.onSuccess(action: suspend (T) -> Unit): Flow<Result<T, AppError>> {
     return this.onEach { result ->
-        if (result is Result.Success) {
-            action(result.value)
-        }
+        result.onSuccess(action)
     }
 }
 
 inline fun <T> Flow<Result<T, AppError>>.onFailure(action: suspend (AppError) -> Unit): Flow<Result<T, AppError>> {
     return this.onEach { result ->
-        if (result is Result.Failure) {
-            action(result.error)
+        result.onFailure(action)
+    }
+}
+
+// Специфичные для Amulet App функции
+inline fun <T> Flow<Result<T, AppError>>.onBleError(action: suspend (AppError.BleError) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        result.onFailure { error ->
+            if (error is AppError.BleError) {
+                action(error)
+            }
+        }
+    }
+}
+
+inline fun <T> Flow<Result<T, AppError>>.onHugsError(action: suspend (AppError) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        result.onFailure { error ->
+            when (error) {
+                is AppError.PreconditionFailed -> action(error)
+                is AppError.RateLimited -> action(error)
+                else -> { /* игнорируем другие ошибки */ }
+            }
         }
     }
 }
@@ -301,6 +349,10 @@ inline fun <T> Flow<Result<T, AppError>>.onFailure(action: suspend (AppError) ->
 
 ```kotlin
 // В ProfileViewModel.kt
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+
 private val _uiState = MutableStateFlow(ProfileState(isLoading = true))
 val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
 
@@ -323,12 +375,12 @@ init {
         getUserProfileUseCase()
             .map { result ->
                 when (result) {
-                    is Result.Success -> ProfileState(
+                    is Ok -> ProfileState(
                         isLoading = false, 
                         user = result.value, 
                         error = null
                     )
-                    is Result.Failure -> ProfileState(
+                    is Err -> ProfileState(
                         isLoading = false, 
                         user = null, 
                         error = result.error
@@ -346,6 +398,10 @@ init {
 
 ```kotlin
 // В :shared/domain/util/ViewModelExtensions.kt
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+
 inline fun <T> Flow<Result<T, AppError>>.toUiState(
     initialLoading: Boolean = true,
     crossinline onSuccess: (T) -> UiState,
@@ -354,8 +410,8 @@ inline fun <T> Flow<Result<T, AppError>>.toUiState(
     return this
         .map { result ->
             when (result) {
-                is Result.Success -> onSuccess(result.value)
-                is Result.Failure -> onFailure(result.error)
+                is Ok -> onSuccess(result.value)
+                is Err -> onFailure(result.error)
             }
         }
         .onStart { emit(if (initialLoading) UiState.Loading else UiState.Idle) }
@@ -378,42 +434,33 @@ init {
 
 ```kotlin
 // В :shared/domain/util/ResultExtensions.kt
+import com.michaelbull.result.Result
+import com.michaelbull.result.Ok
+import com.michaelbull.result.Err
+import com.michaelbull.result.flatMap
+import com.michaelbull.result.combine
 
-// Комбинирование нескольких Result
-inline fun <T1, T2, R> combine(
+// Комбинирование нескольких Result (используем встроенную функцию библиотеки)
+inline fun <T1, T2, R> combineResults(
     result1: Result<T1, AppError>,
     result2: Result<T2, AppError>,
     transform: (T1, T2) -> R
 ): Result<R, AppError> {
-    return when {
-        result1 is Result.Success && result2 is Result.Success -> 
-            Result.success(transform(result1.value, result2.value))
-        result1 is Result.Failure -> Result.failure(result1.error)
-        result2 is Result.Failure -> Result.failure(result2.error)
-        else -> Result.failure(AppError.Unknown)
-    }
-}
-
-// FlatMap для цепочки операций
-inline fun <T, R> Result<T, AppError>.flatMap(transform: (T) -> Result<R, AppError>): Result<R, AppError> {
-    return when (this) {
-        is Result.Success -> transform(value)
-        is Result.Failure -> Result.failure(error)
-    }
+    return combine(result1, result2, transform)
 }
 
 // Фильтрация успешных результатов
 fun <T> Flow<Result<T, AppError>>.successes(): Flow<T> {
     return this
-        .filter { it is Result.Success }
-        .map { (it as Result.Success).value }
+        .filter { it is Ok }
+        .map { (it as Ok).value }
 }
 
 // Фильтрация ошибок
 fun <T> Flow<Result<T, AppError>>.failures(): Flow<AppError> {
     return this
-        .filter { it is Result.Failure }
-        .map { (it as Result.Failure).error }
+        .filter { it is Err }
+        .map { (it as Err).error }
 }
 
 // Retry с экспоненциальным backoff
@@ -427,8 +474,8 @@ suspend fun <T> retryWithBackoff(
     var currentDelay = initialDelay
     repeat(times - 1) { attempt ->
         when (val result = block()) {
-            is Result.Success -> return result
-            is Result.Failure -> {
+            is Ok -> return result
+            is Err -> {
                 if (result.error is AppError.Network || result.error is AppError.Timeout) {
                     delay(currentDelay)
                     currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
