@@ -126,26 +126,221 @@ override fun observePractices(): Flow<Result<List<Practice>, AppError>> {
     *   `ScreenState` содержит поле `error: AppError?`.
     *   При получении `Result.failure(error)` `ViewModel` выставляет это поле.
 
-    ```kotlin
-    // В ProfileViewModel.kt
-    private val _uiState = MutableStateFlow(ProfileState(isLoading = true))
-    val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
+### 4.1. Extension-функции для Result
 
-    init {
-        viewModelScope.launch {
-            getUserProfileUseCase().collect { result ->
+Для удобства работы с `Result` создаются inline extension-функции:
+
+```kotlin
+// В :shared/domain/util/ResultExtensions.kt
+inline fun <T> Result<T, AppError>.onSuccess(action: (T) -> Unit): Result<T, AppError> {
+    if (this is Result.Success) {
+        action(value)
+    }
+    return this
+}
+
+inline fun <T> Result<T, AppError>.onFailure(action: (AppError) -> Unit): Result<T, AppError> {
+    if (this is Result.Failure) {
+        action(error)
+    }
+    return this
+}
+
+inline fun <T, R> Result<T, AppError>.map(transform: (T) -> R): Result<R, AppError> {
+    return when (this) {
+        is Result.Success -> Result.success(transform(value))
+        is Result.Failure -> Result.failure(error)
+    }
+}
+
+inline fun <T> Result<T, AppError>.mapError(transform: (AppError) -> AppError): Result<T, AppError> {
+    return when (this) {
+        is Result.Success -> this
+        is Result.Failure -> Result.failure(transform(error))
+    }
+}
+
+inline fun <T> Result<T, AppError>.getOrElse(defaultValue: (AppError) -> T): T {
+    return when (this) {
+        is Result.Success -> value
+        is Result.Failure -> defaultValue(error)
+    }
+}
+
+inline fun <T> Result<T, AppError>.getOrNull(): T? {
+    return when (this) {
+        is Result.Success -> value
+        is Result.Failure -> null
+    }
+}
+
+inline fun <T> Result<T, AppError>.isSuccess(): Boolean = this is Result.Success
+inline fun <T> Result<T, AppError>.isFailure(): Boolean = this is Result.Failure
+
+// Для Flow<Result>
+inline fun <T> Flow<Result<T, AppError>>.onSuccess(action: suspend (T) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        if (result is Result.Success) {
+            action(result.value)
+        }
+    }
+}
+
+inline fun <T> Flow<Result<T, AppError>>.onFailure(action: suspend (AppError) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        if (result is Result.Failure) {
+            action(result.error)
+        }
+    }
+}
+```
+
+### 4.2. Упрощенный код в ViewModel
+
+С использованием extension-функций код в ViewModel становится более лаконичным:
+
+```kotlin
+// В ProfileViewModel.kt
+private val _uiState = MutableStateFlow(ProfileState(isLoading = true))
+val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
+
+init {
+    viewModelScope.launch {
+        getUserProfileUseCase()
+            .onSuccess { user ->
+                _uiState.update { it.copy(isLoading = false, user = user, error = null) }
+            }
+            .onFailure { error ->
+                _uiState.update { it.copy(isLoading = false, error = error) }
+            }
+            .collect { /* Flow завершается */ }
+    }
+}
+
+// Или еще более лаконично с map:
+init {
+    viewModelScope.launch {
+        getUserProfileUseCase()
+            .map { result ->
                 when (result) {
-                    is Result.Success -> {
-                        _uiState.update { it.copy(isLoading = false, user = result.value, error = null) }
-                    }
-                    is Result.Failure -> {
-                        _uiState.update { it.copy(isLoading = false, error = result.error) }
-                    }
+                    is Result.Success -> ProfileState(
+                        isLoading = false, 
+                        user = result.value, 
+                        error = null
+                    )
+                    is Result.Failure -> ProfileState(
+                        isLoading = false, 
+                        user = null, 
+                        error = result.error
+                    )
+                }
+            }
+            .collect { newState ->
+                _uiState.value = newState
+            }
+    }
+}
+```
+
+### 4.3. Дополнительные утилиты для ViewModel
+
+```kotlin
+// В :shared/domain/util/ViewModelExtensions.kt
+inline fun <T> Flow<Result<T, AppError>>.toUiState(
+    initialLoading: Boolean = true,
+    crossinline onSuccess: (T) -> UiState,
+    crossinline onFailure: (AppError) -> UiState
+): Flow<UiState> {
+    return this
+        .map { result ->
+            when (result) {
+                is Result.Success -> onSuccess(result.value)
+                is Result.Failure -> onFailure(result.error)
+            }
+        }
+        .onStart { emit(if (initialLoading) UiState.Loading else UiState.Idle) }
+}
+
+// Использование:
+init {
+    viewModelScope.launch {
+        getUserProfileUseCase()
+            .toUiState(
+                onSuccess = { user -> ProfileState(user = user, error = null) },
+                onFailure = { error -> ProfileState(error = error) }
+            )
+            .collect { _uiState.value = it }
+    }
+}
+```
+
+### 4.4. Дополнительные extension-функции
+
+```kotlin
+// В :shared/domain/util/ResultExtensions.kt
+
+// Комбинирование нескольких Result
+inline fun <T1, T2, R> combine(
+    result1: Result<T1, AppError>,
+    result2: Result<T2, AppError>,
+    transform: (T1, T2) -> R
+): Result<R, AppError> {
+    return when {
+        result1 is Result.Success && result2 is Result.Success -> 
+            Result.success(transform(result1.value, result2.value))
+        result1 is Result.Failure -> Result.failure(result1.error)
+        result2 is Result.Failure -> Result.failure(result2.error)
+        else -> Result.failure(AppError.Unknown)
+    }
+}
+
+// FlatMap для цепочки операций
+inline fun <T, R> Result<T, AppError>.flatMap(transform: (T) -> Result<R, AppError>): Result<R, AppError> {
+    return when (this) {
+        is Result.Success -> transform(value)
+        is Result.Failure -> Result.failure(error)
+    }
+}
+
+// Фильтрация успешных результатов
+fun <T> Flow<Result<T, AppError>>.successes(): Flow<T> {
+    return this
+        .filter { it is Result.Success }
+        .map { (it as Result.Success).value }
+}
+
+// Фильтрация ошибок
+fun <T> Flow<Result<T, AppError>>.failures(): Flow<AppError> {
+    return this
+        .filter { it is Result.Failure }
+        .map { (it as Result.Failure).error }
+}
+
+// Retry с экспоненциальным backoff
+suspend fun <T> retryWithBackoff(
+    times: Int = 3,
+    initialDelay: Long = 1000,
+    maxDelay: Long = 10000,
+    factor: Double = 2.0,
+    block: suspend () -> Result<T, AppError>
+): Result<T, AppError> {
+    var currentDelay = initialDelay
+    repeat(times - 1) { attempt ->
+        when (val result = block()) {
+            is Result.Success -> return result
+            is Result.Failure -> {
+                if (result.error is AppError.Network || result.error is AppError.Timeout) {
+                    delay(currentDelay)
+                    currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
+                } else {
+                    return result // Не ретраим для других типов ошибок
                 }
             }
         }
     }
-    ```
+    return block() // Последняя попытка
+}
+```
 
 ## 5. Отображение ошибок в UI
 
