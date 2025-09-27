@@ -347,20 +347,6 @@ val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
 init {
     viewModelScope.launch {
         getUserProfileUseCase()
-            .onSuccess { user ->
-                _uiState.update { it.copy(isLoading = false, user = user, error = null) }
-            }
-            .onFailure { error ->
-                _uiState.update { it.copy(isLoading = false, error = error) }
-            }
-            .collect { /* Flow завершается */ }
-    }
-}
-
-// Или еще более лаконично с map:
-init {
-    viewModelScope.launch {
-        getUserProfileUseCase()
             .map { result ->
                 when (result) {
                     is Ok -> ProfileState(
@@ -390,31 +376,36 @@ import com.michaelbull.result.Result
 import com.michaelbull.result.Ok
 import com.michaelbull.result.Err
 
-inline fun <T> Flow<Result<T, AppError>>.toUiState(
-    initialLoading: Boolean = true,
-    crossinline onSuccess: (T) -> UiState,
-    crossinline onFailure: (AppError) -> UiState
-): Flow<UiState> {
-    return this
-        .map { result ->
-            when (result) {
-                is Ok -> onSuccess(result.value)
-                is Err -> onFailure(result.error)
+// Специфичные для Amulet App функции
+inline fun <T> Flow<Result<T, AppError>>.onBleError(action: suspend (AppError.BleError) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        result.onFailure { error ->
+            if (error is AppError.BleError) {
+                action(error)
             }
         }
-        .onStart { emit(if (initialLoading) UiState.Loading else UiState.Idle) }
+    }
 }
 
-// Использование:
-init {
-    viewModelScope.launch {
-        getUserProfileUseCase()
-            .toUiState(
-                onSuccess = { user -> ProfileState(user = user, error = null) },
-                onFailure = { error -> ProfileState(error = error) }
-            )
-            .collect { _uiState.value = it }
+inline fun <T> Flow<Result<T, AppError>>.onHugsError(action: suspend (AppError) -> Unit): Flow<Result<T, AppError>> {
+    return this.onEach { result ->
+        result.onFailure { error ->
+            when (error) {
+                is AppError.PreconditionFailed -> action(error)
+                is AppError.RateLimited -> action(error)
+                else -> { /* игнорируем другие ошибки */ }
+            }
+        }
     }
+}
+
+// Утилита для комбинирования нескольких Result
+inline fun <T1, T2, R> combineResults(
+    result1: Result<T1, AppError>,
+    result2: Result<T2, AppError>,
+    transform: (T1, T2) -> R
+): Result<R, AppError> {
+    return combine(result1, result2, transform)
 }
 ```
 
@@ -425,17 +416,6 @@ init {
 import com.michaelbull.result.Result
 import com.michaelbull.result.Ok
 import com.michaelbull.result.Err
-import com.michaelbull.result.flatMap
-import com.michaelbull.result.combine
-
-// Комбинирование нескольких Result (используем встроенную функцию библиотеки)
-inline fun <T1, T2, R> combineResults(
-    result1: Result<T1, AppError>,
-    result2: Result<T2, AppError>,
-    transform: (T1, T2) -> R
-): Result<R, AppError> {
-    return combine(result1, result2, transform)
-}
 
 // Фильтрация успешных результатов
 fun <T> Flow<Result<T, AppError>>.successes(): Flow<T> {
