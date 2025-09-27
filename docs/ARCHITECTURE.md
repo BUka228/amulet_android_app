@@ -481,6 +481,32 @@ class PatternEditViewModel {
 
 ### 4. Потоки данных и управление состоянием (Data Flow & State Management)
 
+### Схема взаимодействия и контрактов
+
+```
+┌─────────────────── PRESENTATION (UI Layer) ────────────────────┐
+│   Composable Screen  <-- (StateFlow<State>, Flow<Effect>) ---  ViewModel   │
+│         │                                                          ▲        │
+│         └-------------------- (Event) ----------------------------┘        │
+└───────────────────────────────────▲────────────────────────────────────────┘
+                                    │
+                                (UseCase)
+                                    │
+┌─────────────────── DOMAIN (:shared) ───────────────────────────┐
+│                                                                        │
+│   UseCase  <-- (Result<DomainModel>, Flow<DomainModel>) --- Repository (Interface) │
+│                                                                        │
+└───────────────────────────────────▲────────────────────────────────────────┘
+                                    │
+                         (Repository Implementation)
+                                    │
+┌──────────────────── DATA & CORE (Android Layer) ────────────────┐
+│   Repository (Impl)  -->  ApiService, DAO, AmuletBleManager...       │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+Эта схема визуализирует, какие типы данных передаются между слоями, что и является сутью контрактов.
+
 Однонаправленный поток данных (UDF):
 
 1) UI Action (Intent) → 2) ViewModel (обработка) → 3) UseCase → 4) Repository → 5) Remote/Local/BLE → 6) Result → 7) UseCase policy → 8) ViewModel редьюсер → 9) `StateFlow<ScreenState>` → UI.
