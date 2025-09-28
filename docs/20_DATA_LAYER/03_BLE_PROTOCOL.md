@@ -137,12 +137,26 @@
 
 #### Команды анимации
 
-1. **Начать план анимации:**
+**Важно:** Существует два типа анимаций с разными способами запуска:
+
+##### Встроенные системные анимации (PLAY)
+
+1. **Воспроизведение встроенной анимации:**
+   ```
+   PLAY:breath_square
+   ```
+   - `breath_square` - ID встроенной анимации, зашитой в прошивку
+   - **Назначение:** Быстрый запуск предустановленных анимаций
+   - **Примеры ID:** `breath_square`, `pulse_red`, `chase_blue`, `spinner_rainbow`
+
+##### Пользовательские динамические анимации (PLAN_)
+
+2. **Начать план анимации:**
    ```
    BEGIN_PLAN:unique_id
    ```
 
-2. **Добавить команду в план (с ожиданием подтверждения):**
+3. **Добавить команду в план (с ожиданием подтверждения):**
    ```
    ADD_COMMAND:1:BREATHING:00FF00:5000ms
    ```
@@ -150,15 +164,19 @@
    - Остальное - команда
    - **ВАЖНО:** Отправляется только после получения `STATE:READY_FOR_DATA`
 
-3. **Зафиксировать план:**
+4. **Зафиксировать план:**
    ```
    COMMIT_PLAN:unique_id
    ```
 
-4. **Отменить план:**
+5. **Отменить план:**
    ```
    ROLLBACK_PLAN:unique_id
    ```
+
+**Различие между PLAY и PLAN_:**
+- **`PLAY`** - для встроенных анимаций (быстрый доступ, известные ID)
+- **`PLAN_`** - для пользовательских анимаций (динамическое создание, полный контроль)
 
 #### Формат ответов
 
@@ -391,6 +409,10 @@ sealed interface AmuletCommand {
         val durationMs: Int
     ) : AmuletCommand
     
+    data class Play(
+        val patternId: String
+    ) : AmuletCommand
+    
     data class Custom(
         val command: String,
         val parameters: Map<String, String>
@@ -573,6 +595,7 @@ class CommandTimeoutPolicy {
             is AmuletCommand.SetLed -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.ClearAll -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.Delay -> command.durationMs.toLong() + 1000L // Время задержки + буфер
+            is AmuletCommand.Play -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.Custom -> DEFAULT_TIMEOUT_MS
         }
     }
@@ -659,6 +682,22 @@ class FlowControlRetryPolicy(
         }
     }
 }
+```
+
+#### Примеры использования PLAY команд
+
+```kotlin
+// Быстрый запуск встроенной анимации дыхания
+val breathingCommand = AmuletCommand.Play("breath_square")
+bleManager.sendCommand(breathingCommand)
+
+// Запуск встроенной пульсации
+val pulseCommand = AmuletCommand.Play("pulse_red")
+bleManager.sendCommand(pulseCommand)
+
+// Запуск встроенного спиннера
+val spinnerCommand = AmuletCommand.Play("spinner_rainbow")
+bleManager.sendCommand(spinnerCommand)
 ```
 
 #### Последовательность команд для "секретного кода"
@@ -847,6 +886,30 @@ class AmuletBleManagerTest {
         assertThat(secretCodePlan.commands).hasSize(10)
         assertThat(secretCodePlan.id).isEqualTo("secret_code_test")
     }
+    
+    @Test
+    fun `should send PLAY commands correctly`() = runTest {
+        val mockBleClient = MockBleClient()
+        val manager = AmuletBleManagerImpl(mockBleClient)
+        
+        val playCommand = AmuletCommand.Play("breath_square")
+        val result = manager.sendCommand(playCommand)
+        
+        assertThat(result).isInstanceOf(BleResult.Success::class.java)
+        assertThat(mockBleClient.lastCommand).isEqualTo("PLAY:breath_square")
+    }
+    
+    @Test
+    fun `should distinguish between PLAY and PLAN commands`() = runTest {
+        // PLAY команда - для встроенных анимаций
+        val playCommand = AmuletCommand.Play("pulse_red")
+        assertThat(playCommand.patternId).isEqualTo("pulse_red")
+        
+        // PLAN команды - для пользовательских анимаций
+        val planCommand = AmuletCommand.Custom("BEGIN_PLAN", mapOf("id" to "user_animation_001"))
+        assertThat(planCommand.command).isEqualTo("BEGIN_PLAN")
+        assertThat(planCommand.parameters["id"]).isEqualTo("user_animation_001")
+    }
 }
 
 class FlowControlManagerTest {
@@ -924,5 +987,10 @@ class BleIntegrationTest {
 - **Точные временные паузы** через `DELAY:duration_ms`
 - **Эффективная загрузка анимаций** через механизм `PLAN_` команд
 - **Реализация "секретных кодов"** - сложные последовательности с точным временным контролем
+
+### Два типа анимаций:
+
+- **Встроенные анимации (PLAY)** - быстрый доступ к предустановленным анимациям через `PLAY:pattern_id`
+- **Пользовательские анимации (PLAN_)** - динамическое создание сложных анимаций через `BEGIN_PLAN/ADD_COMMAND/COMMIT_PLAN`
 
 Протокол спроектирован с учетом требований архитектуры Clean Architecture и обеспечивает четкое разделение между низкоуровневым взаимодействием с устройством и высокоуровневой бизнес-логикой приложения. **Flow Control является критически важным компонентом для стабильной работы протокола в продакшене.**
