@@ -77,6 +77,36 @@
    - `00FF00` - цвет
    - `5` - количество активных диодов (из 8)
 
+#### Команды управления светодиодами
+
+7. **Установка кольца (SET_RING):**
+   ```
+   SET_RING:#FF0000:#000000:#000000:#000000:#000000:#000000:#000000:#000000
+   ```
+   - Устанавливает цвет для всех 8 светодиодов
+   - Формат: `#RRGGBB` для каждого диода (0-7)
+
+8. **Установка отдельного светодиода (SET_LED):**
+   ```
+   SET_LED:0:#FF0000
+   ```
+   - `0` - индекс светодиода (0-7)
+   - `#FF0000` - цвет в HEX формате
+   - **Эффективно** для управления одним диодом
+
+9. **Очистка всех светодиодов (CLEAR_ALL):**
+   ```
+   CLEAR_ALL
+   ```
+   - Выключает все светодиоды
+
+10. **Задержка (DELAY):**
+    ```
+    DELAY:1000
+    ```
+    - `1000` - задержка в миллисекундах
+    - **Критически важно** для создания временных пауз в анимациях
+
 #### OTA команды
 
 1. **Начать OTA обновление:**
@@ -346,6 +376,21 @@ sealed interface AmuletCommand {
         val activeLeds: Int
     ) : AmuletCommand
     
+    data class SetRing(
+        val colors: List<Rgb>
+    ) : AmuletCommand
+    
+    data class SetLed(
+        val index: Int,
+        val color: Rgb
+    ) : AmuletCommand
+    
+    data object ClearAll : AmuletCommand
+    
+    data class Delay(
+        val durationMs: Int
+    ) : AmuletCommand
+    
     data class Custom(
         val command: String,
         val parameters: Map<String, String>
@@ -524,6 +569,10 @@ class CommandTimeoutPolicy {
             is AmuletCommand.Fill -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.Spinner -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.Progress -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.SetRing -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.SetLed -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.ClearAll -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.Delay -> command.durationMs.toLong() + 1000L // Время задержки + буфер
             is AmuletCommand.Custom -> DEFAULT_TIMEOUT_MS
         }
     }
@@ -610,6 +659,36 @@ class FlowControlRetryPolicy(
         }
     }
 }
+```
+
+#### Последовательность команд для "секретного кода"
+
+```
+BEGIN_PLAN:secret_code_001
+STATE:READY_FOR_DATA
+ADD_COMMAND:1:SET_LED:0:#FF0000
+STATE:READY_FOR_DATA
+ADD_COMMAND:2:DELAY:500
+STATE:READY_FOR_DATA
+ADD_COMMAND:3:SET_LED:0:#000000
+STATE:READY_FOR_DATA
+ADD_COMMAND:4:DELAY:500
+STATE:READY_FOR_DATA
+ADD_COMMAND:5:SET_LED:0:#FF0000
+STATE:READY_FOR_DATA
+ADD_COMMAND:6:DELAY:500
+STATE:READY_FOR_DATA
+ADD_COMMAND:7:SET_LED:0:#000000
+STATE:READY_FOR_DATA
+ADD_COMMAND:8:DELAY:1000
+STATE:READY_FOR_DATA
+ADD_COMMAND:9:SET_LED:4:#00FF00
+STATE:READY_FOR_DATA
+ADD_COMMAND:10:DELAY:1000
+STATE:READY_FOR_DATA
+ADD_COMMAND:11:SET_LED:4:#000000
+STATE:READY_FOR_DATA
+COMMIT_PLAN:secret_code_001
 ```
 
 ### Интеграция с архитектурой
@@ -722,6 +801,52 @@ class AmuletBleManagerTest {
         // Проверяем, что была попытка переподключения
         assertThat(mockBleClient.connectionAttempts).isGreaterThan(1)
     }
+    
+    @Test
+    fun `should send LED commands correctly`() = runTest {
+        val mockBleClient = MockBleClient()
+        val manager = AmuletBleManagerImpl(mockBleClient)
+        
+        val setLedCommand = AmuletCommand.SetLed(0, Rgb(255, 0, 0))
+        val result = manager.sendCommand(setLedCommand)
+        
+        assertThat(result).isInstanceOf(BleResult.Success::class.java)
+        assertThat(mockBleClient.lastCommand).isEqualTo("SET_LED:0:#FF0000")
+    }
+    
+    @Test
+    fun `should handle delay commands with correct timeout`() = runTest {
+        val mockBleClient = MockBleClient()
+        val manager = AmuletBleManagerImpl(mockBleClient)
+        
+        val delayCommand = AmuletCommand.Delay(2000)
+        val timeout = TimeoutPolicy.getTimeoutForCommand(delayCommand)
+        
+        assertThat(timeout).isEqualTo(3000L) // 2000ms + 1000ms buffer
+    }
+    
+    @Test
+    fun `should create secret code animation plan`() = runTest {
+        val secretCodePlan = AnimationPlan(
+            id = "secret_code_test",
+            commands = listOf(
+                AmuletCommand.SetLed(0, Rgb(255, 0, 0)), // Красный верхний диод
+                AmuletCommand.Delay(500),
+                AmuletCommand.SetLed(0, Rgb(0, 0, 0)),   // Погасить
+                AmuletCommand.Delay(500),
+                AmuletCommand.SetLed(0, Rgb(255, 0, 0)), // Красный снова
+                AmuletCommand.Delay(500),
+                AmuletCommand.SetLed(0, Rgb(0, 0, 0)),   // Погасить
+                AmuletCommand.Delay(1000),               // Пауза между последовательностями
+                AmuletCommand.SetLed(4, Rgb(0, 255, 0)), // Зеленый нижний диод
+                AmuletCommand.Delay(1000),
+                AmuletCommand.SetLed(4, Rgb(0, 0, 0))    // Погасить
+            )
+        )
+        
+        assertThat(secretCodePlan.commands).hasSize(10)
+        assertThat(secretCodePlan.id).isEqualTo("secret_code_test")
+    }
 }
 
 class FlowControlManagerTest {
@@ -783,6 +908,8 @@ class BleIntegrationTest {
 4. **Гибкость** - поддержка как простых команд, так и сложных анимаций
 5. **Безопасность** - валидация команд и защита от некорректных данных
 6. **Критически важно: Flow Control** - механизм управления потоком данных предотвращает переполнение буфера устройства и потерю данных при OTA-обновлениях и загрузке анимаций
+7. **Точное управление светодиодами** - команды `SET_LED` и `DELAY` для создания сложных анимаций и "секретных кодов"
+8. **Временной контроль** - возможность создания пауз и синхронизации анимаций
 
 ### Ключевые особенности Flow Control:
 
@@ -790,5 +917,12 @@ class BleIntegrationTest {
 - **Стабильная работа в реальных условиях** - протокол работает не только в идеальных лабораторных условиях
 - **Автоматическое восстановление** - при ошибках устройство может запросить повторную отправку данных
 - **Мониторинг состояния** - приложение всегда знает текущее состояние устройства
+
+### Возможности для сложных анимаций:
+
+- **Индивидуальное управление светодиодами** через `SET_LED:index:color`
+- **Точные временные паузы** через `DELAY:duration_ms`
+- **Эффективная загрузка анимаций** через механизм `PLAN_` команд
+- **Реализация "секретных кодов"** - сложные последовательности с точным временным контролем
 
 Протокол спроектирован с учетом требований архитектуры Clean Architecture и обеспечивает четкое разделение между низкоуровневым взаимодействием с устройством и высокоуровневой бизнес-логикой приложения. **Flow Control является критически важным компонентом для стабильной работы протокола в продакшене.**
