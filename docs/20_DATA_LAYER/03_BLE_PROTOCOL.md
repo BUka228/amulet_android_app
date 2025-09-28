@@ -14,21 +14,50 @@
 
 ### 1.1. GATT Profile
 
+**Рекомендуемый подход: Единый командный канал**
+
+| Service UUID | Название сервиса | Characteristic UUID | Свойства | Назначение |
+|--------------|------------------|-------------------|----------|------------|
+| `0000180F-0000-1000-8000-00805F9B34FB` | Battery Service | `00002A19-0000-1000-8000-00805F9B34FB` | Read, Notify | Уровень батареи (0-100%) |
+| `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABD` | Write, Notify | **Единая командная характеристика** (все команды через префиксы) |
+| `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABE` | Read, Write | Данные устройства (Read: серийный номер, версия прошивки, аппаратная версия; Write: имя устройства) |
+
+**Альтернативный подход: Раздельные каналы**
+
 | Service UUID | Название сервиса | Characteristic UUID | Свойства | Назначение |
 |--------------|------------------|-------------------|----------|------------|
 | `0000180F-0000-1000-8000-00805F9B34FB` | Battery Service | `00002A19-0000-1000-8000-00805F9B34FB` | Read, Notify | Уровень батареи (0-100%) |
 | `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABD` | Write, Notify | Командная характеристика |
-| `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABE` | Read, Write | Данные устройства (Read: серийный номер, версия прошивки, аппаратная версия; Write: имя устройства) |
+| `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABE` | Read, Write | Данные устройства |
 | `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789ABF` | Write, Notify | OTA обновления |
 | `12345678-1234-1234-1234-123456789ABC` | Amulet Main Service | `12345678-1234-1234-1234-123456789AC0` | Write, Notify | Загрузка анимаций |
+
+**Сравнение подходов:**
+
+| Критерий | Единый канал | Раздельные каналы |
+|----------|--------------|-------------------|
+| **Простота реализации** | ✅ Проще (одна точка входа) | ❌ Сложнее (множественные каналы) |
+| **Логическое разделение** | ❌ Менее очевидно | ✅ Четкое разделение |
+| **Производительность** | ✅ Меньше переключений | ❌ Больше переключений между каналами |
+| **Отладка** | ✅ Один канал для мониторинга | ❌ Несколько каналов для отслеживания |
+| **Масштабируемость** | ✅ Легко добавлять новые команды | ❌ Нужно создавать новые характеристики |
+| **Безопасность** | ❌ Нет разграничения прав | ✅ Возможно разграничение прав доступа |
+
+**Рекомендация:** Использовать **единый командный канал** для упрощения архитектуры и поддержки.
 
 ### 1.2. Формат команд
 
 #### 1.2.1. Структура команд
 
-Все команды передаются как строки в UTF-8 кодировке через командную характеристику.
+Все команды передаются как строки в UTF-8 кодировке через единую командную характеристику.
 
-**Общий формат:** `COMMAND_TYPE:PARAMETERS`
+**Общий формат:** `PREFIX:COMMAND_TYPE:PARAMETERS`
+
+**Префиксы команд:**
+- `ANIM:` - команды анимации
+- `DEV:` - команды управления устройством  
+- `OTA:` - команды OTA обновления
+- `PLAN:` - команды загрузки анимаций
 
 #### 1.2.2. Формат данных устройства
 
@@ -47,13 +76,13 @@
 
 | Команда | Формат | Описание | Пример |
 |---------|--------|----------|--------|
-| `BREATHING` | `BREATHING:RRGGBB:DURATIONms` | Дыхательная анимация | `BREATHING:00FF00:8000ms` |
-| `PULSE` | `PULSE:RRGGBB:SPEED:REPEATS` | Пульсация | `PULSE:FF0000:500:5` |
-| `SPARKLE` | `SPARKLE:RRGGBB:COUNT:SPREAD` | Мерцание (v2.0+) | `SPARKLE:FFFF00:10:3` |
-| `GRADIENT` | `GRADIENT:RRGGBB1:RRGGBB2:SPEED` | Градиент | `GRADIENT:FF0000:0000FF:1000` |
-| `RAINBOW` | `RAINBOW:SPEED:REPEATS` | Радуга | `RAINBOW:2000:3` |
-| `CHASE` | `CHASE:RRGGBB:SPEED:DIRECTION` | Бегущие огни (v2.0+) | `CHASE:00FF00:1000:1` |
-| `CLEAR` | `CLEAR` | Очистить экран | `CLEAR` |
+| `BREATHING` | `ANIM:BREATHING:RRGGBB:DURATIONms` | Дыхательная анимация | `ANIM:BREATHING:00FF00:8000ms` |
+| `PULSE` | `ANIM:PULSE:RRGGBB:SPEED:REPEATS` | Пульсация | `ANIM:PULSE:FF0000:500:5` |
+| `SPARKLE` | `ANIM:SPARKLE:RRGGBB:COUNT:SPREAD` | Мерцание (v2.0+) | `ANIM:SPARKLE:FFFF00:10:3` |
+| `GRADIENT` | `ANIM:GRADIENT:RRGGBB1:RRGGBB2:SPEED` | Градиент | `ANIM:GRADIENT:FF0000:0000FF:1000` |
+| `RAINBOW` | `ANIM:RAINBOW:SPEED:REPEATS` | Радуга | `ANIM:RAINBOW:2000:3` |
+| `CHASE` | `ANIM:CHASE:RRGGBB:SPEED:DIRECTION` | Бегущие огни (v2.0+) | `ANIM:CHASE:00FF00:1000:1` |
+| `CLEAR` | `ANIM:CLEAR` | Очистить экран | `ANIM:CLEAR` |
 
 **Примечание:** Эффекты, предназначенные для кольца светодиодов (например, `CHASE`), на устройствах с `hardwareVersion < 200` адаптируются `PatternCompiler`-ом в совместимый аналог (например, `PULSE`).
 
@@ -61,28 +90,28 @@
 
 | Команда | Формат | Описание | Пример |
 |---------|--------|----------|--------|
-| `BRIGHTNESS` | `BRIGHTNESS:0-100` | Установить яркость | `BRIGHTNESS:75` |
-| `VIBRATION` | `VIBRATION:0-100` | Установить интенсивность вибрации | `VIBRATION:50` |
-| `SLEEP` | `SLEEP` | Перевести в режим сна | `SLEEP` |
-| `WAKE` | `WAKE` | Пробудить устройство | `WAKE` |
+| `BRIGHTNESS` | `DEV:BRIGHTNESS:0-100` | Установить яркость | `DEV:BRIGHTNESS:75` |
+| `VIBRATION` | `DEV:VIBRATION:0-100` | Установить интенсивность вибрации | `DEV:VIBRATION:50` |
+| `SLEEP` | `DEV:SLEEP` | Перевести в режим сна | `DEV:SLEEP` |
+| `WAKE` | `DEV:WAKE` | Пробудить устройство | `DEV:WAKE` |
 
 #### 1.2.5. OTA команды
 
 | Команда | Формат | Описание | Пример |
 |---------|--------|----------|--------|
-| `START_OTA` | `START_OTA:VERSION:SIZE:CHECKSUM` | Начать OTA обновление | `START_OTA:2.1.0:1048576:abc123` |
-| `OTA_CHUNK` | `OTA_CHUNK:INDEX:DATA` | Передать чанк прошивки | `OTA_CHUNK:0:FFD8FFE0...` |
-| `OTA_COMMIT` | `OTA_COMMIT` | Подтвердить установку | `OTA_COMMIT` |
-| `OTA_ABORT` | `OTA_ABORT` | Отменить обновление | `OTA_ABORT` |
+| `START_OTA` | `OTA:START:VERSION:SIZE:CHECKSUM` | Начать OTA обновление | `OTA:START:2.1.0:1048576:abc123` |
+| `OTA_CHUNK` | `OTA:CHUNK:INDEX:DATA` | Передать чанк прошивки | `OTA:CHUNK:0:FFD8FFE0...` |
+| `OTA_COMMIT` | `OTA:COMMIT` | Подтвердить установку | `OTA:COMMIT` |
+| `OTA_ABORT` | `OTA:ABORT` | Отменить обновление | `OTA:ABORT` |
 
 #### 1.2.6. Команды загрузки анимаций
 
 | Команда | Формат | Описание | Пример |
 |---------|--------|----------|--------|
-| `BEGIN_PLAN` | `BEGIN_PLAN:ID:COMMANDS_COUNT` | Начать загрузку плана анимации | `BEGIN_PLAN:anim_001:5` |
-| `PLAN_COMMAND` | `PLAN_COMMAND:INDEX:COMMAND` | Добавить команду в план | `PLAN_COMMAND:0:BREATHING:00FF00:8000ms` |
-| `COMMIT_PLAN` | `COMMIT_PLAN:ID` | Подтвердить план | `COMMIT_PLAN:anim_001` |
-| `ABORT_PLAN` | `ABORT_PLAN:ID` | Отменить план | `ABORT_PLAN:anim_001` |
+| `BEGIN_PLAN` | `PLAN:BEGIN:ID:COMMANDS_COUNT` | Начать загрузку плана анимации | `PLAN:BEGIN:anim_001:5` |
+| `PLAN_COMMAND` | `PLAN:COMMAND:INDEX:COMMAND` | Добавить команду в план | `PLAN:COMMAND:0:ANIM:BREATHING:00FF00:8000ms` |
+| `COMMIT_PLAN` | `PLAN:COMMIT:ID` | Подтвердить план | `PLAN:COMMIT:anim_001` |
+| `ABORT_PLAN` | `PLAN:ABORT:ID` | Отменить план | `PLAN:ABORT:anim_001` |
 
 ### 1.3. Формат ответов и уведомлений
 
@@ -138,16 +167,16 @@ sequenceDiagram
     participant App as Мобильное приложение
     participant Device as Амулет
 
-    App->>Device: START_OTA:2.1.0:1048576:abc123
-    Device-->>App: OK:START_OTA
+    App->>Device: OTA:START:2.1.0:1048576:abc123
+    Device-->>App: OK:OTA:START
 
     loop Для каждого чанка
-        App->>Device: OTA_CHUNK:0:FFD8FFE0...
-        Device-->>App: OK:OTA_CHUNK:0
+        App->>Device: OTA:CHUNK:0:FFD8FFE0...
+        Device-->>App: OK:OTA:CHUNK:0
     end
 
-    App->>Device: OTA_COMMIT
-    Device-->>App: OK:OTA_COMMIT
+    App->>Device: OTA:COMMIT
+    Device-->>App: OK:OTA:COMMIT
 
     Note over Device: Перезагрузка и установка прошивки
 
@@ -161,20 +190,20 @@ sequenceDiagram
     participant App as Мобильное приложение
     participant Device as Амулет
 
-    App->>Device: BEGIN_PLAN:anim_001:3
-    Device-->>App: OK:BEGIN_PLAN
+    App->>Device: PLAN:BEGIN:anim_001:3
+    Device-->>App: OK:PLAN:BEGIN
 
-    App->>Device: PLAN_COMMAND:0:BREATHING:00FF00:8000ms
-    Device-->>App: OK:PLAN_COMMAND:0
+    App->>Device: PLAN:COMMAND:0:ANIM:BREATHING:00FF00:8000ms
+    Device-->>App: OK:PLAN:COMMAND:0
 
-    App->>Device: PLAN_COMMAND:1:PULSE:FF0000:500:5
-    Device-->>App: OK:PLAN_COMMAND:1
+    App->>Device: PLAN:COMMAND:1:ANIM:PULSE:FF0000:500:5
+    Device-->>App: OK:PLAN:COMMAND:1
 
-    App->>Device: PLAN_COMMAND:2:SPARKLE:FFFF00:10:3
-    Device-->>App: OK:PLAN_COMMAND:2
+    App->>Device: PLAN:COMMAND:2:ANIM:SPARKLE:FFFF00:10:3
+    Device-->>App: OK:PLAN:COMMAND:2
 
-    App->>Device: COMMIT_PLAN:anim_001
-    Device-->>App: OK:COMMIT_PLAN
+    App->>Device: PLAN:COMMIT:anim_001
+    Device-->>App: OK:PLAN:COMMIT
 
     Note over Device: Анимация готова к воспроизведению
 ```
