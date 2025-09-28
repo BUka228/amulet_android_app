@@ -879,7 +879,506 @@ fun ProfileScreen(
 }
 ```
 
-## 10. Заключение
+## 10. Интеграция с Paging 3
+
+### 10.1. Проблема с LoadState
+
+Paging 3 привносит собственный механизм состояний через `LoadState`, который нужно интегрировать с нашим `ScreenState`. Основная сложность в том, что `LoadState` существует отдельно от нашего состояния экрана.
+
+### 10.2. Решение: Маппинг LoadState в ScreenState
+
+```kotlin
+// Состояние экрана с пагинацией
+data class HugsState(
+    override val isLoading: Boolean = false,
+    override val error: AppError? = null,
+    val hugs: LazyPagingItems<Hug>? = null,
+    val loadState: LoadState? = null,
+    val refreshLoadState: LoadState? = null,
+    val prependLoadState: LoadState? = null,
+    val appendLoadState: LoadState? = null,
+    val selectedTab: HugsTab = HugsTab.RECEIVED,
+    val isRefreshing: Boolean = false
+) : ScreenState
+
+// ViewModel с интеграцией Paging 3
+class HugsViewModel @Inject constructor(
+    private val getHugsUseCase: GetHugsUseCase
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(HugsState(isLoading = true))
+    val uiState: StateFlow<HugsState> = _uiState.asStateFlow()
+
+    private val _hugsFlow = MutableStateFlow<LazyPagingItems<Hug>?>(null)
+    val hugsFlow: StateFlow<LazyPagingItems<Hug>?> = _hugsFlow.asStateFlow()
+
+    init {
+        loadHugs()
+        observeLoadStates()
+    }
+
+    private fun loadHugs() {
+        viewModelScope.launch {
+            val pagingData = getHugsUseCase()
+                .map { result ->
+                    when (result) {
+                        is Result.Success -> result.value
+                        is Result.Failure -> {
+                            // Обработка ошибки на уровне элемента
+                            null
+                        }
+                    }
+                }
+                .filterNotNull()
+
+            val lazyPagingItems = pagingData.cachedIn(viewModelScope)
+            _hugsFlow.value = lazyPagingItems
+            _uiState.value = _uiState.value.copy(
+                hugs = lazyPagingItems,
+                isLoading = false
+            )
+        }
+    }
+
+    private fun observeLoadStates() {
+        viewModelScope.launch {
+            _hugsFlow.value?.let { lazyPagingItems ->
+                // Наблюдаем за состоянием обновления (pull-to-refresh)
+                snapshotFlow { lazyPagingItems.loadState.refresh }
+                    .collect { loadState ->
+                        _uiState.value = _uiState.value.copy(
+                            refreshLoadState = loadState,
+                            isLoading = loadState is LoadState.Loading,
+                            error = when (loadState) {
+                                is LoadState.Error -> mapLoadStateErrorToAppError(loadState.error)
+                                else -> null
+                            }
+                        )
+                    }
+
+                // Наблюдаем за состоянием добавления в конец (load more)
+                snapshotFlow { lazyPagingItems.loadState.append }
+                    .collect { loadState ->
+                        _uiState.value = _uiState.value.copy(
+                            appendLoadState = loadState,
+                            error = when (loadState) {
+                                is LoadState.Error -> mapLoadStateErrorToAppError(loadState.error)
+                                else -> _uiState.value.error
+                            }
+                        )
+                    }
+
+                // Наблюдаем за состоянием добавления в начало
+                snapshotFlow { lazyPagingItems.loadState.prepend }
+                    .collect { loadState ->
+                        _uiState.value = _uiState.value.copy(
+                            prependLoadState = loadState
+                        )
+                    }
+            }
+        }
+    }
+
+    private fun mapLoadStateErrorToAppError(throwable: Throwable): AppError {
+        return when (throwable) {
+            is HttpException -> mapHttpExceptionToAppError(throwable)
+            is IOException -> AppError.Network
+            is SocketTimeoutException -> AppError.Timeout
+            else -> AppError.Unknown
+        }
+    }
+
+    fun handleEvent(event: HugsEvent) {
+        when (event) {
+            is HugsEvent.RefreshHugs -> refreshHugs()
+            is HugsEvent.Retry -> retry()
+            is HugsEvent.SelectTab -> selectTab(event.tab)
+            // ... другие события
+        }
+    }
+
+    private fun refreshHugs() {
+        _hugsFlow.value?.refresh()
+    }
+
+    private fun retry() {
+        _hugsFlow.value?.retry()
+    }
+
+    private fun selectTab(tab: HugsTab) {
+        _uiState.value = _uiState.value.copy(selectedTab = tab)
+        // Перезагружаем данные для выбранной вкладки
+        loadHugs()
+    }
+}
+```
+
+## 11. Сохранение состояния при Process Death
+
+### 11.1. Проблема Process Death
+
+ViewModel'и переживают смену конфигурации (поворот экрана), но не "смерть" процесса Android. Для критичных данных, которые пользователь вводит, но еще не сохранил, необходимо использовать `SavedStateHandle`.
+
+### 11.2. Использование SavedStateHandle
+
+```kotlin
+// ViewModel с сохранением состояния
+class PatternEditorViewModel @Inject constructor(
+    private val createPatternUseCase: CreatePatternUseCase,
+    private val updatePatternUseCase: UpdatePatternUseCase,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    // Ключи для сохранения состояния
+    private companion object {
+        const val PATTERN_ID_KEY = "pattern_id"
+        const val PATTERN_TITLE_KEY = "pattern_title"
+        const val PATTERN_DESCRIPTION_KEY = "pattern_description"
+        const val PATTERN_SPEC_KEY = "pattern_spec"
+        const val IS_EDITING_KEY = "is_editing"
+        const val HAS_UNSAVED_CHANGES_KEY = "has_unsaved_changes"
+    }
+
+    private val _uiState = MutableStateFlow(
+        PatternEditorState(
+            patternId = savedStateHandle.get<String>(PATTERN_ID_KEY),
+            title = savedStateHandle.get<String>(PATTERN_TITLE_KEY) ?: "",
+            description = savedStateHandle.get<String>(PATTERN_DESCRIPTION_KEY) ?: "",
+            spec = savedStateHandle.get<String>(PATTERN_SPEC_KEY)?.let { 
+                Json.decodeFromString<PatternSpec>(it) 
+            },
+            isEditing = savedStateHandle.get<Boolean>(IS_EDITING_KEY) ?: false,
+            hasUnsavedChanges = savedStateHandle.get<Boolean>(HAS_UNSAVED_CHANGES_KEY) ?: false
+        )
+    )
+    val uiState: StateFlow<PatternEditorState> = _uiState.asStateFlow()
+
+    init {
+        // Восстанавливаем состояние при создании ViewModel
+        restoreState()
+    }
+
+    private fun restoreState() {
+        val currentState = _uiState.value
+        
+        // Если есть сохраненный паттерн, загружаем его
+        if (currentState.patternId != null && currentState.spec != null) {
+            loadPattern(currentState.patternId)
+        }
+    }
+
+    fun handleEvent(event: PatternEditorEvent) {
+        when (event) {
+            is PatternEditorEvent.UpdateTitle -> updateTitle(event.title)
+            is PatternEditorEvent.UpdateDescription -> updateDescription(event.description)
+            is PatternEditorEvent.UpdateSpec -> updateSpec(event.spec)
+            is PatternEditorEvent.SavePattern -> savePattern()
+            is PatternEditorEvent.DiscardChanges -> discardChanges()
+            // ... другие события
+        }
+    }
+
+    private fun updateTitle(title: String) {
+        _uiState.value = _uiState.value.copy(
+            title = title,
+            hasUnsavedChanges = true
+        )
+        // Сохраняем в SavedStateHandle
+        savedStateHandle[PATTERN_TITLE_KEY] = title
+        savedStateHandle[HAS_UNSAVED_CHANGES_KEY] = true
+    }
+
+    private fun updateDescription(description: String) {
+        _uiState.value = _uiState.value.copy(
+            description = description,
+            hasUnsavedChanges = true
+        )
+        savedStateHandle[PATTERN_DESCRIPTION_KEY] = description
+        savedStateHandle[HAS_UNSAVED_CHANGES_KEY] = true
+    }
+
+    private fun updateSpec(spec: PatternSpec) {
+        _uiState.value = _uiState.value.copy(
+            spec = spec,
+            hasUnsavedChanges = true
+        )
+        // Сериализуем и сохраняем
+        savedStateHandle[PATTERN_SPEC_KEY] = Json.encodeToString(spec)
+        savedStateHandle[HAS_UNSAVED_CHANGES_KEY] = true
+    }
+
+    private fun savePattern() {
+        val currentState = _uiState.value
+        if (!currentState.hasUnsavedChanges) return
+
+        viewModelScope.launch {
+            _uiState.value = currentState.copy(isLoading = true, error = null)
+
+            val result = if (currentState.patternId != null) {
+                // Обновление существующего паттерна
+                updatePatternUseCase(
+                    UpdatePatternRequest(
+                        id = currentState.patternId,
+                        title = currentState.title,
+                        description = currentState.description,
+                        spec = currentState.spec!!
+                    )
+                )
+            } else {
+                // Создание нового паттерна
+                createPatternUseCase(
+                    CreatePatternRequest(
+                        title = currentState.title,
+                        description = currentState.description,
+                        spec = currentState.spec!!
+                    )
+                )
+            }
+
+            result
+                .onSuccess { pattern ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        patternId = pattern.id,
+                        hasUnsavedChanges = false
+                    )
+                    // Очищаем сохраненное состояние после успешного сохранения
+                    clearSavedState()
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error
+                    )
+                }
+        }
+    }
+
+    private fun discardChanges() {
+        // Восстанавливаем исходное состояние
+        val originalPattern = savedStateHandle.get<String>(PATTERN_SPEC_KEY)?.let { 
+            Json.decodeFromString<PatternSpec>(it) 
+        }
+        
+        _uiState.value = _uiState.value.copy(
+            title = savedStateHandle.get<String>(PATTERN_TITLE_KEY) ?: "",
+            description = savedStateHandle.get<String>(PATTERN_DESCRIPTION_KEY) ?: "",
+            spec = originalPattern,
+            hasUnsavedChanges = false
+        )
+        
+        // Очищаем флаг несохраненных изменений
+        savedStateHandle[HAS_UNSAVED_CHANGES_KEY] = false
+    }
+
+    private fun clearSavedState() {
+        savedStateHandle.remove<String>(PATTERN_TITLE_KEY)
+        savedStateHandle.remove<String>(PATTERN_DESCRIPTION_KEY)
+        savedStateHandle.remove<String>(PATTERN_SPEC_KEY)
+        savedStateHandle.remove<Boolean>(HAS_UNSAVED_CHANGES_KEY)
+    }
+}
+```
+
+### 10.3. UI интеграция с Paging 3
+
+```kotlin
+@Composable
+fun HugsScreen(
+    viewModel: HugsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val hugsFlow by viewModel.hugsFlow.collectAsState()
+    
+    val lazyPagingItems = hugsFlow ?: return
+
+    // Обработка ошибок
+    ErrorHandler(
+        error = uiState.error,
+        onRetry = { viewModel.handleEvent(HugsEvent.Retry) },
+        onDismiss = { /* очистить ошибку */ }
+    )
+
+    // Основной контент
+    HugsContent(
+        state = uiState,
+        lazyPagingItems = lazyPagingItems,
+        onEvent = viewModel::handleEvent
+    )
+}
+
+@Composable
+fun HugsContent(
+    state: HugsState,
+    lazyPagingItems: LazyPagingItems<Hug>,
+    onEvent: (HugsEvent) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Основной контент
+        items(
+            count = lazyPagingItems.itemCount,
+            key = { index -> lazyPagingItems[index]?.id ?: index }
+        ) { index ->
+            val hug = lazyPagingItems[index]
+            if (hug != null) {
+                HugItem(
+                    hug = hug,
+                    onClick = { /* показать детали */ }
+                )
+            } else {
+                HugItemPlaceholder()
+            }
+        }
+
+        // Индикатор загрузки в конце списка
+        item {
+            when (state.appendLoadState) {
+                is LoadState.Loading -> {
+                    LoadingIndicator()
+                }
+                is LoadState.Error -> {
+                    ErrorRetryItem(
+                        error = state.error,
+                        onRetry = { onEvent(HugsEvent.Retry) }
+                    )
+                }
+                else -> { /* конец списка */ }
+            }
+        }
+    }
+
+    // Pull-to-refresh
+    PullToRefreshBox(
+        isRefreshing = state.refreshLoadState is LoadState.Loading,
+        onRefresh = { onEvent(HugsEvent.RefreshHugs) }
+    ) {
+        // LazyColumn здесь
+    }
+}
+```
+
+### 10.4. Специальные состояния для Paging
+
+```kotlin
+// Дополнительные side effects для пагинации
+sealed interface HugsSideEffect : SideEffect {
+    data class ShowSnackbar(val message: String) : HugsSideEffect
+    data class ShowLoadMoreError(val error: AppError) : HugsSideEffect
+    data class ShowRefreshError(val error: AppError) : HugsSideEffect
+    data class NavigateToHugDetails(val hugId: String) : HugsSideEffect
+}
+
+// Специальные события для пагинации
+sealed interface HugsEvent : UiEvent {
+    data object LoadHugs : HugsEvent
+    data object RefreshHugs : HugsEvent
+    data object LoadMore : HugsEvent
+    data object Retry : HugsEvent
+    data object RetryLoadMore : HugsEvent
+    data class SelectTab(val tab: HugsTab) : HugsEvent
+    data class SendHug(val recipientId: String, val patternId: String?) : HugsEvent
+}
+```
+
+### 11.3. Состояние для редактора паттернов
+
+```kotlin
+data class PatternEditorState(
+    override val isLoading: Boolean = false,
+    override val error: AppError? = null,
+    val patternId: String? = null,
+    val title: String = "",
+    val description: String = "",
+    val spec: PatternSpec? = null,
+    val isEditing: Boolean = false,
+    val hasUnsavedChanges: Boolean = false,
+    val isSaving: Boolean = false,
+    val lastSavedAt: Long? = null
+) : ScreenState
+
+sealed interface PatternEditorEvent : UiEvent {
+    data class UpdateTitle(val title: String) : PatternEditorEvent
+    data class UpdateDescription(val description: String) : PatternEditorEvent
+    data class UpdateSpec(val spec: PatternSpec) : PatternEditorEvent
+    data object SavePattern : PatternEditorEvent
+    data object DiscardChanges : PatternEditorEvent
+    data object StartEditing : PatternEditorEvent
+    data object CancelEditing : PatternEditorEvent
+    data object Retry : PatternEditorEvent
+}
+
+sealed interface PatternEditorSideEffect : SideEffect {
+    data class ShowSnackbar(val message: String) : PatternEditorSideEffect
+    data class ShowUnsavedChangesDialog(val onSave: () -> Unit, val onDiscard: () -> Unit) : PatternEditorSideEffect
+    data class NavigateBack : PatternEditorSideEffect
+    data class ShowSaveSuccessDialog(val pattern: Pattern) : PatternEditorSideEffect
+}
+```
+
+### 11.4. UI интеграция с SavedStateHandle
+
+```kotlin
+@Composable
+fun PatternEditorScreen(
+    patternId: String? = null,
+    viewModel: PatternEditorViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Обработка side effects
+    LaunchedEffect(viewModel) {
+        viewModel.sideEffects.collect { effect ->
+            when (effect) {
+                is PatternEditorSideEffect.ShowSnackbar -> {
+                    // Показать snackbar
+                }
+                is PatternEditorSideEffect.ShowUnsavedChangesDialog -> {
+                    // Показать диалог несохраненных изменений
+                }
+                is PatternEditorSideEffect.NavigateBack -> {
+                    onNavigateBack()
+                }
+                is PatternEditorSideEffect.ShowSaveSuccessDialog -> {
+                    // Показать диалог успешного сохранения
+                }
+            }
+        }
+    }
+
+    // Обработка системной кнопки "Назад"
+    BackHandler(
+        enabled = uiState.hasUnsavedChanges
+    ) {
+        viewModel.handleEvent(PatternEditorEvent.DiscardChanges)
+    }
+
+    PatternEditorContent(
+        state = uiState,
+        onEvent = viewModel::handleEvent
+    )
+}
+```
+
+### 11.5. Ограничения SavedStateHandle
+
+**Важные ограничения:**
+- Размер данных ограничен (обычно ~1MB)
+- Не подходит для больших объектов
+- Данные теряются при принудительном завершении процесса
+- Не подходит для чувствительных данных
+
+**Рекомендации:**
+- Используйте только для небольших критичных данных
+- Для больших данных используйте локальную БД
+- Регулярно сохраняйте промежуточные результаты
+- Предупреждайте пользователя о несохраненных изменениях
+
+## 12. Заключение
 
 Данный контракт между ViewModel и UI обеспечивает:
 
@@ -888,5 +1387,7 @@ fun ProfileScreen(
 3. **Масштабируемость** - легко добавлять новые экраны и функции
 4. **Поддерживаемость** - понятная структура и разделение ответственности
 5. **Типобезопасность** - использование sealed классов для событий и side effects
+6. **Интеграция с Paging 3** - правильная обработка состояний пагинации
+7. **Сохранение состояния** - восстановление критичных данных после Process Death
 
 Этот подход экономит время на этапе реализации UI, обеспечивая четкие контракты и предсказуемое поведение компонентов.
