@@ -54,14 +54,11 @@ erDiagram
         string payload_json
         string status
         int retry_count
-        int max_retries
         string last_error
         string idempotency_key
         long created_at
         long updated_at
         long available_at
-        long leased_until
-        string lease_token
         int priority
         string targetEntityId
     }
@@ -157,9 +154,27 @@ erDiagram
 - `pattern_shares` — список UID, с кем «поделен» паттерн: `patternId TEXT FK`, `userId TEXT FK`, PK `(patternId, userId)`.
 
 #### 5) `outbox_actions` — очередь исходящих действий (критично)
-Обеспечивает устойчивость команд к офлайну и сбоям. Обрабатывается Dispatcher'ом (WorkManager) с backoff'ом и лизингом для единовременной обработки.
+Обеспечивает устойчивость команд к офлайну и сбоям. Обрабатывается Dispatcher'ом (WorkManager) с backoff'ом для единовременной обработки.
 
-**Enum типов действий (`OutboxActionType`):**
+**Схема для мобильного приложения:**
+
+**Критерии для включения действий в Outbox:**
+Простой тест для принятия решения:
+1. **Вопрос 1:** Это команда **изменения данных** (Create, Update, Delete)?
+2. **Вопрос 2:** Если эта команда **потеряется** из-за сбоя, будет ли это проблемой для пользователя?
+
+| Тип действия | Помещать в Outbox? | Почему? |
+| :--- | :--- | :--- |
+| `HUG_SEND` | ✅ **Да** | Критически важная команда пользователя. Не должна теряться. |
+| `PATTERN_CREATE` | ✅ **Да** | Пользователь создал контент, его потеря недопустима. |
+| `DEVICE_UNCLAIM` | ✅ **Да** | Важная операция с аккаунтом. |
+| `PAIR_ACCEPT` | ✅ **Да** | Важное социальное взаимодействие. |
+| `PRACTICE_STOP` | ✅ **Да** | Завершение сессии должно быть записано для статистики. |
+| `TELEMETRY_EVENTS`| ❌ **Нет** | Некритичные данные. Для них лучше отдельная, более простая очередь (таблица `telemetry_events`), где допустимы потери. |
+| `OTA_CHECK` | ❌ **Нет** | Это GET-запрос (чтение). Если он не выполнится, ничего страшного. Он выполнится в следующий раз, когда понадобится. |
+| `STATS_OVERVIEW`| ❌ **Нет** | Это GET-запрос. Его нет смысла выполнять в фоне с гарантией. |
+
+**enum типов действий (`OutboxActionType`):**
 
 ```kotlin
 enum class OutboxActionType(val apiEndpoint: String) {
@@ -186,7 +201,6 @@ enum class OutboxActionType(val apiEndpoint: String) {
     PATTERN_UPDATE("/patterns/{id}"),
     PATTERN_DELETE("/patterns/{id}"),
     PATTERN_SHARE("/patterns/{patternId}/share"),
-    PATTERN_PREVIEW("/patterns/preview"),
     
     // Сессии и практики
     PRACTICE_START("/practices/{practiceId}/start"),
@@ -203,28 +217,16 @@ enum class OutboxActionType(val apiEndpoint: String) {
     
     // Приватность и GDPR
     PRIVACY_EXPORT("/privacy/export"),
-    PRIVACY_DELETE("/privacy/delete"),
-    
-    // Телеметрия
-    TELEMETRY_EVENTS("/telemetry/events"),
-    
-    // OTA обновления
-    OTA_CHECK("/ota/firmware/latest"),
-    
-    // Статистика и аналитика
-    STATS_OVERVIEW("/stats/overview"),
-    
-    // Вебхуки и интеграции
-    WEBHOOK_TRIGGER("/webhooks/{integrationKey}")
+    PRIVACY_DELETE("/privacy/delete")
 }
 ```
 
 **Приоритеты обработки (по умолчанию):**
 - `HIGH (100)`: `HUG_SEND`, `FCM_TOKEN_ADD/DELETE` — критичные для UX
 - `NORMAL (50)`: `USER_UPDATE`, `DEVICE_CLAIM/UNCLAIM`, `PRACTICE_START/STOP`
-- `LOW (10)`: `TELEMETRY_EVENTS`, `OTA_CHECK` — фоновые операции
+- `LOW (10)`: `PATTERN_CREATE/UPDATE` — менее критичные операции
 
-Обязательные поля:
+**Обязательные поля:**
 - `id: String (TEXT, PK)` — стабильно‑уникальный ID (например, ULID/UUID). Позволяет привязку UI к конкретной операции.
 - `type: String (TEXT) NOT NULL` — тип действия из enum выше.
 - `payload_json: String (TEXT) NOT NULL` — сериализованный контракт запроса. В payload обязательно включать любой внешний идемпотентный ключ, если применимо.
@@ -232,15 +234,12 @@ enum class OutboxActionType(val apiEndpoint: String) {
 - `retry_count: Int (INTEGER) NOT NULL DEFAULT 0`
 - `created_at: Long (INTEGER) NOT NULL` — время постановки.
 
-Расширенные поля (рекомендуется для энтерпрайз‑уровня надёжности):
+**Расширенные поля:**
 - `updated_at: Long (INTEGER) NOT NULL` — последняя смена статуса.
 - `available_at: Long (INTEGER) NOT NULL DEFAULT created_at` — «не ранее чем» (для backoff/отложенных задач).
-- `max_retries: Int (INTEGER) NOT NULL DEFAULT 5` — политика повторов на уровне записи.
 - `last_error: String? (TEXT)` — машинно‑читабельная ошибка последней неудачи.
 - `idempotency_key: String? (TEXT)` — корреляция с сервером для идемпотентных операций HTTP.
 - `priority: Int (INTEGER) NOT NULL DEFAULT 0` — выше — раньше (heap‑очередь в запросах DAO).
-- `lease_token: String? (TEXT)` — «замок» обработчика (GUID).
-- `leased_until: Long? (INTEGER)` — TTL блокировки (обработчик обязан продлевать или отпускать).
 - `targetEntityId: String? (TEXT)` — ID целевой сущности для быстрого поиска связанных действий (например, `patternId` для `PATTERN_UPDATE`).
 
 Индексы и ограничения:
@@ -249,9 +248,9 @@ enum class OutboxActionType(val apiEndpoint: String) {
 - `IDX_outbox_targetEntityId` на `targetEntityId` — быстрый поиск действий для конкретной сущности.
 - `UNQ_outbox_idempotency` уникальный на `idempotency_key` (WHERE `idempotency_key IS NOT NULL`).
 
-Протокол обработки (рекомендация):
-1) Atomically select and lease: выбрать запись `PENDING`/`FAILED` с `available_at <= now()` и выставить `status=IN_FLIGHT`, `lease_token`, `leased_until = now()+T` (одна транзакция).
-2) Выполнить действие. На успех — `status=COMPLETED`, очистить `lease_token` и `last_error`.
+Протокол обработки (упрощенный для мобильного приложения):
+1) Выбрать запись `PENDING`/`FAILED` с `available_at <= now()` и выставить `status=IN_FLIGHT` (одна транзакция).
+2) Выполнить действие. На успех — `status=COMPLETED`, очистить `last_error`.
 3) На ретраибельную ошибку — инкремент `retry_count`, рассчитать backoff, поставить `status=PENDING`, `available_at = now()+backoff`, сохранить `last_error`.
 4) На не‑ретраибельную — `status=FAILED`, сохранить `last_error`.
 
@@ -568,7 +567,7 @@ fun pagingSourceSent(uid: String): PagingSource<Int, HugEntity>
 @Query("SELECT * FROM hugs WHERE toUserId = :uid ORDER BY createdAt DESC")
 fun pagingSourceReceived(uid: String): PagingSource<Int, HugEntity>
 
-// OutboxDao — извлечение ближайших к исполнению (без гонок в одной транзакции)
+// OutboxDao — извлечение ближайших к исполнению
 @Query(
   "SELECT * FROM outbox_actions " +
   "WHERE status IN ('PENDING','FAILED') AND available_at <= :now " +
@@ -586,7 +585,7 @@ fun getActionsForEntity(entityId: String): Flow<List<OutboxActionEntity>>
 suspend fun cleanupCompletedActions(cutoffTime: Long): Int
 
 // Очистка неудачных действий (старше 30 дней, исчерпали попытки)
-@Query("DELETE FROM outbox_actions WHERE status = 'FAILED' AND retry_count >= max_retries AND updated_at < :cutoffTime")
+@Query("DELETE FROM outbox_actions WHERE status = 'FAILED' AND updated_at < :cutoffTime")
 suspend fun cleanupFailedActions(cutoffTime: Long): Int
 
 // Очистка отправленных телеметрических событий (старше 3 дней)
@@ -694,7 +693,7 @@ class DatabaseCleanupWorker : CoroutineWorker(context, params) {
 ### Краткий чек‑лист реализации в `:core:database`
 - Определить `@Database(version = N, autoMigrations = [...])` и `@TypeConverters` (например, для Boolean/enum, ULID).
 - `@Entity` для всех таблиц; для outbox — дополнительные `CHECK` (через `@Entity(tableName = ..., ignoredColumns = ...)` + миграционный SQL, если нужны сложные CHECK).
-- DAO: потоковые методы (`Flow`/`PagingSource`), транзакции для lease‑протокола outbox.
+- DAO: потоковые методы (`Flow`/`PagingSource`), транзакции для обработки outbox.
 - Интеграционные тесты миграций (MigrationTestHelper), тесты идемпотентного upsert и порядка сортировки.
 
 
