@@ -305,6 +305,8 @@ OpenAPI определяет богатую модель `PatternSpec`/`PatternE
 // :shared
 interface PatternCompiler {
     fun compile(spec: PatternSpec, hardwareVersion: Int, firmwareVersion: String): DeviceCommandPlan
+    // Трансляция сложных пространственных анимаций (Chase, Wave) в последовательности команд для 8-диодного кольца
+    // Оркестрация последовательного выполнения команд для поддержки SEQUENTIAL режима ("секретные коды") путем генерации команд с задержками
 }
 
 data class DeviceCommandPlan(
