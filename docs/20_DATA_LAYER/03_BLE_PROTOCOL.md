@@ -819,51 +819,183 @@ COMMIT_PLAN:secret_code_001
 
 ### Интеграция с архитектурой
 
-#### Использование в UseCase с Flow Control
+#### Правильная архитектура с Clean Architecture
+
+**1. Интерфейс репозитория в Domain Layer (не знает о Flow Control):**
 
 ```kotlin
-class SendAnimationUseCase(
-    private val bleManager: AmuletBleManager,
-    private val patternCompiler: PatternCompiler,
-    private val flowControlRetryPolicy: FlowControlRetryPolicy
-) {
-    suspend fun execute(pattern: PatternSpec, deviceId: String): Result<Unit, AppError> {
-        return try {
-            val plan = patternCompiler.compile(pattern, deviceId)
-            
-            // Загрузка анимации с Flow Control
-            bleManager.uploadAnimation(plan).collect { progress ->
-                when (progress.state) {
-                    is UploadState.Preparing -> {
-                        // Ожидание готовности устройства
-                        flowControlRetryPolicy.executeWithFlowControlAndRetry {
-                            // Подготовка к загрузке
-                        }
-                    }
-                    is UploadState.Uploading -> {
-                        // Отправка данных с контролем потока
-                        flowControlRetryPolicy.sendDataWithFlowControl(
-                            data = progress.data,
-                            sendOperation = { data -> 
-                                bleManager.sendCommand(AmuletCommand.Custom("ADD_COMMAND", mapOf("data" to data.toString())))
-                            }
-                        )
-                    }
-                    is UploadState.Completed -> {
-                        // Анимация успешно загружена
-                    }
-                    is UploadState.Failed -> {
-                        throw Exception("Upload failed: ${progress.state.cause}")
-                    }
-                }
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(mapExceptionToAppError(e))
+// в :shared/domain/repository/AmuletRepository.kt
+interface AmuletRepository {
+    /**
+     * Загружает анимационный план на устройство.
+     * Метод завершится, когда план будет полностью и надежно доставлен.
+     * Прогресс можно отслеживать через возвращаемый Flow.
+     */
+    fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress>
+    
+    /**
+     * Отправляет команду на устройство.
+     * Все детали BLE протокола скрыты внутри.
+     */
+    suspend fun sendCommand(command: AmuletCommand): Result<Unit, AppError>
+    
+    /**
+     * Настраивает Wi-Fi и запускает OTA обновление.
+     */
+    suspend fun startWifiOta(
+        ssid: String, 
+        password: String, 
+        url: String, 
+        version: String, 
+        checksum: String
+    ): Flow<OtaProgress>
+}
+```
+
+**2. Реализация репозитория в Data Layer (вся магия BLE здесь):**
+
+```kotlin
+// в :data:amulet/AmuletRepositoryImpl.kt
+class AmuletRepositoryImpl @Inject constructor(
+    private val bleManager: AmuletBleManager // У которого внутри есть FlowControlManager
+) : AmuletRepository {
+
+    override fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress> {
+        // bleManager возвращает Flow, который УЖЕ инкапсулирует
+        // всю логику Flow Control, ретраев и таймаутов.
+        // Репозиторий просто делегирует вызов.
+        return bleManager.uploadAnimation(plan)
+    }
+    
+    override suspend fun sendCommand(command: AmuletCommand): Result<Unit, AppError> {
+        return when (bleManager.sendCommand(command)) {
+            is BleResult.Success -> Result.success(Unit)
+            is BleResult.Error -> Result.failure(mapBleErrorToAppError(bleResult))
         }
+    }
+    
+    override suspend fun startWifiOta(
+        ssid: String, 
+        password: String, 
+        url: String, 
+        version: String, 
+        checksum: String
+    ): Flow<OtaProgress> {
+        // Base64 кодирование
+        val ssidBase64 = Base64.getEncoder().encodeToString(ssid.toByteArray())
+        val passwordBase64 = Base64.getEncoder().encodeToString(password.toByteArray())
+        
+        // Настройка Wi-Fi
+        val wifiCommand = AmuletCommand.SetWifiCred(ssidBase64, passwordBase64)
+        bleManager.sendCommand(wifiCommand)
+        
+        // Запуск OTA
+        val otaCommand = AmuletCommand.WifiOtaStart(url, version, checksum)
+        bleManager.sendCommand(otaCommand)
+        
+        return bleManager.startOtaUpdate(FirmwareInfo(url, version, checksum))
     }
 }
 ```
+
+**3. UseCase в Domain Layer (чистота и простота):**
+
+```kotlin
+// в :shared/domain/usecase/UploadAnimationUseCase.kt
+class UploadAnimationUseCase @Inject constructor(
+    private val amuletRepository: AmuletRepository,
+    private val patternCompiler: PatternCompiler
+) {
+    // Возвращает Flow с прогрессом, но не знает, как этот прогресс достигается.
+    fun invoke(pattern: PatternSpec): Flow<Result<UploadProgress, AppError>> {
+        return flow {
+            // 1. Бизнес-логика: скомпилировать паттерн
+            val plan = patternCompiler.compile(pattern)
+            
+            // 2. Делегирование репозиторию
+            amuletRepository.uploadAnimation(plan).collect { progress ->
+                emit(Result.success(progress))
+            }
+        }.asResult() // Стандартная обертка для обработки ошибок
+    }
+}
+
+// в :shared/domain/usecase/StartWifiOtaUseCase.kt
+class StartWifiOtaUseCase @Inject constructor(
+    private val amuletRepository: AmuletRepository
+) {
+    fun invoke(
+        ssid: String, 
+        password: String, 
+        firmwareUrl: String, 
+        version: String, 
+        checksum: String
+    ): Flow<Result<OtaProgress, AppError>> {
+        return flow {
+            amuletRepository.startWifiOta(ssid, password, firmwareUrl, version, checksum)
+                .collect { progress ->
+                    emit(Result.success(progress))
+                }
+        }.asResult()
+    }
+}
+```
+```
+
+#### Диаграмма архитектуры
+
+```mermaid
+graph TB
+    subgraph "Presentation Layer"
+        UI[UI Components]
+        ViewModel[ViewModels]
+    end
+    
+    subgraph "Domain Layer"
+        UseCase1[UploadAnimationUseCase]
+        UseCase2[StartWifiOtaUseCase]
+        Repository[AmuletRepository Interface]
+        Domain[Domain Models]
+    end
+    
+    subgraph "Data Layer"
+        RepoImpl[AmuletRepositoryImpl]
+        BLEManager[AmuletBleManager]
+        BLEImpl[AmuletBleManagerImpl]
+        FlowControl[FlowControlManager]
+        RetryPolicy[RetryPolicy]
+    end
+    
+    subgraph "Device"
+        Device[Amulet Device]
+    end
+    
+    UI --> ViewModel
+    ViewModel --> UseCase1
+    ViewModel --> UseCase2
+    UseCase1 --> Repository
+    UseCase2 --> Repository
+    Repository --> RepoImpl
+    RepoImpl --> BLEManager
+    BLEManager --> BLEImpl
+    BLEImpl --> FlowControl
+    BLEImpl --> RetryPolicy
+    BLEImpl --> Device
+    
+    classDef domain fill:#e1f5fe
+    classDef data fill:#f3e5f5
+    classDef presentation fill:#e8f5e8
+    
+    class UseCase1,UseCase2,Repository,Domain domain
+    class RepoImpl,BLEManager,BLEImpl,FlowControl,RetryPolicy data
+    class UI,ViewModel presentation
+```
+
+**Ключевые принципы:**
+- **Domain Layer** не знает о BLE, Flow Control или технических деталях
+- **Data Layer** инкапсулирует всю сложность BLE протокола
+- **UseCase** работает только с бизнес-логикой
+- **Flow Control** полностью скрыт в Data Layer
 
 ### Конфигурация и настройки
 
@@ -944,9 +1076,21 @@ class BleLogger {
 ### Архитектурные принципы:
 
 - **Инкапсуляция сложности** - `FlowControlManager` является внутренней деталью `AmuletBleManagerImpl`
-- **Простой публичный API** - UseCase взаимодействует только с `AmuletBleManager` через простой интерфейс
-- **Скрытие реализации** - Flow Control автоматически управляется внутри менеджера
-- **Четкое разделение ответственности** - UseCase не знает о внутренних деталях BLE протокола
+- **Правильное разделение слоев** - UseCase работает только с `AmuletRepository`, не зная о BLE деталях
+- **Скрытие реализации** - Flow Control автоматически управляется внутри Data Layer
+- **Четкое разделение ответственности**:
+  - **Domain Layer** - бизнес-логика, не знает о BLE
+  - **Data Layer** - вся магия BLE, Flow Control, ретраи
+  - **Presentation Layer** - UI, использует UseCase
 
-Протокол спроектирован с учетом требований архитектуры Clean Architecture и обеспечивает четкое разделение между низкоуровневым взаимодействием с устройством и высокоуровневой бизнес-логикой приложения. **Flow Control является критически важным компонентом для стабильной работы протокола в продакшене, но его сложность полностью скрыта от UseCase-ов.**
+Протокол спроектирован с учетом требований архитектуры Clean Architecture и обеспечивает четкое разделение между низкоуровневым взаимодействием с устройством и высокоуровневой бизнес-логикой приложения. 
+
+**Ключевые архитектурные преимущества:**
+- **UseCase не знает о BLE** - работает только с `AmuletRepository`
+- **Flow Control скрыт в Data Layer** - вся сложность инкапсулирована в `AmuletBleManagerImpl`
+- **Правильное разделение ответственности** - каждый слой имеет свою роль
+- **Тестируемость** - Domain Layer можно тестировать без BLE зависимостей
+- **Масштабируемость** - легко добавлять новые источники данных
+
+**Flow Control является критически важным компонентом для стабильной работы протокола в продакшене, но его сложность полностью скрыта от UseCase-ов и Domain Layer.**
 
