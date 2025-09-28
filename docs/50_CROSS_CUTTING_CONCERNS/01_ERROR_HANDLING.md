@@ -32,6 +32,7 @@ sealed interface AppError {
     data object Forbidden : AppError // 403
     data object NotFound : AppError // 404
     data object Conflict : AppError // 409 (например, email уже занят)
+    data class VersionConflict(val serverVersion: Int) : AppError // 409 (конфликт версий при оптимистической блокировке)
     data object RateLimited : AppError // 429
     
     // Более специфичные бизнес-ошибки, парсятся из тела 4xx
@@ -190,7 +191,15 @@ fun mapHttpExceptionToAppError(httpException: HttpException): AppError {
         401 -> AppError.Unauthorized
         403 -> AppError.Forbidden
         404 -> AppError.NotFound
-        409 -> AppError.Conflict
+        409 -> {
+            // Проверяем, является ли это конфликтом версий
+            val versionConflict = parseVersionConflict(httpException.response()?.errorBody())
+            if (versionConflict != null) {
+                AppError.VersionConflict(versionConflict)
+            } else {
+                AppError.Conflict
+            }
+        }
         412 -> {
             val reason = parsePreconditionFailedReason(httpException.response()?.errorBody())
             AppError.PreconditionFailed(reason)
@@ -207,6 +216,18 @@ fun mapHttpExceptionToAppError(httpException: HttpException): AppError {
 
 // Вспомогательные функции для парсинга деталей ошибок
 // Используем JsonElement для большей устойчивости к изменениям формата ошибки от бэкенда
+private fun parseVersionConflict(errorBody: ResponseBody?): Int? {
+    return try {
+        errorBody?.string()?.let { body ->
+            val jsonElement = Json.decodeFromString<JsonElement>(body)
+            // Парсим структуру: { "details": { "currentVersion": 123 } }
+            jsonElement.jsonObject["details"]?.jsonObject?.get("currentVersion")?.jsonPrimitive?.intOrNull
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
 private fun parsePreconditionFailedReason(errorBody: ResponseBody?): String? {
     return try {
         errorBody?.string()?.let { body ->
@@ -656,6 +677,7 @@ suspend fun processAction(action: OutboxActionEntity): Result<Unit, AppError> {
 | `Unauthorized`, `Forbidden` | Fail | Проблемы авторизации |
 | `Validation`, `PreconditionFailed` | Fail | Некорректные данные |
 | `Conflict`, `RateLimited` | Fail | Бизнес-логика |
+| `VersionConflict` | Fail | Конфликт версий (требует пользовательского разрешения) |
 | `BleError`, `OtaError` | Fail | Аппаратные проблемы |
 
 **Правило 3 (Serialization):** В поле `lastError: String?` сохраняется результат `appError.toString()`:
@@ -665,6 +687,7 @@ suspend fun processAction(action: OutboxActionEntity): Result<Unit, AppError> {
 "Network" // AppError.Network.toString()
 "Server(500, Internal Server Error)" // AppError.Server.toString()
 "Validation(errors={email=[Invalid format]})" // AppError.Validation.toString()
+"VersionConflict(serverVersion=123)" // AppError.VersionConflict.toString()
 "BleError.DeviceNotFound" // AppError.BleError.DeviceNotFound.toString()
 ```
 
