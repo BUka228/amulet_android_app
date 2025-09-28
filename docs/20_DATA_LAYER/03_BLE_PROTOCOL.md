@@ -178,6 +178,26 @@
 - **`PLAY`** - для встроенных анимаций (быстрый доступ, известные ID)
 - **`PLAN_`** - для пользовательских анимаций (динамическое создание, полный контроль)
 
+#### Команды управления Wi-Fi и OTA
+
+1. **Настройка Wi-Fi (SET_WIFI_CRED):**
+   ```
+   SET_WIFI_CRED:SSID_BASE64:PASSWORD_BASE64
+   ```
+   - `SSID_BASE64` - SSID сети в кодировке Base64
+   - `PASSWORD_BASE64` - пароль сети в кодировке Base64
+   - **Обязательно:** Все параметры должны быть закодированы в Base64
+   - **Пример:** `SET_WIFI_CRED:TXlXaUZp:TGV0TWVJbg==`
+
+2. **Запуск Wi-Fi OTA обновления (WIFI_OTA_START):**
+   ```
+   WIFI_OTA_START:URL:VERSION:CHECKSUM
+   ```
+   - `URL` - URL для загрузки прошивки
+   - `VERSION` - версия прошивки (например, 2.1.0)
+   - `CHECKSUM` - контрольная сумма файла прошивки
+   - **Пример:** `WIFI_OTA_START:https://api.amulet.com/firmware/2.1.0.bin:2.1.0:a1b2c3d4e5f6`
+
 #### Формат ответов
 
 **Успешные ответы:**
@@ -200,6 +220,18 @@ NOTIFY:TYPE:DATA
 - `NOTIFY:STATUS:CHARGING` - устройство заряжается
 - `NOTIFY:OTA:PROGRESS:50` - прогресс OTA 50%
 - `NOTIFY:ANIMATION:COMPLETE` - анимация завершена
+
+**Wi-Fi OTA уведомления:**
+- `NOTIFY:WIFI_OTA:CONNECTING` - подключение к Wi-Fi сети
+- `NOTIFY:WIFI_OTA:CONNECTED` - успешное подключение к Wi-Fi
+- `NOTIFY:WIFI_OTA:DOWNLOADING` - начало загрузки прошивки
+- `NOTIFY:WIFI_OTA:PROGRESS:25` - прогресс загрузки 25%
+- `NOTIFY:WIFI_OTA:VERIFYING` - проверка контрольной суммы
+- `NOTIFY:WIFI_OTA:INSTALLING` - установка прошивки
+- `NOTIFY:WIFI_OTA:SUCCESS` - успешное обновление
+- `NOTIFY:WIFI_OTA:ERROR:NETWORK` - ошибка сети
+- `NOTIFY:WIFI_OTA:ERROR:CHECKSUM` - ошибка контрольной суммы
+- `NOTIFY:WIFI_OTA:ERROR:INSTALL` - ошибка установки
 
 #### Управление потоком данных (Flow Control)
 
@@ -303,6 +335,48 @@ sequenceDiagram
     Device-->>App: OK:COMMIT_PLAN
     
     Device-->>App: NOTIFY:ANIMATION:COMPLETE
+```
+
+#### Wi-Fi OTA Update Flow
+
+```mermaid
+sequenceDiagram
+    participant App as Мобильное приложение
+    participant Device as Амулет
+    participant Server as Сервер
+    
+    Note over App,Device: Настройка Wi-Fi и запуск OTA
+    
+    App->>Device: SET_WIFI_CRED:TXlXaUZp:TGV0TWVJbg==
+    Device-->>App: OK:SET_WIFI_CRED
+    Device-->>App: NOTIFY:WIFI_OTA:CONNECTING
+    
+    Device->>Device: Подключение к Wi-Fi
+    Device-->>App: NOTIFY:WIFI_OTA:CONNECTED
+    
+    App->>Device: WIFI_OTA_START:https://api.amulet.com/firmware/2.1.0.bin:2.1.0:a1b2c3d4e5f6
+    Device-->>App: OK:WIFI_OTA_START
+    Device-->>App: NOTIFY:WIFI_OTA:DOWNLOADING
+    
+    Device->>Server: HTTP GET /firmware/2.1.0.bin
+    Server-->>Device: Файл прошивки (chunked)
+    
+    loop Прогресс загрузки
+        Device-->>App: NOTIFY:WIFI_OTA:PROGRESS:25
+        Device-->>App: NOTIFY:WIFI_OTA:PROGRESS:50
+        Device-->>App: NOTIFY:WIFI_OTA:PROGRESS:75
+    end
+    
+    Device-->>App: NOTIFY:WIFI_OTA:VERIFYING
+    Device->>Device: Проверка контрольной суммы
+    
+    Device-->>App: NOTIFY:WIFI_OTA:INSTALLING
+    Device->>Device: Установка прошивки
+    
+    Device-->>App: NOTIFY:WIFI_OTA:SUCCESS
+    Device->>Device: Перезагрузка
+    
+    Note over App,Device: OTA обновление завершено успешно
 ```
 
 ---
@@ -411,6 +485,17 @@ sealed interface AmuletCommand {
     
     data class Play(
         val patternId: String
+    ) : AmuletCommand
+    
+    data class SetWifiCred(
+        val ssidBase64: String,
+        val passwordBase64: String
+    ) : AmuletCommand
+    
+    data class WifiOtaStart(
+        val url: String,
+        val version: String,
+        val checksum: String
     ) : AmuletCommand
     
     data class Custom(
@@ -596,6 +681,8 @@ class CommandTimeoutPolicy {
             is AmuletCommand.ClearAll -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.Delay -> command.durationMs.toLong() + 1000L // Время задержки + буфер
             is AmuletCommand.Play -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.SetWifiCred -> DEFAULT_TIMEOUT_MS
+            is AmuletCommand.WifiOtaStart -> OTA_TIMEOUT_MS // Длительная операция
             is AmuletCommand.Custom -> DEFAULT_TIMEOUT_MS
         }
     }
@@ -812,153 +899,6 @@ class BleLogger {
 }
 ```
 
-### Тестирование
-
-#### Unit тесты
-
-```kotlin
-class AmuletBleManagerTest {
-    @Test
-    fun `should connect to device successfully`() = runTest {
-        val mockBleClient = MockBleClient()
-        val manager = AmuletBleManagerImpl(mockBleClient)
-        
-        manager.connect("test-device")
-        
-        assertThat(manager.connectionState.value).isInstanceOf(ConnectionState.Connected::class.java)
-    }
-    
-    @Test
-    fun `should retry connection on failure`() = runTest {
-        val mockBleClient = MockBleClient().apply {
-            connectionResult = Result.failure(Exception("Connection failed"))
-        }
-        val manager = AmuletBleManagerImpl(mockBleClient)
-        
-        manager.connect("test-device")
-        
-        // Проверяем, что была попытка переподключения
-        assertThat(mockBleClient.connectionAttempts).isGreaterThan(1)
-    }
-    
-    @Test
-    fun `should send LED commands correctly`() = runTest {
-        val mockBleClient = MockBleClient()
-        val manager = AmuletBleManagerImpl(mockBleClient)
-        
-        val setLedCommand = AmuletCommand.SetLed(0, Rgb(255, 0, 0))
-        val result = manager.sendCommand(setLedCommand)
-        
-        assertThat(result).isInstanceOf(BleResult.Success::class.java)
-        assertThat(mockBleClient.lastCommand).isEqualTo("SET_LED:0:#FF0000")
-    }
-    
-    @Test
-    fun `should handle delay commands with correct timeout`() = runTest {
-        val mockBleClient = MockBleClient()
-        val manager = AmuletBleManagerImpl(mockBleClient)
-        
-        val delayCommand = AmuletCommand.Delay(2000)
-        val timeout = TimeoutPolicy.getTimeoutForCommand(delayCommand)
-        
-        assertThat(timeout).isEqualTo(3000L) // 2000ms + 1000ms buffer
-    }
-    
-    @Test
-    fun `should create secret code animation plan`() = runTest {
-        val secretCodePlan = AnimationPlan(
-            id = "secret_code_test",
-            commands = listOf(
-                AmuletCommand.SetLed(0, Rgb(255, 0, 0)), // Красный верхний диод
-                AmuletCommand.Delay(500),
-                AmuletCommand.SetLed(0, Rgb(0, 0, 0)),   // Погасить
-                AmuletCommand.Delay(500),
-                AmuletCommand.SetLed(0, Rgb(255, 0, 0)), // Красный снова
-                AmuletCommand.Delay(500),
-                AmuletCommand.SetLed(0, Rgb(0, 0, 0)),   // Погасить
-                AmuletCommand.Delay(1000),               // Пауза между последовательностями
-                AmuletCommand.SetLed(4, Rgb(0, 255, 0)), // Зеленый нижний диод
-                AmuletCommand.Delay(1000),
-                AmuletCommand.SetLed(4, Rgb(0, 0, 0))    // Погасить
-            )
-        )
-        
-        assertThat(secretCodePlan.commands).hasSize(10)
-        assertThat(secretCodePlan.id).isEqualTo("secret_code_test")
-    }
-    
-    @Test
-    fun `should send PLAY commands correctly`() = runTest {
-        val mockBleClient = MockBleClient()
-        val manager = AmuletBleManagerImpl(mockBleClient)
-        
-        val playCommand = AmuletCommand.Play("breath_square")
-        val result = manager.sendCommand(playCommand)
-        
-        assertThat(result).isInstanceOf(BleResult.Success::class.java)
-        assertThat(mockBleClient.lastCommand).isEqualTo("PLAY:breath_square")
-    }
-    
-    @Test
-    fun `should distinguish between PLAY and PLAN commands`() = runTest {
-        // PLAY команда - для встроенных анимаций
-        val playCommand = AmuletCommand.Play("pulse_red")
-        assertThat(playCommand.patternId).isEqualTo("pulse_red")
-        
-        // PLAN команды - для пользовательских анимаций
-        val planCommand = AmuletCommand.Custom("BEGIN_PLAN", mapOf("id" to "user_animation_001"))
-        assertThat(planCommand.command).isEqualTo("BEGIN_PLAN")
-        assertThat(planCommand.parameters["id"]).isEqualTo("user_animation_001")
-    }
-}
-
-class FlowControlManagerTest {
-    @Test
-    fun `should wait for ready state before executing operation`() = runTest {
-        val flowControlManager = FlowControlManager()
-        
-        // Изначально устройство занято
-        assertThat(flowControlManager.readyState.value).isInstanceOf(DeviceReadyState.Busy::class.java)
-        
-        // Симулируем готовность устройства
-        flowControlManager.handleDeviceState("STATE:READY_FOR_DATA")
-        
-        var operationExecuted = false
-        flowControlManager.executeWithFlowControl {
-            operationExecuted = true
-        }
-        
-        assertThat(operationExecuted).isTrue()
-    }
-    
-    @Test
-    fun `should handle device error state`() = runTest {
-        val flowControlManager = FlowControlManager()
-        
-        flowControlManager.handleDeviceState("STATE:ERROR")
-        
-        assertThat(flowControlManager.readyState.value).isInstanceOf(DeviceReadyState.Error::class.java)
-    }
-}
-```
-
-#### Интеграционные тесты
-
-```kotlin
-class BleIntegrationTest {
-    @Test
-    fun `should upload animation successfully`() = runTest {
-        val manager = createRealBleManager()
-        val plan = createTestAnimationPlan()
-        
-        val progressFlow = manager.uploadAnimation(plan)
-        val progressList = progressFlow.toList()
-        
-        assertThat(progressList.last().state).isInstanceOf(UploadState.Completed::class.java)
-    }
-}
-```
-
 ---
 
 ## Заключение
@@ -973,6 +913,7 @@ class BleIntegrationTest {
 6. **Критически важно: Flow Control** - механизм управления потоком данных предотвращает переполнение буфера устройства и потерю данных при OTA-обновлениях и загрузке анимаций
 7. **Точное управление светодиодами** - команды `SET_LED` и `DELAY` для создания сложных анимаций и "секретных кодов"
 8. **Временной контроль** - возможность создания пауз и синхронизации анимаций
+9. **Wi-Fi OTA обновления** - команды `SET_WIFI_CRED` и `WIFI_OTA_START` для автономных обновлений прошивки
 
 ### Ключевые особенности Flow Control:
 
@@ -987,6 +928,13 @@ class BleIntegrationTest {
 - **Точные временные паузы** через `DELAY:duration_ms`
 - **Эффективная загрузка анимаций** через механизм `PLAN_` команд
 - **Реализация "секретных кодов"** - сложные последовательности с точным временным контролем
+
+### Wi-Fi OTA возможности:
+
+- **Автономные обновления** - устройство может обновляться без подключения к телефону
+- **Base64 кодирование** - безопасная передача Wi-Fi credentials
+- **Детальный мониторинг** - полный контроль над процессом обновления через уведомления
+- **Обработка ошибок** - специфичные уведомления для разных типов ошибок
 
 ### Два типа анимаций:
 
