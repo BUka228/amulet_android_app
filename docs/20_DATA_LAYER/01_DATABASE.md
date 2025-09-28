@@ -136,7 +136,7 @@ erDiagram
 - `hardwareVersion: Int (INTEGER)` — `100|200`.
 - `title: String (TEXT)`
 - `description: String? (TEXT)`
-- `specJson: String (TEXT)` — сериализованный `PatternSpec`.
+- `specJson: String (TEXT)` — сериализованный `PatternSpec` (поддерживает все типы элементов, включая `PatternElementSequence`).
 - `public: Boolean (INTEGER)` — 0/1.
 - `reviewStatus: String? (TEXT)` — `pending|approved|rejected` (для публичных).
 - `usageCount: Int? (INTEGER)`
@@ -613,6 +613,7 @@ suspend fun cleanupRemoteKeys(cutoffTime: Long): Int
 ### Готовность к эволюции схемы
 - Добавление таблиц: `achievements`, `sessions` и др. — без влияния на существующие FK.
 - Расширение `patterns` для новых `PatternElement*` — прозрачно, так как `specJson` хранит сериализованную схему.
+- **Поддержка `PatternElementSequence`**: Новый тип элемента последовательности полностью совместим с существующей схемой БД, так как хранится в `specJson` как часть `PatternSpec`.
 - Перенос FTS/индексов — через ручные миграции с бэкапом данных во временные таблицы.
 
 ---

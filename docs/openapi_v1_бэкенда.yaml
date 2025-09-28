@@ -2426,6 +2426,7 @@ components:
         - $ref: '#/components/schemas/PatternElementChase'
         - $ref: '#/components/schemas/PatternElementColor'
         - $ref: '#/components/schemas/PatternElementCustom'
+        - $ref: '#/components/schemas/PatternElementSequence'
       discriminator:
         propertyName: type
         mapping:
@@ -2435,6 +2436,7 @@ components:
           chase: '#/components/schemas/PatternElementChase'
           color: '#/components/schemas/PatternElementColor'
           custom: '#/components/schemas/PatternElementCustom'
+          sequence: '#/components/schemas/PatternElementSequence'
     # Базовые поля элемента
     PatternElementBase:
       type: object
@@ -2570,6 +2572,58 @@ components:
                 - required: [colors]
           required: [type]
           additionalProperties: false
+    PatternElementSequence:
+      allOf:
+        - $ref: '#/components/schemas/PatternElementBase'
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [sequence]
+            params:
+              type: object
+              properties:
+                steps:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SequenceStep'
+              required: [steps]
+          additionalProperties: false
+    SequenceStep:
+      oneOf:
+        - $ref: '#/components/schemas/LedAction'
+        - $ref: '#/components/schemas/DelayAction'
+      discriminator:
+        propertyName: type
+        mapping:
+          led: '#/components/schemas/LedAction'
+          delay: '#/components/schemas/DelayAction'
+    LedAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [led]
+        ledIndex:
+          type: integer
+          description: "Индекс светодиода (0-7). -1 для всех диодов."
+        color:
+          type: string
+          description: "Цвет в формате HEX, например #FF0000"
+        durationMs:
+          type: integer
+          description: "Длительность свечения в мс"
+      required: [type, ledIndex, color, durationMs]
+    DelayAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [delay]
+        durationMs:
+          type: integer
+          description: "Длительность паузы в мс"
+      required: [type, durationMs]
     PatternCreateRequest:
       type: object
       required: [kind, spec, hardwareVersion]

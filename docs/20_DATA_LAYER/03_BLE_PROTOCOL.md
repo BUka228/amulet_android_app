@@ -789,33 +789,48 @@ bleManager.sendCommand(spinnerCommand)
 
 #### Последовательность команд для "секретного кода"
 
+**Поддержка PatternElementSequence:**
+
+Новый тип элемента `PatternElementSequence` обеспечивает эффективную передачу дискретных последовательностей команд. Компилятор паттернов преобразует `SequenceStep` элементы напрямую в BLE-команды:
+
+- `LedAction` → `SET_LED:index:color` + `DELAY:duration`
+- `DelayAction` → `DELAY:duration`
+
+**Пример "секретного кода" "Я скучаю" (двойная пульсация верхнего диода, потом одинарная нижнего):**
+
 ```
 BEGIN_PLAN:secret_code_001
 STATE:READY_FOR_DATA
-ADD_COMMAND:1:SET_LED:0:#FF0000
+ADD_COMMAND:1:SET_LED:0:#FF00FF
 STATE:READY_FOR_DATA
-ADD_COMMAND:2:DELAY:500
+ADD_COMMAND:2:DELAY:150
 STATE:READY_FOR_DATA
 ADD_COMMAND:3:SET_LED:0:#000000
 STATE:READY_FOR_DATA
-ADD_COMMAND:4:DELAY:500
+ADD_COMMAND:4:DELAY:100
 STATE:READY_FOR_DATA
-ADD_COMMAND:5:SET_LED:0:#FF0000
+ADD_COMMAND:5:SET_LED:0:#FF00FF
 STATE:READY_FOR_DATA
-ADD_COMMAND:6:DELAY:500
+ADD_COMMAND:6:DELAY:150
 STATE:READY_FOR_DATA
 ADD_COMMAND:7:SET_LED:0:#000000
 STATE:READY_FOR_DATA
-ADD_COMMAND:8:DELAY:1000
+ADD_COMMAND:8:DELAY:400
 STATE:READY_FOR_DATA
-ADD_COMMAND:9:SET_LED:4:#00FF00
+ADD_COMMAND:9:SET_LED:4:#FFFF00
 STATE:READY_FOR_DATA
-ADD_COMMAND:10:DELAY:1000
+ADD_COMMAND:10:DELAY:200
 STATE:READY_FOR_DATA
 ADD_COMMAND:11:SET_LED:4:#000000
 STATE:READY_FOR_DATA
 COMMIT_PLAN:secret_code_001
 ```
+
+**Преимущества PatternElementSequence:**
+- **Эффективность**: Прямое соответствие между `SequenceStep` и BLE-командами
+- **Компактность**: Минимальный JSON для описания последовательностей
+- **Производительность**: Быстрая загрузка и выполнение "секретных кодов"
+- **Читаемость**: Понятная структура для отладки и модификации
 
 ### Интеграция с архитектурой
 
@@ -1059,7 +1074,8 @@ class BleLogger {
 - **Индивидуальное управление светодиодами** через `SET_LED:index:color`
 - **Точные временные паузы** через `DELAY:duration_ms`
 - **Эффективная загрузка анимаций** через механизм `PLAN_` команд
-- **Реализация "секретных кодов"** - сложные последовательности с точным временным контролем
+- **Реализация "секретных кодов"** — сложные последовательности с точным временным контролем
+- **PatternElementSequence поддержка** — специализированный тип элемента для дискретных последовательностей команд с прямой трансляцией в BLE-команды
 
 ### Wi-Fi OTA возможности:
 
