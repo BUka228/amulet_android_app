@@ -421,19 +421,20 @@ interface BleCommandEncoder {
   - При успешном завершении — `Completed`, UI переводится в «Готово» и может предложить предпросмотр.
   - Поток «горячий» на время операции; отмена корутины пользователем прерывает передачу и отправляет `ROLLBACK`.
 
-**Стратегия разрешения конфликтов для редактора паттернов:**
+**Стратегия разрешения конфликтов для редактора паттернов (ОБЯЗАТЕЛЬНО):**
 
 Проблема: политика «server wins» может уничтожить 20 минут работы пользователя при редактировании паттерна в офлайне.
 
-**Оптимистическая блокировка + Разрешение конфликта пользователем:**
+**РЕШЕНИЕ: Оптимистическая блокировка + Разрешение конфликта пользователем (ОБЯЗАТЕЛЬНО к реализации):**
 
-- **Бэкенд:**
+- **Бэкенд (ОБЯЗАТЕЛЬНО):**
   - В модель `Pattern` добавлено поле `version: Int` (атомарно инкрементируется при каждом `PATCH`).
-  - `PATCH /patterns/{id}` требует заголовок `If-Match: version` или параметр `editingVersion`.
-  - Логика: `ЕСЛИ editingVersion == currentVersion, ТО обновить и version++, ИНАЧЕ 409 Conflict`.
-- **Клиент:**
-  - При открытии паттерна сохраняется `editingVersion`.
-  - При сохранении отправляется `editingVersion` в запросе.
+  - `PATCH /patterns/{id}` требует поле `version` в теле запроса (`PatternUpdateRequest.version`).
+  - Логика: `ЕСЛИ request.version == currentVersion, ТО обновить и version++, ИНАЧЕ 409 Conflict`.
+  - При 409 Conflict возвращается детальная информация: `currentVersion`, `providedVersion`, `reason: "version_mismatch"`.
+- **Клиент (ОБЯЗАТЕЛЬНО):**
+  - При открытии паттерна сохраняется `editingVersion = pattern.version`.
+  - При сохранении отправляется `version: editingVersion` в `PatternUpdateRequest`.
   - При `409 Conflict` — показ диалога разрешения конфликта с опциями:
     - «Сохранить мою версию» (перезаписать серверную)
     - «Использовать новую с сервера» (отменить локальные изменения)
@@ -445,11 +446,12 @@ interface BleCommandEncoder {
 - **Трёхстороннее слияние:** автоматическое объединение изменений через `diff3`-алгоритм. Сложно в реализации для JSON-структур, избыточно для редких одновременных правок.
 - **Операционные трансформации:** для real-time коллаборации. Избыточно для асинхронного редактирования.
 
-**Реализация в архитектуре:**
+**Реализация в архитектуре (ОБЯЗАТЕЛЬНО):**
 
 - `:data:patterns` содержит логику обнаружения конфликтов и UI-состояния для диалогов.
 - `:feature:patterns` обрабатывает пользовательский выбор в диалоге конфликта.
-- `:core:network` поддерживает заголовки `If-Match`/`If-None-Match` для оптимистической блокировки.
+- `:core:network` поддерживает обработку 409 Conflict responses с детальной информацией о конфликте.
+- **КРИТИЧНО:** Без реализации оптимистической блокировки редактор паттернов НЕ ДОЛЖЕН быть выпущен в продакшн.
 
 **Пример реализации:**
 
@@ -457,7 +459,7 @@ interface BleCommandEncoder {
 // :shared
 data class Pattern(
     val id: String,
-    val version: Int, // для optimistic locking
+    val version: Int, // ОБЯЗАТЕЛЬНО для optimistic locking
     val spec: PatternSpec,
     // ... другие поля
 )
@@ -474,7 +476,10 @@ class PatternsRepositoryImpl {
             Result.success(response.pattern)
         } catch (e: HttpException) {
             when (e.code()) {
-                409 -> Result.failure(AppError.Conflict("Pattern was modified by another user"))
+                409 -> Result.failure(AppError.PatternConflict(
+                    currentVersion = extractCurrentVersion(e),
+                    providedVersion = editingVersion
+                ))
                 else -> Result.failure(AppError.Server(e.code(), e.message()))
             }
         }
@@ -497,9 +502,12 @@ class PatternEditViewModel {
                     // Обновить UI, показать успех
                 }
                 is Result.Failure -> when (result.error) {
-                    is AppError.Conflict -> {
-                        // Показать диалог разрешения конфликта
-                        showConflictResolutionDialog()
+                    is AppError.PatternConflict -> {
+                        // Показать диалог разрешения конфликта с деталями
+                        showConflictResolutionDialog(
+                            currentVersion = result.error.currentVersion,
+                            providedVersion = result.error.providedVersion
+                        )
                     }
                     else -> {
                         // Показать общую ошибку

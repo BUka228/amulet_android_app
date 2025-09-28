@@ -664,6 +664,9 @@ paths:
         Для публичных паттернов при изменении полей, влияющих на контент (например, `spec`, `title`, `public` и др.),
         статус модерации автоматически сбрасывается на `reviewStatus: "pending"`. До повторного одобрения паттерн
         временно пропадает из публичного каталога.
+        
+        **Оптимистическая блокировка:** Поле `version` в запросе должно совпадать с текущей версией паттерна на сервере.
+        При несовпадении версий возвращается ошибка 409 Conflict.
       parameters:
         - in: path
           name: id
@@ -689,6 +692,7 @@ paths:
         '401': { $ref: '#/components/responses/UnauthorizedError' }
         '403': { $ref: '#/components/responses/ForbiddenError' }
         '404': { $ref: '#/components/responses/NotFoundError' }
+        '409': { $ref: '#/components/responses/PatternConflictError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
     delete:
       tags: [patterns]
@@ -2123,6 +2127,28 @@ components:
                         type: string
                         enum: [self_send, pair_blocked]
                         description: Причина отказа — отправка самому себе или пара заблокирована
+    PatternConflictError:
+      description: Conflict (конфликт версий при обновлении паттерна)
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+              - type: object
+                properties:
+                  details:
+                    type: object
+                    properties:
+                      reason:
+                        type: string
+                        enum: [version_mismatch]
+                        description: Причина конфликта — несовпадение версий (паттерн был изменен другим пользователем)
+                      currentVersion:
+                        type: integer
+                        description: Текущая версия паттерна на сервере
+                      providedVersion:
+                        type: integer
+                        description: Версия, переданная клиентом
     User:
       type: object
       properties:
@@ -2367,6 +2393,9 @@ components:
       properties:
         id:
           type: string
+        version:
+          type: integer
+          description: Версия для оптимистической блокировки (атомарно инкрементируется при каждом PATCH)
         ownerId:
           type: string
           nullable: true
@@ -2646,7 +2675,11 @@ components:
           type: integer
     PatternUpdateRequest:
       type: object
+      required: [version]
       properties:
+        version:
+          type: integer
+          description: Версия паттерна для оптимистической блокировки (должна совпадать с текущей версией на сервере)
         kind:
           type: string
         spec:
