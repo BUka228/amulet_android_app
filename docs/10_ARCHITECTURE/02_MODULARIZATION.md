@@ -23,6 +23,7 @@
 - `:app` — точка входа Android, навигация, DI-композиция.
 - `:shared` — KMP Domain: модели/DTO, интерфейсы репозиториев, UseCase/оркестраторы. Без Android/Compose/Retrofit/Room.
 - `:core:*` — инфраструктура платформы (Android): сеть, БД, BLE, дизайн-система, конфиг, телеметрия.
+- `:core:sync` — инфраструктура планирования и исполнения фоновой синхронизации/очередей (WorkManager, диспетчер действий).
 - `:data:*` — реализации репозиториев. Инкапсулируют Network/DB/BLE, но не зависят от `:feature:*`.
 - `:feature:*` — экраны/бизнес‑UI. Смотрят только на `:shared` и `:core:design`.
 
@@ -39,6 +40,10 @@
 - `:core:*`
   - Разрешено: зависимости на Android SDK и сторонние библиотеки; `:core:*` могут зависеть друг от друга, но только «вниз» по абстракциям (например, `:core:network` не должен зависеть от `:core:database`).
   - Запрещено: зависимости на `:feature:*` и `:data:*`.
+
+- `:core:sync` (специализация правил):
+  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:database"))`, `implementation("androidx.work:work-runtime-ktx:<version>")`.
+  - Запрещено: любые зависимости на `:data:*` и `:feature:*`.
 
 - `:shared`
   - Разрешено: только KMP‑совместимые зависимости (stdlib, coroutines, kotlinx.serialization, Koin/Kodein — опционально). Никаких Android артефактов.
@@ -112,6 +117,7 @@ dependencies {
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
   - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`.
   - **core**: `:core:network`, `:core:database`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
+  - Дополнительно: `:core:sync`.
   - **shared**: один модуль `:shared`.
   - **app**: один модуль `:app`.
 
@@ -123,6 +129,7 @@ dependencies {
   - `:core:network` → `core/network/`
   - `:core:database` → `core/database/`
   - `:core:design` → `core/design/`
+  - `:core:sync` → `core/sync/`
   - `:shared` → `shared/`
   - `:app` → `app/`
 
@@ -191,6 +198,7 @@ include(":app")
 include(":shared")
 
 include(":core:network", ":core:database", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
+include(":core:sync")
 include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy")
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
 
@@ -204,6 +212,7 @@ project(":core:ble").projectDir = file("core/ble")
 project(":core:telemetry").projectDir = file("core/telemetry")
 project(":core:design").projectDir = file("core/design")
 project(":core:config").projectDir = file("core/config")
+project(":core:sync").projectDir = file("core/sync")
 
 project(":data:user").projectDir = file("data/user")
 project(":data:devices").projectDir = file("data/devices")
@@ -300,5 +309,41 @@ includeBuild("build-logic")
 - Общие версии библиотек держать в `gradle/libs.versions.toml` и использовать в build-logic через Version Catalog (`libs`).
 - Базовые Android параметры (`compileSdk`, `minSdk`, `kotlinOptions.jvmTarget`, Compose) зашить в convention‑плагины.
 - Проверки зависимостей из раздела 5 вынести в отдельный плагин `DependencyRulesPlugin` в `build-logic` и применять его ко всем Android модулям.
+
+### 11. Синхронизация: роль `:core:sync` и поток данных
+
+`:`core:sync` обеспечивает планирование фоновых задач (WorkManager), диспетчеризацию и выполнение действий доменной очереди, не зная о конкретных реализациях репозиториев.
+
+Правила зависимостей для `:core:sync`:
+
+- Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:database"))`, `implementation("androidx.work:work-runtime-ktx:<version>")`.
+- Запрещено: зависимости на `:data:*` и `:feature:*`.
+
+Диаграмма потока данных:
+
+```mermaid
+graph TD
+    subgraph ":data:hugs"
+        C{HugsRepositoryImpl}
+        C2[HugsActionExecutor] --> |реализует| I{ActionExecutor}
+    end
+
+    subgraph ":core:sync"
+        D(SyncScheduler)
+        G{ActionProcessor} --> |использует| I
+    end
+
+    subgraph ":shared"
+        I
+    end
+    
+    subgraph ":app"
+        DI((DI Hilt))
+    end
+    
+    C -->|добавляет задачу| D
+    G -->|вызывает execute| C2
+    DI -->|инжектит в :core:sync| C2
+```
 
 
