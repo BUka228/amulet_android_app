@@ -252,4 +252,56 @@ fun onPick(patternId: String) {
 
 Такой контракт обеспечивает предсказуемость, тестируемость и минимальную связанность между экранами и слоями приложения.
 
+### 8) Условная навигация (Conditional Navigation)
+
+Коротко: корневой `MainScreen` наблюдает `AuthState` и выбирает граф: `authGraph` (гость) или основной граф (авторизован). При смене состояния стек сбрасывается.
+
+```kotlin
+sealed interface AuthState {
+    data object Loading : AuthState
+    data object LoggedOut : AuthState
+    data class LoggedIn(val userId: String) : AuthState
+}
+
+@HiltViewModel
+class AuthViewModel @Inject constructor(repo: AuthRepository) : ViewModel() {
+    val state: StateFlow<AuthState> = repo.authState // Loading → LoggedOut/LoggedIn
+}
+
+@Composable
+fun MainScreen(
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
+    val navController = rememberNavController()
+    val authState by authViewModel.state.collectAsState()
+
+    when (authState) {
+        AuthState.Loading -> SplashScreen()
+        AuthState.LoggedOut -> androidx.compose.runtime.key(AuthState.LoggedOut::class) {
+            NavHost(navController, startDestination = "auth") { authGraph(navController) }
+        }
+        is AuthState.LoggedIn -> androidx.compose.runtime.key(AuthState.LoggedIn::class) {
+            NavHost(navController, startDestination = RootDestination.baseRoute) {
+                dashboardGraph(navController)
+                hugsGraph(navController)
+                practicesGraph(navController)
+                devicesGraph(navController)
+                settingsGraph(navController)
+            }
+        }
+    }
+}
+
+// Альтернатива: сбросить стек после успешного логина
+navController.navigate(RootDestination.baseRoute) {
+    popUpTo(0)
+    launchSingleTop = true
+}
+```
+
+Рекомендации:
+- Проверку `isLoggedIn` и восстановление сессии выполнять в `AuthViewModel`, пока UI показывает `Loading`
+- Все deep link’и валидировать: если нужна авторизация — временно отправлять в `authGraph` и запоминать целевой маршрут для редиректа после логина
+- Пользователь/токены не передаются через аргументы; источники истины — репозитории/`DataStore`
+
 
