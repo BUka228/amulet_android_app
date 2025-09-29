@@ -262,3 +262,43 @@ abstract class RepositoryBindingsModule {
 Данный документ обязателен к соблюдению. Любые отступления обсуждаются через ADR и фиксируются в `docs/10_ARCHITECTURE`.
 
 
+### 10. build-logic и Convention Plugins (рекомендуется, по сути — обязательно)
+
+Чтобы исключить дублирование Gradle-конфигурации и гарантировать единообразие по всем модулям, используем отдельный Gradle Composite Build `build-logic/` с Convention Plugins.
+
+Структура папок:
+
+```
+build-logic/
+  ├─ settings.gradle.kts
+  ├─ build.gradle.kts
+  └─ src/main/kotlin/
+       ├─ amulet.android.app.gradle.kts
+       ├─ amulet.android.library.gradle.kts
+       ├─ amulet.android.feature.gradle.kts
+       ├─ amulet.android.core.gradle.kts
+       └─ amulet.kotlin.multiplatform.shared.gradle.kts
+```
+
+Подключение Composite Build из корня репозитория (корневой `settings.gradle.kts`):
+
+```kotlin
+// Подключаем build-logic как composite build
+includeBuild("build-logic")
+```
+
+Рекомендуемые ID плагинов:
+
+- `amulet.android.app` — для `:app`
+- `amulet.android.feature` — для `:feature:*`
+- `amulet.android.library` — для Android библиотек общего назначения (`:data:*`, части `:core:*`)
+- `amulet.android.core` — для инфраструктурных модулей `:core:*` с общими настройками (может расширять library)
+- `amulet.kotlin.multiplatform.shared` — для `:shared` (KMP)
+
+Советы по внедрению:
+
+- Общие версии библиотек держать в `gradle/libs.versions.toml` и использовать в build-logic через Version Catalog (`libs`).
+- Базовые Android параметры (`compileSdk`, `minSdk`, `kotlinOptions.jvmTarget`, Compose) зашить в convention‑плагины.
+- Проверки зависимостей из раздела 5 вынести в отдельный плагин `DependencyRulesPlugin` в `build-logic` и применять его ко всем Android модулям.
+
+
