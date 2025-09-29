@@ -26,6 +26,10 @@
 - `:core:sync` — инфраструктура планирования и исполнения фоновой синхронизации/очередей (WorkManager, диспетчер действий).
 - `:data:*` — реализации репозиториев. Инкапсулируют Network/DB/BLE, но не зависят от `:feature:*`.
 - `:feature:*` — экраны/бизнес‑UI. Смотрят только на `:shared` и `:core:design`.
+- `:feature:profile` — просмотр и редактирование профиля; вход из настроек/дашборда.
+- `:feature:onboarding` — первый запуск: регистрация/логин/базовая информация.
+- `:feature:pairing` — многошаговое сопряжение устройства (может быть частью `:feature:devices`, но при высокой сложности рекомендуется отдельный модуль).
+- `:feature:control-center` — создание и управление правилами IFTTT.
 
 ### 2. Правила зависимостей (обязательны)
 
@@ -115,6 +119,7 @@ dependencies {
 
 - Иерархия модулей: `:<layer>:<name>`.
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
+    - Дополнительно (рекомендуется): `:feature:profile`, `:feature:onboarding`, `:feature:pairing` (по необходимости), `:feature:control-center`.
   - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`.
   - **core**: `:core:network`, `:core:database`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
   - Дополнительно: `:core:sync`.
@@ -124,6 +129,10 @@ dependencies {
 - Физическая структура папок ДОЛЖНА зеркалировать путь модуля в Gradle:
   - `:feature:hugs` → `feature/hugs/`
   - `:feature:devices` → `feature/devices/`
+  - `:feature:profile` → `feature/profile/`
+  - `:feature:onboarding` → `feature/onboarding/`
+  - `:feature:pairing` → `feature/pairing/`
+  - `:feature:control-center` → `feature/control-center/`
   - `:data:hugs` → `data/hugs/`
   - `:data:devices` → `data/devices/`
   - `:core:network` → `core/network/`
@@ -201,6 +210,7 @@ include(":core:network", ":core:database", ":core:ble", ":core:telemetry", ":cor
 include(":core:sync")
 include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy")
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
+include(":feature:profile", ":feature:onboarding", ":feature:pairing", ":feature:control-center")
 
 // Жёсткая привязка путей к папкам (обязательно)
 project(":shared").projectDir = file("shared")
@@ -229,6 +239,10 @@ project(":feature:patterns").projectDir = file("feature/patterns")
 project(":feature:sessions").projectDir = file("feature/sessions")
 project(":feature:devices").projectDir = file("feature/devices")
 project(":feature:settings").projectDir = file("feature/settings")
+project(":feature:profile").projectDir = file("feature/profile")
+project(":feature:onboarding").projectDir = file("feature/onboarding")
+project(":feature:pairing").projectDir = file("feature/pairing")
+project(":feature:control-center").projectDir = file("feature/control-center")
 ```
 
 Расположение исходников (обязательно):
