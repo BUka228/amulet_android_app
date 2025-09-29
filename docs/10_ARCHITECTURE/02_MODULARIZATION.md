@@ -106,7 +106,7 @@ dependencies {
 }
 ```
 
-### 4. Соглашения по именованию модулей и пакетов
+### 4. Соглашения по именованию модулей, пакетов и ПАПОК (обязательно)
 
 - Иерархия модулей: `:<layer>:<name>`.
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
@@ -115,13 +115,24 @@ dependencies {
   - **shared**: один модуль `:shared`.
   - **app**: один модуль `:app`.
 
+- Физическая структура папок ДОЛЖНА зеркалировать путь модуля в Gradle:
+  - `:feature:hugs` → `feature/hugs/`
+  - `:feature:devices` → `feature/devices/`
+  - `:data:hugs` → `data/hugs/`
+  - `:data:devices` → `data/devices/`
+  - `:core:network` → `core/network/`
+  - `:core:database` → `core/database/`
+  - `:core:design` → `core/design/`
+  - `:shared` → `shared/`
+  - `:app` → `app/`
+
 - Пакеты внутри модулей:
   - `:feature:*`: `com.example.amulet_android_app.feature.<name>`
   - `:data:*`: `com.example.amulet_android_app.data.<name>`
   - `:core:*`: `com.example.amulet_android_app.core.<name>`
   - `:shared`: `com.example.amulet.shared` (с сохранением KMP структуры `commonMain` и т.д.)
 
-- Имена артефактов Gradle: `moduleName` зеркалирует путь. Пример файла модуля: `feature-hugs/build.gradle.kts` для `:feature:hugs` — допустимо, но предпочтительно физическая структура монорепозитория с подпапками `feature/hugs`, `data/hugs` и т.д.
+- Имена артефактов Gradle: `moduleName` должен соответствовать физическому пути. Используем подпапки `feature/<name>`, `data/<name>`, `core/<name>`. Альтернативные схемы именования директорий не допускаются.
 
 ### 5. Ограничение зависимостей и автоматические проверки
 
@@ -180,18 +191,42 @@ include(":app")
 include(":shared")
 
 include(":core:network", ":core:database", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
-
 include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy")
-
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
+
+// Жёсткая привязка путей к папкам (обязательно)
+project(":shared").projectDir = file("shared")
+project(":app").projectDir = file("app")
+
+project(":core:network").projectDir = file("core/network")
+project(":core:database").projectDir = file("core/database")
+project(":core:ble").projectDir = file("core/ble")
+project(":core:telemetry").projectDir = file("core/telemetry")
+project(":core:design").projectDir = file("core/design")
+project(":core:config").projectDir = file("core/config")
+
+project(":data:user").projectDir = file("data/user")
+project(":data:devices").projectDir = file("data/devices")
+project(":data:hugs").projectDir = file("data/hugs")
+project(":data:patterns").projectDir = file("data/patterns")
+project(":data:practices").projectDir = file("data/practices")
+project(":data:rules").projectDir = file("data/rules")
+project(":data:privacy").projectDir = file("data/privacy")
+
+project(":feature:dashboard").projectDir = file("feature/dashboard")
+project(":feature:library").projectDir = file("feature/library")
+project(":feature:hugs").projectDir = file("feature/hugs")
+project(":feature:patterns").projectDir = file("feature/patterns")
+project(":feature:sessions").projectDir = file("feature/sessions")
+project(":feature:devices").projectDir = file("feature/devices")
+project(":feature:settings").projectDir = file("feature/settings")
 ```
 
-Расположение исходников:
+Расположение исходников (обязательно):
 
 - `core/network/build.gradle.kts` → проект `:core:network` и т.д.
 - `feature/hugs/build.gradle.kts` → проект `:feature:hugs`.
-
-Рекомендации: держать структуру папок согласованной с путями модулей.
+- Любой модуль обязан иметь корень в соответствующей папке по схеме из раздела 4.
 
 ### 7. DI‑композиция и точка связывания
 
