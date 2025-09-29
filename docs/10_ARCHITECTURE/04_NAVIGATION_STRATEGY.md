@@ -116,13 +116,15 @@ fun NavController.navigateToPatternPicker() {
 
 @Composable
 fun ScreenA(navController: NavController) {
-    val result = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.getLiveData<String>(RESULT_KEY_PATTERN_PICKED)
-        ?.observeAsState()
+    // Идиоматично: использовать StateFlow + collectAsStateWithLifecycle
+    val handle = navController.currentBackStackEntry?.savedStateHandle
+    val resultFlow = remember(handle) {
+        handle?.getStateFlow<String?>(RESULT_KEY_PATTERN_PICKED, null)
+    }
+    val result by resultFlow?.collectAsStateWithLifecycle(initialValue = null)
 
-    LaunchedEffect(result?.value) {
-        result?.value?.let { patternId ->
+    LaunchedEffect(result) {
+        result?.let { patternId ->
             // обработать выбранный паттерн
             navController.currentBackStackEntry?.savedStateHandle?.remove<String>(RESULT_KEY_PATTERN_PICKED)
         }
@@ -135,6 +137,10 @@ fun NavController.returnPatternResult(patternId: String) {
     popBackStack()
 }
 ```
+
+Альтернативы и примечания:
+- При наличии `LiveData` можно использовать `observeAsStateWithLifecycle()` из `lifecycle-runtime-compose`.
+- Если в актуальной версии Navigation Compose доступен официальный API возврата результата без `SavedStateHandle`, используем его (при его стабильности) в духе рекомендаций Jetpack; данная страница будет обновлена при миграции.
 
 
 ### 4) Структура навигационного графа
