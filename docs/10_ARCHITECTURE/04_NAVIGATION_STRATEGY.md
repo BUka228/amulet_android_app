@@ -51,6 +51,42 @@ fun NavGraphBuilder.profileScreen(
 }
 ```
 
+Обработка аргументов во ViewModel (через `SavedStateHandle`)
+
+```kotlin
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val getUserProfile: GetUserProfileUseCase,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    private val userId: String = requireNotNull(savedStateHandle.get<String>("userId")) {
+        "Missing required nav argument: userId"
+    }
+
+    val state: StateFlow<ProfileState> = flow {
+        emit(loadState())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, ProfileState(isLoading = true))
+
+    private suspend fun loadState(): ProfileState {
+        return getUserProfile(UserId(userId))
+            .fold(
+                onSuccess = { ProfileState(user = it) },
+                onFailure = { ProfileState(error = it) }
+            )
+    }
+}
+
+@Composable
+fun ProfileRoute(
+    onBack: () -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.state.collectAsStateWithLifecycle()
+    ProfileScreen(state = uiState, onBack = onBack)
+}
+```
+Когда ViewModel извлекает аргументы сама, Composable не парсит `BackStackEntry`; это упрощает вызов и концентрирует валидацию/дефолты в одном месте.
+
 Пример c `kotlinx.serialization` (точечно, если требуется несколько полей):
 
 ```kotlin
