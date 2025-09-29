@@ -104,6 +104,31 @@ fun rememberSendHugSharedViewModel(navBackStackEntry: NavBackStackEntry): SendHu
 }
 ```
 
+Явная привязка к вложенному графу с Hilt (`@HiltViewModel`) и `hiltViewModel(navBackStackEntry)`
+
+```kotlin
+// Предположим, что nested graph объявлен как route = "hugs"
+fun NavGraphBuilder.hugsGraph(navController: NavController) {
+    navigation(startDestination = "hugs/list", route = "hugs") {
+        composable("hugs/list") { entry ->
+            // Получаем BackStackEntry самого графа, а не конкретного экрана
+            val graphEntry = remember(navController) { navController.getBackStackEntry("hugs") }
+            val sharedVm: SendHugSharedViewModel = hiltViewModel(graphEntry)
+            HugsListScreen(sharedVm)
+        }
+
+        composable("hugs/details/{hugId}") { entry ->
+            val graphEntry = remember(navController) { navController.getBackStackEntry("hugs") }
+            val sharedVm: SendHugSharedViewModel = hiltViewModel(graphEntry)
+            HugDetailsScreen(sharedVm)
+        }
+    }
+}
+
+// В Compose это эквивалент паттерну navGraphViewModels из Fragment API:
+// вместо navGraphViewModels(graphId) мы явно передаём navBackStackEntry в hiltViewModel(...)
+```
+
 Возврат результата экраном B на экран A: `SavedStateHandle`
 
 ```kotlin
