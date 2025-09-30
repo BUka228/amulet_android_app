@@ -14,6 +14,7 @@
  │                ├─ :shared (интерфейсы, DTO)
  │                ├─ :core:network
  │                ├─ :core:database
+ │                ├─ :core:sync
  │                └─ :core:ble (по необходимости)
  └─ DI: bind(Impl из :data:* as интерфейсы из :shared)
 ```
@@ -22,7 +23,7 @@
 
 - `:app` — точка входа Android, навигация, DI-композиция.
 - `:shared` — KMP Domain: модели/DTO, интерфейсы репозиториев, UseCase/оркестраторы. Без Android/Compose/Retrofit/Room.
- - `:core:*` — инфраструктура платформы (Android): сеть, БД, BLE, дизайн-система, конфиг, телеметрия.
+ - `:core:*` — инфраструктура платформы (Android): сеть, БД, синхронизация (Outbox/WorkManager), BLE, дизайн-система, конфиг, телеметрия.
 - `:data:*` — реализации репозиториев. Инкапсулируют Network/DB/BLE, но не зависят от `:feature:*`.
 - `:feature:*` — экраны/бизнес‑UI. Смотрят только на `:shared` и `:core:design`.
 - `:feature:profile` — просмотр и редактирование профиля; вход из настроек/дашборда.
@@ -37,7 +38,7 @@
   - Запрещено: прямые зависимости на `:data:*`, `:core:*` (кроме `:core:design`), `feature ↔ feature`.
 
 - `:data:*`
-  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
+  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, `implementation(project(":core:sync"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
   - Запрещено: зависимости на `:feature:*` и на `:app`.
 
 - `:core:*`
@@ -93,6 +94,7 @@ dependencies {
     implementation(project(":shared"))
     implementation(project(":core:network"))
     implementation(project(":core:database"))
+    implementation(project(":core:sync"))
     // по необходимости
     implementation(project(":core:ble"))
 }
@@ -116,7 +118,7 @@ dependencies {
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
     - Дополнительно (рекомендуется): `:feature:profile`, `:feature:onboarding`, `:feature:pairing` (по необходимости), `:feature:control-center`.
   - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`.
-  - **core**: `:core:network`, `:core:database`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
+  - **core**: `:core:network`, `:core:database`, `:core:sync`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
   - **shared**: один модуль `:shared`.
   - **app**: один модуль `:app`.
 
@@ -131,6 +133,7 @@ dependencies {
   - `:data:devices` → `data/devices/`
   - `:core:network` → `core/network/`
   - `:core:database` → `core/database/`
+  - `:core:sync` → `core/sync/`
   - `:core:design` → `core/design/`
   - `:shared` → `shared/`
   - `:app` → `app/`
@@ -199,7 +202,7 @@ gradle.projectsEvaluated {
 include(":app")
 include(":shared")
 
-include(":core:network", ":core:database", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
+include(":core:network", ":core:database", ":core:sync", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
 include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy")
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
 include(":feature:profile", ":feature:onboarding", ":feature:pairing", ":feature:control-center")
@@ -210,6 +213,7 @@ project(":app").projectDir = file("app")
 
 project(":core:network").projectDir = file("core/network")
 project(":core:database").projectDir = file("core/database")
+project(":core:sync").projectDir = file("core/sync")
 project(":core:ble").projectDir = file("core/ble")
 project(":core:telemetry").projectDir = file("core/telemetry")
 project(":core:design").projectDir = file("core/design")
