@@ -25,7 +25,6 @@
   1) `AuthInterceptor` — добавляет `Authorization: Bearer <id_token>` (токен обновляется через Firebase SDK; см. `01_ARCHITECTURE_OVERVIEW.md`, ADR об аутентификации)
   2) `AppCheckInterceptor` — добавляет `X-Firebase-AppCheck: <token>`
   3) `HttpLoggingInterceptor` — только в debug
-  4) `ErrorHandlingInterceptor` (опционально) — централизованная обработка HTTP‑ошибок, если не используется `safeApiCall` на каждом вызове. В нашем стандарте предпочтительнее `safeApiCall`.
 
 #### 1.2. Конфигурация Retrofit
 
