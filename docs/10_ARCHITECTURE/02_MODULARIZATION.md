@@ -15,6 +15,7 @@
  │                ├─ :core:network
  │                ├─ :core:database
  │                ├─ :core:sync
+ │                ├─ :core:crypto
  │                └─ :core:ble (по необходимости)
  └─ DI: bind(Impl из :data:* as интерфейсы из :shared)
 ```
@@ -23,7 +24,7 @@
 
 - `:app` — точка входа Android, навигация, DI-композиция.
 - `:shared` — KMP Domain: модели/DTO, интерфейсы репозиториев, UseCase/оркестраторы. Без Android/Compose/Retrofit/Room.
- - `:core:*` — инфраструктура платформы (Android): сеть, БД, синхронизация (Outbox/WorkManager), BLE, дизайн-система, конфиг, телеметрия.
+ - `:core:*` — инфраструктура платформы (Android): сеть, БД, синхронизация (Outbox/WorkManager), криптография/безопасное хранилище, BLE, дизайн-система, конфиг, телеметрия.
 - `:data:*` — реализации репозиториев. Инкапсулируют Network/DB/BLE, но не зависят от `:feature:*`.
 - `:feature:*` — экраны/бизнес‑UI. Смотрят только на `:shared` и `:core:design`.
 - `:feature:profile` — просмотр и редактирование профиля; вход из настроек/дашборда.
@@ -38,7 +39,7 @@
   - Запрещено: прямые зависимости на `:data:*`, `:core:*` (кроме `:core:design`), `feature ↔ feature`.
 
 - `:data:*`
-  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, `implementation(project(":core:sync"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
+  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, `implementation(project(":core:sync"))`, `implementation(project(":core:crypto"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
   - Запрещено: зависимости на `:feature:*` и на `:app`.
 
 - `:core:*`
@@ -117,8 +118,8 @@ dependencies {
 - Иерархия модулей: `:<layer>:<name>`.
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
     - Дополнительно (рекомендуется): `:feature:profile`, `:feature:onboarding`, `:feature:pairing` (по необходимости), `:feature:control-center`.
-  - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`.
-  - **core**: `:core:network`, `:core:database`, `:core:sync`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
+  - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`, `:data:auth`.
+  - **core**: `:core:network`, `:core:database`, `:core:sync`, `:core:crypto`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
   - **shared**: один модуль `:shared`.
   - **app**: один модуль `:app`.
 
@@ -131,9 +132,11 @@ dependencies {
   - `:feature:control-center` → `feature/control-center/`
   - `:data:hugs` → `data/hugs/`
   - `:data:devices` → `data/devices/`
+  - `:data:auth` → `data/auth/`
   - `:core:network` → `core/network/`
   - `:core:database` → `core/database/`
   - `:core:sync` → `core/sync/`
+  - `:core:crypto` → `core/crypto/`
   - `:core:design` → `core/design/`
   - `:shared` → `shared/`
   - `:app` → `app/`
@@ -202,8 +205,8 @@ gradle.projectsEvaluated {
 include(":app")
 include(":shared")
 
-include(":core:network", ":core:database", ":core:sync", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
-include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy")
+include(":core:network", ":core:database", ":core:sync", ":core:crypto", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
+include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy", ":data:auth")
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
 include(":feature:profile", ":feature:onboarding", ":feature:pairing", ":feature:control-center")
 
@@ -214,6 +217,7 @@ project(":app").projectDir = file("app")
 project(":core:network").projectDir = file("core/network")
 project(":core:database").projectDir = file("core/database")
 project(":core:sync").projectDir = file("core/sync")
+project(":core:crypto").projectDir = file("core/crypto")
 project(":core:ble").projectDir = file("core/ble")
 project(":core:telemetry").projectDir = file("core/telemetry")
 project(":core:design").projectDir = file("core/design")
@@ -226,6 +230,7 @@ project(":data:patterns").projectDir = file("data/patterns")
 project(":data:practices").projectDir = file("data/practices")
 project(":data:rules").projectDir = file("data/rules")
 project(":data:privacy").projectDir = file("data/privacy")
+project(":data:auth").projectDir = file("data/auth")
 
 project(":feature:dashboard").projectDir = file("feature/dashboard")
 project(":feature:library").projectDir = file("feature/library")
