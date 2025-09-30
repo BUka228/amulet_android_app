@@ -50,10 +50,10 @@
 
 Часть Б — фоновая синхронизация:
 1) WorkManager запускает `OutboxWorker` по констрейнтам.
-2) `OutboxWorker` выбирает due‑элемент (`PENDING`/`FAILED` с `available_at <= now()`), помечает `IN_FLIGHT`.
-3) Через `ActionProcessorFactory` получает `SendHugProcessor` и вызывает `process(payload)`.
-4) Процессор делает HTTP‑вызов, обрабатывает ответ, выполняет reconcile (например, upsert `HugEntity(id, status=SENT, deliveredAt)`).
-5) `OutboxWorker` выставляет `COMPLETED` либо рассчитывает бэкофф и возвращает в `PENDING`/`FAILED`.
+2) `OutboxWorker` работает в цикле: на каждой итерации выбирает один due‑элемент (`PENDING`/`FAILED` с `available_at <= now()`). Если задач нет — завершает работу `Result.success()`.
+3) Помечает выбранный элемент `IN_FLIGHT` и через `ActionProcessorFactory` получает соответствующий процессор, вызывает `process(payload)`.
+4) На успех — фиксирует `COMPLETED`; на ретраибельную ошибку — рассчитывает бэкофф и переводит в `PENDING`; на не‑ретраибельную — `FAILED`.
+5) Переходит к следующей итерации цикла, пока в очереди остаются due‑элементы.
 6) UI автоматически обновляется из Room (иконка/статус меняется на «отправлено» или «ошибка»; доступен «Повторить»).
 
 ---
@@ -66,7 +66,41 @@
   - Приоритеты: HIGH для `HUG_SEND`, токенов FCM; NORMAL для профиля/устройств; LOW для паттернов.
 
 - Локальные сущности (пример `hugs`):
-  - Доп. поле статуса для UI (например, `sending/failed/sent`) или вычисляется по наличию активной записи в outbox по `targetEntityId`.
+  - Официальная стратегия: НЕ добавлять отдельное поле `syncStatus` в сущности. Статус вычислять на лету через `LEFT JOIN` с `outbox_actions` по `targetEntityId` (с фильтром `status != 'COMPLETED'`). DAO предоставляет `Flow<List<...WithStatus>>`.
+
+Диаграмма состояний (Mermaid):
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: Создание задачи
+    PENDING --> IN_FLIGHT: Воркер взял в работу
+    IN_FLIGHT --> COMPLETED: Успешное выполнение
+    IN_FLIGHT --> FAILED: Провальная ошибка / исчерпаны ретраи
+    IN_FLIGHT --> PENDING: Временная ошибка (retry)
+    FAILED --> PENDING: Пользователь нажал "Повторить"
+    COMPLETED --> [*]
+```
+
+Пример DAO‑контракта (эскиз):
+
+```kotlin
+data class HugWithStatus(
+    val hug: HugEntity,
+    val syncStatus: String? // null = нет активной outbox‑задачи
+)
+
+@Query(
+  """
+  SELECT h.*, o.status AS syncStatus
+  FROM hugs h
+  LEFT JOIN outbox_actions o
+    ON o.targetEntityId = h.id AND o.status != 'COMPLETED'
+  WHERE h.toUserId = :uid OR h.fromUserId = :uid
+  ORDER BY h.createdAt DESC
+  """
+)
+fun observeHugsWithStatus(uid: String): Flow<List<HugWithStatus>>
+```
 
 ---
 
@@ -76,6 +110,19 @@
 - Констрейнты по умолчанию: `NetworkType.CONNECTED`. Для критичных пользовательских команд — `.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)`.
 - Бэкофф: экспоненциальный с джиттером `min(base*2^retries, MAX) * random(0.5..1.5)`; `available_at` хранится в БД и учитывается выборкой DAO.
 - Утренние «чистки» (cleanup) по TTL: `COMPLETED > 7 дней`, `FAILED > 30 дней` — см. `01_DATABASE.md`.
+
+Восстановление после сбоев (watchdog):
+
+- Проблема: задача может «зависнуть» в статусе `IN_FLIGHT`, если процесс был убит до фиксации результата.
+- Решение: при старте приложения и периодически по расписанию запускать сторожевой воркер, который переводит такие записи обратно в `PENDING`.
+- Правило: считать «зависшими» записи `IN_FLIGHT`, у которых `updated_at < now() - 5 минут` (порог конфигурируемый).
+- Реализация (эскиз SQL):
+
+```sql
+UPDATE outbox_actions
+SET status = 'PENDING', updated_at = :now
+WHERE status = 'IN_FLIGHT' AND updated_at < :cutoff;
+```
 
 ---
 
