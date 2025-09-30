@@ -81,7 +81,7 @@ ASCII‑схема слоёв и потоков:
 - Архитектурные компоненты: Jetpack ViewModel, Navigation Compose (type‑safe граф, deep link/NFC‑entry).
 - DI: Hilt (Android) + возможность Koin в `:shared` (KMP‑friendly). На Android уровне Hilt связывает реализации с интерфейсами из `:shared`.
 - Сеть: Retrofit + OkHttp (конвейер интерсепторов: аутентификация Firebase ID Token, App Check, retry/backoff, logging в dev).
-- Сериализация: kotlinx.serialization (KMP, стабильные модели DTO/конвертеры).
+- Сериализация: kotlinx.serialization (стабильные модели DTO/конвертеры в `:core:network`).
 - Локальное хранилище: Room (SQL, миграции, Paging), DataStore (преференсы/ключ‑значение).
 - Тестирование: JUnit5, MockK, Turbine (Flow), Compose UI Test, Robolectric/Instrumented, Kotest (BDD опционально).
 - Работа с железом: Android BLE API (GATT), Android NFC API (NDEF/Deep Link), Foreground Service для устойчивых сессий.
@@ -123,7 +123,7 @@ ASCII‑схема слоёв и потоков:
  Правила зависимостей (строгая изоляция — выбранный подход):
 
 - `:feature:*` → зависит только от `:shared`, `:core:design`. Запрещены прямые зависимости `feature ↔ feature` и зависимости на `:data:*`/`:core:*`.
-- `:data:*` → зависит от `:shared` (интерфейсы, DTO), `:core:network`, `:core:database`, `:core:ble` (по необходимости). Не зависит от `:feature:*`.
+ - `:data:*` → зависит от `:shared` (интерфейсы), `:core:network` (DTO и сеть), `:core:database`, `:core:ble` (по необходимости). Не зависит от `:feature:*`.
 - `:shared` не зависит от Android/Compose/Retrofit/Room. Только Kotlin stdlib, kotlinx.serialization, Koin (опционально).
 - `:core:*` могут зависеть от Android SDK, но не от `:feature:*` или `:data:*`.
 - Направление: Presentation → Domain → Data (через интерфейсы). Инверсия: реализации регистрируются DI на уровне `:app`.
@@ -151,7 +151,7 @@ ASCII‑схема слоёв и потоков:
  ├─ :feature:* ──┐        (интерфейсы из :shared)
  │               └─ :shared
  ├─ :data:* ──────┐
- │                ├─ :shared (interfaces, DTO)
+ │                ├─ :shared (interfaces)
  │                ├─ :core:network
  │                ├─ :core:database
  │                └─ :core:ble (if needed)
@@ -172,7 +172,7 @@ abstract class RepositoryBindingsModule {
 
 **Преимущества data-слоя (при строгой изоляции фич):**
 
-- **Изоляция ответственности:** Модуль `:data:hugs` знает только о том, как работать с «объятиями». Он зависит от `:core:network` (Retrofit-клиент), `:core:database` (DAO) и `:shared` (интерфейс `HugsRepository`, DTO-модели).
+- **Изоляция ответственности:** Модуль `:data:hugs` знает только о том, как работать с «объятиями». Он зависит от `:core:network` (Retrofit-клиент и DTO), `:core:database` (DAO) и `:shared` (интерфейс `HugsRepository`).
 - **Чёткие зависимости:** Фича‑модуль `:feature:hugs` зависит только от `:shared`; привязка `HugsRepositoryImpl` к `HugsRepository` выполняется в `:app` через DI (Hilt/Koin‑мост), поэтому изменения в `:data:hugs` не пересобирают `:feature:hugs`.
 - **Масштабируемость:** Добавление новой сущности (например, «Достижения») требует только создания интерфейса в `:shared`, DTO/DAO в `:core:*` и реализации в новом модуле `:data:achievements`.
 
@@ -601,7 +601,7 @@ Offline‑first для команд (исходящих действий):
 
 **а) DTO (Data Transfer Object) — Сетевой слой**
 
-- **Где живут:** `:shared` модуль (так как они являются частью контракта с API и нужны для KMP).
+- **Где живут:** `:core:network` модуль.
 - **Назначение:** Точное представление JSON-ответов от вашего API (согласно `openapi_v1_бэкенда.yaml`). Они содержат аннотации `@Serializable` и могут иметь поля, специфичные для API (например, `_seconds` для Timestamp).
 
 **б) Сущности БД (Database Entities) — Слой базы данных**
@@ -714,7 +714,7 @@ class RulesRepositoryImpl(...): RulesRepository {
 
 Роль `:shared`:
 
-- Домейн‑слой: интерфейсы репозиториев, UseCase, бизнес‑правила, модели/DTO (kotlinx.serialization) и мапперы.
+- Домейн‑слой: интерфейсы репозиториев, UseCase, бизнес‑правила, доменные модели и мапперы (KMP).
 - Портируемость: iOS/other платформы смогут переиспользовать домейн без Android‑зависимостей.
 
 Что остаётся на платформе (Android):

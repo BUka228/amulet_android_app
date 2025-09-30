@@ -11,7 +11,7 @@
  ├─ :feature:* ──┐        (зависят только от интерфейсов из :shared и UI из :core:design)
  │               └─ :shared
  ├─ :data:* ──────┐
- │                ├─ :shared (интерфейсы, DTO)
+ │                ├─ :shared (интерфейсы)
  │                ├─ :core:network
  │                ├─ :core:database
  │                ├─ :core:sync
@@ -23,7 +23,7 @@
 Детализация типов модулей:
 
 - `:app` — точка входа Android, навигация, DI-композиция.
-- `:shared` — KMP Domain: модели/DTO, интерфейсы репозиториев, UseCase/оркестраторы. Без Android/Compose/Retrofit/Room.
+- `:shared` — KMP Domain: доменные модели, интерфейсы репозиториев, UseCase/оркестраторы. Без Android/Compose/Retrofit/Room.
  - `:core:*` — инфраструктура платформы (Android): сеть, БД, синхронизация (Outbox/WorkManager), криптография/безопасное хранилище, BLE, дизайн-система, конфиг, телеметрия.
 - `:data:*` — реализации репозиториев. Инкапсулируют Network/DB/BLE, но не зависят от `:feature:*`.
 - `:feature:*` — экраны/бизнес‑UI. Смотрят только на `:shared` и `:core:design`.

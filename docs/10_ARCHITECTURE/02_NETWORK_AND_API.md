@@ -71,11 +71,11 @@ object NetworkModule {
 
 ### 2. Структура моделей и DTO (Data Transfer Objects)
 
-- **Расположение:** все DTO по схемам OpenAPI v1 располагаются в `:shared` (KMP). Это часть публичного контракта.
+- **Расположение:** все DTO по схемам OpenAPI v1 располагаются в `:core:network`. Это часть сетевого контракта.
 - **Нейминг:**
   - Суффикс `Dto` для всех типов, отражающих JSON: `UserDto`, `HugDto`, `PatternDto`.
   - Аннотации `@Serializable` и `@SerialName` для полей, чьи имена отличаются от Kotlin‑конвенций (`snake_case` → `camelCase`).
-- **Обработка Timestamp:** в OpenAPI возможны варианты: ISO‑строка или `{ _seconds, _nanoseconds }`. В `:shared` используется кастомный `KSerializer` (например, `TimestampAsEpochMillisSerializer`), который десериализует обе формы в `Long` (epochMillis) и сериализует обратно в ISO‑строку при необходимости.
+- **Обработка Timestamp:** в OpenAPI возможны варианты: ISO‑строка или `{ _seconds, _nanoseconds }`. В `:core:network` используется кастомный `KSerializer` (например, `TimestampAsEpochMillisSerializer`), который десериализует обе формы в `Long` (epochMillis) и сериализует обратно в ISO‑строку при необходимости.
 - **Полиморфные типы:** для иерархий вроде `PatternElement*` используется `JsonContentPolymorphicSerializer` c дискриминатором `type`. Неизвестные типы должны падать безопасно с `SerializationException` и маппиться в `AppError.Unknown` на границе сети.
 
 Пример DTO (эскиз):
@@ -103,7 +103,7 @@ data class HugDto(
 Пример (концептуально):
 
 ```kotlin
-// DTO в :shared
+// DTO в :core:network
 @Serializable
 data class HugDto(
     val id: String,
@@ -127,7 +127,7 @@ fun HugDto.toDomain(): Hug = Hug(
 )
 ```
 
-Полиморфные элементы `PatternElement` маппятся через централизованный конвертер в `:shared` (см. BLE/Pattern разделы в `01_ARCHITECTURE_OVERVIEW.md`).
+Полиморфные элементы `PatternElement` маппятся через централизованный конвертер в `:core:network` (см. BLE/Pattern разделы в `01_ARCHITECTURE_OVERVIEW.md`).
 
 ---
 
@@ -185,7 +185,7 @@ fun HugDto.toDomain(): Hug = Hug(
 ### 9. Чек‑лист внедрения
 
 - Создать/настроить `:core:network` с Hilt‑модулем, `OkHttpClient`, `Retrofit`, интерсепторами.
-- В `:shared` определить DTO с `@Serializable`, сериализаторы `TimestampAsEpochMillisSerializer`, полиморфные сериализаторы для `PatternElement`.
+- В `:core:network` определить DTO с `@Serializable`, сериализаторы `TimestampAsEpochMillisSerializer`, полиморфные сериализаторы для `PatternElement`.
 - В `:data:*` реализовать `ApiService`, мапперы DTO↔Domain, `RemoteMediator` с транзакциями Room (`upsert + remote_keys`).
 - Везде использовать `safeApiCall` и возвращать `Result<T, AppError>` (см. `01_ERROR_HANDLING.md`).
 - Настроить `Paging 3` и кэширование по стратегии `read‑through + stale‑while‑revalidate`.
