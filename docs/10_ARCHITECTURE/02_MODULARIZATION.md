@@ -10,13 +10,14 @@
 :app
  ├─ :feature:* ──┐        (зависят только от интерфейсов из :shared и UI из :core:design)
  │               └─ :shared
- ├─ :data:* ──────┐
- │                ├─ :shared (интерфейсы)
- │                ├─ :core:network
- │                ├─ :core:database
- │                ├─ :core:sync
- │                ├─ :core:crypto
- │                └─ :core:ble (по необходимости)
+├─ :data:* ──────┐
+│                ├─ :shared (интерфейсы)
+│                ├─ :core:network
+│                ├─ :core:database
+│                ├─ :core:sync
+│                ├─ :core:crypto
+│                ├─ :core:auth
+│                └─ :core:ble (по необходимости)
  └─ DI: bind(Impl из :data:* as интерфейсы из :shared)
 ```
 
@@ -39,7 +40,7 @@
   - Запрещено: прямые зависимости на `:data:*`, `:core:*` (кроме `:core:design`), `feature ↔ feature`.
 
 - `:data:*`
-  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, `implementation(project(":core:sync"))`, `implementation(project(":core:crypto"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
+  - Разрешено: `implementation(project(":shared"))`, `implementation(project(":core:network"))`, `implementation(project(":core:database"))`, `implementation(project(":core:sync"))`, `implementation(project(":core:crypto"))`, `implementation(project(":core:auth"))`, опционально `implementation(project(":core:ble"))`, `implementation(project(":core:telemetry"))`, `implementation(project(":core:config"))`.
   - Запрещено: зависимости на `:feature:*` и на `:app`.
 
 - `:core:*`
@@ -119,7 +120,7 @@ dependencies {
   - **feature**: `:feature:dashboard`, `:feature:hugs`, `:feature:patterns`, `:feature:devices`, `:feature:sessions`, `:feature:settings`, `:feature:library`.
     - Дополнительно (рекомендуется): `:feature:profile`, `:feature:onboarding`, `:feature:pairing` (по необходимости), `:feature:control-center`.
   - **data**: `:data:user`, `:data:devices`, `:data:hugs`, `:data:patterns`, `:data:practices`, `:data:rules`, `:data:privacy`, `:data:auth`.
-  - **core**: `:core:network`, `:core:database`, `:core:sync`, `:core:crypto`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
+  - **core**: `:core:network`, `:core:database`, `:core:sync`, `:core:crypto`, `:core:auth`, `:core:ble`, `:core:telemetry`, `:core:design`, `:core:config`.
   - **shared**: один модуль `:shared`.
   - **app**: один модуль `:app`.
 
@@ -137,6 +138,7 @@ dependencies {
   - `:core:database` → `core/database/`
   - `:core:sync` → `core/sync/`
   - `:core:crypto` → `core/crypto/`
+  - `:core:auth` → `core/auth/`
   - `:core:design` → `core/design/`
   - `:shared` → `shared/`
   - `:app` → `app/`
@@ -205,7 +207,7 @@ gradle.projectsEvaluated {
 include(":app")
 include(":shared")
 
-include(":core:network", ":core:database", ":core:sync", ":core:crypto", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
+include(":core:network", ":core:database", ":core:sync", ":core:crypto", ":core:auth", ":core:ble", ":core:telemetry", ":core:design", ":core:config")
 include(":data:user", ":data:devices", ":data:hugs", ":data:patterns", ":data:practices", ":data:rules", ":data:privacy", ":data:auth")
 include(":feature:dashboard", ":feature:library", ":feature:hugs", ":feature:patterns", ":feature:sessions", ":feature:devices", ":feature:settings")
 include(":feature:profile", ":feature:onboarding", ":feature:pairing", ":feature:control-center")
@@ -218,6 +220,7 @@ project(":core:network").projectDir = file("core/network")
 project(":core:database").projectDir = file("core/database")
 project(":core:sync").projectDir = file("core/sync")
 project(":core:crypto").projectDir = file("core/crypto")
+project(":core:auth").projectDir = file("core/auth")
 project(":core:ble").projectDir = file("core/ble")
 project(":core:telemetry").projectDir = file("core/telemetry")
 project(":core:design").projectDir = file("core/design")

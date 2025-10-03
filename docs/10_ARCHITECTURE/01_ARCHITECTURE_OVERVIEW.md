@@ -101,6 +101,7 @@ ASCII‑схема слоёв и потоков:
 - `:shared` — KMP Domain: use case'ы, модели, интерфейсы репозиториев, бизнес‑правила.
 - `:core:network` — Retrofit/OkHttp, авторизация, App Check, сериализация.
 - `:core:database` — Room/DAO, миграции, DataStore.
+- `:core:auth` — UserSessionManager, шифрованное хранение сессии, Proto DataStore.
 - `:core:ble` — BLE/NFC абстракции, GATT‑профили, конверсия паттернов → команды.
 - `:core:telemetry` — сбор, батчинг, отправка телеметрии.
 - `:core:design` — Compose design system (themes, typography, components).
