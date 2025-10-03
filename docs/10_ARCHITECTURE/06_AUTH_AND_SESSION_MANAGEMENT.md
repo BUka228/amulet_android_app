@@ -64,23 +64,29 @@ sequenceDiagram
 
 ### 3. Размещение и Зависимости
 
-Компонент `UserSessionManager` разделен на две части в соответствии с принципом инверсии зависимостей:
+Компонент `UserSessionManager` разделен на три части в соответствии с принципом инверсии зависимостей и строгой типизации:
 
-*   **Интерфейс (`interface UserSessionManager`):**
-    *   **Модуль:** `:shared`.
-    *   **Назначение:** Определяет KMP-совместимый контракт, который нужен доменному слою (`UseCase`'ам) для доступа к состоянию сессии.
+*   **`UserSessionProvider` (интерфейс в `:shared`):**
+    *   **Назначение:** Безопасный интерфейс только для чтения состояния сессии. Используется `UseCase`'ами в доменном слое.
     *   **Зависимости:** Не имеет зависимостей от внешних слоев.
+    *   **Безопасность:** Содержит только методы чтения, предотвращает случайное изменение состояния.
 
-*   **Реализация (`class UserSessionManagerImpl`):**
-    *   **Модуль:** `:core:auth`.
-    *   **Назначение:** Предоставляет конкретную реализацию менеджера для платформы Android, используя `Proto DataStore` и `androidx.security` для шифрования.
-    *   **Зависимости:** Зависит от `:shared` (чтобы реализовать интерфейс) и от Android-библиотек.
+*   **`UserSessionUpdater` (интерфейс в `:data:auth`):**
+    *   **Назначение:** Интерфейс для управления состоянием сессии. Используется исключительно `AuthRepositoryImpl`.
+    *   **Зависимости:** Не экспортируется в `:shared`, остается внутренним для data слоя.
+    *   **Безопасность:** Типобезопасное разделение ответственности.
+
+*   **`UserSessionManager` (объединенный интерфейс в `:core:auth`):**
+    *   **Назначение:** Полный интерфейс, объединяющий чтение и запись. Реализуется `UserSessionManagerImpl`.
+    *   **Зависимости:** Зависит от `:shared` (для `UserSessionProvider`) и Android-библиотек.
+    *   **DI:** Используется для связывания реализации с интерфейсами через Hilt.
 
 **Процесс DI:**
-1.  Интерфейс `UserSessionManager` запрашивается `UseCase`'ами в `:shared`.
-2.  Реализация `UserSessionManagerImpl` предоставляется в `:core:auth`.
-3.  Hilt-модуль в `:core:auth` связывает (`@Binds`) реализацию с интерфейсом.
-4.  На уровне `:app` Hilt собирает граф зависимостей, позволяя `ViewModel`'ям и другим компонентам инжектить `UseCase`'ы, которые, в свою очередь, получают правильную реализацию `UserSessionManager`.
+1.  `UserSessionProvider` запрашивается `UseCase`'ами в `:shared`.
+2.  `UserSessionUpdater` используется только в `AuthRepositoryImpl` в `:data:auth`.
+3.  `UserSessionManagerImpl` реализует оба интерфейса в `:core:auth`.
+4.  Hilt-модуль в `:core:auth` связывает (`@Binds`) реализацию с интерфейсами.
+5.  На уровне `:app` Hilt обеспечивает правильное внедрение зависимостей.
 
 ---
 
@@ -123,14 +129,15 @@ sealed interface UserSessionContext {
 }
 ```
 
-#### UserSessionManager.kt (интерфейс в `:shared`)
+#### UserSessionProvider.kt (интерфейс в `:shared`)
 
 ```kotlin
 /**
  * Интерфейс для доступа к контексту сессии.
  * Является частью доменного слоя.
+ * Содержит только методы чтения - безопасен для использования в UseCase'ах.
  */
-interface UserSessionManager {
+interface UserSessionProvider {
 
     /**
      * Основной реактивный поток состояния сессии.
@@ -141,13 +148,38 @@ interface UserSessionManager {
      * Удобное свойство для синхронного доступа к текущему состоянию.
      */
     val currentContext: UserSessionContext get() = sessionContext.value
+}
+```
 
+#### UserSessionUpdater.kt (интерфейс в `:data:auth`)
+
+```kotlin
+/**
+ * Интерфейс для управления состоянием сессии.
+ * Предназначен ИСКЛЮЧИТЕЛЬНО для использования в AuthRepository.
+ * Не экспортируется в :shared для предотвращения случайного использования.
+ */
+interface UserSessionUpdater {
     /**
-     * Внимание: Эти методы должны вызываться ИСКЛЮЧИТЕЛЬНО из AuthRepository.
+     * Обновляет сессию, переводя ее в состояние LoggedIn.
      */
     suspend fun updateSession(user: User)
+
+    /**
+     * Очищает сессию, переводя ее в состояние LoggedOut.
+     */
     suspend fun clearSession()
 }
+```
+
+#### UserSessionManager.kt (объединенный интерфейс в `:core:auth`)
+
+```kotlin
+/**
+ * Полный интерфейс менеджера сессии, объединяющий чтение и запись.
+ * Реализуется UserSessionManagerImpl и используется для DI.
+ */
+interface UserSessionManager : UserSessionProvider, UserSessionUpdater
 ```
 
 #### AuthRepository.kt (интерфейс в `:shared`)
@@ -220,10 +252,12 @@ message UserConsentsProto {
 
 ### 5. Чек-лист для разработчика
 
-- ✅ Для получения реактивного состояния сессии — подписывайтесь на `userSessionManager.sessionContext`.
-- ✅ Для синхронного доступа к `userId` или `consents` (в интерсепторах, логгерах) — используйте `userSessionManager.currentContext`.
-- ❌ **ЗАПРЕЩЕНО** вызывать `updateSession` или `clearSession` откуда-либо, кроме `AuthRepositoryImpl`.
+- ✅ Для получения реактивного состояния сессии в `UseCase`'ах — подписывайтесь на `userSessionProvider.sessionContext`.
+- ✅ Для синхронного доступа к `userId` или `consents` (в интерсепторах, логгерах) — используйте `userSessionProvider.currentContext`.
+- ✅ Для управления состоянием сессии в `AuthRepositoryImpl` — используйте `userSessionUpdater.updateSession()` и `userSessionUpdater.clearSession()`.
+- ❌ **ЗАПРЕЩЕНО** использовать `UserSessionUpdater` в доменном слое (`UseCase`'ах).
 - ✅ Процесс входа/регистрации должен быть оркестрирован через `UseCase` в доменном слое.
 - ❌ **ЗАПРЕЩЕНО** создавать зависимости между репозиториями (например, `AuthRepository` -> `UserRepository`).
+- ✅ Используйте типобезопасное разделение: `UserSessionProvider` для чтения, `UserSessionUpdater` для записи.
 
 
