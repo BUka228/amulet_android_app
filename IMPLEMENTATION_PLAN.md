@@ -127,6 +127,7 @@
   - Создание схемы БД ([01_DATABASE.md](docs/20_DATA_LAYER/01_DATABASE.md))
   - 14 таблиц с индексами и связями
   - Миграции и версионирование
+  - Repository реализации ([01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md))
 
 - [ ] **Outbox Pattern**
   - Очередь исходящих действий
@@ -151,6 +152,7 @@
   - Migration тесты
 
 **Связанные документы:**
+- [01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md)
 - [01_DATABASE.md](docs/20_DATA_LAYER/01_DATABASE.md)
 
 ### 2.2 Сетевой слой
@@ -161,6 +163,7 @@
   - OpenAPI контракты ([openapi_v1_бэкенда.yaml](docs/openapi_v1_бэкенда.yaml))
   - Интерсепторы для auth и App Check
   - Retry и backoff стратегии
+  - Repository реализации ([01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md))
 
 - [ ] **Офлайн-синхронизация**
   - WorkManager для фоновых задач
@@ -180,6 +183,7 @@
   - Offline/online scenarios
 
 **Связанные документы:**
+- [01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md)
 - [02_NETWORK_AND_API.md](docs/20_DATA_LAYER/02_NETWORK_AND_API.md)
 - [04_OFFLINE_SYNC.md](docs/20_DATA_LAYER/04_OFFLINE_SYNC.md)
 
@@ -196,6 +200,7 @@
   - Подключение и переподключение
   - Загрузка анимаций
   - OTA обновления
+  - Repository реализации ([01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md))
 
 - [ ] **Безопасность BLE**
   - Аутентификация и шифрование
@@ -221,6 +226,7 @@
   - Error scenarios
 
 **Связанные документы:**
+- [01_DATA_LAYER_CONTRACTS.md](docs/15_CONTRACTS/01_DATA_LAYER_CONTRACTS.md)
 - [03_BLE_PROTOCOL.md](docs/20_DATA_LAYER/02_BLE_PROTOCOL.md)
 
 ---
@@ -261,12 +267,12 @@
 
 #### Задачи:
 - [ ] **Основные Use Cases**
-  - SendHugUseCase, CreatePatternUseCase
+  - SendHugUseCase, CreatePatternUseCase ([02_DOMAIN_LAYER_CONTRACTS.md](docs/15_CONTRACTS/02_DOMAIN_LAYER_CONTRACTS.md))
   - StartPracticeUseCase, ConnectDeviceUseCase
   - UpdateProfileUseCase, SyncDataUseCase
 
 - [ ] **Orchestrators**
-  - Сложные бизнес-процессы
+  - Сложные бизнес-процессы ([03_ORCHESTRATORS.md](docs/30_DOMAIN_LAYER/03_ORCHESTRATORS.md))
   - Координация между Use Cases
   - Транзакционная логика
 
@@ -285,6 +291,7 @@
 
 **Связанные документы:**
 - [02_DOMAIN_LAYER_CONTRACTS.md](docs/15_CONTRACTS/02_DOMAIN_LAYER_CONTRACTS.md)
+- [01_DOMAIN_MODELS.md](docs/30_DOMAIN_LAYER/01_DOMAIN_MODELS.md)
 - [03_ORCHESTRATORS.md](docs/30_DOMAIN_LAYER/03_ORCHESTRATORS.md)
 
 ---
@@ -296,7 +303,7 @@
 
 #### Задачи:
 - [ ] **MVVM+MVI паттерн**
-  - ScreenState, UiEvent, SideEffect
+  - ScreenState, UiEvent, SideEffect ([03_PRESENTATION_LAYER_CONTRACTS.md](docs/15_CONTRACTS/03_PRESENTATION_LAYER_CONTRACTS.md))
   - ViewModel с StateFlow
   - SavedStateHandle для process death
 
@@ -319,6 +326,7 @@
   - Snapshot тесты
 
 **Связанные документы:**
+- [03_PRESENTATION_LAYER_CONTRACTS.md](docs/15_CONTRACTS/03_PRESENTATION_LAYER_CONTRACTS.md)
 - [01_UI_STATE_MANAGEMENT.md](docs/40_PRESENTATION_LAYER/01_UI_STATE_MANAGEMENT.md)
 - [02_DESIGN_SYSTEM.md](docs/40_PRESENTATION_LAYER/02_DESIGN_SYSTEM.md)
 
