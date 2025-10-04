@@ -73,7 +73,7 @@
   - Edge cases и exception handling
 
 **Связанные документы:**
-- [05_ERROR_HANDLING.md](docs/50_CROSS_CUTTING_CONCERNS/01_ERROR_HANDLING.md)
+- [01_ERROR_HANDLING.md](docs/50_CROSS_CUTTING_CONCERNS/01_ERROR_HANDLING.md)
 
 ### 1.3 Логирование и телеметрия
 **Приоритет:** 🟡 Средний | **Сложность:** Низкая | **Время:** 1 неделя
@@ -181,6 +181,7 @@
 
 **Связанные документы:**
 - [02_NETWORK_AND_API.md](docs/20_DATA_LAYER/02_NETWORK_AND_API.md)
+- [04_OFFLINE_SYNC.md](docs/20_DATA_LAYER/04_OFFLINE_SYNC.md)
 
 ### 2.3 BLE протокол
 **Приоритет:** 🔴 Критический | **Сложность:** Очень высокая | **Время:** 3-4 недели
@@ -253,7 +254,7 @@
   - Edge cases и null handling
 
 **Связанные документы:**
-- [03_DOMAIN_MODELS.md](docs/20_DATA_LAYER/03_DOMAIN_MODELS.md)
+- [01_DOMAIN_MODELS.md](docs/30_DOMAIN_LAYER/01_DOMAIN_MODELS.md)
 
 ### 3.2 Use Cases и бизнес-логика
 **Приоритет:** 🔴 Критический | **Сложность:** Средняя | **Время:** 2 недели
@@ -622,12 +623,20 @@
 
 ### Data Layer
 - [01_DATABASE.md](docs/20_DATA_LAYER/01_DATABASE.md)
-- [02_BLE_PROTOCOL.md](docs/20_DATA_LAYER/02_BLE_PROTOCOL.md)
-- [03_DOMAIN_MODELS.md](docs/20_DATA_LAYER/03_DOMAIN_MODELS.md)
-- [04_UI_STATE_MANAGEMENT.md](docs/20_DATA_LAYER/04_UI_STATE_MANAGEMENT.md)
-- [05_ERROR_HANDLING.md](docs/20_DATA_LAYER/05_ERROR_HANDLING.md)
+- [02_NETWORK_AND_API.md](docs/20_DATA_LAYER/02_NETWORK_AND_API.md)
+- [03_BLE_PROTOCOL.md](docs/20_DATA_LAYER/02_BLE_PROTOCOL.md)
+- [04_OFFLINE_SYNC.md](docs/20_DATA_LAYER/04_OFFLINE_SYNC.md)
+
+### Domain Layer
+- [01_DOMAIN_MODELS.md](docs/30_DOMAIN_LAYER/01_DOMAIN_MODELS.md)
+- [03_ORCHESTRATORS.md](docs/30_DOMAIN_LAYER/03_ORCHESTRATORS.md)
+
+### Presentation Layer
+- [01_UI_STATE_MANAGEMENT.md](docs/40_PRESENTATION_LAYER/01_UI_STATE_MANAGEMENT.md)
+- [02_DESIGN_SYSTEM.md](docs/40_PRESENTATION_LAYER/02_DESIGN_SYSTEM.md)
 
 ### Cross-cutting Concerns
+- [01_ERROR_HANDLING.md](docs/50_CROSS_CUTTING_CONCERNS/01_ERROR_HANDLING.md)
 - [02_LOGGING_AND_TELEMETRY.md](docs/50_CROSS_CUTTING_CONCERNS/02_LOGGING_AND_TELEMETRY.md)
 - [03_SECURITY_AND_PRIVACY.md](docs/50_CROSS_CUTTING_CONCERNS/03_SECURITY_AND_PRIVACY.md)
 - [04_TESTING_STRATEGY.md](docs/50_CROSS_CUTTING_CONCERNS/04_TESTING_STRATEGY.md)
