@@ -26,7 +26,7 @@
   - Конфигурация Gradle с версиями в `libs.versions.toml`
 
 - [ ] **Настройка DI (Dependency Injection)**
-  - Hilt для Android модулей ([ADR-001](docs/80_PROCESSES_AND_CONVENTIONS/01_ARCHITECTURAL_GOVERNANCE.md#adr-001))
+  - Hilt для Android модулей
   - Koin для `:shared` модуля
   - Создание Hilt-Koin моста в `:app`
 
