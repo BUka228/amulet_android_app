@@ -13,7 +13,6 @@
 - Для обзора репозитория: предпочитать Glob/Grep/LS/Read вместо shell-команд.
 - Для правок файлов: ApplyPatch (один файл за вызов), перед правкой читать файл.
 - Для выполнения CLI: Execute; использовать абсолютные пути и не полагаться на состояние сессии.
-- GitHub Projects (gh): создавать/редактировать проекты/поля/элементы только по прямому запросу пользователя.
 
 ## Безопасность и приватность
 - Не выводить и не коммитить секреты, ключи, токены, содержимое .env и конфигов.
@@ -38,10 +37,6 @@
 - BLE: GATT, flow‑control, NFC‑deeplink, OTA.
 - Единый `Result<T, AppError>` и централизованный маппинг ошибок.
 
-## GitHub Projects (дорожная карта)
-- Использовать проект «Amulet Roadmap»; поля: Priority, Epic, Area/Layer, Module, Complexity, Target, Estimate, Due.
-- Эпики: Core/Foundation, Auth & Session, Device Pairing & BLE, Practices MVP, Animation Studio, Hugs, Offline Sync, OTA Updates, Polish & Release.
-- Этапы (Target): M0 Foundation → M1 MVP → M2 Social & Patterns → M3 Sync+OTA → M4 Polish.
 
 ## Ограничения
 - Не создавать/обновлять документацию, если этого явно не просили (исключение: этот файл).
