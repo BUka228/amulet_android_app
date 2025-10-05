@@ -70,6 +70,8 @@ internal fun Project.configureUnitTestDependencies() {
         add("testImplementation", libs.findLibrary("mockk").get())
         add("testImplementation", libs.findLibrary("turbine").get())
         add("testImplementation", libs.findLibrary("kotlinx.coroutines.test").get())
+        add("testImplementation", libs.findLibrary("koin.test").get())
+        add("testImplementation", libs.findLibrary("koin.test.junit5").get())
         add("testRuntimeOnly", libs.findLibrary("junit.jupiter.engine").get())
     }
 
