@@ -1,0 +1,61 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+output-reports:
+  active: true
+
+config:
+  validation: true
+
+custom:
+  amulet:
+    active: true
+    ViewModelDependsOnRepositoryRule:
+      active: true
+    UseCaseNamingRule:
+      active: true
+    FeatureDependsOnDataRule:
+      active: true
+    DomainLayerAndroidDependencyRule:
+      active: true
+    RepositoryNamingRule:
+      active: true
+    StateFlowExposureRule:
+      active: true
+    ErrorHandlingRule:
+      active: true
+    KmpCompatibilityRule:
+      active: true
+    PatternElementNamingRule:
+      active: true
+    NavigationContractRule:
+      active: true
+
+rules:
+  Naming:
+    active: true
+
+  exceptions:
+    active: true
+
+  performance:
+    active: true
+
+  potential-bugs:
+    active: true
+
+  style:
+    active: true
+
+  formatting:
+    active: true
+
+  custom-rules:
+    active: true

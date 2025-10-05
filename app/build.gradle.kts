@@ -1,17 +1,12 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
+    id("amulet.android.application")
 }
 
 android {
     namespace = "com.example.amulet_android_app"
-    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.amulet_android_app"
-        minSdk = 26
-        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -27,16 +22,6 @@ android {
             )
         }
     }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
-    }
 }
 
 dependencies {
@@ -49,7 +34,19 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    testImplementation(libs.junit)
+    implementation(project(":shared"))
+    implementation(project(":core:design"))
+    implementation(project(":data:auth"))
+    implementation(project(":data:devices"))
+    implementation(project(":data:hugs"))
+    implementation(project(":data:patterns"))
+    implementation(project(":data:practices"))
+    implementation(project(":data:privacy"))
+    implementation(project(":data:rules"))
+    implementation(project(":data:user"))
+    implementation(libs.koin.android)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
