@@ -12,7 +12,7 @@ class LayerDependenciesTest {
         .importPackages("com.example.amulet")
 
     @Test
-    fun `feature modules depend only on shared abstractions and core design`() {
+    fun `модули feature зависят только от shared-абстракций и core design`() {
         classes()
             .that().resideInAPackage("..feature..")
             .should().onlyDependOnClassesThat().resideInAnyPackage(
@@ -33,7 +33,7 @@ class LayerDependenciesTest {
     }
 
     @Test
-    fun `feature modules do not depend on other feature modules`() {
+    fun `модули feature не зависят друг от друга`() {
         slices()
             .matching("com.example.amulet.feature.(*)..")
             .should().notDependOnEachOther()
@@ -41,13 +41,14 @@ class LayerDependenciesTest {
     }
 
     @Test
-    fun `data modules do not leak into presentation layer`() {
+    fun `модули data не протекают в презентационный слой`() {
         classes()
             .that().resideInAPackage("..data..")
             .should().onlyDependOnClassesThat().resideInAnyPackage(
                 "..data..",
                 "..shared..",
                 "..core..",
+                "com.github.michaelbull.result..",
                 "kotlin..",
                 "kotlinx..",
                 "java..",
@@ -60,7 +61,7 @@ class LayerDependenciesTest {
     }
 
     @Test
-    fun `shared module is platform agnostic`() {
+    fun `модуль shared платформенно-агностичен`() {
         classes()
             .that().resideInAPackage("..shared..")
             .and().resideOutsideOfPackage("..shared.R")
@@ -78,7 +79,7 @@ class LayerDependenciesTest {
     }
 
     @Test
-    fun `modules remain acyclic`() {
+    fun `зависимости модулей остаются ацикличными`() {
         slices()
             .matching("com.example.amulet.(*)..")
             .should().beFreeOfCycles()
