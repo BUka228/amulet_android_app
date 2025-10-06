@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_package = "com.example.amulet.core.auth.session.proto";
+option java_multiple_files = true;
+
+message UserSessionPreferences {
+  string user_id = 1;
+  string display_name = 2;
+  string avatar_url = 3;
+  UserConsentsProto consents = 4;
+}
+
+message UserConsentsProto {
+  bool analytics = 1;
+  bool marketing = 2;
+}

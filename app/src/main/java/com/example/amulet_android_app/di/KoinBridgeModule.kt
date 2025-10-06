@@ -9,8 +9,10 @@ import com.example.amulet.data.practices.practicesDataModule
 import com.example.amulet.data.privacy.privacyDataModule
 import com.example.amulet.data.rules.rulesDataModule
 import com.example.amulet.data.user.userDataModule
+import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.di.sharedKoinModules
-import com.example.amulet.shared.domain.auth.AuthRepository
+import com.example.amulet.shared.domain.auth.repository.AuthRepository
 import com.example.amulet.shared.domain.devices.DevicesRepository
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
@@ -29,6 +31,7 @@ import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
+import org.koin.dsl.module
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 
@@ -38,7 +41,11 @@ object KoinBridgeModule {
 
     @Provides
     @Singleton
-    fun provideKoin(application: Application): Koin =
+    fun provideKoin(
+        application: Application,
+        userSessionProvider: UserSessionProvider,
+        userSessionUpdater: UserSessionUpdater
+    ): Koin =
         GlobalContext.getOrNull() ?: startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
             androidContext(application)
@@ -52,7 +59,11 @@ object KoinBridgeModule {
                 rulesDataModule,
                 userDataModule
             )
-            modules(sharedKoinModules() + dataModules)
+            val bridgeModule = module {
+                single<UserSessionProvider> { userSessionProvider }
+                single<UserSessionUpdater> { userSessionUpdater }
+            }
+            modules(sharedKoinModules() + dataModules + bridgeModule)
         }.koin
 
     @Provides
