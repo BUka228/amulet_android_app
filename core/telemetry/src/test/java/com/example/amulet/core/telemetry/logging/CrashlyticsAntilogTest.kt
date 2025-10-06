@@ -25,14 +25,14 @@ class CrashlyticsAntilogTest {
 
     @Test
     fun `always delegates logging`() {
-        antilog.performLog(LogLevel.DEBUG, "tag", null, "message")
+        antilog.logForTest(LogLevel.DEBUG, "tag", null, "message")
 
         verify { delegate.log(LogLevel.DEBUG, "tag", null, "message") }
     }
 
     @Test
     fun `ignores crashlytics calls for levels below warning`() {
-        antilog.performLog(LogLevel.INFO, null, null, null)
+        antilog.logForTest(LogLevel.INFO, null, null, null)
 
         verify(exactly = 0) { crashlytics.setCustomKey(any(), any<String>()) }
         verify(exactly = 0) { crashlytics.log(any()) }
@@ -43,7 +43,7 @@ class CrashlyticsAntilogTest {
     fun `reports warning with defaults`() {
         val throwable = IllegalStateException("boom")
 
-        antilog.performLog(LogLevel.WARNING, null, throwable, "something happened")
+        antilog.logForTest(LogLevel.WARNING, null, throwable, "something happened")
 
         verify { crashlytics.setCustomKey("log_priority", "WARNING") }
         verify { crashlytics.setCustomKey("log_tag", "Telemetry") }
@@ -53,10 +53,27 @@ class CrashlyticsAntilogTest {
 
     @Test
     fun `skips crashlytics message when blank`() {
-        antilog.performLog(LogLevel.ERROR, "tag", null, "  ")
+        antilog.logForTest(LogLevel.ERROR, "tag", null, "  ")
 
         verify { crashlytics.setCustomKey("log_priority", "ERROR") }
         verify { crashlytics.setCustomKey("log_tag", "tag") }
         verify(exactly = 0) { crashlytics.log(any()) }
+    }
+
+    private fun CrashlyticsAntilog.logForTest(
+        priority: LogLevel,
+        tag: String?,
+        throwable: Throwable?,
+        message: String?
+    ) {
+        val method = CrashlyticsAntilog::class.java.getDeclaredMethod(
+            "performLog",
+            LogLevel::class.java,
+            String::class.java,
+            Throwable::class.java,
+            String::class.java
+        )
+        method.isAccessible = true
+        method.invoke(this, priority, tag, throwable, message)
     }
 }
