@@ -11,5 +11,4 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:database"))
     implementation(project(":core:config"))
-    implementation(libs.koin.core)
 }

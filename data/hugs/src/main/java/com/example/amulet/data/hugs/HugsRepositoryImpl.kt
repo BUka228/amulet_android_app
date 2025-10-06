@@ -3,13 +3,10 @@ package com.example.amulet.data.hugs
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.github.michaelbull.result.Ok
-import org.koin.core.module.Module
-import org.koin.dsl.module
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class HugsRepositoryImpl : HugsRepository {
+@Singleton
+class HugsRepositoryImpl @Inject constructor() : HugsRepository {
     override suspend fun sendHug(): AppResult<Unit> = Ok(Unit)
-}
-
-val hugsDataModule: Module = module {
-    single<HugsRepository> { HugsRepositoryImpl() }
 }
