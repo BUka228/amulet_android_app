@@ -1,14 +1,12 @@
 package com.example.amulet_android_app.di
 
 import android.app.Application
-import com.example.amulet.data.auth.authDataModule
 import com.example.amulet.data.devices.devicesDataModule
 import com.example.amulet.data.hugs.hugsDataModule
 import com.example.amulet.data.patterns.patternsDataModule
 import com.example.amulet.data.practices.practicesDataModule
 import com.example.amulet.data.privacy.privacyDataModule
 import com.example.amulet.data.rules.rulesDataModule
-import com.example.amulet.data.user.userDataModule
 import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.di.sharedKoinModules
@@ -44,24 +42,26 @@ object KoinBridgeModule {
     fun provideKoin(
         application: Application,
         userSessionProvider: UserSessionProvider,
-        userSessionUpdater: UserSessionUpdater
+        userSessionUpdater: UserSessionUpdater,
+        authRepository: AuthRepository,
+        userRepository: UserRepository
     ): Koin =
         GlobalContext.getOrNull() ?: startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
             androidContext(application)
             val dataModules = listOf(
-                authDataModule,
                 devicesDataModule,
                 hugsDataModule,
                 patternsDataModule,
                 practicesDataModule,
                 privacyDataModule,
-                rulesDataModule,
-                userDataModule
+                rulesDataModule
             )
             val bridgeModule = module {
                 single<UserSessionProvider> { userSessionProvider }
                 single<UserSessionUpdater> { userSessionUpdater }
+                single<AuthRepository> { authRepository }
+                single<UserRepository> { userRepository }
             }
             modules(sharedKoinModules() + dataModules + bridgeModule)
         }.koin
@@ -71,9 +71,6 @@ object KoinBridgeModule {
 
     @Provides
     fun provideHugsRepository(koin: Koin): HugsRepository = koin.get()
-
-    @Provides
-    fun provideAuthRepository(koin: Koin): AuthRepository = koin.get()
 
     @Provides
     fun provideDevicesRepository(koin: Koin): DevicesRepository = koin.get()
@@ -90,6 +87,4 @@ object KoinBridgeModule {
     @Provides
     fun provideRulesRepository(koin: Koin): RulesRepository = koin.get()
 
-    @Provides
-    fun provideUserRepository(koin: Koin): UserRepository = koin.get()
 }

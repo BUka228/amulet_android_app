@@ -8,10 +8,11 @@ import com.example.amulet.shared.domain.auth.repository.AuthRepository
 import com.example.amulet.shared.domain.user.model.User
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
-import org.koin.core.module.Module
-import org.koin.dsl.module
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthRepositoryImpl(
+@Singleton
+class AuthRepositoryImpl @Inject constructor(
     private val userSessionUpdater: UserSessionUpdater
 ) : AuthRepository {
 
@@ -35,8 +36,4 @@ class AuthRepositoryImpl(
     private companion object {
         const val DEFAULT_USER_ID = "session-user"
     }
-}
-
-val authDataModule: Module = module {
-    single<AuthRepository> { AuthRepositoryImpl(get()) }
 }

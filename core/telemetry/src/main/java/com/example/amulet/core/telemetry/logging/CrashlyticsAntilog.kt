@@ -1,6 +1,5 @@
 package com.example.amulet.core.telemetry.logging
 
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.github.aakira.napier.Antilog
 import io.github.aakira.napier.LogLevel
 
@@ -12,7 +11,7 @@ import io.github.aakira.napier.LogLevel
  * с ключами приоритета и тега, сообщением и исключением (если есть).
  */
 class CrashlyticsAntilog(
-    private val crashlytics: FirebaseCrashlytics,
+    private val crashlytics: CrashlyticsReporter,
     private val delegate: Antilog
 ) : Antilog() {
 

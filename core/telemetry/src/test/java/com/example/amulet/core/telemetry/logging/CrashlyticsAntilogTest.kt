@@ -1,25 +1,22 @@
 package com.example.amulet.core.telemetry.logging
 
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import io.github.aakira.napier.Antilog
 import io.github.aakira.napier.LogLevel
-import io.mockk.clearAllMocks
-import io.mockk.mockk
-import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class CrashlyticsAntilogTest {
 
-    private lateinit var crashlytics: FirebaseCrashlytics
-    private lateinit var delegate: Antilog
+    private lateinit var crashlytics: RecordingCrashlyticsReporter
+    private lateinit var delegate: RecordingAntilog
     private lateinit var antilog: CrashlyticsAntilog
 
     @BeforeEach
     fun setUp() {
-        clearAllMocks()
-        crashlytics = mockk(relaxed = true)
-        delegate = mockk(relaxed = true)
+        crashlytics = RecordingCrashlyticsReporter()
+        delegate = RecordingAntilog()
         antilog = CrashlyticsAntilog(crashlytics, delegate)
     }
 
@@ -27,16 +24,19 @@ class CrashlyticsAntilogTest {
     fun `always delegates logging`() {
         antilog.logForTest(LogLevel.DEBUG, "tag", null, "message")
 
-        verify { delegate.log(LogLevel.DEBUG, "tag", null, "message") }
+        assertEquals(
+            listOf(RecordingAntilog.LogEntry(LogLevel.DEBUG, "tag", null, "message")),
+            delegate.entries
+        )
     }
 
     @Test
     fun `ignores crashlytics calls for levels below warning`() {
         antilog.logForTest(LogLevel.INFO, null, null, null)
 
-        verify(exactly = 0) { crashlytics.setCustomKey(any(), any<String>()) }
-        verify(exactly = 0) { crashlytics.log(any()) }
-        verify(exactly = 0) { crashlytics.recordException(any()) }
+        assertTrue(crashlytics.customKeys.isEmpty())
+        assertTrue(crashlytics.loggedMessages.isEmpty())
+        assertTrue(crashlytics.recordedExceptions.isEmpty())
     }
 
     @Test
@@ -45,19 +45,24 @@ class CrashlyticsAntilogTest {
 
         antilog.logForTest(LogLevel.WARNING, null, throwable, "something happened")
 
-        verify { crashlytics.setCustomKey("log_priority", "WARNING") }
-        verify { crashlytics.setCustomKey("log_tag", "Telemetry") }
-        verify { crashlytics.log("something happened") }
-        verify { crashlytics.recordException(throwable) }
+        assertEquals(
+            listOf("log_priority" to "WARNING", "log_tag" to "Telemetry"),
+            crashlytics.customKeys
+        )
+        assertEquals(listOf("something happened"), crashlytics.loggedMessages)
+        assertEquals(listOf(throwable), crashlytics.recordedExceptions)
     }
 
     @Test
     fun `skips crashlytics message when blank`() {
         antilog.logForTest(LogLevel.ERROR, "tag", null, "  ")
 
-        verify { crashlytics.setCustomKey("log_priority", "ERROR") }
-        verify { crashlytics.setCustomKey("log_tag", "tag") }
-        verify(exactly = 0) { crashlytics.log(any()) }
+        assertEquals(
+            listOf("log_priority" to "ERROR", "log_tag" to "tag"),
+            crashlytics.customKeys
+        )
+        assertTrue(crashlytics.loggedMessages.isEmpty())
+        assertTrue(crashlytics.recordedExceptions.isEmpty())
     }
 
     private fun CrashlyticsAntilog.logForTest(
@@ -75,5 +80,38 @@ class CrashlyticsAntilogTest {
         )
         method.isAccessible = true
         method.invoke(this, priority, tag, throwable, message)
+    }
+
+    private class RecordingCrashlyticsReporter : CrashlyticsReporter {
+        val customKeys = mutableListOf<Pair<String, String>>()
+        val loggedMessages = mutableListOf<String>()
+        val recordedExceptions = mutableListOf<Throwable>()
+
+        override fun setCustomKey(key: String, value: String) {
+            customKeys += key to value
+        }
+
+        override fun log(message: String) {
+            loggedMessages += message
+        }
+
+        override fun recordException(throwable: Throwable) {
+            recordedExceptions += throwable
+        }
+    }
+
+    private class RecordingAntilog : Antilog() {
+        val entries = mutableListOf<LogEntry>()
+
+        override fun performLog(priority: LogLevel, tag: String?, throwable: Throwable?, message: String?) {
+            entries += LogEntry(priority, tag, throwable, message)
+        }
+
+        data class LogEntry(
+            val priority: LogLevel,
+            val tag: String?,
+            val throwable: Throwable?,
+            val message: String?
+        )
     }
 }

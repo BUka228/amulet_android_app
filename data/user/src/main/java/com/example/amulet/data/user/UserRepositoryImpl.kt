@@ -5,10 +5,11 @@ import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.github.michaelbull.result.Ok
-import org.koin.core.module.Module
-import org.koin.dsl.module
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class UserRepositoryImpl : UserRepository {
+@Singleton
+class UserRepositoryImpl @Inject constructor() : UserRepository {
     override suspend fun fetchProfile(userId: String): AppResult<User> =
         Ok(
             User(
@@ -18,8 +19,4 @@ class UserRepositoryImpl : UserRepository {
                 consents = UserConsents(analytics = true)
             )
         )
-}
-
-val userDataModule: Module = module {
-    single<UserRepository> { UserRepositoryImpl() }
 }

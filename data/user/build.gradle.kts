@@ -10,5 +10,4 @@ dependencies {
     implementation(project(":shared"))
     implementation(project(":core:network"))
     implementation(project(":core:database"))
-    implementation(libs.koin.core)
 }
