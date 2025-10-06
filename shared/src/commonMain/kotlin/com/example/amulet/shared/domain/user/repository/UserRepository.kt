@@ -1,4 +1,4 @@
-package com.example.amulet.shared.domain.user
+package com.example.amulet.shared.domain.user.repository
 
 import com.example.amulet.shared.core.AppResult
 

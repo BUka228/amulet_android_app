@@ -9,6 +9,7 @@ kotlin {
                 implementation(libs.koin.core)
                 api(libs.kotlin.result)
                 implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.napier)
             }
         }
         val commonTest by getting {

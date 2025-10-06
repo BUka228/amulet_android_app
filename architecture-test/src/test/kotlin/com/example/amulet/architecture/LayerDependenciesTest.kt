@@ -73,6 +73,7 @@ class LayerDependenciesTest {
                 "org.jetbrains.annotations..",
                 "com.github.michaelbull.result..",
                 "org.koin..",
+                "io.github.aakira.napier..",
                 "java.."
             )
             .check(importedClasses)

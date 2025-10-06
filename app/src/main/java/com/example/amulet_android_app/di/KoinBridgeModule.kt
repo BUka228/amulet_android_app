@@ -18,7 +18,7 @@ import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
-import com.example.amulet.shared.domain.user.UserRepository
+import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
 import dagger.Provides
