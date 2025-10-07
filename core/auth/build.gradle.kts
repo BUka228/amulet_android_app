@@ -2,7 +2,6 @@ import com.google.devtools.ksp.gradle.KspTaskJvm
 
 plugins {
     id("amulet.android.core")
-    alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.protobuf)
 }
@@ -29,8 +28,6 @@ android {
 
 dependencies {
     implementation(project(":shared"))
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.javalite)
     testImplementation(libs.junit)

@@ -6,7 +6,10 @@ import amulet.android.common.configureUnitTestDependencies
 import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 
 class AmuletAndroidApplicationPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
@@ -26,6 +29,13 @@ class AmuletAndroidApplicationPlugin : Plugin<Project> {
             defaultConfig {
                 targetSdk = ANDROID_COMPILE_SDK
             }
+        }
+
+        val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+        dependencies {
+            add("implementation", libs.findLibrary("hilt-android").get())
+            add("ksp", libs.findLibrary("hilt-compiler").get())
         }
 
         configureUnitTestDependencies()

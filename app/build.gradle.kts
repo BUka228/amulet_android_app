@@ -47,8 +47,6 @@ dependencies {
     implementation(project(":data:user"))
     implementation(project(":data:telemetry"))
     implementation(libs.koin.android)
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

@@ -12,8 +12,6 @@ import org.gradle.kotlin.dsl.getByType
 class AmuletAndroidDataPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         pluginManager.apply("amulet.android.library")
-        pluginManager.apply("com.google.dagger.hilt.android")
-        pluginManager.apply("com.google.devtools.ksp")
 
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this, enableCompose = false)
@@ -23,8 +21,6 @@ class AmuletAndroidDataPlugin : Plugin<Project> {
 
         dependencies {
             add("implementation", libs.findLibrary("kotlin.result").get())
-            add("implementation", libs.findLibrary("hilt-android").get())
-            add("ksp", libs.findLibrary("hilt-compiler").get())
         }
     }
 }

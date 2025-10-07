@@ -1,6 +1,5 @@
 plugins {
     id("amulet.android.core")
-    alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
 }
 
@@ -14,9 +13,6 @@ ksp {
 
 dependencies {
     implementation(project(":shared"))
-
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
