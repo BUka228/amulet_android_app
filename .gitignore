@@ -162,3 +162,7 @@ detekt-rules/.gradle/
 # Generated documentation
 PROJECT_CODE.md
 generate_code_doc.py
+
+# Export scripts and results
+export_uncommitted_files.py
+uncommitted_files.md

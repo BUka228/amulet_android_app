@@ -248,12 +248,6 @@ enum class OutboxActionType(val apiEndpoint: String) {
 - `IDX_outbox_targetEntityId` на `targetEntityId` — быстрый поиск действий для конкретной сущности.
 - `UNQ_outbox_idempotency` уникальный на `idempotency_key` (WHERE `idempotency_key IS NOT NULL`).
 
-Протокол обработки (упрощенный для мобильного приложения):
-1) Выбрать запись `PENDING`/`FAILED` с `available_at <= now()` и выставить `status=IN_FLIGHT` (одна транзакция).
-2) Выполнить действие. На успех — `status=COMPLETED`, очистить `last_error`.
-3) На ретраибельную ошибку — инкремент `retry_count`, рассчитать backoff, поставить `status=PENDING`, `available_at = now()+backoff`, сохранить `last_error`.
-4) На не‑ретраибельную — `status=FAILED`, сохранить `last_error`.
-
 DAO должны предоставлять удобные `Flow` для отображения прогресса в UI.
 
 **Примечание о разделении очередей:**
