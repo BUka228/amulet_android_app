@@ -28,8 +28,12 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":core:network"))
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.javalite)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.appcheck.ktx)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
