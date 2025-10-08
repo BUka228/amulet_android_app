@@ -1,5 +1,6 @@
 package com.example.amulet.core.network
 
+import com.example.amulet.core.network.serialization.JsonProvider
 import com.example.amulet.shared.core.AppError
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
@@ -13,11 +14,10 @@ import retrofit2.HttpException
 import retrofit2.Response
 import java.io.IOException
 import java.net.UnknownHostException
-import kotlinx.serialization.json.Json
 
 class SafeApiCallTest {
 
-    private val mapper = NetworkExceptionMapper(Json { ignoreUnknownKeys = true })
+    private val mapper = NetworkExceptionMapper(JsonProvider.create())
 
     @Test
     fun `safeApiCall возвращает Ok при успехе`() = runTest {
@@ -46,8 +46,7 @@ class SafeApiCallTest {
 
 class NetworkExceptionMapperTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
-    private val mapper = NetworkExceptionMapper(json)
+    private val mapper = NetworkExceptionMapper(JsonProvider.create())
 
     @Test
     fun `мапит 401 Unauthorized`() {
@@ -64,6 +63,15 @@ class NetworkExceptionMapperTest {
     }
 
     @Test
+    fun `мапит конфликт версий из details`() {
+        val error = mapper.mapToAppError(
+            httpException(409, """{"details":{"currentVersion":7}}""")
+        )
+
+        assertEquals(AppError.VersionConflict(7), error)
+    }
+
+    @Test
     fun `мапит ошибки валидации`() {
         val error = mapper.mapToAppError(
             httpException(
@@ -73,6 +81,18 @@ class NetworkExceptionMapperTest {
         )
 
         assertEquals(AppError.Validation(mapOf("field" to "must not be blank")), error)
+    }
+
+    @Test
+    fun `мапит ошибки валидации из массива объектов`() {
+        val error = mapper.mapToAppError(
+            httpException(
+                422,
+                """{"errors":[{"field":"name","message":"too short"}]}"""
+            )
+        )
+
+        assertEquals(AppError.Validation(mapOf("name" to "too short")), error)
     }
 
     @Test
@@ -88,6 +108,15 @@ class NetworkExceptionMapperTest {
         val error = mapper.mapToAppError(httpException(429))
 
         assertEquals(AppError.RateLimited, error)
+    }
+
+    @Test
+    fun `мапит 412 в PreconditionFailed с reason`() {
+        val error = mapper.mapToAppError(
+            httpException(412, """{"details":{"reason":"self_send"}}""")
+        )
+
+        assertEquals(AppError.PreconditionFailed("self_send"), error)
     }
 
     @Test

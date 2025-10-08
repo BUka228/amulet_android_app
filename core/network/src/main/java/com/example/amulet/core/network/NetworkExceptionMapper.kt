@@ -76,7 +76,9 @@ class NetworkExceptionMapper(
     private fun parsePreconditionReason(payload: JsonElement?): String? {
         if (payload !is JsonObject) return null
         return payload.stringField("reason")
+            ?: payload.stringField("message")
             ?: payload.jsonObject("details")?.stringField("reason")
+            ?: payload.jsonObject("details")?.stringField("message")
     }
 
     /**
@@ -97,9 +99,17 @@ class NetworkExceptionMapper(
                 key to extractMessage(value)
             }
             is JsonArray -> errorsElement
-                .mapIndexed { index, element -> index.toString() to extractMessage(element) }
+                .mapIndexedNotNull { index, element ->
+                    when (element) {
+                        is JsonObject -> {
+                            val field = element.stringField("field") ?: index.toString()
+                            field to (element.stringField("message") ?: extractMessage(element))
+                        }
+                        else -> index.toString() to extractMessage(element)
+                    }
+                }
                 .toMap()
-            else -> emptyMap()
+            else -> root.entries.associate { (key, value) -> key to extractMessage(value) }
         }
     }
 
