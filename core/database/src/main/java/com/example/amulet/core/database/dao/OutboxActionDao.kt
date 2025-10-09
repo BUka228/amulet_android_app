@@ -79,4 +79,18 @@ interface OutboxActionDao {
     @Transaction
     suspend fun cleanupFailed(cutoffTime: Long): Int =
         deleteUpdatedBefore(OutboxActionStatus.FAILED, cutoffTime)
+
+    @Query(
+        "UPDATE outbox_actions SET " +
+            "status = :pendingStatus, " +
+            "updatedAt = :now, " +
+            "availableAt = :now " +
+            "WHERE status = :inFlightStatus AND updatedAt < :stuckBefore"
+    )
+    suspend fun resetStuckActions(
+        inFlightStatus: OutboxActionStatus,
+        pendingStatus: OutboxActionStatus,
+        stuckBefore: Long,
+        now: Long
+    ): Int
 }
