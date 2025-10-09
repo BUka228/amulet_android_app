@@ -200,7 +200,6 @@ fun NavController.returnPatternResult(patternId: String) {
 ```
 
 Альтернативы и примечания:
-- При наличии `LiveData` можно использовать `observeAsStateWithLifecycle()` из `lifecycle-runtime-compose`.
 - Если в актуальной версии Navigation Compose доступен официальный API возврата результата без `SavedStateHandle`, используем его (при его стабильности) в духе рекомендаций Jetpack; данная страница будет обновлена при миграции.
 
 

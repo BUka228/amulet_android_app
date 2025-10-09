@@ -237,18 +237,25 @@ data class RuleAction(
 
 ```kotlin
 data class FirmwareInfo(
-  val id: FirmwareId, // ${hardwareVersion}_${version}
-  val hardwareVersion: Int,
-  val version: String,
-  val notes: String?,
-  val url: String,
-  val checksum: String,
-  val sizeBytes: Long?,
-  val updateAvailable: Boolean,
-  val minFirmwareVersion: String?,
-  val maxFirmwareVersion: String?,
-  val cachedAt: Instant?
+    val id: FirmwareId,
+    val hardwareVersion: Int,
+    val version: FirmwareVersion,
+    val downloadUrl: String,
+    val changelog: String?,
+    val isMandatory: Boolean,
+    val sizeBytes: Long?,
+    val checksum: String?
 )
+
+data class FirmwareVersion(
+    val name: String,
+    val code: Int
+) : Comparable<FirmwareVersion> {
+    
+    override fun compareTo(other: FirmwareVersion): Int {
+        return this.code.compareTo(other.code)
+    }
+}
 ```
 
 - Связи: используется при принятии решений в UseCase/оркестраторах OTA.
