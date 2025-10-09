@@ -42,6 +42,7 @@
             <option value="$PROJECT_DIR$/data/practices" />
             <option value="$PROJECT_DIR$/data/privacy" />
             <option value="$PROJECT_DIR$/data/rules" />
+            <option value="$PROJECT_DIR$/data/telemetry" />
             <option value="$PROJECT_DIR$/data/user" />
             <option value="$PROJECT_DIR$/detekt-rules" />
             <option value="$PROJECT_DIR$/feature" />
