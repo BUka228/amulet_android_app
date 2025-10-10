@@ -61,4 +61,8 @@ class AuthRepositoryImpl @Inject constructor(
             Err(AppError.Unknown)
         }
     )
+
+    private companion object {
+        const val TAG = "AuthRepositoryImpl"
+    }
 }

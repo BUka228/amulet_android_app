@@ -19,4 +19,7 @@ class RoomAuthLocalDataSource @Inject constructor(
             Logger.i("Local tables cleared", TAG)
         }
     }
+    private companion object {
+        const val TAG = "RoomAuthLocalDataSource"
+    }
 }
