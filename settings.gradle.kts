@@ -61,7 +61,8 @@ include(
     ":feature:profile",
     ":feature:onboarding",
     ":feature:pairing",
-    ":feature:control-center"
+    ":feature:control-center",
+    ":feature:auth"
 )
 
 project(":shared").projectDir = file("shared")
@@ -99,3 +100,4 @@ project(":feature:profile").projectDir = file("feature/profile")
 project(":feature:onboarding").projectDir = file("feature/onboarding")
 project(":feature:pairing").projectDir = file("feature/pairing")
 project(":feature:control-center").projectDir = file("feature/control-center")
+project(":feature:auth").projectDir = file("feature/auth")

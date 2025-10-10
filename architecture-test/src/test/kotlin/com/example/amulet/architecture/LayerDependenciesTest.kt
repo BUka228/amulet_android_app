@@ -49,6 +49,7 @@ class LayerDependenciesTest {
                 "..shared..",
                 "..core..",
                 "com.github.michaelbull.result..",
+                "com.google.firebase..",
                 "kotlin..",
                 "kotlinx..",
                 "java..",

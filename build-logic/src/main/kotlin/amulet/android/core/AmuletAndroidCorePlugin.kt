@@ -1,6 +1,7 @@
 package amulet.android.core
 
 import amulet.android.common.configureKotlinAndroid
+import amulet.android.common.configureUnitTestDependencies
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -13,5 +14,7 @@ class AmuletAndroidCorePlugin : Plugin<Project> {
         extensions.configure<LibraryExtension> {
             configureKotlinAndroid(this, enableCompose = false)
         }
+
+        configureUnitTestDependencies()
     }
 }

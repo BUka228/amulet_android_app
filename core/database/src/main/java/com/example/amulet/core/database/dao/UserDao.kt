@@ -15,6 +15,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE id = :id")
     fun observeById(id: String): Flow<UserEntity?>
 
+    @Query("SELECT * FROM users WHERE id = :id")
+    suspend fun getById(id: String): UserEntity?
+
     @Transaction
     @Query("SELECT * FROM users WHERE id = :id")
     fun observeWithDevices(id: String): Flow<UserWithDevices?>

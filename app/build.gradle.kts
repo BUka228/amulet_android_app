@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":data:rules"))
     implementation(project(":data:user"))
     implementation(project(":data:telemetry"))
+    implementation(project(":feature:auth"))
     implementation(libs.koin.android)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

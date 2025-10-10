@@ -2,6 +2,8 @@ package com.example.amulet_android_app.presentation.session
 
 import com.example.amulet.core.auth.session.UserSessionManager
 import com.example.amulet.shared.core.auth.UserSessionContext
+import com.example.amulet.shared.domain.privacy.model.UserConsents
+import com.example.amulet.shared.domain.user.model.UserId
 import com.example.amulet_android_app.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +29,14 @@ class SessionViewModelTest {
 
     @Test
     fun `emits LoggedIn when session manager provides user`() = runTest {
-        val context = UserSessionContext.LoggedIn(userId = "id", displayName = null, avatarUrl = null, consents = com.example.amulet.shared.domain.privacy.model.UserConsents())
+        val context = UserSessionContext.LoggedIn(
+            userId = UserId("id"),
+            displayName = null,
+            avatarUrl = null,
+            timezone = null,
+            language = null,
+            consents = UserConsents()
+        )
         val manager = FakeUserSessionManager(context)
         val viewModel = SessionViewModel(manager)
 
@@ -48,7 +57,9 @@ private class FakeUserSessionManager(initial: UserSessionContext) : UserSessionM
             userId = user.id,
             displayName = user.displayName,
             avatarUrl = user.avatarUrl,
-            consents = user.consents
+            timezone = user.timezone,
+            language = user.language,
+            consents = user.consents ?: UserConsents()
         )
     }
 

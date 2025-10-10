@@ -68,6 +68,7 @@ internal fun Project.configureUnitTestDependencies() {
     dependencies {
         add("testImplementation", libs.findLibrary("junit.jupiter.api").get())
         add("testImplementation", libs.findLibrary("mockk").get())
+        add("testImplementation", libs.findLibrary("mockk.agent").get())
         add("testImplementation", libs.findLibrary("turbine").get())
         add("testImplementation", libs.findLibrary("kotlinx.coroutines.test").get())
         add("testImplementation", libs.findLibrary("koin.test").get())
@@ -77,5 +78,6 @@ internal fun Project.configureUnitTestDependencies() {
 
     tasks.withType(Test::class.java).configureEach {
         useJUnitPlatform()
+        jvmArgs("-Djdk.attach.allowAttachSelf=true")
     }
 }

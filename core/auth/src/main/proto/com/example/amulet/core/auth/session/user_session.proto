@@ -8,9 +8,13 @@ message UserSessionPreferences {
   string display_name = 2;
   string avatar_url = 3;
   UserConsentsProto consents = 4;
+  string timezone = 5;
+  string language = 6;
 }
 
 message UserConsentsProto {
   bool analytics = 1;
-  bool marketing = 2;
+  bool usage = 2;
+  bool crash = 3;
+  bool diagnostics = 4;
 }

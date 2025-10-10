@@ -7,6 +7,7 @@ import com.example.amulet.core.auth.session.proto.UserSessionPreferences
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
+import com.example.amulet.shared.domain.user.model.UserId
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import org.junit.After
@@ -43,10 +44,12 @@ class UserSessionManagerImplTest {
     fun `обновление сессии выдает LoggedIn состояние`() = runTest {
         val resource = createResource()
         val user = User(
-            id = "user-123",
+            id = UserId("user-123"),
             displayName = "Sample",
             avatarUrl = "https://example.com/avatar.png",
-            consents = UserConsents(analytics = true, marketing = false)
+            timezone = "Europe/Moscow",
+            language = "ru",
+            consents = UserConsents(analytics = true, usage = true)
         )
 
         resource.manager.updateSession(user)
@@ -56,13 +59,15 @@ class UserSessionManagerImplTest {
         assertEquals(user.id, loggedIn.userId)
         assertEquals(user.displayName, loggedIn.displayName)
         assertEquals(user.avatarUrl, loggedIn.avatarUrl)
+        assertEquals(user.timezone, loggedIn.timezone)
+        assertEquals(user.language, loggedIn.language)
         assertEquals(user.consents, loggedIn.consents)
     }
 
     @Test
     fun `очистка сессии возвращает LoggedOut`() = runTest {
         val resource = createResource()
-        val user = User(id = "user", consents = UserConsents())
+        val user = User(id = UserId("user"), consents = UserConsents())
 
         resource.manager.updateSession(user)
         resource.manager.sessionContext.first { it is UserSessionContext.LoggedIn }
@@ -76,13 +81,13 @@ class UserSessionManagerImplTest {
     @Test
     fun `сессия сохраняется в datastore`() = runTest {
         val resource = createResource()
-        val user = User(id = "persisted", displayName = "First", consents = UserConsents(analytics = true))
+        val user = User(id = UserId("persisted"), displayName = "First", consents = UserConsents(analytics = true))
 
         resource.manager.updateSession(user)
         resource.manager.sessionContext.first { it is UserSessionContext.LoggedIn }
 
         val stored = resource.dataStore.data.first()
-        assertEquals(user.id, stored.userId)
+        assertEquals(user.id.value, stored.userId)
         assertEquals(user.displayName, stored.displayName)
     }
 

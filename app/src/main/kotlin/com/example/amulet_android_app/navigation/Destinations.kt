@@ -1,6 +1,8 @@
 package com.example.amulet_android_app.navigation
 
 import androidx.navigation.NavController
+import com.example.amulet.feature.auth.navigation.AuthDestination
+import com.example.amulet.feature.auth.navigation.AuthGraph
 
 sealed interface AppDestination {
     val baseRoute: String
@@ -11,11 +13,11 @@ object MainGraphDestination : AppDestination {
 }
 
 object AuthGraphDestination : AppDestination {
-    override val baseRoute: String = "auth"
+    override val baseRoute: String = AuthGraph.route
 }
 
 object AuthLoginDestination : AppDestination {
-    override val baseRoute: String = "auth/login"
+    override val baseRoute: String = AuthDestination.login
 }
 
 object ProfileDestination : AppDestination {

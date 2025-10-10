@@ -8,6 +8,7 @@ import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionContext.LoggedIn
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
+import com.example.amulet.shared.domain.user.model.UserId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -39,10 +40,12 @@ class UserSessionManagerImpl @Inject constructor(
     override suspend fun updateSession(user: User) {
         dataStore.updateData { preferences ->
             preferences.toBuilder()
-                .setUserId(user.id)
+                .setUserId(user.id.value)
                 .setDisplayName(user.displayName.orEmpty())
                 .setAvatarUrl(user.avatarUrl.orEmpty())
-                .setConsents(user.consents.toProto())
+                .setTimezone(user.timezone.orEmpty())
+                .setLanguage(user.language.orEmpty())
+                .setConsents((user.consents ?: UserConsents()).toProto())
                 .build()
         }
     }
@@ -61,9 +64,11 @@ class UserSessionManagerImpl @Inject constructor(
             UserConsents()
         }
         return LoggedIn(
-            userId = userId,
+            userId = UserId(userId),
             displayName = displayName.takeIf { it.isNotBlank() },
             avatarUrl = avatarUrl.takeIf { it.isNotBlank() },
+            timezone = timezone.takeIf { it.isNotBlank() },
+            language = language.takeIf { it.isNotBlank() },
             consents = consentsModel
         )
     }
@@ -71,12 +76,16 @@ class UserSessionManagerImpl @Inject constructor(
     private fun UserConsents.toProto(): UserConsentsProto =
         UserConsentsProto.newBuilder()
             .setAnalytics(analytics)
-            .setMarketing(marketing)
+            .setUsage(usage)
+            .setCrash(crash)
+            .setDiagnostics(diagnostics)
             .build()
 
     private fun UserConsentsProto.toModel(): UserConsents =
         UserConsents(
             analytics = analytics,
-            marketing = marketing
+            usage = usage,
+            crash = crash,
+            diagnostics = diagnostics
         )
 }

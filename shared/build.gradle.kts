@@ -9,6 +9,7 @@ kotlin {
                 implementation(libs.koin.core)
                 api(libs.kotlin.result)
                 implementation(libs.kotlinx.coroutines.core)
+                api(libs.kotlinx.datetime)
                 implementation(libs.napier)
             }
         }
