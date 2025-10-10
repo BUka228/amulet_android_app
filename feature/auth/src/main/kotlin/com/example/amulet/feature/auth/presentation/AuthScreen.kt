@@ -1,8 +1,6 @@
 package com.example.amulet.feature.auth.presentation
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,20 +32,27 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.credentials.Credential
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.GetCredentialInterruptedException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import com.example.amulet.core.design.components.button.AmuletButton
 import com.example.amulet.core.design.components.button.ButtonVariant
 import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.foundation.theme.AmuletTheme
 import com.example.amulet.shared.core.AppError
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.flow.collectLatest
-import kotlin.jvm.java
+import kotlinx.coroutines.launch
 
 @Composable
 fun AuthRoute(
@@ -56,8 +61,9 @@ fun AuthRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val credentialManager = remember(context) { CredentialManager.create(context) }
 
-    val googleClient = remember(context) {
+    val googleConfig = remember(context) {
         val clientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
         if (clientIdRes == 0) {
             null
@@ -66,53 +72,49 @@ fun AuthRoute(
             if (clientId.isBlank()) {
                 null
             } else {
-                val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(clientId)
-                    .requestEmail()
-                    .build()
-                GoogleSignIn.getClient(context, options)
+                GoogleSignInConfig(
+                    request = GetCredentialRequest.Builder()
+                        .addCredentialOption(
+                            GetGoogleIdOption.Builder()
+                                .setServerClientId(clientId)
+                                .setFilterByAuthorizedAccounts(false)
+                                .setAutoSelectEnabled(false)
+                                .build()
+                        )
+                        .build()
+                )
             }
         }
     }
 
     val latestViewModel by rememberUpdatedState(viewModel)
+    val latestGoogleConfig by rememberUpdatedState(googleConfig)
 
-    val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_CANCELED) {
-            latestViewModel.handleEvent(AuthUiEvent.GoogleSignInCancelled)
-            return@rememberLauncherForActivityResult
-        }
-
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        try {
-            val account = task.getResult(ApiException::class.java)
-            val idToken = account?.idToken
-            if (!idToken.isNullOrBlank()) {
-                latestViewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived(idToken))
-            } else {
-                latestViewModel.handleEvent(AuthUiEvent.GoogleSignInError(null))
-            }
-        } catch (apiException: ApiException) {
-            if (apiException.statusCode == CommonStatusCodes.CANCELED) {
-                latestViewModel.handleEvent(AuthUiEvent.GoogleSignInCancelled)
-            } else {
-                latestViewModel.handleEvent(AuthUiEvent.GoogleSignInError(apiException))
-            }
-        } catch (throwable: Throwable) {
-            latestViewModel.handleEvent(AuthUiEvent.GoogleSignInError(throwable))
-        }
-    }
-
-    LaunchedEffect(viewModel.sideEffects, googleClient) {
+    LaunchedEffect(viewModel.sideEffects, googleConfig) {
         viewModel.sideEffects.collectLatest { sideEffect ->
             when (sideEffect) {
                 AuthSideEffect.SignInSuccess -> onAuthSuccess()
                 AuthSideEffect.LaunchGoogleSignIn -> {
-                    val client: GoogleSignInClient? = googleClient
-                    if (client == null) {
+                    val config = latestGoogleConfig
+                    if (config == null) {
                         viewModel.handleEvent(AuthUiEvent.GoogleSignInError(IllegalStateException("Google Sign-In not configured")))
                     } else {
-                        googleLauncher.launch(client.signInIntent)
+                        viewModel.viewModelScope.launch {
+                            handleCredentialRequest(
+                                context = context,
+                                credentialManager = credentialManager,
+                                request = config.request,
+                                onResult = { response ->
+                                    handleCredential(response.credential, latestViewModel)
+                                },
+                                onCancellation = {
+                                    latestViewModel.handleEvent(AuthUiEvent.GoogleSignInCancelled)
+                                },
+                                onError = { throwable ->
+                                    latestViewModel.handleEvent(AuthUiEvent.GoogleSignInError(throwable))
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -122,7 +124,7 @@ fun AuthRoute(
     AuthScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
-        isGoogleSignInAvailable = googleClient != null
+        isGoogleSignInAvailable = googleConfig != null
     )
 }
 
@@ -268,4 +270,51 @@ private fun AppError.toMessage(): String = when (this) {
     is AppError.BleError -> "Ошибка подключения"
     is AppError.OtaError -> "Ошибка обновления"
     AppError.Unknown -> "Неизвестная ошибка"
+}
+
+private data class GoogleSignInConfig(
+    val request: GetCredentialRequest
+)
+
+private suspend fun handleCredentialRequest(
+    context: Context,
+    credentialManager: CredentialManager,
+    request: GetCredentialRequest,
+    onResult: (GetCredentialResponse) -> Unit,
+    onCancellation: () -> Unit,
+    onError: (Throwable) -> Unit
+) {
+    try {
+        val result = credentialManager.getCredential(context, request)
+        onResult(result)
+    } catch (cancellation: GetCredentialCancellationException) {
+        onCancellation()
+    } catch (interruption: GetCredentialInterruptedException) {
+        onError(interruption)
+    } catch (noCredential: NoCredentialException) {
+        onError(noCredential)
+    } catch (exception: GetCredentialException) {
+        onError(exception)
+    } catch (throwable: Throwable) {
+        onError(throwable)
+    }
+}
+
+private fun handleCredential(credential: Credential, viewModel: AuthViewModel) {
+    when (credential) {
+        is CustomCredential -> {
+            if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val token = googleCredential.idToken
+                if (!token.isNullOrBlank()) {
+                    viewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived(token))
+                } else {
+                    viewModel.handleEvent(AuthUiEvent.GoogleSignInError(null))
+                }
+            } else {
+                viewModel.handleEvent(AuthUiEvent.GoogleSignInError(IllegalStateException("Unsupported credential type")))
+            }
+        }
+        else -> viewModel.handleEvent(AuthUiEvent.GoogleSignInError(IllegalStateException("Unsupported credential type")))
+    }
 }
