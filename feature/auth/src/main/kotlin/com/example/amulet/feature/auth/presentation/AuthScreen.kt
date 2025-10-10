@@ -47,6 +47,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.jvm.java
 
 @Composable
 fun AuthRoute(
@@ -62,7 +63,7 @@ fun AuthRoute(
             null
         } else {
             val clientId = context.getString(clientIdRes)
-            if (clientId.isNullOrBlank()) {
+            if (clientId.isBlank()) {
                 null
             } else {
                 val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -133,7 +134,7 @@ fun AuthScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = AmuletTheme.spacing
-    val errorMessage = remember(state.error) { state.error?.let { it.toMessage() } }
+    val errorMessage = remember(state.error) { state.error?.toMessage() }
 
     Column(
         modifier = modifier
