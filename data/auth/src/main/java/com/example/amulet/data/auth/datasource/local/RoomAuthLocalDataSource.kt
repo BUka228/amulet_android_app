@@ -1,6 +1,7 @@
 package com.example.amulet.data.auth.datasource.local
 
 import com.example.amulet.core.database.AmuletDatabase
+import com.example.amulet.shared.core.logging.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -13,7 +14,9 @@ class RoomAuthLocalDataSource @Inject constructor(
 
     override suspend fun clearAll() {
         withContext(Dispatchers.IO) {
+            Logger.d("Clearing local auth-related tables", TAG)
             database.clearAllTables()
+            Logger.i("Local tables cleared", TAG)
         }
     }
 }

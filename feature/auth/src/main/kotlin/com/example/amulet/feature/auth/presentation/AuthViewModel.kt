@@ -3,6 +3,7 @@ package com.example.amulet.feature.auth.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.AppError
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
@@ -35,6 +36,7 @@ class AuthViewModel @Inject constructor(
     val sideEffects: SharedFlow<AuthSideEffect> = _sideEffects.asSharedFlow()
 
     fun handleEvent(event: AuthUiEvent) {
+        Logger.d("handleEvent: ${'$'}event", TAG)
         when (event) {
             is AuthUiEvent.EmailChanged -> _uiState.update { it.copy(email = event.value, error = null) }
             is AuthUiEvent.PasswordChanged -> _uiState.update { it.copy(password = event.value, error = null) }
@@ -60,12 +62,14 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun signIn(state: AuthUiState) {
+        Logger.d("signIn clicked", TAG)
         if (state.email.isBlank() || state.password.isBlank()) {
             _uiState.update {
                 it.copy(
                     error = AppError.Validation(mapOf("credentials" to "Enter email and password"))
                 )
             }
+            Logger.w("signIn validation failed: empty credentials", null, TAG)
             return
         }
 
@@ -75,10 +79,12 @@ class AuthViewModel @Inject constructor(
             val result = signInUseCase(UserCredentials(state.email.trim(), state.password))
             result.fold(
                 success = {
+                    Logger.i("signIn success", TAG)
                     _uiState.update { it.copy(isSubmitting = false) }
                     _sideEffects.emit(AuthSideEffect.SignInSuccess)
                 },
                 failure = { error ->
+                    Logger.w("signIn failed: ${'$'}error", null, TAG)
                     _uiState.update { it.copy(isSubmitting = false, error = error) }
                 }
             )
@@ -86,12 +92,14 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun signUp(state: AuthUiState) {
+        Logger.d("signUp clicked", TAG)
         if (state.email.isBlank() || state.password.isBlank() || state.confirmPassword.isBlank()) {
             _uiState.update {
                 it.copy(
                     error = AppError.Validation(mapOf("credentials" to "Please fill in all fields"))
                 )
             }
+            Logger.w("signUp validation failed: missing fields", null, TAG)
             return
         }
 
@@ -101,6 +109,7 @@ class AuthViewModel @Inject constructor(
                     error = AppError.Validation(mapOf("password" to "Passwords do not match"))
                 )
             }
+            Logger.w("signUp validation failed: password mismatch", null, TAG)
             return
         }
 
@@ -110,10 +119,12 @@ class AuthViewModel @Inject constructor(
             val result = signUpUseCase(UserCredentials(state.email.trim(), state.password))
             result.fold(
                 success = {
+                    Logger.i("signUp success", TAG)
                     _uiState.update { it.copy(isSubmitting = false) }
                     _sideEffects.emit(AuthSideEffect.SignInSuccess)
                 },
                 failure = { error ->
+                    Logger.w("signUp failed: ${'$'}error", null, TAG)
                     _uiState.update { it.copy(isSubmitting = false, error = error) }
                 }
             )
@@ -123,12 +134,15 @@ class AuthViewModel @Inject constructor(
     private fun requestGoogleSignIn() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, error = null) }
+            Logger.i("requestGoogleSignIn", TAG)
             _sideEffects.emit(AuthSideEffect.LaunchGoogleSignIn)
         }
     }
 
     private fun signInWithGoogle(idToken: String) {
+        Logger.d("signInWithGoogle clicked", TAG)
         if (idToken.isBlank()) {
+            Logger.w("signInWithGoogle validation failed: empty idToken", null, TAG)
             _uiState.update { it.copy(isSubmitting = false, error = AppError.Unknown) }
             return
         }
@@ -137,10 +151,12 @@ class AuthViewModel @Inject constructor(
             val result = signInWithGoogleUseCase(idToken)
             result.fold(
                 success = {
+                    Logger.i("signInWithGoogle success", TAG)
                     _uiState.update { it.copy(isSubmitting = false) }
                     _sideEffects.emit(AuthSideEffect.SignInSuccess)
                 },
                 failure = { error ->
+                    Logger.w("signInWithGoogle failed: ${'$'}error", null, TAG)
                     _uiState.update { it.copy(isSubmitting = false, error = error) }
                 }
             )
@@ -148,6 +164,7 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun handleGoogleSignInError(throwable: Throwable?) {
+        Logger.w("GoogleSignIn error", throwable, TAG)
         val mappedError = when (throwable) {
             is ApiException -> when (throwable.statusCode) {
                 CommonStatusCodes.CANCELED -> null
@@ -175,5 +192,9 @@ class AuthViewModel @Inject constructor(
                 error = null
             )
         }
+    }
+
+    private companion object {
+        private const val TAG = "AuthViewModel"
     }
 }

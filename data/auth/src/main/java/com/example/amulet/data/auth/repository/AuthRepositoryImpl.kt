@@ -4,6 +4,7 @@ import com.example.amulet.data.auth.datasource.local.AuthLocalDataSource
 import com.example.amulet.data.auth.datasource.remote.AuthRemoteDataSource
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.auth.repository.AuthRepository
@@ -37,15 +38,27 @@ class AuthRepositoryImpl @Inject constructor(
                 userSessionUpdater.clearSession()
                 localDataSource.clearAll()
             }.fold(
-                onSuccess = { Ok(Unit) },
-                onFailure = { Err(AppError.Unknown) }
+                onSuccess = {
+                    Logger.i("Repository signOut: local cleared", TAG)
+                    Ok(Unit)
+                },
+                onFailure = { throwable ->
+                    Logger.w("Repository signOut: local clear failed", throwable, TAG)
+                    Err(AppError.Unknown)
+                }
             )
         }
 
     override suspend fun establishSession(user: User): AppResult<Unit> = runCatching {
         userSessionUpdater.updateSession(user)
     }.fold(
-        onSuccess = { Ok(Unit) },
-        onFailure = { Err(AppError.Unknown) }
+        onSuccess = {
+            Logger.i("Repository establishSession success userId=${'$'}{user.id.value}", TAG)
+            Ok(Unit)
+        },
+        onFailure = { throwable ->
+            Logger.w("Repository establishSession failed", throwable, TAG)
+            Err(AppError.Unknown)
+        }
     )
 }
