@@ -20,6 +20,14 @@ class FirebaseAuthDataSource @Inject constructor(
     private val firebaseAuth: FirebaseAuth
 ) : AuthRemoteDataSource {
 
+    override suspend fun signUp(credentials: UserCredentials): AppResult<UserId> = runCatching {
+        val result = firebaseAuth.createUserWithEmailAndPassword(credentials.email, credentials.password).await()
+        result.user?.uid?.let(::UserId) ?: throw IllegalStateException("Missing Firebase user id")
+    }.fold(
+        onSuccess = { uid -> Ok(uid) },
+        onFailure = { throwable -> Err(throwable.toAppError()) }
+    )
+
     override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> = runCatching {
         val result = firebaseAuth.signInWithEmailAndPassword(credentials.email, credentials.password).await()
         result.user?.uid?.let(::UserId) ?: throw IllegalStateException("Missing Firebase user id")

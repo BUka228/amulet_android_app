@@ -1,0 +1,29 @@
+<resources>
+    <string name="auth_title">Вход в аккаунт</string>
+    <string name="auth_title_sign_in">Вход в аккаунт</string>
+    <string name="auth_title_sign_up">Создание аккаунта</string>
+    <string name="auth_email_label">Email</string>
+    <string name="auth_password_label">Пароль</string>
+    <string name="auth_confirm_password_label">Подтверждение пароля</string>
+    <string name="auth_sign_in">Войти</string>
+    <string name="auth_sign_up">Зарегистрироваться</string>
+    <string name="auth_switch_to_sign_up">Нет аккаунта? Создайте его</string>
+    <string name="auth_switch_to_sign_in">Уже есть аккаунт? Войдите</string>
+    <string name="auth_google_sign_in">Войти через Google</string>
+    <string name="auth_google_unavailable">Google Sign-In недоступен</string>
+
+    <string name="auth_error_validation_default">Некорректные данные</string>
+    <string name="auth_error_credentials">Неверный email или пароль</string>
+    <string name="auth_error_forbidden">Нет доступа</string>
+    <string name="auth_error_network">Проблемы с подключением к сети</string>
+    <string name="auth_error_timeout">Превышено время ожидания</string>
+    <string name="auth_error_server">Ошибка сервера (%1$d)</string>
+    <string name="auth_error_rate_limited">Слишком много попыток. Попробуйте позже</string>
+    <string name="auth_error_precondition">Невозможно выполнить запрос</string>
+    <string name="auth_error_not_found">Пользователь не найден</string>
+    <string name="auth_error_conflict">Конфликт данных, повторите попытку</string>
+    <string name="auth_error_database">Ошибка локального хранилища</string>
+    <string name="auth_error_ble">Ошибка подключения</string>
+    <string name="auth_error_ota">Ошибка обновления</string>
+    <string name="auth_error_unknown">Неизвестная ошибка</string>
+</resources>

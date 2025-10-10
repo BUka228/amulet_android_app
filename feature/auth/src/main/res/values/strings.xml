@@ -1,0 +1,29 @@
+<resources>
+    <string name="auth_title">Sign in to your account</string>
+    <string name="auth_title_sign_in">Sign in to your account</string>
+    <string name="auth_title_sign_up">Create a new account</string>
+    <string name="auth_email_label">Email</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_confirm_password_label">Confirm password</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_sign_up">Sign up</string>
+    <string name="auth_switch_to_sign_up">Don’t have an account? Create one</string>
+    <string name="auth_switch_to_sign_in">Already have an account? Sign in</string>
+    <string name="auth_google_sign_in">Sign in with Google</string>
+    <string name="auth_google_unavailable">Google Sign-In is unavailable</string>
+
+    <string name="auth_error_validation_default">Invalid data</string>
+    <string name="auth_error_credentials">Incorrect email or password</string>
+    <string name="auth_error_forbidden">Access denied</string>
+    <string name="auth_error_network">Network connection issues</string>
+    <string name="auth_error_timeout">Network timeout</string>
+    <string name="auth_error_server">Server error (%1$d)</string>
+    <string name="auth_error_rate_limited">Too many attempts. Please try again later</string>
+    <string name="auth_error_precondition">Unable to complete the request</string>
+    <string name="auth_error_not_found">User not found</string>
+    <string name="auth_error_conflict">Data conflict, please try again</string>
+    <string name="auth_error_database">Local storage error</string>
+    <string name="auth_error_ble">Connection error</string>
+    <string name="auth_error_ota">Update error</string>
+    <string name="auth_error_unknown">Unknown error</string>
+</resources>

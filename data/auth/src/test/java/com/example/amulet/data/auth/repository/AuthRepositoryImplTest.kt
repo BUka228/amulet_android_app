@@ -40,6 +40,20 @@ class AuthRepositoryImplTest {
     }
 
     @Test
+    fun `signUp delegates to remote`() = runTest {
+        val credentials = UserCredentials(email = "user@example.com", password = "pwd")
+        val userId = UserId("user-id")
+        coEvery { remoteDataSource.signUp(credentials) } returns com.github.michaelbull.result.Ok(userId)
+
+        val result = repository.signUp(credentials)
+
+        assertEquals(userId, result.component1())
+        assertNull(result.component2())
+        coVerify(exactly = 1) { remoteDataSource.signUp(credentials) }
+        confirmVerified(remoteDataSource)
+    }
+
+    @Test
     fun `signIn delegates to remote`() = runTest {
         val credentials = UserCredentials(email = "user@example.com", password = "pwd")
         val userId = UserId("user-id")

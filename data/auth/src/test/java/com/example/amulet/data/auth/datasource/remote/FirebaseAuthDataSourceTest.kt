@@ -47,6 +47,41 @@ class FirebaseAuthDataSourceTest {
     }
 
     @Test
+    fun `signUp returns uid on success`() = runTest {
+        val firebaseUser = mockk<FirebaseUser> {
+            every { uid } returns "new-user-123"
+        }
+        val authResult = mockk<AuthResult> {
+            every { user } returns firebaseUser
+        }
+        val email = "new@example.com"
+        val password = "secret"
+
+        every {
+            firebaseAuth.createUserWithEmailAndPassword(email, password)
+        } returns Tasks.forResult(authResult)
+
+        val result = dataSource.signUp(UserCredentials(email = email, password = password))
+
+        assertEquals(UserId("new-user-123"), result.component1())
+        assertNull(result.component2())
+    }
+
+    @Test
+    fun `signUp maps failures to app error`() = runTest {
+        val email = "new@example.com"
+        val password = "secret"
+        every {
+            firebaseAuth.createUserWithEmailAndPassword(email, password)
+        } returns Tasks.forException(FirebaseAuthInvalidCredentialsException("auth", "invalid"))
+
+        val result = dataSource.signUp(UserCredentials(email = email, password = password))
+
+        assertNull(result.component1())
+        assertEquals(AppError.Unauthorized, result.component2())
+    }
+
+    @Test
     fun `signIn returns uid on success`() = runTest {
         val firebaseUser = mockk<FirebaseUser> {
             every { uid } returns "user-123"

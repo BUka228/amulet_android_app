@@ -6,6 +6,7 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
+import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import io.mockk.MockKAnnotations
@@ -35,12 +36,15 @@ class AuthViewModelTest {
     @MockK
     private lateinit var signInWithGoogleUseCase: SignInWithGoogleUseCase
 
+    @MockK
+    private lateinit var signUpUseCase: SignUpUseCase
+
     private lateinit var viewModel: AuthViewModel
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        viewModel = AuthViewModel(signInUseCase, signInWithGoogleUseCase)
+        viewModel = AuthViewModel(signInUseCase, signInWithGoogleUseCase, signUpUseCase)
     }
 
     @Test
@@ -62,7 +66,40 @@ class AuthViewModelTest {
     }
 
     @Test
+    fun `successful sign up emits side effect`() = runTest {
+        val credentials = UserCredentials(email = "new@example.com", password = "secret")
+        coEvery { signUpUseCase.invoke(credentials) } returns Ok(Unit)
+
+        viewModel.handleEvent(AuthUiEvent.AuthModeSwitchRequested)
+        viewModel.handleEvent(AuthUiEvent.EmailChanged("new@example.com"))
+        viewModel.handleEvent(AuthUiEvent.PasswordChanged("secret"))
+        viewModel.handleEvent(AuthUiEvent.ConfirmPasswordChanged("secret"))
+
+        viewModel.sideEffects.test {
+            viewModel.handleEvent(AuthUiEvent.Submit)
+            mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
+            assertEquals(AuthSideEffect.SignInSuccess, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        assertTrue(!viewModel.uiState.value.isSubmitting)
+    }
+
+    @Test
     fun `blank credentials produce validation error`() = runTest {
+        viewModel.handleEvent(AuthUiEvent.Submit)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.error is AppError.Validation)
+    }
+
+    @Test
+    fun `sign up with mismatched passwords produces validation error`() = runTest {
+        viewModel.handleEvent(AuthUiEvent.AuthModeSwitchRequested)
+        viewModel.handleEvent(AuthUiEvent.EmailChanged("new@example.com"))
+        viewModel.handleEvent(AuthUiEvent.PasswordChanged("secret"))
+        viewModel.handleEvent(AuthUiEvent.ConfirmPasswordChanged("different"))
+
         viewModel.handleEvent(AuthUiEvent.Submit)
 
         val state = viewModel.uiState.value

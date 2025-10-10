@@ -22,6 +22,9 @@ class AuthRepositoryImpl @Inject constructor(
     private val userSessionUpdater: UserSessionUpdater
 ) : AuthRepository {
 
+    override suspend fun signUp(credentials: UserCredentials): AppResult<UserId> =
+        remoteDataSource.signUp(credentials)
+
     override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> =
         remoteDataSource.signIn(credentials)
 

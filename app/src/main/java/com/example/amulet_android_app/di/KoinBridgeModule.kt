@@ -11,6 +11,7 @@ import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
+import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
@@ -78,5 +79,8 @@ object KoinBridgeModule {
 
     @Provides
     fun provideSignOutUseCase(koin: Koin): SignOutUseCase = koin.get()
+
+    @Provides
+    fun provideSignUpUseCase(koin: Koin): SignUpUseCase = koin.get()
 
 }

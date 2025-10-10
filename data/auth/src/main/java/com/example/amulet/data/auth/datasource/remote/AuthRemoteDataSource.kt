@@ -11,6 +11,11 @@ import com.example.amulet.shared.domain.user.model.UserId
 interface AuthRemoteDataSource {
 
     /**
+     * Создаёт нового пользователя и возвращает его уникальный идентификатор.
+     */
+    suspend fun signUp(credentials: UserCredentials): AppResult<UserId>
+
+    /**
      * Выполняет аутентификацию пользователя и возвращает его уникальный идентификатор.
      */
     suspend fun signIn(credentials: UserCredentials): AppResult<UserId>

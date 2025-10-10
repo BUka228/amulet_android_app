@@ -2,12 +2,14 @@ package com.example.amulet.feature.auth.presentation
 
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,10 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
@@ -49,6 +54,7 @@ import com.example.amulet.core.design.components.button.ButtonVariant
 import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.foundation.theme.AmuletTheme
 import com.example.amulet.shared.core.AppError
+import com.example.amulet.feature.auth.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.flow.collectLatest
@@ -136,71 +142,116 @@ fun AuthScreen(
     modifier: Modifier = Modifier
 ) {
     val spacing = AmuletTheme.spacing
-    val errorMessage = remember(state.error) { state.error?.toMessage() }
+    val errorMessage = state.error?.toMessage()
+    val titleRes = if (state.authMode == AuthMode.SignIn) R.string.auth_title_sign_in else R.string.auth_title_sign_up
+    val primaryButtonTextRes = if (state.authMode == AuthMode.SignIn) R.string.auth_sign_in else R.string.auth_sign_up
+    val switchTextRes = if (state.authMode == AuthMode.SignIn) R.string.auth_switch_to_sign_up else R.string.auth_switch_to_sign_in
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = spacing.xl, vertical = spacing.lg),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
-        Text(
-            text = "Вход в аккаунт",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = spacing.xl, vertical = spacing.lg),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 420.dp),
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 6.dp,
+                shadowElevation = 4.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = spacing.xl, vertical = spacing.lg),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(titleRes),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-        Spacer(Modifier.height(spacing.lg))
+                    Spacer(Modifier.height(spacing.lg))
 
-        AuthEmailField(
-            value = state.email,
-            onValueChange = { onEvent(AuthUiEvent.EmailChanged(it)) }
-        )
+                    AuthEmailField(
+                        value = state.email,
+                        onValueChange = { onEvent(AuthUiEvent.EmailChanged(it)) }
+                    )
 
-        Spacer(Modifier.height(spacing.md))
+                    Spacer(Modifier.height(spacing.md))
 
-        AuthPasswordField(
-            value = state.password,
-            onValueChange = { onEvent(AuthUiEvent.PasswordChanged(it)) },
-            onSubmit = { onEvent(AuthUiEvent.Submit) }
-        )
+                    AuthPasswordField(
+                        value = state.password,
+                        onValueChange = { onEvent(AuthUiEvent.PasswordChanged(it)) },
+                        onSubmit = { onEvent(AuthUiEvent.Submit) }
+                    )
 
-        if (errorMessage != null) {
-            Spacer(Modifier.height(spacing.sm))
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
+                if (state.authMode == AuthMode.SignUp) {
+                    Spacer(Modifier.height(spacing.md))
+                    AuthConfirmPasswordField(
+                        value = state.confirmPassword,
+                        onValueChange = { onEvent(AuthUiEvent.ConfirmPasswordChanged(it)) },
+                        onSubmit = { onEvent(AuthUiEvent.Submit) }
+                    )
+                }
 
-        Spacer(Modifier.height(spacing.lg))
+                    if (errorMessage != null) {
+                        Spacer(Modifier.height(spacing.sm))
+                        Text(
+                            text = errorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
 
-        AmuletButton(
-            text = "Войти",
-            onClick = { onEvent(AuthUiEvent.Submit) },
-            loading = state.isSubmitting,
-            enabled = !state.isSubmitting,
-            variant = ButtonVariant.Primary
-        )
+                    Spacer(Modifier.height(spacing.lg))
 
-        Spacer(Modifier.height(spacing.md))
+                    AmuletButton(
+                    text = stringResource(primaryButtonTextRes),
+                        onClick = { onEvent(AuthUiEvent.Submit) },
+                        loading = state.isSubmitting,
+                        enabled = !state.isSubmitting,
+                        variant = ButtonVariant.Primary
+                    )
 
-        AmuletButton(
-            text = "Войти через Google",
-            onClick = { onEvent(AuthUiEvent.GoogleSignInRequested) },
-            loading = state.isSubmitting,
-            enabled = !state.isSubmitting && isGoogleSignInAvailable,
-            variant = ButtonVariant.Outline
-        )
+                if (state.authMode == AuthMode.SignIn) {
+                    Spacer(Modifier.height(spacing.md))
 
-        if (!isGoogleSignInAvailable) {
-            Spacer(Modifier.height(spacing.sm))
-            Text(
-                text = "Google Sign-In недоступен",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                    AmuletButton(
+                        text = stringResource(R.string.auth_google_sign_in),
+                        onClick = { onEvent(AuthUiEvent.GoogleSignInRequested) },
+                        loading = state.isSubmitting,
+                        enabled = !state.isSubmitting && isGoogleSignInAvailable,
+                        variant = ButtonVariant.Outline
+                    )
+
+                    if (!isGoogleSignInAvailable) {
+                        Spacer(Modifier.height(spacing.sm))
+                        Text(
+                            text = stringResource(R.string.auth_google_unavailable),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(spacing.sm))
+
+                AmuletButton(
+                    text = stringResource(switchTextRes),
+                    onClick = { onEvent(AuthUiEvent.AuthModeSwitchRequested) },
+                    enabled = !state.isSubmitting,
+                    variant = ButtonVariant.Text,
+                    fullWidth = false
+                )
+                }
+            }
         }
     }
 }
@@ -215,7 +266,7 @@ private fun AuthEmailField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
-        label = "Email",
+        label = stringResource(R.string.auth_email_label),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Email,
             imeAction = ImeAction.Next
@@ -238,7 +289,7 @@ private fun AuthPasswordField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier.fillMaxWidth(),
-        label = "Пароль",
+        label = stringResource(R.string.auth_password_label),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
             imeAction = ImeAction.Done
@@ -256,20 +307,55 @@ private fun AuthPasswordField(
     )
 }
 
+@Composable
+private fun AuthConfirmPasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isPasswordVisible by remember { mutableStateOf(false) }
+    val visualTransformation: VisualTransformation =
+        if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
+
+    AmuletTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.fillMaxWidth(),
+        label = stringResource(R.string.auth_confirm_password_label),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Password,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(onDone = { onSubmit() }),
+        visualTransformation = visualTransformation,
+        trailingIconContent = {
+            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                Icon(
+                    imageVector = if (isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                    contentDescription = null
+                )
+            }
+        }
+    )
+}
+
+@Composable
 private fun AppError.toMessage(): String = when (this) {
-    is AppError.Validation -> this.errors.values.firstOrNull() ?: "Некорректные данные"
-    AppError.Unauthorized -> "Неверный email или пароль"
-    AppError.Forbidden -> "Нет доступа"
-    AppError.Network, AppError.Timeout -> "Проблемы с подключением к сети"
-    is AppError.Server -> "Ошибка сервера (${this.code})"
-    AppError.RateLimited -> "Слишком много попыток. Попробуйте позже"
-    is AppError.PreconditionFailed -> this.reason ?: "Невозможно выполнить запрос"
-    AppError.NotFound -> "Пользователь не найден"
-    AppError.Conflict, is AppError.VersionConflict -> "Конфликт данных, повторите попытку"
-    AppError.DatabaseError -> "Ошибка локального хранилища"
-    is AppError.BleError -> "Ошибка подключения"
-    is AppError.OtaError -> "Ошибка обновления"
-    AppError.Unknown -> "Неизвестная ошибка"
+    is AppError.Validation -> this.errors.values.firstOrNull() ?: stringResource(R.string.auth_error_validation_default)
+    AppError.Unauthorized -> stringResource(R.string.auth_error_credentials)
+    AppError.Forbidden -> stringResource(R.string.auth_error_forbidden)
+    AppError.Network -> stringResource(R.string.auth_error_network)
+    AppError.Timeout -> stringResource(R.string.auth_error_timeout)
+    is AppError.Server -> stringResource(R.string.auth_error_server, this.code)
+    AppError.RateLimited -> stringResource(R.string.auth_error_rate_limited)
+    is AppError.PreconditionFailed -> this.reason ?: stringResource(R.string.auth_error_precondition)
+    AppError.NotFound -> stringResource(R.string.auth_error_not_found)
+    AppError.Conflict, is AppError.VersionConflict -> stringResource(R.string.auth_error_conflict)
+    AppError.DatabaseError -> stringResource(R.string.auth_error_database)
+    is AppError.BleError -> stringResource(R.string.auth_error_ble)
+    is AppError.OtaError -> stringResource(R.string.auth_error_ota)
+    AppError.Unknown -> stringResource(R.string.auth_error_unknown)
 }
 
 private data class GoogleSignInConfig(
@@ -316,5 +402,41 @@ private fun handleCredential(credential: Credential, viewModel: AuthViewModel) {
             }
         }
         else -> viewModel.handleEvent(AuthUiEvent.GoogleSignInError(IllegalStateException("Unsupported credential type")))
+    }
+}
+
+@Preview(name = "Auth screen - light", showBackground = true)
+@Composable
+private fun AuthScreenPreviewLight() {
+    AmuletTheme(darkTheme = false) {
+        AuthScreen(
+            state = AuthUiState(),
+            onEvent = {},
+            isGoogleSignInAvailable = true
+        )
+    }
+}
+
+@Preview(name = "Auth screen - dark", showBackground = true)
+@Composable
+private fun AuthScreenPreviewDark() {
+    AmuletTheme(darkTheme = true) {
+        AuthScreen(
+            state = AuthUiState(),
+            onEvent = {},
+            isGoogleSignInAvailable = true
+        )
+    }
+}
+
+@Preview(name = "Auth screen - sign up", showBackground = true)
+@Composable
+private fun AuthScreenPreviewSignUp() {
+    AmuletTheme(darkTheme = false) {
+        AuthScreen(
+            state = AuthUiState(authMode = AuthMode.SignUp),
+            onEvent = {},
+            isGoogleSignInAvailable = true
+        )
     }
 }
