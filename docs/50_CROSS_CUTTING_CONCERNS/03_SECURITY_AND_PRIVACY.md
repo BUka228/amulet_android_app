@@ -50,6 +50,10 @@
 
 ### 3.2. App Check
 - **Обязательное требование:** App Check должен сопровождать все вызовы к API/бэкенду. Проверка и прикрепление токена выполняется в сетевом слое, запросы без валидного App Check отвергаются.
+- **Инициализация:** App Check инициализируется в `AmuletApp.onCreate()` через `AppCheckInitializer`:
+  - Debug-сборки: `DebugAppCheckProviderFactory` для разработки
+  - Release-сборки: `PlayIntegrityAppCheckProviderFactory` для продакшена
+- **Интеграция:** Токены генерируются через `FirebaseAppCheckTokenProvider` и автоматически добавляются в заголовок `X-Firebase-AppCheck` через `AppCheckInterceptor`.
 
 ## 4. Безопасность на уровне приложения
 

@@ -63,6 +63,10 @@ abstract class AuthModule {
         fun provideFirebaseAppCheck(): FirebaseAppCheck = FirebaseAppCheck.getInstance()
 
         @Provides
+        @Singleton
+        fun provideAppCheckInitializer(): AppCheckInitializer = AppCheckInitializer()
+
+        @Provides
         fun provideUserSessionProvider(manager: UserSessionManager): UserSessionProvider = manager
 
         @Provides

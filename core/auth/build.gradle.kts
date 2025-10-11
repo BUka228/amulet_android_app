@@ -34,6 +34,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.appcheck.ktx)
+    implementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.appcheck.playintegrity)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
