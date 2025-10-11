@@ -1,5 +1,6 @@
 plugins {
     id("amulet.android.core")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -10,7 +11,7 @@ android {
     }
 
     defaultConfig {
-        buildConfigField("String", "API_BASE_URL", "\"https://api.amulet.app/v1/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://us-central1-amulet-878cc.cloudfunctions.net/api/\"")
     }
 }
 

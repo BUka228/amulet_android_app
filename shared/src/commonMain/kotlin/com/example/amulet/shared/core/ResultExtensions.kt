@@ -72,7 +72,7 @@ inline fun <T, R> AppResult<T>.mapSuccess(transform: (T) -> R): AppResult<R> = m
  * @param action suspend‑обработчик успешного значения.
  * @return исходный [Flow] для последующего чейнинга.
  */
-inline fun <T> Flow<AppResult<T>>.onSuccess(noinline action: suspend (T) -> Unit): Flow<AppResult<T>> =
+fun <T> Flow<AppResult<T>>.onSuccess(action: suspend (T) -> Unit): Flow<AppResult<T>> =
     onEach { result ->
         result.component1()?.let { value -> action(value) }
     }
@@ -83,7 +83,7 @@ inline fun <T> Flow<AppResult<T>>.onSuccess(noinline action: suspend (T) -> Unit
  * @param action suspend‑обработчик ошибки [AppError].
  * @return исходный [Flow] для последующего чейнинга.
  */
-inline fun <T> Flow<AppResult<T>>.onFailure(noinline action: suspend (AppError) -> Unit): Flow<AppResult<T>> =
+fun <T> Flow<AppResult<T>>.onFailure(action: suspend (AppError) -> Unit): Flow<AppResult<T>> =
     onEach { result ->
         result.component2()?.let { error -> action(error) }
     }
