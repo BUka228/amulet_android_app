@@ -27,15 +27,13 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation(project(":core:network"))
+    api(project(":shared"))
+    api(project(":core:network"))
+    implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.javalite)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.appcheck.ktx)
-    implementation(libs.firebase.appcheck.debug)
-    implementation(libs.firebase.appcheck.playintegrity)
+    api(project(":core:supabase"))
+    implementation(libs.supabase.auth)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

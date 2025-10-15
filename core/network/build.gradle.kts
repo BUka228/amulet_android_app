@@ -11,12 +11,14 @@ android {
     }
 
     defaultConfig {
-        buildConfigField("String", "API_BASE_URL", "\"https://us-central1-amulet-878cc.cloudfunctions.net/api/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://api.amulet.app/v2/\"")
     }
 }
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":core:supabase"))
+    implementation(project(":core:turnstile"))
     implementation(libs.retrofit)
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:${libs.versions.kotlinxSerializationConverter.get()}")
     implementation(libs.kotlinx.serialization.json)

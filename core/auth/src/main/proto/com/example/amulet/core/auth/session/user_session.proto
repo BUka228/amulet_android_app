@@ -10,6 +10,10 @@ message UserSessionPreferences {
   UserConsentsProto consents = 4;
   string timezone = 5;
   string language = 6;
+  string access_token = 7;
+  string refresh_token = 8;
+  int64 access_token_expires_at = 9;
+  string token_type = 10;
 }
 
 message UserConsentsProto {

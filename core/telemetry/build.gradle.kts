@@ -8,8 +8,9 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":core:network"))
     implementation(libs.napier)
-    api(platform(libs.firebase.bom))
-    api(libs.firebase.analytics.ktx)
-    api(libs.firebase.crashlytics.ktx)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
 }

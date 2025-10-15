@@ -5,6 +5,8 @@ import com.example.amulet.data.auth.datasource.remote.AuthRemoteDataSource
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.domain.auth.model.UserCredentials
+import com.example.amulet.shared.domain.auth.model.AuthSession
+import com.example.amulet.shared.domain.auth.model.AuthTokens
 import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
 import io.mockk.MockKAnnotations
@@ -42,41 +44,56 @@ class AuthRepositoryImplTest {
     @Test
     fun `signUp delegates to remote`() = runTest {
         val credentials = UserCredentials(email = "user@example.com", password = "pwd")
-        val userId = UserId("user-id")
-        coEvery { remoteDataSource.signUp(credentials) } returns com.github.michaelbull.result.Ok(userId)
+        val session = AuthSession(
+            userId = UserId("user-id"),
+            tokens = AuthTokens("access", "refresh", 123L, "bearer")
+        )
+        coEvery { remoteDataSource.signUp(credentials) } returns com.github.michaelbull.result.Ok(session)
+        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signUp(credentials)
 
-        assertEquals(userId, result.component1())
+        assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signUp(credentials) }
+        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 
     @Test
     fun `signIn delegates to remote`() = runTest {
         val credentials = UserCredentials(email = "user@example.com", password = "pwd")
-        val userId = UserId("user-id")
-        coEvery { remoteDataSource.signIn(credentials) } returns com.github.michaelbull.result.Ok(userId)
+        val session = AuthSession(
+            userId = UserId("user-id"),
+            tokens = AuthTokens("access", "refresh", 456L, "bearer")
+        )
+        coEvery { remoteDataSource.signIn(credentials) } returns com.github.michaelbull.result.Ok(session)
+        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signIn(credentials)
 
-        assertEquals(userId, result.component1())
+        assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signIn(credentials) }
+        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 
     @Test
     fun `signInWithGoogle delegates to remote`() = runTest {
-        val userId = UserId("user-id")
-        coEvery { remoteDataSource.signInWithGoogle("token") } returns com.github.michaelbull.result.Ok(userId)
+        val session = AuthSession(
+            userId = UserId("user-id"),
+            tokens = AuthTokens("access", "refresh", 789L, "bearer")
+        )
+        coEvery { remoteDataSource.signInWithGoogle("token") } returns com.github.michaelbull.result.Ok(session)
+        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signInWithGoogle("token")
 
-        assertEquals(userId, result.component1())
+        assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signInWithGoogle("token") }
+        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 

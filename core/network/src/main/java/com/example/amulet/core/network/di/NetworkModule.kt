@@ -1,14 +1,14 @@
 package com.example.amulet.core.network
 
-import com.example.amulet.core.network.auth.AppCheckTokenProvider
 import com.example.amulet.core.network.auth.IdTokenProvider
 import com.example.amulet.core.network.di.ApiBaseUrl
-import com.example.amulet.core.network.interceptor.AppCheckInterceptor
 import com.example.amulet.core.network.interceptor.AuthInterceptor
+import com.example.amulet.core.network.interceptor.CaptchaInterceptor
 import com.example.amulet.core.network.serialization.JsonProvider
 import com.example.amulet.core.network.service.AdminApiService
 import com.example.amulet.core.network.service.DevicesApiService
 import com.example.amulet.core.network.service.HugsApiService
+import com.example.amulet.core.network.service.NotificationsApiService
 import com.example.amulet.core.network.service.PairsApiService
 import com.example.amulet.core.network.service.PatternsApiService
 import com.example.amulet.core.network.service.PracticesApiService
@@ -16,7 +16,9 @@ import com.example.amulet.core.network.service.PrivacyApiService
 import com.example.amulet.core.network.service.RulesApiService
 import com.example.amulet.core.network.service.TelemetryApiService
 import com.example.amulet.core.network.service.UsersApiService
+import com.example.amulet.core.supabase.SupabaseEnvironment
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import com.example.amulet.core.turnstile.TurnstileTokenStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,7 +40,7 @@ object NetworkModule {
     @Provides
     @Singleton
     @ApiBaseUrl
-    fun provideApiBaseUrl(): String = BuildConfig.API_BASE_URL
+    fun provideApiBaseUrl(environment: SupabaseEnvironment): String = environment.restUrl.trimEnd('/') + "/"
 
     @Provides
     @Singleton
@@ -55,14 +57,15 @@ object NetworkModule {
         AuthInterceptor(idTokenProvider)
 
     @Provides
-    fun provideAppCheckInterceptor(appCheckTokenProvider: AppCheckTokenProvider): AppCheckInterceptor =
-        AppCheckInterceptor(appCheckTokenProvider)
+    fun provideCaptchaInterceptor(tokenStore: TurnstileTokenStore): CaptchaInterceptor =
+        CaptchaInterceptor(tokenStore)
 
     @Provides
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
-        appCheckInterceptor: AppCheckInterceptor
+        captchaInterceptor: CaptchaInterceptor,
+        environment: SupabaseEnvironment
     ): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) {
@@ -76,8 +79,14 @@ object NetworkModule {
             .connectTimeout(15_000, TimeUnit.MILLISECONDS)
             .readTimeout(30_000, TimeUnit.MILLISECONDS)
             .writeTimeout(30_000, TimeUnit.MILLISECONDS)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("apikey", environment.anonKey)
+                    .build()
+                chain.proceed(request)
+            }
+            .addInterceptor(captchaInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor(appCheckInterceptor)
             .apply { if (loggingInterceptor.level != HttpLoggingInterceptor.Level.NONE) addInterceptor(loggingInterceptor) }
             .build()
     }
@@ -123,4 +132,7 @@ object NetworkModule {
 
     @Provides
     fun provideAdminApiService(retrofit: Retrofit): AdminApiService = retrofit.create(AdminApiService::class.java)
+
+    @Provides
+    fun provideNotificationsApiService(retrofit: Retrofit): NotificationsApiService = retrofit.create(NotificationsApiService::class.java)
 }

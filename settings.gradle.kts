@@ -32,10 +32,13 @@ include(
     ":core:sync",
     ":core:crypto",
     ":core:auth",
+    ":core:supabase",
     ":core:ble",
     ":core:telemetry",
     ":core:design",
-    ":core:config"
+    ":core:config",
+    ":core:notifications",
+    ":core:turnstile"
 )
 
 include(
@@ -47,7 +50,8 @@ include(
     ":data:rules",
     ":data:privacy",
     ":data:auth",
-    ":data:telemetry"
+    ":data:telemetry",
+    ":data:notifications"
 )
 
 include(
@@ -74,10 +78,13 @@ project(":core:database").projectDir = file("core/database")
 project(":core:sync").projectDir = file("core/sync")
 project(":core:crypto").projectDir = file("core/crypto")
 project(":core:auth").projectDir = file("core/auth")
+project(":core:supabase").projectDir = file("core/supabase")
 project(":core:ble").projectDir = file("core/ble")
 project(":core:telemetry").projectDir = file("core/telemetry")
 project(":core:design").projectDir = file("core/design")
 project(":core:config").projectDir = file("core/config")
+project(":core:turnstile").projectDir = file("core/turnstile")
+project(":core:notifications").projectDir = file("core/notifications")
 
 project(":data:user").projectDir = file("data/user")
 project(":data:devices").projectDir = file("data/devices")
@@ -88,6 +95,7 @@ project(":data:rules").projectDir = file("data/rules")
 project(":data:privacy").projectDir = file("data/privacy")
 project(":data:auth").projectDir = file("data/auth")
 project(":data:telemetry").projectDir = file("data/telemetry")
+project(":data:notifications").projectDir = file("data/notifications")
 
 project(":feature:dashboard").projectDir = file("feature/dashboard")
 project(":feature:library").projectDir = file("feature/library")

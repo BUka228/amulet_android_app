@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.0"
-kotlin = "2.0.21"
+kotlin = "2.2.20"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -8,7 +8,7 @@ espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.6.1"
 activityCompose = "1.8.0"
 composeBom = "2024.09.00"
-hilt = "2.52"
+hilt = "2.56"
 koin = "3.5.6"
 detekt = "1.23.6"
 junitJupiter = "5.10.3"
@@ -17,7 +17,7 @@ turbine = "1.1.0"
 archunit = "1.2.1"
 kotestAssertions = "5.9.1"
 kotlinxCoroutines = "1.9.0"
-ksp = "2.0.21-1.0.28"
+ksp = "2.2.20-2.0.4"
 kotlinResult = "2.0.0"
 retrofit = "2.11.0"
 kotlinxSerializationConverter = "1.0.0"
@@ -25,13 +25,12 @@ kotlinxSerialization = "1.7.3"
 kotlinxDatetime = "0.6.1"
 okhttp = "4.12.0"
 napier = "2.6.1"
-firebaseBom = "33.5.1"
-googleServices = "4.4.2"
-firebaseCrashlyticsGradle = "2.9.9"
+supabase = "3.2.2"
+onesignal = "5.1.8"
 datastore = "1.1.1"
 protobuf = "3.25.3"
 protobufPlugin = "0.9.4"
-room = "2.6.1"
+room = "2.7.0-beta01"
 paging = "3.3.2"
 androidxTestCore = "1.5.0"
 work = "2.9.0"
@@ -95,13 +94,13 @@ kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime",
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 napier = { group = "io.github.aakira", name = "napier", version.ref = "napier" }
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
-firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
-firebase-appcheck-ktx = { group = "com.google.firebase", name = "firebase-appcheck-ktx" }
-firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
-firebase-appcheck-playintegrity = { group = "com.google.firebase", name = "firebase-appcheck-playintegrity" }
+supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
+supabase-kt-android = { module = "io.github.jan-tennert.supabase:supabase-kt-android", version.ref = "supabase" }
+supabase-kt = { module = "io.github.jan-tennert.supabase:supabase-kt", version.ref = "supabase" }
+supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabase" }
+supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt", version.ref = "supabase" }
+supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "supabase" }
+onesignal = { group = "com.onesignal", name = "OneSignal", version.ref = "onesignal" }
 protobuf-javalite = { group = "com.google.protobuf", name = "protobuf-javalite", version.ref = "protobuf" }
 protobuf-protoc = { group = "com.google.protobuf", name = "protoc", version.ref = "protobuf" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
@@ -138,7 +137,5 @@ hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsGradle" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

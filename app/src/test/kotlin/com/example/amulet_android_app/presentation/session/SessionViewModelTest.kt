@@ -35,7 +35,8 @@ class SessionViewModelTest {
             avatarUrl = null,
             timezone = null,
             language = null,
-            consents = UserConsents()
+            consents = UserConsents(),
+            tokens = null
         )
         val manager = FakeUserSessionManager(context)
         val viewModel = SessionViewModel(manager)
@@ -53,17 +54,26 @@ private class FakeUserSessionManager(initial: UserSessionContext) : UserSessionM
         get() = flow.value
 
     override suspend fun updateSession(user: com.example.amulet.shared.domain.user.model.User) {
+        val existingTokens = (flow.value as? UserSessionContext.LoggedIn)?.tokens
         flow.value = UserSessionContext.LoggedIn(
             userId = user.id,
             displayName = user.displayName,
             avatarUrl = user.avatarUrl,
             timezone = user.timezone,
             language = user.language,
-            consents = user.consents ?: UserConsents()
+            consents = user.consents ?: UserConsents(),
+            tokens = existingTokens
         )
     }
 
     override suspend fun clearSession() {
         flow.value = UserSessionContext.LoggedOut
+    }
+
+    override suspend fun updateTokens(tokens: com.example.amulet.shared.domain.auth.model.AuthTokens) {
+        val current = flow.value
+        if (current is UserSessionContext.LoggedIn) {
+            flow.value = current.copy(tokens = tokens)
+        }
     }
 }

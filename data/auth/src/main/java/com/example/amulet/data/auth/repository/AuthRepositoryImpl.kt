@@ -4,12 +4,13 @@ import com.example.amulet.data.auth.datasource.local.AuthLocalDataSource
 import com.example.amulet.data.auth.datasource.remote.AuthRemoteDataSource
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.core.auth.UserSessionUpdater
+import com.example.amulet.shared.core.logging.Logger
+import com.example.amulet.shared.core.mapSuccess
+import com.example.amulet.shared.domain.auth.model.AuthSession
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.auth.repository.AuthRepository
 import com.example.amulet.shared.domain.user.model.User
-import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.flatMap
@@ -23,14 +24,23 @@ class AuthRepositoryImpl @Inject constructor(
     private val userSessionUpdater: UserSessionUpdater
 ) : AuthRepository {
 
-    override suspend fun signUp(credentials: UserCredentials): AppResult<UserId> =
-        remoteDataSource.signUp(credentials)
+    override suspend fun signUp(credentials: UserCredentials): AppResult<AuthSession> =
+        remoteDataSource.signUp(credentials).mapSuccess { session ->
+            userSessionUpdater.updateTokens(session.tokens)
+            session
+        }
 
-    override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> =
-        remoteDataSource.signIn(credentials)
+    override suspend fun signIn(credentials: UserCredentials): AppResult<AuthSession> =
+        remoteDataSource.signIn(credentials).mapSuccess { session ->
+            userSessionUpdater.updateTokens(session.tokens)
+            session
+        }
 
-    override suspend fun signInWithGoogle(idToken: String): AppResult<UserId> =
-        remoteDataSource.signInWithGoogle(idToken)
+    override suspend fun signInWithGoogle(idToken: String): AppResult<AuthSession> =
+        remoteDataSource.signInWithGoogle(idToken).mapSuccess { session ->
+            userSessionUpdater.updateTokens(session.tokens)
+            session
+        }
 
     override suspend fun signOut(): AppResult<Unit> =
         remoteDataSource.signOut().flatMap {

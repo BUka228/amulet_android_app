@@ -5,13 +5,15 @@ import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.di.sharedKoinModules
 import com.example.amulet.shared.domain.auth.repository.AuthRepository
-import com.example.amulet.shared.domain.devices.DevicesRepository
-import com.example.amulet.shared.domain.hugs.HugsRepository
-import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
+import com.example.amulet.shared.domain.devices.DevicesRepository
+import com.example.amulet.shared.domain.hugs.HugsRepository
+import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.notifications.repository.NotificationsRepository
+import com.example.amulet.shared.domain.notifications.usecase.RegisterPushTokenUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
@@ -23,13 +25,13 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
 import org.koin.core.Koin
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 import org.koin.dsl.module
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -48,7 +50,8 @@ object KoinBridgeModule {
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
         privacyRepository: PrivacyRepository,
-        rulesRepository: RulesRepository
+        rulesRepository: RulesRepository,
+        notificationsRepository: NotificationsRepository
     ): Koin =
         GlobalContext.getOrNull() ?: startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
@@ -64,6 +67,7 @@ object KoinBridgeModule {
                 single<PracticesRepository> { practicesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
+                single<NotificationsRepository> { notificationsRepository }
             }
             modules(sharedKoinModules() + bridgeModule)
         }.koin
@@ -83,4 +87,6 @@ object KoinBridgeModule {
     @Provides
     fun provideSignUpUseCase(koin: Koin): SignUpUseCase = koin.get()
 
+    @Provides
+    fun provideRegisterPushTokenUseCase(koin: Koin): RegisterPushTokenUseCase = koin.get()
 }

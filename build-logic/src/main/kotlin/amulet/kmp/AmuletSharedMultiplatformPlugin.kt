@@ -45,7 +45,7 @@ class AmuletSharedMultiplatformPlugin : Plugin<Project> {
             }
             jvmToolchain(21)
 
-            targetHierarchy.default()
+            applyDefaultHierarchyTemplate()
 
             sourceSets.apply {
                 maybeCreate("commonMain")

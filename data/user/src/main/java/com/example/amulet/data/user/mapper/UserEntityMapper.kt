@@ -9,8 +9,10 @@ import javax.inject.Singleton
 import kotlinx.datetime.Instant
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlin.time.ExperimentalTime
 
 @Singleton
+@OptIn(ExperimentalTime::class)
 class UserEntityMapper @Inject constructor(
     private val json: Json
 ) {

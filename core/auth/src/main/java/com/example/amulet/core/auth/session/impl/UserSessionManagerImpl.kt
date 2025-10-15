@@ -6,6 +6,7 @@ import com.example.amulet.core.auth.session.proto.UserConsentsProto
 import com.example.amulet.core.auth.session.proto.UserSessionPreferences
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionContext.LoggedIn
+import com.example.amulet.shared.domain.auth.model.AuthTokens
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
@@ -50,6 +51,27 @@ class UserSessionManagerImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateTokens(tokens: AuthTokens) {
+        dataStore.updateData { preferences ->
+            preferences.toBuilder().apply {
+                accessToken = tokens.accessToken
+                if (tokens.refreshToken != null) {
+                    refreshToken = tokens.refreshToken
+                } else {
+                    clearRefreshToken()
+                }
+                tokens.expiresAtEpochSeconds?.let {
+                    accessTokenExpiresAt = it
+                } ?: clearAccessTokenExpiresAt()
+                if (tokens.tokenType != null) {
+                    tokenType = tokens.tokenType
+                } else {
+                    clearTokenType()
+                }
+            }.build()
+        }
+    }
+
     override suspend fun clearSession() {
         dataStore.updateData { UserSessionPreferences.getDefaultInstance() }
     }
@@ -69,7 +91,21 @@ class UserSessionManagerImpl @Inject constructor(
             avatarUrl = avatarUrl.takeIf { it.isNotBlank() },
             timezone = timezone.takeIf { it.isNotBlank() },
             language = language.takeIf { it.isNotBlank() },
-            consents = consentsModel
+            consents = consentsModel,
+            tokens = tokensOrNull()
+        )
+    }
+
+    private fun UserSessionPreferences.tokensOrNull(): AuthTokens? {
+        if (accessToken.isNullOrBlank()) return null
+        val refresh = refreshToken.takeIf { it.isNotBlank() }
+        val expiresAt = accessTokenExpiresAt.takeIf { it != 0L }
+        val type = tokenType.takeIf { it.isNotBlank() }
+        return AuthTokens(
+            accessToken = accessToken,
+            refreshToken = refresh,
+            expiresAtEpochSeconds = expiresAt,
+            tokenType = type
         )
     }
 

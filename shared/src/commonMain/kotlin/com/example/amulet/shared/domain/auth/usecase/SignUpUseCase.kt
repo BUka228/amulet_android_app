@@ -13,6 +13,6 @@ class SignUpUseCase(
     suspend operator fun invoke(credentials: UserCredentials): AppResult<Unit> =
         authRepository
             .signUp(credentials)
-            .flatMap { userId -> userRepository.fetchProfile(userId) }
+            .flatMap { session -> userRepository.fetchProfile(session.userId) }
             .flatMap { user -> authRepository.establishSession(user) }
 }

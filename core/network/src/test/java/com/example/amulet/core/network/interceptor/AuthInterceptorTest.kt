@@ -1,7 +1,7 @@
 package com.example.amulet.core.network.interceptor
 
-import com.example.amulet.core.network.auth.AppCheckTokenProvider
 import com.example.amulet.core.network.auth.IdTokenProvider
+import com.example.amulet.core.turnstile.TurnstileTokenStore
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
@@ -53,16 +53,31 @@ class AuthInterceptorTest {
     }
 
     @Test
-    fun `adds App Check header when token available`() {
+    fun `adds captcha header when token available`() {
         server.enqueue(MockResponse().setBody("{}"))
+        val tokenStore = TurnstileTokenStore().apply { updateToken("captcha-token") }
         val client = OkHttpClient.Builder()
-            .addInterceptor(AppCheckInterceptor(AppCheckTokenProvider { "appCheck" }))
+            .addInterceptor(CaptchaInterceptor(tokenStore))
             .build()
 
         client.newCall(defaultRequest()).execute()
 
         val recorded = server.takeRequest()
-        assertEquals("appCheck", recorded.getHeader("X-Firebase-AppCheck"))
+        assertEquals("captcha-token", recorded.getHeader("X-Captcha-Token"))
+    }
+
+    @Test
+    fun `does not add captcha header when token missing`() {
+        server.enqueue(MockResponse().setBody("{}"))
+        val tokenStore = TurnstileTokenStore()
+        val client = OkHttpClient.Builder()
+            .addInterceptor(CaptchaInterceptor(tokenStore))
+            .build()
+
+        client.newCall(defaultRequest()).execute()
+
+        val recorded = server.takeRequest()
+        assertNull(recorded.getHeader("X-Captcha-Token"))
     }
 
     private fun defaultRequest(): Request =

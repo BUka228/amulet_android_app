@@ -12,9 +12,9 @@ repositories {
 
 dependencies {
     implementation("com.android.tools.build:gradle:8.13.0")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
-    implementation("com.google.dagger:hilt-android-gradle-plugin:2.52")
-    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:2.0.21-1.0.28")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20")
+    implementation("com.google.dagger:hilt-android-gradle-plugin:2.56")
+    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.20-2.0.4")
 }
 
 gradlePlugin {

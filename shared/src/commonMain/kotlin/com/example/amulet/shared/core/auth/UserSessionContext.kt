@@ -1,5 +1,6 @@
 package com.example.amulet.shared.core.auth
 
+import com.example.amulet.shared.domain.auth.model.AuthTokens
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.UserId
 
@@ -15,6 +16,7 @@ sealed interface UserSessionContext {
         val avatarUrl: String?,
         val timezone: String?,
         val language: String?,
-        val consents: UserConsents
+        val consents: UserConsents,
+        val tokens: AuthTokens?
     ) : UserSessionContext
 }

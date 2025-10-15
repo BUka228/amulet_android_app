@@ -4,6 +4,8 @@ import amulet.android.common.ANDROID_COMPILE_SDK
 import amulet.android.common.configureKotlinAndroid
 import amulet.android.common.configureUnitTestDependencies
 import com.android.build.api.dsl.ApplicationExtension
+import dagger.hilt.android.plugin.HiltExtension
+import org.jetbrains.kotlin.gradle.plugin.KaptExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
@@ -17,9 +19,16 @@ class AmuletAndroidApplicationPlugin : Plugin<Project> {
         pluginManager.apply("org.jetbrains.kotlin.android")
         pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
         pluginManager.apply("com.google.dagger.hilt.android")
+        pluginManager.apply("org.jetbrains.kotlin.kapt")
         pluginManager.apply("com.google.devtools.ksp")
-        pluginManager.apply("com.google.gms.google-services")
-        pluginManager.apply("com.google.firebase.crashlytics")
+
+        extensions.configure<HiltExtension> {
+            enableAggregatingTask = true
+        }
+
+        extensions.configure<KaptExtension> {
+            correctErrorTypes = true
+        }
 
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this, enableCompose = true)
@@ -35,7 +44,7 @@ class AmuletAndroidApplicationPlugin : Plugin<Project> {
 
         dependencies {
             add("implementation", libs.findLibrary("hilt-android").get())
-            add("ksp", libs.findLibrary("hilt-compiler").get())
+            add("kapt", libs.findLibrary("hilt-compiler").get())
         }
 
         configureUnitTestDependencies()
