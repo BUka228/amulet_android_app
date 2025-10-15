@@ -12,8 +12,6 @@ import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.devices.DevicesRepository
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
-import com.example.amulet.shared.domain.notifications.repository.NotificationsRepository
-import com.example.amulet.shared.domain.notifications.usecase.RegisterPushTokenUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
@@ -50,8 +48,7 @@ object KoinBridgeModule {
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
         privacyRepository: PrivacyRepository,
-        rulesRepository: RulesRepository,
-        notificationsRepository: NotificationsRepository
+        rulesRepository: RulesRepository
     ): Koin =
         GlobalContext.getOrNull() ?: startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
@@ -67,7 +64,6 @@ object KoinBridgeModule {
                 single<PracticesRepository> { practicesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
-                single<NotificationsRepository> { notificationsRepository }
             }
             modules(sharedKoinModules() + bridgeModule)
         }.koin
@@ -86,7 +82,4 @@ object KoinBridgeModule {
 
     @Provides
     fun provideSignUpUseCase(koin: Koin): SignUpUseCase = koin.get()
-
-    @Provides
-    fun provideRegisterPushTokenUseCase(koin: Koin): RegisterPushTokenUseCase = koin.get()
 }

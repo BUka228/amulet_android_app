@@ -28,7 +28,6 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"${prop("SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_REST_URL", "\"${prop("SUPABASE_REST_URL", "https://api.amulet.app/v2")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("SUPABASE_ANON_KEY")}\"")
-        buildConfigField("String", "ONESIGNAL_APP_ID", "\"${prop("ONESIGNAL_APP_ID")}\"")
         buildConfigField("String", "TURNSTILE_SITE_KEY", "\"${prop("TURNSTILE_SITE_KEY")}\"")
     }
 
@@ -63,7 +62,6 @@ dependencies {
     implementation(project(":core:design"))
     implementation(project(":core:auth"))
     implementation(project(":core:telemetry"))
-    implementation(project(":core:notifications"))
     implementation(project(":core:supabase"))
     implementation(project(":core:turnstile"))
     implementation(project(":data:auth"))
@@ -75,7 +73,6 @@ dependencies {
     implementation(project(":data:rules"))
     implementation(project(":data:user"))
     implementation(project(":data:telemetry"))
-    implementation(project(":data:notifications"))
     implementation(project(":feature:auth"))
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)

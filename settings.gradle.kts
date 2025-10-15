@@ -50,8 +50,7 @@ include(
     ":data:rules",
     ":data:privacy",
     ":data:auth",
-    ":data:telemetry",
-    ":data:notifications"
+    ":data:telemetry"
 )
 
 include(
@@ -95,7 +94,6 @@ project(":data:rules").projectDir = file("data/rules")
 project(":data:privacy").projectDir = file("data/privacy")
 project(":data:auth").projectDir = file("data/auth")
 project(":data:telemetry").projectDir = file("data/telemetry")
-project(":data:notifications").projectDir = file("data/notifications")
 
 project(":feature:dashboard").projectDir = file("feature/dashboard")
 project(":feature:library").projectDir = file("feature/library")
