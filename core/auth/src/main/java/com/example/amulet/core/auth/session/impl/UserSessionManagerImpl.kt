@@ -19,8 +19,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Singleton
+@OptIn(ExperimentalTime::class)
 class UserSessionManagerImpl @Inject constructor(
     private val dataStore: DataStore<UserSessionPreferences>
 ) : UserSessionManager {
@@ -76,16 +79,16 @@ class UserSessionManagerImpl @Inject constructor(
     private fun UserConsents.toProto(): UserConsentsProto =
         UserConsentsProto.newBuilder()
             .setAnalytics(analytics)
-            .setUsage(usage)
-            .setCrash(crash)
-            .setDiagnostics(diagnostics)
+            .setMarketing(marketing)
+            .setNotifications(notifications)
+            .setUpdatedAt(updatedAt?.epochSeconds?.toString())
             .build()
 
     private fun UserConsentsProto.toModel(): UserConsents =
         UserConsents(
             analytics = analytics,
-            usage = usage,
-            crash = crash,
-            diagnostics = diagnostics
+            marketing = marketing,
+            notifications = notifications,
+            updatedAt = Instant.parse(updatedAt)
         )
 }

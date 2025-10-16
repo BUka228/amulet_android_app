@@ -14,7 +14,7 @@ message UserSessionPreferences {
 
 message UserConsentsProto {
   bool analytics = 1;
-  bool usage = 2;
-  bool crash = 3;
-  bool diagnostics = 4;
+  bool marketing = 2;
+  bool notifications = 3;
+  string updated_at = 4;
 }

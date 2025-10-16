@@ -6,10 +6,10 @@ import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kotlin.time.ExperimentalTime
 
 @Singleton
 @OptIn(ExperimentalTime::class)
@@ -29,12 +29,12 @@ class UserEntityMapper @Inject constructor(
     )
 
     private fun String.toConsents(): UserConsents? = runCatching {
-        val map = json.decodeFromString<Map<String, Boolean>>(this)
+        val map = json.decodeFromString<Map<String, String?>>(this)
         UserConsents(
-            analytics = map["analytics"] ?: false,
-            usage = map["usage"] ?: false,
-            crash = map["crash"] ?: false,
-            diagnostics = map["diagnostics"] ?: false
+            analytics = map["analytics"]?.toBoolean() ?: false,
+            marketing = map["marketing"]?.toBoolean() ?: false,
+            notifications = map["notifications"]?.toBoolean() ?: false,
+            updatedAt = map["updatedAt"]?.let { Instant.parse(it) }
         )
     }.getOrNull()
 }

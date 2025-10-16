@@ -6,19 +6,28 @@ import com.example.amulet.core.network.dto.user.UserResponseDto
 import com.example.amulet.core.network.dto.user.UserUpdateRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.POST
 import retrofit2.http.PATCH
+import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface UsersApiService {
 
-    @POST("users.me.init")
-    suspend fun initUser(@Body request: UserInitRequestDto = UserInitRequestDto()): UserResponseDto
+    @POST("users/{route}")
+    suspend fun initUser(
+        @Path("route") route: String = "users.me.init",
+        @Body request: UserInitRequestDto = UserInitRequestDto()
+    ): UserResponseDto
 
-    @GET("users.me")
-    suspend fun getCurrentUser(): UserResponseDto
+    @GET("users/{route}")
+    suspend fun getCurrentUser(
+        @Path("route") route: String = "users.me"
+    ): UserResponseDto
 
-    @PATCH("users.me")
-    suspend fun updateCurrentUser(@Body request: UserUpdateRequestDto): UserResponseDto
+    @PATCH("users/{route}")
+    suspend fun updateCurrentUser(
+        @Path("route") route: String = "users.me",
+        @Body request: UserUpdateRequestDto
+    ): UserResponseDto
 
     @GET("privacy/rights")
     suspend fun getPrivacyRights(): PrivacyRightsResponseDto

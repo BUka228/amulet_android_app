@@ -1,8 +1,10 @@
 package com.example.amulet.shared.domain.user.model
 
 import com.example.amulet.shared.domain.privacy.model.UserConsents
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 data class User(
     val id: UserId,
     val displayName: String? = null,

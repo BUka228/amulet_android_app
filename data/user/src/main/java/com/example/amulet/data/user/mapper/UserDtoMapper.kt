@@ -7,13 +7,14 @@ import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.datetime.Instant
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.time.ExperimentalTime
+import kotlinx.serialization.json.longOrNull
 
 @Singleton
 @OptIn(ExperimentalTime::class)
@@ -49,20 +50,29 @@ class UserDtoMapper @Inject constructor(
     private fun UserDto.toConsents(): UserConsents? =
         consents?.toUserConsents()
 
-    private fun JsonObject.toUserConsents(): UserConsents = UserConsents(
-        analytics = this["analytics"]?.jsonPrimitive?.booleanOrNull ?: false,
-        usage = this["usage"]?.jsonPrimitive?.booleanOrNull ?: false,
-        crash = this["crash"]?.jsonPrimitive?.booleanOrNull ?: false,
-        diagnostics = this["diagnostics"]?.jsonPrimitive?.booleanOrNull ?: false
-    )
+    private fun JsonObject.toUserConsents(): UserConsents {
+        val analytics = this["analytics"]?.jsonPrimitive?.booleanOrNull ?: false
+        val marketing = this["marketing"]?.jsonPrimitive?.booleanOrNull ?: false
+        val notifications = this["notifications"]?.jsonPrimitive?.booleanOrNull ?: false
+        val updatedAt: Instant? = this["updatedAt"]?.jsonPrimitive?.content?.let { 
+            Instant.parse(it)
+        }
+        
+        return UserConsents(
+            analytics = analytics,
+            marketing = marketing,
+            notifications = notifications,
+            updatedAt = updatedAt
+        )
+    }
 
     private fun UserConsents?.toJsonString(): String =
         json.encodeToString(
             mapOf(
                 "analytics" to (this?.analytics ?: false),
-                "usage" to (this?.usage ?: false),
-                "crash" to (this?.crash ?: false),
-                "diagnostics" to (this?.diagnostics ?: false)
+                "marketing" to (this?.marketing ?: false),
+                "notifications" to (this?.notifications ?: false),
+                "updatedAt" to (this?.updatedAt?.toString())
             )
         )
 }

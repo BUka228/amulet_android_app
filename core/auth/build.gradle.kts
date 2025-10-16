@@ -29,7 +29,8 @@ android {
 dependencies {
     api(project(":shared"))
     api(project(":core:network"))
-    implementation(libs.kotlinx.datetime)
+    // kotlinx.datetime уже предоставляется через :shared (api dependency)
+    // implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.datastore)
     implementation(libs.protobuf.javalite)
     api(project(":core:supabase"))

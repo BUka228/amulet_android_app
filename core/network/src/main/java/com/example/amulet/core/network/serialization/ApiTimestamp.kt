@@ -44,8 +44,24 @@ object TimestampAsEpochMillisSerializer : KSerializer<ApiTimestamp> {
 
     private fun parseStringTimestamp(primitive: JsonPrimitive): Long {
         val content = primitive.content
-        return runCatching { Instant.parse(content).toEpochMilli() }
-            .getOrElse { error("Invalid ISO timestamp: $content") }
+        return runCatching { 
+            // Поддержка формата с микросекундами (6 цифр): 2025-10-16T15:35:50.306508+00:00
+            val normalized = if (content.contains('.')) {
+                val parts = content.split('.')
+                if (parts.size == 2) {
+                    val fractionalPart = parts[1].takeWhile { it.isDigit() }
+                    var timezonePart = parts[1].dropWhile { it.isDigit() }
+                    // Обрезаем до 9 цифр (наносекунды) или дополняем нулями
+                    val nanos = fractionalPart.take(9).padEnd(9, '0')
+                    // Заменяем +00:00 на Z для совместимости с Instant.parse()
+                    if (timezonePart == "+00:00") {
+                        timezonePart = "Z"
+                    }
+                    "${parts[0]}.$nanos$timezonePart"
+                } else content
+            } else content
+            Instant.parse(normalized).toEpochMilli()
+        }.getOrElse { error("Invalid ISO timestamp: $content") }
     }
 
     private fun parseObjectTimestamp(obj: JsonObject): Long {
