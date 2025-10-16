@@ -18,6 +18,7 @@ dependencies {
     
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.ktor.client.okhttp)
     
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
