@@ -81,14 +81,31 @@ class UserSessionManagerImpl @Inject constructor(
             .setAnalytics(analytics)
             .setMarketing(marketing)
             .setNotifications(notifications)
-            .setUpdatedAt(updatedAt?.epochSeconds?.toString())
+            .setUpdatedAt(updatedAt?.toString() ?: "")
             .build()
 
-    private fun UserConsentsProto.toModel(): UserConsents =
-        UserConsents(
+    private fun UserConsentsProto.toModel(): UserConsents {
+        val parsedInstant = if (updatedAt.isNotBlank()) {
+            try {
+                // Пытаемся парсить как ISO-8601 (новый формат)
+                Instant.parse(updatedAt)
+            } catch (e: Exception) {
+                try {
+                    // Fallback: пытаемся парсить как epochSeconds (старый формат)
+                    Instant.fromEpochSeconds(updatedAt.toLong())
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        } else {
+            null
+        }
+        
+        return UserConsents(
             analytics = analytics,
             marketing = marketing,
             notifications = notifications,
-            updatedAt = Instant.parse(updatedAt)
+            updatedAt = parsedInstant
         )
+    }
 }

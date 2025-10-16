@@ -13,8 +13,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 
 @Singleton
 @OptIn(ExperimentalTime::class)
@@ -66,13 +68,13 @@ class UserDtoMapper @Inject constructor(
         )
     }
 
-    private fun UserConsents?.toJsonString(): String =
-        json.encodeToString(
-            mapOf(
-                "analytics" to (this?.analytics ?: false),
-                "marketing" to (this?.marketing ?: false),
-                "notifications" to (this?.notifications ?: false),
-                "updatedAt" to (this?.updatedAt?.toString())
-            )
-        )
+    private fun UserConsents?.toJsonString(): String {
+        val jsonObject = buildJsonObject {
+            put("analytics", this@toJsonString?.analytics ?: false)
+            put("marketing", this@toJsonString?.marketing ?: false)
+            put("notifications", this@toJsonString?.notifications ?: false)
+            this@toJsonString?.updatedAt?.toString()?.let { put("updatedAt", it) }
+        }
+        return json.encodeToString(JsonObject.serializer(), jsonObject)
+    }
 }
