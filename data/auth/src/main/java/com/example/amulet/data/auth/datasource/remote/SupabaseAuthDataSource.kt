@@ -3,8 +3,6 @@ package com.example.amulet.data.auth.datasource.remote
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.logging.Logger
-import com.example.amulet.shared.domain.auth.model.AuthSession
-import com.example.amulet.shared.domain.auth.model.AuthTokens
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Err
@@ -28,7 +26,7 @@ class SupabaseAuthDataSource @Inject constructor(
 
     private val auth get() = supabaseClient.auth
 
-    override suspend fun signUp(credentials: UserCredentials): AppResult<AuthSession> =
+    override suspend fun signUp(credentials: UserCredentials): AppResult<UserId> =
         runAuth("signUp") {
             auth.signUpWith(Email) {
                 this.email = credentials.email
@@ -36,7 +34,7 @@ class SupabaseAuthDataSource @Inject constructor(
             }
         }
 
-    override suspend fun signIn(credentials: UserCredentials): AppResult<AuthSession> =
+    override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> =
         runAuth("signIn") {
             auth.signInWith(Email) {
                 this.email = credentials.email
@@ -44,7 +42,7 @@ class SupabaseAuthDataSource @Inject constructor(
             }
         }
 
-    override suspend fun signInWithGoogle(idToken: String): AppResult<AuthSession> =
+    override suspend fun signInWithGoogle(idToken: String): AppResult<UserId> =
         runAuth("signInWithGoogle") {
             auth.signInWith(IDToken) {
                 this.idToken = idToken
@@ -71,15 +69,16 @@ class SupabaseAuthDataSource @Inject constructor(
     private suspend fun runAuth(
         action: String,
         block: suspend () -> Unit
-    ): AppResult<AuthSession> = runCatching {
+    ): AppResult<UserId> = runCatching {
         Logger.d("$action requested", TAG)
         withContext(Dispatchers.IO) { block() }
     }.fold(
         onSuccess = {
             val session = auth.currentSessionOrNull()
                 ?: error("Missing Supabase session")
-            Logger.i("$action success user=${session.user?.id}", TAG)
-            Ok(session.toRemoteAuthSession())
+            val userId = session.user?.id ?: error("Missing Supabase user")
+            Logger.i("$action success user=$userId", TAG)
+            Ok(UserId(userId))
         },
         onFailure = { throwable ->
             Logger.w("$action failed", throwable, TAG)
@@ -87,27 +86,6 @@ class SupabaseAuthDataSource @Inject constructor(
         }
     )
 
-    private fun UserSession.toRemoteAuthSession(): AuthSession {
-        val userInfo = user ?: error("Missing Supabase user")
-        return AuthSession(
-            userId = UserId(userInfo.id),
-            tokens = AuthTokens(
-                accessToken = accessToken,
-                refreshToken = refreshToken,
-                expiresAtEpochSeconds = computeExpiresAtSeconds(),
-                tokenType = tokenType
-            )
-        )
-    }
-
-    private fun UserSession.computeExpiresAtSeconds(): Long? {
-        val expiresInSeconds = expiresIn
-        return if ((expiresInSeconds ushr 63) == 0L && expiresInSeconds != 0L) {
-            (System.currentTimeMillis() / 1_000) + expiresInSeconds
-        } else {
-            null
-        }
-    }
 
     private fun Throwable.toAppError(): AppError = when (this) {
         is RestException -> when (statusCode) {

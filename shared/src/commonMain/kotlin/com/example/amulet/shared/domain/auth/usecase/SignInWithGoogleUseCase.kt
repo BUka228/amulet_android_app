@@ -12,6 +12,6 @@ class SignInWithGoogleUseCase(
     suspend operator fun invoke(idToken: String): AppResult<Unit> =
         authRepository
             .signInWithGoogle(idToken)
-            .flatMap { session -> userRepository.fetchProfile(session.userId) }
+            .flatMap { userId -> userRepository.fetchProfile(userId) }
             .flatMap { user -> authRepository.establishSession(user) }
 }
