@@ -32,6 +32,7 @@ class SupabaseAuthDataSource @Inject constructor(
                 this.email = credentials.email
                 this.password = credentials.password
             }
+            auth.currentSessionOrNull()
         }
 
     override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> =
@@ -40,6 +41,7 @@ class SupabaseAuthDataSource @Inject constructor(
                 this.email = credentials.email
                 this.password = credentials.password
             }
+            auth.currentSessionOrNull()
         }
 
     override suspend fun signInWithGoogle(idToken: String): AppResult<UserId> =
@@ -48,6 +50,7 @@ class SupabaseAuthDataSource @Inject constructor(
                 this.idToken = idToken
                 this.provider = Google
             }
+            auth.currentSessionOrNull()
         }
 
     override suspend fun signOut(): AppResult<Unit> = runCatching {
@@ -68,14 +71,16 @@ class SupabaseAuthDataSource @Inject constructor(
 
     private suspend fun runAuth(
         action: String,
-        block: suspend () -> Unit
+        block: suspend () -> UserSession?
     ): AppResult<UserId> = runCatching {
         Logger.d("$action requested", TAG)
         withContext(Dispatchers.IO) { block() }
     }.fold(
-        onSuccess = {
-            val session = auth.currentSessionOrNull()
-                ?: error("Missing Supabase session")
+        onSuccess = { session ->
+            if (session == null) {
+                Logger.w("$action: session not available (email confirmation required?)", null, TAG)
+                return Err(AppError.Unauthorized)
+            }
             val userId = session.user?.id ?: error("Missing Supabase user")
             Logger.i("$action success user=$userId", TAG)
             Ok(UserId(userId))
