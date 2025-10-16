@@ -32,8 +32,11 @@
             <option value="$PROJECT_DIR$/core/database" />
             <option value="$PROJECT_DIR$/core/design" />
             <option value="$PROJECT_DIR$/core/network" />
+            <option value="$PROJECT_DIR$/core/notifications" />
+            <option value="$PROJECT_DIR$/core/supabase" />
             <option value="$PROJECT_DIR$/core/sync" />
             <option value="$PROJECT_DIR$/core/telemetry" />
+            <option value="$PROJECT_DIR$/core/turnstile" />
             <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/data/auth" />
             <option value="$PROJECT_DIR$/data/devices" />

@@ -6,7 +6,6 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.core.logging.Logger
-import com.example.amulet.shared.core.mapSuccess
 import com.example.amulet.shared.domain.auth.model.AuthSession
 import com.example.amulet.shared.domain.auth.model.UserCredentials
 import com.example.amulet.shared.domain.auth.repository.AuthRepository
@@ -25,22 +24,13 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
 
     override suspend fun signUp(credentials: UserCredentials): AppResult<AuthSession> =
-        remoteDataSource.signUp(credentials).mapSuccess { session ->
-            userSessionUpdater.updateTokens(session.tokens)
-            session
-        }
+        remoteDataSource.signUp(credentials)
 
     override suspend fun signIn(credentials: UserCredentials): AppResult<AuthSession> =
-        remoteDataSource.signIn(credentials).mapSuccess { session ->
-            userSessionUpdater.updateTokens(session.tokens)
-            session
-        }
+        remoteDataSource.signIn(credentials)
 
     override suspend fun signInWithGoogle(idToken: String): AppResult<AuthSession> =
-        remoteDataSource.signInWithGoogle(idToken).mapSuccess { session ->
-            userSessionUpdater.updateTokens(session.tokens)
-            session
-        }
+        remoteDataSource.signInWithGoogle(idToken)
 
     override suspend fun signOut(): AppResult<Unit> =
         remoteDataSource.signOut().flatMap {
@@ -63,7 +53,7 @@ class AuthRepositoryImpl @Inject constructor(
         userSessionUpdater.updateSession(user)
     }.fold(
         onSuccess = {
-            Logger.i("Repository establishSession success userId=${'$'}{user.id.value}", TAG)
+            Logger.i("Repository establishSession success userId=${user.id.value}", TAG)
             Ok(Unit)
         },
         onFailure = { throwable ->

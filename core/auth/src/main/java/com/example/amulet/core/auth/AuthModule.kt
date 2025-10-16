@@ -8,8 +8,6 @@ import com.example.amulet.core.auth.datastore.UserSessionPreferencesSerializer
 import com.example.amulet.core.auth.session.UserSessionManager
 import com.example.amulet.core.auth.session.impl.UserSessionManagerImpl
 import com.example.amulet.core.auth.session.proto.UserSessionPreferences
-import com.example.amulet.core.auth.token.SupabaseAccessTokenProvider
-import com.example.amulet.core.network.auth.IdTokenProvider
 import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import dagger.Binds
@@ -29,9 +27,6 @@ abstract class AuthModule {
 
     @Binds
     abstract fun bindUserSessionManager(impl: UserSessionManagerImpl): UserSessionManager
-
-    @Binds
-    abstract fun bindIdTokenProvider(impl: SupabaseAccessTokenProvider): IdTokenProvider
 
     companion object {
         private const val STORE_FILE = "user_session.pb"

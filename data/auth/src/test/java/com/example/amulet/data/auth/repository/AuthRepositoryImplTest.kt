@@ -49,14 +49,12 @@ class AuthRepositoryImplTest {
             tokens = AuthTokens("access", "refresh", 123L, "bearer")
         )
         coEvery { remoteDataSource.signUp(credentials) } returns com.github.michaelbull.result.Ok(session)
-        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signUp(credentials)
 
         assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signUp(credentials) }
-        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 
@@ -68,14 +66,12 @@ class AuthRepositoryImplTest {
             tokens = AuthTokens("access", "refresh", 456L, "bearer")
         )
         coEvery { remoteDataSource.signIn(credentials) } returns com.github.michaelbull.result.Ok(session)
-        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signIn(credentials)
 
         assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signIn(credentials) }
-        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 
@@ -86,14 +82,12 @@ class AuthRepositoryImplTest {
             tokens = AuthTokens("access", "refresh", 789L, "bearer")
         )
         coEvery { remoteDataSource.signInWithGoogle("token") } returns com.github.michaelbull.result.Ok(session)
-        coJustRun { sessionUpdater.updateTokens(session.tokens) }
 
         val result = repository.signInWithGoogle("token")
 
         assertEquals(session, result.component1())
         assertNull(result.component2())
         coVerify(exactly = 1) { remoteDataSource.signInWithGoogle("token") }
-        coVerify(exactly = 1) { sessionUpdater.updateTokens(session.tokens) }
         confirmVerified(remoteDataSource)
     }
 
