@@ -121,7 +121,6 @@ class NetworkExceptionMapper(
         is JsonPrimitive -> element.content
         is JsonArray -> element.joinToString(",") { child -> extractMessage(child) }
         is JsonObject -> element.entries.joinToString(",") { (key, value) -> "$key:${extractMessage(value)}" }
-        else -> element.toString()
     }
 
     /**

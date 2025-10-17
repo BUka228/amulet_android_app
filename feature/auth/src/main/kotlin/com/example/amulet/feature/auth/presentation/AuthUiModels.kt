@@ -24,7 +24,7 @@ sealed interface AuthUiEvent {
     data object ErrorConsumed : AuthUiEvent
     data object AuthModeSwitchRequested : AuthUiEvent
     data object GoogleSignInRequested : AuthUiEvent
-    data class GoogleIdTokenReceived(val idToken: String) : AuthUiEvent
+    data class GoogleIdTokenReceived(val idToken: String, val rawNonce: String?) : AuthUiEvent
     data object GoogleSignInCancelled : AuthUiEvent
     data class GoogleSignInError(val throwable: Throwable?) : AuthUiEvent
 }

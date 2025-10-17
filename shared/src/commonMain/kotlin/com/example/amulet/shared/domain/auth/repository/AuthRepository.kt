@@ -8,7 +8,7 @@ import com.example.amulet.shared.domain.user.model.UserId
 interface AuthRepository {
     suspend fun signUp(credentials: UserCredentials): AppResult<UserId>
     suspend fun signIn(credentials: UserCredentials): AppResult<UserId>
-    suspend fun signInWithGoogle(idToken: String): AppResult<UserId>
+    suspend fun signInWithGoogle(idToken: String, rawNonce: String?): AppResult<UserId>
     suspend fun signOut(): AppResult<Unit>
     suspend fun establishSession(user: User): AppResult<Unit>
 }

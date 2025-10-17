@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">amulet_android_app</string>
+    <string name="app_name" translatable="false">amulet_android_app</string>
+    <string name="auth_google_redirect_url" translatable="false">584499082597-a2aiqn93mfn4tnet60jj3e51jft64cr2.apps.googleusercontent.com</string>
 </resources>

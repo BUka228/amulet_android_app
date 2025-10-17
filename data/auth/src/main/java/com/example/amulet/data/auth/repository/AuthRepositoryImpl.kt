@@ -29,8 +29,8 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signIn(credentials: UserCredentials): AppResult<UserId> =
         remoteDataSource.signIn(credentials)
 
-    override suspend fun signInWithGoogle(idToken: String): AppResult<UserId> =
-        remoteDataSource.signInWithGoogle(idToken)
+    override suspend fun signInWithGoogle(idToken: String, rawNonce: String?): AppResult<UserId> =
+        remoteDataSource.signInWithGoogle(idToken, rawNonce)
 
     override suspend fun signOut(): AppResult<Unit> =
         remoteDataSource.signOut().flatMap {

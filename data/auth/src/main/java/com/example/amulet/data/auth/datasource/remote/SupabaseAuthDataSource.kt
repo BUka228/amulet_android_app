@@ -44,11 +44,12 @@ class SupabaseAuthDataSource @Inject constructor(
             auth.currentSessionOrNull()
         }
 
-    override suspend fun signInWithGoogle(idToken: String): AppResult<UserId> =
+    override suspend fun signInWithGoogle(idToken: String, rawNonce: String?): AppResult<UserId> =
         runAuth("signInWithGoogle") {
             auth.signInWith(IDToken) {
                 this.idToken = idToken
                 this.provider = Google
+                this.nonce = rawNonce
             }
             auth.currentSessionOrNull()
         }

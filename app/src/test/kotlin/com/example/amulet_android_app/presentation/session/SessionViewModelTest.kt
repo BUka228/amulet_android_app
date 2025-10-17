@@ -12,8 +12,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.Rule
+import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
 class SessionViewModelTest {
 
     @get:Rule
@@ -44,6 +45,7 @@ class SessionViewModelTest {
     }
 }
 
+@OptIn(ExperimentalTime::class)
 private class FakeUserSessionManager(initial: UserSessionContext) : UserSessionManager {
     private val flow = MutableStateFlow(initial)
 

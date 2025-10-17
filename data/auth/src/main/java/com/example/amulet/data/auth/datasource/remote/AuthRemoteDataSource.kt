@@ -23,7 +23,7 @@ interface AuthRemoteDataSource {
     /**
      * Авторизация пользователя по Google ID token. Возвращает user id.
      */
-    suspend fun signInWithGoogle(idToken: String): AppResult<UserId>
+    suspend fun signInWithGoogle(idToken: String, rawNonce: String?): AppResult<UserId>
 
     /**
      * Завершает сессию пользователя на удалённом источнике.

@@ -47,7 +47,7 @@ class AuthViewModel @Inject constructor(
             AuthUiEvent.ErrorConsumed -> _uiState.update { it.copy(error = null) }
             AuthUiEvent.AuthModeSwitchRequested -> toggleAuthMode()
             AuthUiEvent.GoogleSignInRequested -> requestGoogleSignIn()
-            is AuthUiEvent.GoogleIdTokenReceived -> signInWithGoogle(event.idToken)
+            is AuthUiEvent.GoogleIdTokenReceived -> signInWithGoogle(event.idToken, event.rawNonce)
             AuthUiEvent.GoogleSignInCancelled -> _uiState.update { it.copy(isSubmitting = false) }
             is AuthUiEvent.GoogleSignInError -> handleGoogleSignInError(event.throwable)
         }
@@ -139,7 +139,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    private fun signInWithGoogle(idToken: String) {
+    private fun signInWithGoogle(idToken: String, rawNonce: String?) {
         Logger.d("signInWithGoogle clicked", TAG)
         if (idToken.isBlank()) {
             Logger.w("signInWithGoogle validation failed: empty idToken", null, TAG)
@@ -148,7 +148,7 @@ class AuthViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val result = signInWithGoogleUseCase(idToken)
+            val result = signInWithGoogleUseCase(idToken, rawNonce)
             result.fold(
                 success = {
                     Logger.i("signInWithGoogle success", TAG)

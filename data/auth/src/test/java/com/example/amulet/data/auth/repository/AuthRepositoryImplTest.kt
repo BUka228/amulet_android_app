@@ -70,13 +70,13 @@ class AuthRepositoryImplTest {
     @Test
     fun `signInWithGoogle delegates to remote`() = runTest {
         val userId = UserId("user-id")
-        coEvery { remoteDataSource.signInWithGoogle("token") } returns com.github.michaelbull.result.Ok(userId)
+        coEvery { remoteDataSource.signInWithGoogle("token", "nonce") } returns com.github.michaelbull.result.Ok(userId)
 
-        val result = repository.signInWithGoogle("token")
+        val result = repository.signInWithGoogle("token", "nonce")
 
         assertEquals(userId, result.component1())
         assertNull(result.component2())
-        coVerify(exactly = 1) { remoteDataSource.signInWithGoogle("token") }
+        coVerify(exactly = 1) { remoteDataSource.signInWithGoogle("token", "nonce") }
         confirmVerified(remoteDataSource)
     }
 
