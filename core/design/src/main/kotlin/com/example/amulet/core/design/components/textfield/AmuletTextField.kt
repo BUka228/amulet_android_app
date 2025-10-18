@@ -68,6 +68,7 @@ fun AmuletTextField(
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
-        isError = isError
+        isError = isError,
+        shape = MaterialTheme.shapes.large
     )
 }
