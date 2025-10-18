@@ -2,6 +2,8 @@
     <string name="auth_title">Вход в аккаунт</string>
     <string name="auth_title_sign_in">Вход в аккаунт</string>
     <string name="auth_title_sign_up">Создание аккаунта</string>
+    <string name="auth_subtitle_sign_in">С возвращением! Введите свои данные</string>
+    <string name="auth_subtitle_sign_up">Присоединяйтесь и начните путешествие</string>
     <string name="auth_email_label">Email</string>
     <string name="auth_password_label">Пароль</string>
     <string name="auth_confirm_password_label">Подтверждение пароля</string>

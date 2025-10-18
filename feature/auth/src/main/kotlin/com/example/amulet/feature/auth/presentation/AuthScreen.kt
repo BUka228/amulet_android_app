@@ -1,6 +1,7 @@
 package com.example.amulet.feature.auth.presentation
 
 import android.content.Context
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -20,6 +23,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -171,124 +177,153 @@ fun AuthScreen(
     val titleRes = if (state.authMode == AuthMode.SignIn) R.string.auth_title_sign_in else R.string.auth_title_sign_up
     val primaryButtonTextRes = if (state.authMode == AuthMode.SignIn) R.string.auth_sign_in else R.string.auth_sign_up
     val switchTextRes = if (state.authMode == AuthMode.SignIn) R.string.auth_switch_to_sign_up else R.string.auth_switch_to_sign_in
+    val scrollState = rememberScrollState()
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
     ) {
+        // Декоративный градиент в верхней части
         Box(
             modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .align(Alignment.TopCenter)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = spacing.xl, vertical = spacing.lg),
-            contentAlignment = Alignment.Center
+                .verticalScroll(scrollState)
+                .padding(horizontal = spacing.xl)
+                .widthIn(max = 420.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 420.dp),
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp,
-                shadowElevation = 4.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = spacing.xl, vertical = spacing.lg),
-                    verticalArrangement = Arrangement.Top,
-                    horizontalAlignment = Alignment.CenterHorizontally
+            Spacer(Modifier.height(spacing.xxl))
+
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = stringResource(
+                    if (state.authMode == AuthMode.SignIn) 
+                        R.string.auth_subtitle_sign_in 
+                    else 
+                        R.string.auth_subtitle_sign_up
+                ),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = spacing.xs)
+            )
+
+            Spacer(Modifier.height(spacing.xxl))
+
+            AuthEmailField(
+                value = state.email,
+                onValueChange = { onEvent(AuthUiEvent.EmailChanged(it)) }
+            )
+
+            Spacer(Modifier.height(spacing.lg))
+
+            AuthPasswordField(
+                value = state.password,
+                onValueChange = { onEvent(AuthUiEvent.PasswordChanged(it)) },
+                onSubmit = { onEvent(AuthUiEvent.Submit) }
+            )
+
+            if (state.authMode == AuthMode.SignUp) {
+                Spacer(Modifier.height(spacing.lg))
+                AuthConfirmPasswordField(
+                    value = state.confirmPassword,
+                    onValueChange = { onEvent(AuthUiEvent.ConfirmPasswordChanged(it)) },
+                    onSubmit = { onEvent(AuthUiEvent.Submit) }
+                )
+            }
+
+            if (errorMessage != null) {
+                Spacer(Modifier.height(spacing.md))
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(titleRes),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(spacing.lg))
-
-                    AuthEmailField(
-                        value = state.email,
-                        onValueChange = { onEvent(AuthUiEvent.EmailChanged(it)) }
-                    )
-
-                    Spacer(Modifier.height(spacing.md))
-
-                    AuthPasswordField(
-                        value = state.password,
-                        onValueChange = { onEvent(AuthUiEvent.PasswordChanged(it)) },
-                        onSubmit = { onEvent(AuthUiEvent.Submit) }
-                    )
-
-                if (state.authMode == AuthMode.SignUp) {
-                    Spacer(Modifier.height(spacing.md))
-                    AuthConfirmPasswordField(
-                        value = state.confirmPassword,
-                        onValueChange = { onEvent(AuthUiEvent.ConfirmPasswordChanged(it)) },
-                        onSubmit = { onEvent(AuthUiEvent.Submit) }
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(spacing.md)
                     )
                 }
+            }
 
-                    if (errorMessage != null) {
-                        Spacer(Modifier.height(spacing.sm))
-                        Text(
-                            text = errorMessage,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+            Spacer(Modifier.height(spacing.xxl))
 
-                    Spacer(Modifier.height(spacing.lg))
+            AmuletButton(
+                text = stringResource(primaryButtonTextRes),
+                onClick = { onEvent(AuthUiEvent.Submit) },
+                loading = state.isSubmitting,
+                enabled = !state.isSubmitting,
+                variant = ButtonVariant.Primary
+            )
 
-                    AmuletButton(
-                    text = stringResource(primaryButtonTextRes),
-                        onClick = { onEvent(AuthUiEvent.Submit) },
-                        loading = state.isSubmitting,
-                        enabled = !state.isSubmitting,
-                        variant = ButtonVariant.Primary
-                    )
-
-                if (state.authMode == AuthMode.SignIn) {
-                    Spacer(Modifier.height(spacing.md))
-
-                    AmuletButton(
-                        text = stringResource(R.string.auth_google_sign_in),
-                        onClick = { onEvent(AuthUiEvent.GoogleSignInRequested) },
-                        loading = state.isSubmitting,
-                        enabled = !state.isSubmitting && isGoogleSignInAvailable,
-                        variant = ButtonVariant.Outline
-                    )
-
-                    if (!isGoogleSignInAvailable) {
-                        Spacer(Modifier.height(spacing.sm))
-                        Text(
-                            text = stringResource(R.string.auth_google_unavailable),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(spacing.sm))
+            if (state.authMode == AuthMode.SignIn) {
+                Spacer(Modifier.height(spacing.md))
 
                 AmuletButton(
-                    text = stringResource(switchTextRes),
-                    onClick = { onEvent(AuthUiEvent.AuthModeSwitchRequested) },
+                    text = stringResource(R.string.auth_google_sign_in),
+                    onClick = { onEvent(AuthUiEvent.GoogleSignInRequested) },
+                    loading = state.isSubmitting,
+                    enabled = !state.isSubmitting && isGoogleSignInAvailable,
+                    variant = ButtonVariant.Outline
+                )
+
+                if (!isGoogleSignInAvailable) {
+                    Spacer(Modifier.height(spacing.sm))
+                    Text(
+                        text = stringResource(R.string.auth_google_unavailable),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(spacing.lg))
+
+            AmuletButton(
+                text = stringResource(switchTextRes),
+                onClick = { onEvent(AuthUiEvent.AuthModeSwitchRequested) },
+                enabled = !state.isSubmitting,
+                variant = ButtonVariant.Text,
+                fullWidth = false
+            )
+
+            if (state.authMode == AuthMode.SignIn) {
+                Spacer(Modifier.height(spacing.xs))
+
+                AmuletButton(
+                    text = stringResource(R.string.auth_continue_as_guest),
+                    onClick = { onEvent(AuthUiEvent.GuestModeRequested()) },
                     enabled = !state.isSubmitting,
                     variant = ButtonVariant.Text,
                     fullWidth = false
                 )
-
-                if (state.authMode == AuthMode.SignIn) {
-                    Spacer(Modifier.height(spacing.md))
-
-                    AmuletButton(
-                        text = stringResource(R.string.auth_continue_as_guest),
-                        onClick = { onEvent(AuthUiEvent.GuestModeRequested()) },
-                        enabled = !state.isSubmitting,
-                        variant = ButtonVariant.Outline,
-                        fullWidth = false
-                    )
-                }
-                }
             }
+
+            Spacer(Modifier.height(spacing.xxl))
         }
     }
 }

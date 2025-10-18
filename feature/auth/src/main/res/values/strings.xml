@@ -2,6 +2,8 @@
     <string name="auth_title">Sign in to your account</string>
     <string name="auth_title_sign_in">Sign in to your account</string>
     <string name="auth_title_sign_up">Create a new account</string>
+    <string name="auth_subtitle_sign_in">Welcome back! Please enter your credentials</string>
+    <string name="auth_subtitle_sign_up">Join us and start your journey</string>
     <string name="auth_email_label">Email</string>
     <string name="auth_password_label">Password</string>
     <string name="auth_confirm_password_label">Confirm password</string>
