@@ -27,6 +27,7 @@ sealed interface AuthUiEvent {
     data class GoogleIdTokenReceived(val idToken: String, val rawNonce: String?) : AuthUiEvent
     data object GoogleSignInCancelled : AuthUiEvent
     data class GoogleSignInError(val throwable: Throwable?) : AuthUiEvent
+    data class GuestModeRequested(val displayName: String? = null, val language: String? = null) : AuthUiEvent
 }
 
 sealed interface AuthSideEffect {

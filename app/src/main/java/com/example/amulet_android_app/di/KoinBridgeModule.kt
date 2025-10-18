@@ -5,6 +5,7 @@ import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.core.auth.UserSessionUpdater
 import com.example.amulet.shared.di.sharedKoinModules
 import com.example.amulet.shared.domain.auth.repository.AuthRepository
+import com.example.amulet.shared.domain.auth.usecase.EnableGuestModeUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
@@ -82,4 +83,7 @@ object KoinBridgeModule {
 
     @Provides
     fun provideSignUpUseCase(koin: Koin): SignUpUseCase = koin.get()
+
+    @Provides
+    fun provideEnableGuestModeUseCase(koin: Koin): EnableGuestModeUseCase = koin.get()
 }

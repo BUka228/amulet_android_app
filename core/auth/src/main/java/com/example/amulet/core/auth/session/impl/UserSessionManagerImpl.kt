@@ -9,6 +9,7 @@ import com.example.amulet.shared.core.auth.UserSessionContext.LoggedIn
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -57,10 +58,37 @@ class UserSessionManagerImpl @Inject constructor(
         dataStore.updateData { UserSessionPreferences.getDefaultInstance() }
     }
 
+    override suspend fun enableGuestMode(displayName: String?, language: String?) {
+        val guestSessionId = UUID.randomUUID().toString()
+        dataStore.updateData { preferences ->
+            preferences.toBuilder()
+                .setIsGuest(true)
+                .setGuestSessionId(guestSessionId)
+                .setDisplayName(displayName ?: "Гость")
+                .setLanguage(language.orEmpty())
+                .clearUserId()
+                .clearAvatarUrl()
+                .clearTimezone()
+                .clearConsents()
+                .build()
+        }
+    }
+
     private fun UserSessionPreferences.toSessionContext(): UserSessionContext {
+        // Гостевой режим
+        if (isGuest && guestSessionId.isNotBlank()) {
+            return UserSessionContext.Guest(
+                sessionId = guestSessionId,
+                displayName = displayName.takeIf { it.isNotBlank() },
+                language = language.takeIf { it.isNotBlank() }
+            )
+        }
+        
+        // Обычная авторизованная сессия
         if (userId.isNullOrBlank()) {
             return UserSessionContext.LoggedOut
         }
+        
         val consentsModel = if (hasConsents()) {
             consents.toModel()
         } else {

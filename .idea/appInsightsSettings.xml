@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.amulet_android_app" />
-                  <option name="mobileSdkAppId" value="1:284908942155:android:5c5735272a615588806ece" />
-                  <option name="projectId" value="amulet-878cc" />
-                  <option name="projectNumber" value="284908942155" />
+                  <option name="appId" value="PLACEHOLDER" />
+                  <option name="mobileSdkAppId" value="" />
+                  <option name="projectId" value="" />
+                  <option name="projectNumber" value="" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

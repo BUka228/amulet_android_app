@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.auth.model.UserCredentials
+import com.example.amulet.shared.domain.auth.usecase.EnableGuestModeUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
@@ -26,7 +27,8 @@ import kotlinx.coroutines.launch
 class AuthViewModel @Inject constructor(
     private val signInUseCase: SignInUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
-    private val signUpUseCase: SignUpUseCase
+    private val signUpUseCase: SignUpUseCase,
+    private val enableGuestModeUseCase: EnableGuestModeUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -50,6 +52,7 @@ class AuthViewModel @Inject constructor(
             is AuthUiEvent.GoogleIdTokenReceived -> signInWithGoogle(event.idToken, event.rawNonce)
             AuthUiEvent.GoogleSignInCancelled -> _uiState.update { it.copy(isSubmitting = false) }
             is AuthUiEvent.GoogleSignInError -> handleGoogleSignInError(event.throwable)
+            is AuthUiEvent.GuestModeRequested -> enableGuestMode(event.displayName, event.language)
         }
     }
 
@@ -190,6 +193,26 @@ class AuthViewModel @Inject constructor(
                 confirmPassword = "",
                 isSubmitting = false,
                 error = null
+            )
+        }
+    }
+
+    private fun enableGuestMode(displayName: String?, language: String?) {
+        Logger.d("enableGuestMode requested", TAG)
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSubmitting = true, error = null) }
+
+            val result = enableGuestModeUseCase(displayName, language)
+            result.fold(
+                success = {
+                    Logger.i("enableGuestMode success", TAG)
+                    _uiState.update { it.copy(isSubmitting = false) }
+                    _sideEffects.emit(AuthSideEffect.SignInSuccess)
+                },
+                failure = { error ->
+                    Logger.w("enableGuestMode failed: $error", null, TAG)
+                    _uiState.update { it.copy(isSubmitting = false, error = error) }
+                }
             )
         }
     }

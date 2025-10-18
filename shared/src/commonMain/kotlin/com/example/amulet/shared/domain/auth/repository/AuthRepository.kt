@@ -11,4 +11,5 @@ interface AuthRepository {
     suspend fun signInWithGoogle(idToken: String, rawNonce: String?): AppResult<UserId>
     suspend fun signOut(): AppResult<Unit>
     suspend fun establishSession(user: User): AppResult<Unit>
+    suspend fun enableGuestSession(displayName: String? = null, language: String? = null): AppResult<Unit>
 }

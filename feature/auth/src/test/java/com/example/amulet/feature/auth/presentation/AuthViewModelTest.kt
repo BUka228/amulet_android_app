@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.example.amulet.feature.auth.MainDispatcherRule
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.auth.model.UserCredentials
+import com.example.amulet.shared.domain.auth.usecase.EnableGuestModeUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
@@ -39,12 +40,15 @@ class AuthViewModelTest {
     @MockK
     private lateinit var signUpUseCase: SignUpUseCase
 
+    @MockK
+    private lateinit var enableGuestModeUseCase: EnableGuestModeUseCase
+
     private lateinit var viewModel: AuthViewModel
 
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        viewModel = AuthViewModel(signInUseCase, signInWithGoogleUseCase, signUpUseCase)
+        viewModel = AuthViewModel(signInUseCase, signInWithGoogleUseCase, signUpUseCase, enableGuestModeUseCase)
     }
 
     @Test
@@ -135,13 +139,13 @@ class AuthViewModelTest {
 
     @Test
     fun `google sign in success emits success side effect`() = runTest {
-        coEvery { signInWithGoogleUseCase.invoke("token") } returns Ok(Unit)
+        coEvery { signInWithGoogleUseCase.invoke("token", "rawNonce") } returns Ok(Unit)
 
         viewModel.handleEvent(AuthUiEvent.GoogleSignInRequested)
         mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
 
         viewModel.sideEffects.test {
-            viewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived("token"))
+            viewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived("token", "rawNonce"))
             mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
             assertEquals(AuthSideEffect.SignInSuccess, awaitItem())
             cancelAndIgnoreRemainingEvents()
@@ -153,11 +157,11 @@ class AuthViewModelTest {
 
     @Test
     fun `google sign in failure updates error`() = runTest {
-        coEvery { signInWithGoogleUseCase.invoke("token") } returns Err(AppError.Network)
+        coEvery { signInWithGoogleUseCase.invoke("token", "rawNonce") } returns Err(AppError.Network)
 
         viewModel.handleEvent(AuthUiEvent.GoogleSignInRequested)
         mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
-        viewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived("token"))
+        viewModel.handleEvent(AuthUiEvent.GoogleIdTokenReceived("token", "rawNonce"))
         mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(AppError.Network, viewModel.uiState.value.error)

@@ -13,6 +13,7 @@ import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.impl.annotations.MockK
 import io.mockk.slot
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.test.runTest
 import kotlin.time.Instant
 import kotlinx.serialization.json.Json
@@ -27,6 +28,7 @@ import org.junit.Test
  * Интеграционный тест для проверки корректности маппинга UserConsents
  * через весь стек: DTO -> Domain -> Entity
  */
+@OptIn(ExperimentalTime::class)
 class UserConsentsIntegrationTest {
 
     @MockK

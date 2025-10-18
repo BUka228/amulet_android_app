@@ -62,6 +62,19 @@ class AuthRepositoryImpl @Inject constructor(
         }
     )
 
+    override suspend fun enableGuestSession(displayName: String?, language: String?): AppResult<Unit> = runCatching {
+        userSessionUpdater.enableGuestMode(displayName, language)
+    }.fold(
+        onSuccess = {
+            Logger.i("Repository enableGuestSession success", TAG)
+            Ok(Unit)
+        },
+        onFailure = { throwable ->
+            Logger.w("Repository enableGuestSession failed", throwable, TAG)
+            Err(AppError.Unknown)
+        }
+    )
+
     private companion object {
         const val TAG = "AuthRepositoryImpl"
     }

@@ -2,6 +2,7 @@ package com.example.amulet.data.user.mapper
 
 import com.example.amulet.core.network.dto.user.UserDto
 import com.example.amulet.shared.domain.privacy.model.UserConsents
+import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -12,6 +13,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalTime::class)
 class UserDtoMapperTest {
 
     private lateinit var mapper: UserDtoMapper

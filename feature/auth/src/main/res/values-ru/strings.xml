@@ -11,6 +11,7 @@
     <string name="auth_switch_to_sign_in">Уже есть аккаунт? Войдите</string>
     <string name="auth_google_sign_in">Войти через Google</string>
     <string name="auth_google_unavailable">Google Sign-In недоступен</string>
+    <string name="auth_continue_as_guest">Продолжить как гость</string>
 
     <string name="auth_error_validation_default">Некорректные данные</string>
     <string name="auth_error_credentials">Неверный email или пароль</string>

@@ -1,6 +1,7 @@
 package com.example.amulet.data.user
 
 import com.example.amulet.shared.domain.privacy.model.UserConsents
+import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import org.junit.Test
 import kotlin.reflect.full.memberProperties
@@ -9,6 +10,7 @@ import kotlin.reflect.jvm.javaType
 /**
  * Тест для проверки типов на уровне bytecode
  */
+@OptIn(ExperimentalTime::class)
 class UserConsentsBytecodeTest {
 
     @Test

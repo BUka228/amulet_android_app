@@ -10,6 +10,8 @@ message UserSessionPreferences {
   UserConsentsProto consents = 4;
   string timezone = 5;
   string language = 6;
+  bool is_guest = 7;
+  string guest_session_id = 8;
 }
 
 message UserConsentsProto {

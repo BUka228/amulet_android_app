@@ -1,5 +1,6 @@
 package com.example.amulet.shared.di
 
+import com.example.amulet.shared.domain.auth.usecase.EnableGuestModeUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
@@ -15,6 +16,7 @@ private val sharedModule = module {
     factory { SignInWithGoogleUseCase(get(), get()) }
     factory { SignOutUseCase(get()) }
     factory { SignUpUseCase(get(), get()) }
+    factory { EnableGuestModeUseCase(get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

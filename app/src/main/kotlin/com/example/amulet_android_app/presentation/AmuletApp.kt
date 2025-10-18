@@ -34,8 +34,14 @@ fun AmuletApp(
                         startDestination = AuthGraphDestination,
                     )
                 }
-
                 is AuthState.LoggedIn -> key(AuthState.LoggedIn) {
+                    val navController = rememberNavController()
+                    AppNavHost(
+                        navController = navController,
+                        startDestination = MainGraphDestination,
+                    )
+                }
+                AuthState.Guest -> key(AuthState.Guest) {
                     val navController = rememberNavController()
                     AppNavHost(
                         navController = navController,

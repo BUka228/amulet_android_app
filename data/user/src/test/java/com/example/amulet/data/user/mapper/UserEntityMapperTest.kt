@@ -1,6 +1,7 @@
 package com.example.amulet.data.user.mapper
 
 import com.example.amulet.core.database.entity.UserEntity
+import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -9,6 +10,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalTime::class)
 class UserEntityMapperTest {
 
     private lateinit var mapper: UserEntityMapper

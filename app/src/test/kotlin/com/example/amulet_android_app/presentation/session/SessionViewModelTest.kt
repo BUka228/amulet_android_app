@@ -1,7 +1,7 @@
 package com.example.amulet_android_app.presentation.session
 
-import com.example.amulet.core.auth.session.UserSessionManager
 import com.example.amulet.shared.core.auth.UserSessionContext
+import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.UserId
 import com.example.amulet_android_app.MainDispatcherRule
@@ -21,15 +21,15 @@ class SessionViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun `emits LoggedOut when session manager provides logged out`() = runTest {
-        val manager = FakeUserSessionManager(UserSessionContext.LoggedOut)
-        val viewModel = SessionViewModel(manager)
+    fun `emits LoggedOut when session provider provides logged out`() = runTest {
+        val provider = FakeUserSessionProvider(UserSessionContext.LoggedOut)
+        val viewModel = SessionViewModel(provider)
 
         assertEquals(AuthState.LoggedOut, viewModel.state.value)
     }
 
     @Test
-    fun `emits LoggedIn when session manager provides user`() = runTest {
+    fun `emits LoggedIn when session provider provides user`() = runTest {
         val context = UserSessionContext.LoggedIn(
             userId = UserId("id"),
             displayName = null,
@@ -38,34 +38,31 @@ class SessionViewModelTest {
             language = null,
             consents = UserConsents()
         )
-        val manager = FakeUserSessionManager(context)
-        val viewModel = SessionViewModel(manager)
+        val provider = FakeUserSessionProvider(context)
+        val viewModel = SessionViewModel(provider)
 
         assertEquals(AuthState.LoggedIn, viewModel.state.value)
     }
+
+    @Test
+    fun `emits Guest when session provider provides guest context`() = runTest {
+        val context = UserSessionContext.Guest(
+            sessionId = "guest-123",
+            displayName = "Guest User",
+            language = "ru"
+        )
+        val provider = FakeUserSessionProvider(context)
+        val viewModel = SessionViewModel(provider)
+
+        assertEquals(AuthState.Guest, viewModel.state.value)
+    }
 }
 
-@OptIn(ExperimentalTime::class)
-private class FakeUserSessionManager(initial: UserSessionContext) : UserSessionManager {
+private class FakeUserSessionProvider(initial: UserSessionContext) : UserSessionProvider {
     private val flow = MutableStateFlow(initial)
 
     override val sessionContext: StateFlow<UserSessionContext> = flow
 
     override val currentContext: UserSessionContext
         get() = flow.value
-
-    override suspend fun updateSession(user: com.example.amulet.shared.domain.user.model.User) {
-        flow.value = UserSessionContext.LoggedIn(
-            userId = user.id,
-            displayName = user.displayName,
-            avatarUrl = user.avatarUrl,
-            timezone = user.timezone,
-            language = user.language,
-            consents = user.consents ?: UserConsents()
-        )
-    }
-
-    override suspend fun clearSession() {
-        flow.value = UserSessionContext.LoggedOut
-    }
 }

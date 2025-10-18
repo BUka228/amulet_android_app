@@ -275,6 +275,18 @@ fun AuthScreen(
                     variant = ButtonVariant.Text,
                     fullWidth = false
                 )
+
+                if (state.authMode == AuthMode.SignIn) {
+                    Spacer(Modifier.height(spacing.md))
+
+                    AmuletButton(
+                        text = stringResource(R.string.auth_continue_as_guest),
+                        onClick = { onEvent(AuthUiEvent.GuestModeRequested()) },
+                        enabled = !state.isSubmitting,
+                        variant = ButtonVariant.Outline,
+                        fullWidth = false
+                    )
+                }
                 }
             }
         }

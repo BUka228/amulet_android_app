@@ -9,6 +9,12 @@ sealed interface UserSessionContext {
 
     data object LoggedOut : UserSessionContext
 
+    data class Guest(
+        val sessionId: String,
+        val displayName: String?,
+        val language: String?
+    ) : UserSessionContext
+
     data class LoggedIn(
         val userId: UserId,
         val displayName: String?,

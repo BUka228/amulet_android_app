@@ -11,6 +11,7 @@
     <string name="auth_switch_to_sign_in">Already have an account? Sign in</string>
     <string name="auth_google_sign_in">Sign in with Google</string>
     <string name="auth_google_unavailable">Google Sign-In is unavailable</string>
+    <string name="auth_continue_as_guest">Continue as Guest</string>
 
     <string name="auth_error_validation_default">Invalid data</string>
     <string name="auth_error_credentials">Incorrect email or password</string>
