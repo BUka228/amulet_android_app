@@ -3,13 +3,10 @@ package com.example.amulet_android_app.navigation
 import androidx.navigation.NavController
 import com.example.amulet.feature.auth.navigation.AuthDestination
 import com.example.amulet.feature.auth.navigation.AuthGraph
+import com.example.amulet.feature.dashboard.navigation.DashboardGraph
 
 sealed interface AppDestination {
     val baseRoute: String
-}
-
-object MainGraphDestination : AppDestination {
-    override val baseRoute: String = "main"
 }
 
 object AuthGraphDestination : AppDestination {
@@ -20,25 +17,44 @@ object AuthLoginDestination : AppDestination {
     override val baseRoute: String = AuthDestination.login
 }
 
-object ProfileDestination : AppDestination {
-    override val baseRoute: String = "profile"
+object DashboardGraphDestination : AppDestination {
+    override val baseRoute: String = DashboardGraph.route
 }
 
-object DashboardDestination : AppDestination {
-    override val baseRoute: String = "dashboard"
+// TODO: Добавить destinations по мере реализации feature модулей
+// object PairingGraphDestination : AppDestination { override val baseRoute: String = PairingGraph.route }
+// object LibraryGraphDestination : AppDestination { override val baseRoute: String = LibraryGraph.route }
+// object HugsGraphDestination : AppDestination { override val baseRoute: String = HugsGraph.route }
+// object PatternsGraphDestination : AppDestination { override val baseRoute: String = PatternsGraph.route }
+// object SettingsGraphDestination : AppDestination { override val baseRoute: String = SettingsGraph.route }
+
+// Navigation Extensions
+fun NavController.navigateToPairing() {
+    // TODO: Реализовать когда :feature:pairing будет готов
+    println("Навигация к Pairing (не реализовано)")
 }
 
-object SettingsDestination : AppDestination {
-    override val baseRoute: String = "settings"
+fun NavController.navigateToLibrary() {
+    navigate("library/main") {
+        launchSingleTop = true
+    }
 }
 
-fun NavController.navigateToDashboard() {
-    navigate(DashboardDestination.baseRoute) {
+fun NavController.navigateToHugs() {
+    navigate("hugs/main") {
+        launchSingleTop = true
+    }
+}
+
+fun NavController.navigateToPatterns() {
+    navigate("patterns/main") {
         launchSingleTop = true
     }
 }
 
 fun NavController.navigateToSettings() {
-    navigate(SettingsDestination.baseRoute)
+    navigate("settings/main") {
+        launchSingleTop = true
+    }
 }
 

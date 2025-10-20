@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dashboard Screen -->
+    <string name="dashboard_welcome">Welcome</string>
+    <string name="dashboard_settings">Settings</string>
+    
+    <!-- Amulet Status -->
+    <string name="amulet_status_disconnected_title">Amulet not connected</string>
+    <string name="amulet_status_disconnected_subtitle">Connect your amulet to access all features</string>
+    <string name="amulet_status_connect_button">Connect amulet</string>
+    
+    <string name="amulet_status_connected">Connected</string>
+    <string name="amulet_status_connecting">Connecting…</string>
+    <string name="amulet_status_disconnected">Disconnected</string>
+    
+    <string name="amulet_stat_battery">Battery</string>
+    <string name="amulet_stat_signal">Signal</string>
+    <string name="amulet_stat_signal_excellent">Excellent</string>
+    <string name="amulet_stat_state">State</string>
+    <string name="amulet_stat_state_off">Off</string>
+    
+    <!-- Quick Start -->
+    <string name="quick_start_title">Quick Start</string>
+    <string name="quick_start_breathing_title">4-7-8 Breathing</string>
+    <string name="quick_start_breathing_subtitle">Deep relaxation technique</string>
+    <string name="quick_start_button">Start</string>
+    
+    <!-- Daily Stats -->
+    <string name="daily_stats_title">Today</string>
+    <string name="daily_stats_practices">Practices</string>
+    <string name="daily_stats_hugs">Hugs</string>
+    <string name="daily_stats_minutes">%d min</string>
+    <string name="daily_stats_count">%d</string>
+    
+    <string name="daily_stats_calm_level">Calm level</string>
+    <string name="daily_stats_calm_percent" formatted="false">%d%% — %s</string>
+    <string name="daily_stats_calm_excellent">Excellent</string>
+    <string name="daily_stats_calm_good">Good</string>
+    <string name="daily_stats_calm_normal">Normal</string>
+    <string name="daily_stats_calm_could_be_better">Could be better</string>
+    <string name="daily_stats_calm_need_practice">Need practice</string>
+    
+    <!-- Quick Access -->
+    <string name="quick_access_title">Quick Access</string>
+    <string name="quick_access_library_title">Practice Library</string>
+    <string name="quick_access_library_subtitle">Meditations, breathing, sounds</string>
+    <string name="quick_access_hugs_title">Hugs</string>
+    <string name="quick_access_hugs_subtitle">Send emotion to loved one</string>
+    <string name="quick_access_patterns_title">Animation Constructor</string>
+    <string name="quick_access_patterns_subtitle">Create custom pattern</string>
+    
+    <!-- Recommendations -->
+    <string name="recommendation_start_day">Start your day with practice</string>
+    <string name="recommendation_start_day_description">5 minutes of breathing will help you set up for a productive day</string>
+    <string name="recommendation_restore_calm">Restore your calm</string>
+    <string name="recommendation_restore_calm_description">Try meditation to relieve stress</string>
+    <string name="recommendation_button_start">Start</string>
+</resources>

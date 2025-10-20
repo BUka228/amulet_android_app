@@ -74,6 +74,7 @@ dependencies {
     implementation(project(":data:user"))
     implementation(project(":data:telemetry"))
     implementation(project(":feature:auth"))
+    implementation(project(":feature:dashboard"))
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)
     testImplementation(libs.junit)

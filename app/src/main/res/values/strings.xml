@@ -1,4 +1,26 @@
 <resources>
     <string name="app_name" translatable="false">amulet_android_app</string>
     <string name="auth_google_redirect_url" translatable="false">584499082597-a2aiqn93mfn4tnet60jj3e51jft64cr2.apps.googleusercontent.com</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_home">Home</string>
+    <string name="bottom_nav_library">Library</string>
+    <string name="bottom_nav_hugs">Hugs</string>
+    <string name="bottom_nav_patterns">Patterns</string>
+    <string name="bottom_nav_settings">Settings</string>
+    
+    <!-- Placeholder Screens -->
+    <string name="placeholder_library_title">Practice Library</string>
+    <string name="placeholder_library_description">Meditations, breathing exercises, and sound practices will be here</string>
+    
+    <string name="placeholder_hugs_title">Hugs</string>
+    <string name="placeholder_hugs_description">Hug history and Amulet usage statistics will be here</string>
+    
+    <string name="placeholder_patterns_title">Patterns</string>
+    <string name="placeholder_patterns_description">Your customizable vibration patterns will be here</string>
+    
+    <string name="placeholder_settings_title">Settings</string>
+    <string name="placeholder_settings_description">App settings and user profile will be here</string>
+    
+    <string name="placeholder_in_development">🚧 In Development</string>
 </resources>

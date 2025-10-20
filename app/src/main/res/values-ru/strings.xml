@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_home">Главная</string>
+    <string name="bottom_nav_library">Библиотека</string>
+    <string name="bottom_nav_hugs">Объятия</string>
+    <string name="bottom_nav_patterns">Паттерны</string>
+    <string name="bottom_nav_settings">Настройки</string>
+    
+    <!-- Placeholder Screens -->
+    <string name="placeholder_library_title">Библиотека практик</string>
+    <string name="placeholder_library_description">Здесь будут медитации, дыхательные упражнения и звуковые практики</string>
+    
+    <string name="placeholder_hugs_title">Объятия</string>
+    <string name="placeholder_hugs_description">Здесь будет история объятий и статистика использования Амулета</string>
+    
+    <string name="placeholder_patterns_title">Паттерны</string>
+    <string name="placeholder_patterns_description">Здесь будут ваши настраиваемые паттерны вибрации</string>
+    
+    <string name="placeholder_settings_title">Настройки</string>
+    <string name="placeholder_settings_description">Здесь будут настройки приложения и профиль пользователя</string>
+    
+    <string name="placeholder_in_development">🚧 В разработке</string>
+</resources>

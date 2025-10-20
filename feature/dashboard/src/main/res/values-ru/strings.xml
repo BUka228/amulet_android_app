@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dashboard Screen -->
+    <string name="dashboard_welcome">Добро пожаловать</string>
+    <string name="dashboard_settings">Настройки</string>
+    
+    <!-- Amulet Status -->
+    <string name="amulet_status_disconnected_title">Амулет не подключен</string>
+    <string name="amulet_status_disconnected_subtitle">Подключите ваш амулет для доступа ко всем возможностям</string>
+    <string name="amulet_status_connect_button">Подключить амулет</string>
+    
+    <string name="amulet_status_connected">Подключен</string>
+    <string name="amulet_status_connecting">Подключение…</string>
+    <string name="amulet_status_disconnected">Отключен</string>
+    
+    <string name="amulet_stat_battery">Батарея</string>
+    <string name="amulet_stat_signal">Сигнал</string>
+    <string name="amulet_stat_signal_excellent">Отлично</string>
+    <string name="amulet_stat_state">Состояние</string>
+    <string name="amulet_stat_state_off">Выкл</string>
+    
+    <!-- Quick Start -->
+    <string name="quick_start_title">Быстрый старт</string>
+    <string name="quick_start_breathing_title">Дыхание 4-7-8</string>
+    <string name="quick_start_breathing_subtitle">Техника глубокого расслабления</string>
+    <string name="quick_start_button">Начать</string>
+    
+    <!-- Daily Stats -->
+    <string name="daily_stats_title">Сегодня</string>
+    <string name="daily_stats_practices">Практики</string>
+    <string name="daily_stats_hugs">Объятия</string>
+    <string name="daily_stats_minutes">%d мин</string>
+    <string name="daily_stats_count">%d</string>
+    
+    <string name="daily_stats_calm_level">Уровень спокойствия</string>
+    <string name="daily_stats_calm_percent" formatted="false">%d%% — %s</string>
+    <string name="daily_stats_calm_excellent">Отлично</string>
+    <string name="daily_stats_calm_good">Хорошо</string>
+    <string name="daily_stats_calm_normal">Нормально</string>
+    <string name="daily_stats_calm_could_be_better">Можно лучше</string>
+    <string name="daily_stats_calm_need_practice">Нужна практика</string>
+    
+    <!-- Quick Access -->
+    <string name="quick_access_title">Быстрый доступ</string>
+    <string name="quick_access_library_title">Библиотека практик</string>
+    <string name="quick_access_library_subtitle">Медитации, дыхание, звуки</string>
+    <string name="quick_access_hugs_title">Объятия</string>
+    <string name="quick_access_hugs_subtitle">Отправить эмоцию близкому</string>
+    <string name="quick_access_patterns_title">Конструктор анимаций</string>
+    <string name="quick_access_patterns_subtitle">Создать собственный паттерн</string>
+    
+    <!-- Recommendations -->
+    <string name="recommendation_start_day">Начните день с практики</string>
+    <string name="recommendation_start_day_description">5 минут дыхания помогут настроиться на продуктивный день</string>
+    <string name="recommendation_restore_calm">Восстановите спокойствие</string>
+    <string name="recommendation_restore_calm_description">Попробуйте медитацию для снятия стресса</string>
+    <string name="recommendation_button_start">Начать</string>
+</resources>
