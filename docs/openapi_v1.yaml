@@ -17,12 +17,12 @@ info:
 servers:
   - url: https://api.amulet.app/v2
     description: Production (Supabase Edge Functions)
-  - url: https://{projectRef}.supabase.co/functions/v1/api/v2
+  - url: https://{projectRef}.supabase.co/functions/v1
     description: Supabase Functions (custom project)
     variables:
       projectRef:
         default: amulet
-  - url: http://127.0.0.1:54321/functions/v1/api/v2
+  - url: https://api.amulet.app/functions/v1
     description: Local Supabase Development
 tags:
   - name: users
@@ -474,6 +474,9 @@ paths:
     post:
       tags: [hugs]
       summary: Отправить «объятие»
+      description: |
+        **Rate Limit:** 50 запросов в минуту на пользователя.
+        При превышении лимита возвращается 429 с заголовком `Retry-After`.
       requestBody:
         required: true
         content:
@@ -503,21 +506,25 @@ paths:
       summary: История «объятий»
       parameters:
         - in: query
-          name: direction
-          required: true
+          name: filter
           schema:
             type: string
-            enum: [sent, received]
+            enum: [all, sent, received]
+            default: all
+          description: Фильтр направления объятий
         - in: query
-          name: cursor
+          name: offset
           schema:
-            type: string
+            type: integer
+            minimum: 0
+            default: 0
         - in: query
           name: limit
           schema:
             type: integer
             minimum: 1
             maximum: 100
+            default: 20
       responses:
         '200':
           description: OK
@@ -526,12 +533,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  items:
+                  hugs:
                     type: array
                     items:
                       $ref: '#/components/schemas/Hug'
-                  nextCursor:
-                    type: string
+                  pagination:
+                    type: object
+                    properties:
+                      limit:
+                        type: integer
+                      offset:
+                        type: integer
+                      total:
+                        type: integer
+                        nullable: true
         '401': { $ref: '#/components/responses/UnauthorizedError' }
         '403': { $ref: '#/components/responses/ForbiddenError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
@@ -560,10 +575,79 @@ paths:
         '404': { $ref: '#/components/responses/NotFoundError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
 
+  /hugs/pending:
+    get:
+      tags: [hugs]
+      summary: Неполученные «объятия» для offline-синхронизации
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hugs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Hug'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
+  /hugs/{hugId}/acknowledge:
+    post:
+      tags: [hugs]
+      summary: Подтверждение воспроизведения объятия на устройстве
+      parameters:
+        - in: path
+          name: hugId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HugAcknowledgeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [acknowledged]
+        '400':
+          description: Invalid argument
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
   /pairs.invite:
     post:
       tags: [pairs]
       summary: Пригласить партнёра
+      description: |
+        **Rate Limit:** Ограничено количество активных приглашений (максимум 10 одновременно).
+        При превышении лимита возвращается 429.
       requestBody:
         required: true
         content:
@@ -681,6 +765,29 @@ paths:
         '404': { $ref: '#/components/responses/NotFoundError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
 
+  /pairs/{pairId}/stats:
+    get:
+      tags: [pairs]
+      summary: Статистика пары
+      description: Получить агрегированную статистику объятий для пары
+      parameters:
+        - in: path
+          name: pairId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PairStats'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
   /practices:
     get:
       tags: [library]
@@ -749,7 +856,6 @@ paths:
   /patterns:
     get:
       tags: [patterns]
-    
       summary: Публичные паттерны
       parameters:
         - in: query
@@ -797,6 +903,9 @@ paths:
       description: |
         При создании паттерна с полем `public: true` ему автоматически присваивается статус модерации `reviewStatus: "pending"`.
         Такой паттерн не отображается в публичном каталоге до одобрения администратором.
+        
+        **Rate Limit:** Ограничено количество создаваемых паттернов в минуту.
+        При превышении лимита возвращается 429.
       requestBody:
         required: true
         content:
@@ -867,8 +976,8 @@ paths:
         статус модерации автоматически сбрасывается на `reviewStatus: "pending"`. До повторного одобрения паттерн
         временно пропадает из публичного каталога.
         
-        **Оптимистическая блокировка:** Поле `version` в запросе должно совпадать с текущей версией паттерна на сервере.
-        При несовпадении версий возвращается ошибка 409 Conflict.
+        **Оптимистическая блокировка:** Поле `version` в запросе **обязательно** и должно совпадать с текущей версией паттерна на сервере.
+        При несовпадении версий возвращается ошибка 409 Conflict с деталями о текущей и переданной версии.
       parameters:
         - in: path
           name: id
@@ -924,8 +1033,12 @@ paths:
       tags: [patterns]
       summary: Поделиться паттерном с партнёром
       description: |
-        Паттерном можно делиться только после модерации. Требуется `reviewStatus: "approved"`.
-        Иначе будет возвращена ошибка `failed_precondition (412)`.
+        **Ограничения:**
+        - Нельзя шарить паттерны со статусом `reviewStatus: "rejected"`
+        - Публичные паттерны не требуют шаринга
+        - Только владелец может расшарить паттерн
+        
+        При попытке расшарить отклонённый паттерн возвращается ошибка `failed_precondition (412)`.
       parameters:
         - in: path
           name: patternId
@@ -953,10 +1066,58 @@ paths:
         '403': { $ref: '#/components/responses/ForbiddenError' }
         '404': { $ref: '#/components/responses/NotFoundError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
+  /patterns/{id}/collaborators:
+    post:
+      tags: [patterns]
+      summary: Управление коллабораторами паттерна
+      description: Добавить или удалить коллабораторов для совместного редактирования паттерна
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatternCollaboratorsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [updated]
+                  collaborators:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid argument
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '409': { $ref: '#/components/responses/AlreadyExistsError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
   /patterns/preview:
     post:
       tags: [patterns]
       summary: Предпросмотр паттерна на устройстве
+      description: |
+        **Rate Limit:** Ограничено количество запросов предпросмотра в минуту.
+        При превышении лимита возвращается 429.
       requestBody:
         required: true
         content:
@@ -1554,6 +1715,50 @@ paths:
     post:
       tags: [admin]
       summary: Заблокировать устройство (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+      x-roles:
+        - admin
+      parameters:
+        - in: path
+          name: deviceId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Причина блокировки
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  device:
+                    $ref: '#/components/schemas/Device'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+  /admin/devices/{deviceId}/unban:
+    post:
+      tags: [admin]
+      summary: Разблокировать устройство (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+      x-roles:
+        - admin
       parameters:
         - in: path
           name: deviceId
@@ -1561,7 +1766,17 @@ paths:
           schema:
             type: string
       responses:
-        '200': { description: OK }
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  device:
+                    $ref: '#/components/schemas/Device'
         '401': { $ref: '#/components/responses/UnauthorizedError' }
         '403': { $ref: '#/components/responses/ForbiddenError' }
         '404': { $ref: '#/components/responses/NotFoundError' }
@@ -1592,6 +1807,13 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firmware:
+                    $ref: '#/components/schemas/AdminFirmwareInfo'
         '401': { $ref: '#/components/responses/UnauthorizedError' }
         '403': { $ref: '#/components/responses/ForbiddenError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
@@ -1602,6 +1824,22 @@ paths:
         Требуется роль администратора (`admin: true`).
       x-roles:
         - admin
+      parameters:
+        - in: query
+          name: hardwareVersion
+          schema:
+            type: integer
+            enum: [100, 200]
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: OK
@@ -1613,11 +1851,265 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/FirmwareInfo'
+                      $ref: '#/components/schemas/AdminFirmwareInfo'
                   nextCursor:
                     type: string
         '401': { $ref: '#/components/responses/UnauthorizedError' }
         '403': { $ref: '#/components/responses/ForbiddenError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+  /admin/firmware/{id}:
+    patch:
+      tags: [admin]
+      summary: Обновить прошивку (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+      x-roles:
+        - admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes: { type: string }
+                isPublished: { type: boolean }
+                rolloutStage: { type: string, nullable: true }
+                metadata: { type: object }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  firmware:
+                    $ref: '#/components/schemas/AdminFirmwareInfo'
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+    delete:
+      tags: [admin]
+      summary: Удалить прошивку (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+      x-roles:
+        - admin
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+
+  /admin/ota-jobs:
+    get:
+      tags: [admin]
+      summary: Список OTA задач (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+        Возвращает список всех OTA rollout задач с возможностью фильтрации.
+      x-roles:
+        - admin
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, failed, cancelled]
+          description: Фильтр по статусу задачи
+        - in: query
+          name: firmwareId
+          schema:
+            type: string
+          description: Фильтр по ID прошивки
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        firmwareId: { type: string }
+                        rolloutPercentage: { type: integer }
+                        status: { type: string }
+                        scheduledFor: { type: string, format: date-time, nullable: true }
+                        startedAt: { type: string, format: date-time, nullable: true }
+                        completedAt: { type: string, format: date-time, nullable: true }
+                        metadata: { type: object }
+                        createdAt: { type: string, format: date-time }
+                        updatedAt: { type: string, format: date-time }
+                  nextCursor:
+                    type: string
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+    post:
+      tags: [admin]
+      summary: Создать OTA задачу (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+        Создаёт новую задачу для развёртывания прошивки.
+      x-roles:
+        - admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firmwareId:
+                  type: string
+                  description: ID прошивки для развёртывания
+                rolloutPercentage:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                  default: 100
+                  description: Процент устройств для развёртывания
+                scheduledFor:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Время запуска (null = немедленно)
+                metadata:
+                  type: object
+                  description: Дополнительные метаданные
+              required: [firmwareId]
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+  /admin/ota-jobs/{jobId}:
+    get:
+      tags: [admin]
+      summary: Получить детали OTA задачи (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+      x-roles:
+        - admin
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      firmwareId: { type: string }
+                      rolloutPercentage: { type: integer }
+                      status: { type: string }
+                      scheduledFor: { type: string, format: date-time, nullable: true }
+                      startedAt: { type: string, format: date-time, nullable: true }
+                      completedAt: { type: string, format: date-time, nullable: true }
+                      metadata: { type: object }
+                      createdAt: { type: string, format: date-time }
+                      updatedAt: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
+        '429': { $ref: '#/components/responses/TooManyRequestsError' }
+    patch:
+      tags: [admin]
+      summary: Обновить статус OTA задачи (админ)
+      description: |
+        Требуется роль администратора (`admin: true`).
+        Позволяет изменить статус задачи (например, отменить).
+      x-roles:
+        - admin
+      parameters:
+        - in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [cancelled]
+                  description: Новый статус (только отмена)
+              required: [status]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401': { $ref: '#/components/responses/UnauthorizedError' }
+        '403': { $ref: '#/components/responses/ForbiddenError' }
+        '404': { $ref: '#/components/responses/NotFoundError' }
         '429': { $ref: '#/components/responses/TooManyRequestsError' }
 
   /admin/stats/overview:
@@ -2505,20 +2997,84 @@ components:
       properties:
         toUserId:
           type: string
+          description: UUID получателя объятия
         pairId:
           type: string
+          description: UUID пары
         emotion:
           type: object
           required: [color, patternId]
           properties:
             color:
               type: string
+              pattern: '^#[0-9A-Fa-f]{6}$'
+              description: Hex-цвет эмоции
             patternId:
               type: string
+              description: UUID паттерна
         payload:
           type: object
-        inReplyToHugId:
+          description: Дополнительные данные
+        inReplyTo:
           type: string
+          description: UUID объятия, на которое отвечаем
+        autoSharePattern:
+          type: boolean
+          default: true
+          description: Автоматически расшарить паттерн с получателем
+    
+    HugAcknowledgeRequest:
+      type: object
+      required: [deviceId, playedAt]
+      properties:
+        deviceId:
+          type: string
+          description: UUID устройства, на котором воспроизведено
+        playedAt:
+          type: string
+          format: date-time
+          description: Время воспроизведения
+    
+    HugPushPayload:
+      type: object
+      description: Структура данных, передаваемых через OneSignal при отправке объятия
+      properties:
+        type:
+          type: string
+          enum: [hug]
+        hugId:
+          type: string
+        emotion:
+          type: object
+          properties:
+            color:
+              type: string
+            patternId:
+              type: string
+        fromUser:
+          type: object
+          properties:
+            id:
+              type: string
+            displayName:
+              type: string
+            avatarUrl:
+              type: string
+              nullable: true
+        pairId:
+          type: string
+          nullable: true
+        inReplyTo:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        patternSpec:
+          allOf:
+            - $ref: '#/components/schemas/PatternSpec'
+          description: Inline-спецификация паттерна (если < 5KB)
+          nullable: true
 
     Pair:
       type: object
@@ -2554,6 +3110,38 @@ components:
       properties:
         inviteId:
           type: string
+    
+    PairStats:
+      type: object
+      properties:
+        pairId:
+          type: string
+        totalHugs:
+          type: integer
+          description: Общее количество объятий
+        deliveredCount:
+          type: integer
+          description: Количество доставленных объятий
+        pendingCount:
+          type: integer
+          description: Количество ожидающих доставки
+        avgDeliveryTimeSec:
+          type: number
+          nullable: true
+          description: Среднее время доставки в секундах
+        emotionsDistribution:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Распределение объятий по цветам эмоций
+        lastHugAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstHugAt:
+          type: string
+          format: date-time
+          nullable: true
 
     Practice:
       type: object
@@ -2923,6 +3511,18 @@ components:
           $ref: '#/components/schemas/PatternSpec'
         duration:
           type: integer
+    
+    PatternCollaboratorsRequest:
+      type: object
+      required: [action, userId]
+      properties:
+        action:
+          type: string
+          enum: [add, remove]
+          description: Действие - добавить или удалить коллаборатора
+        userId:
+          type: string
+          description: UUID пользователя для добавления/удаления
 
     Rule:
       type: object
@@ -3018,6 +3618,41 @@ components:
           type: integer
         updateAvailable:
           type: boolean
+    AdminFirmwareInfo:
+      type: object
+      description: Расширенная информация о прошивке для администраторов
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        hardwareVersion:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+        checksum:
+          type: string
+          nullable: true
+        size:
+          type: integer
+          nullable: true
+        isPublished:
+          type: boolean
+        rolloutStage:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     FirmwareReportRequest:
       type: object
       required: [fromVersion, toVersion, status]
