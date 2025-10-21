@@ -1,7 +1,7 @@
 package com.example.amulet.data.devices
 
 import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.domain.devices.DevicesRepository
+import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.github.michaelbull.result.Ok
 import javax.inject.Inject
 import javax.inject.Singleton

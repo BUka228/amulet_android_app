@@ -177,10 +177,103 @@ bleManager.observeNotifications().collect { notification ->
 ```kotlin
 @Inject lateinit var bleScanner: BleScanner
 
+// Сканирование всех амулетов поблизости
 bleScanner.scanForAmulets(timeoutMs = 10_000).collect { device ->
     println("Found: ${device.name} (${device.address})")
+    println("Serial: ${device.serialNumber}")
     // Подключиться к устройству
     bleManager.connect(device.address)
+}
+
+// Сканирование конкретного амулета по serial number (для паринга)
+bleScanner.scanForAmulets(
+    timeoutMs = 15_000,
+    serialNumberFilter = "AM-001-ABC123"
+).collect { device ->
+    println("Found target device: ${device.address}")
+    bleManager.connect(device.address)
+}
+```
+
+### Паринг через QR код или NFC
+
+Когда рядом несколько амулетов, используется паринг по серийному номеру:
+
+```kotlin
+@Inject lateinit var pairingHelper: DevicePairingHelper
+
+// Шаг 1: Получить данные паринга из QR или NFC (в другом модуле)
+// Пример QR: "amulet://pair?serial=AM-001-ABC123&token=eyJhbGc..."
+// Пример NFC: {"serial":"AM-001-ABC123","token":"eyJhbGc..."}
+
+val pairingData = PairingData(
+    serialNumber = "AM-001-ABC123",
+    claimToken = "eyJhbGc..."
+)
+
+// Шаг 2: Найти и подключиться к конкретному устройству
+try {
+    val deviceAddress = pairingHelper.findAndConnectDevice(
+        pairingData = pairingData,
+        scanTimeoutMs = 15_000
+    )
+    
+    println("Connected to device: $deviceAddress")
+    
+    // Шаг 3: Проверить serial number
+    val isValid = pairingHelper.verifyConnectedDevice(pairingData)
+    
+    if (isValid) {
+        // Шаг 4: Заклеймить устройство через API
+        // devicesRepository.claimDevice(pairingData.serialNumber, pairingData.claimToken)
+    }
+    
+} catch (e: DevicePairingException.DeviceNotFound) {
+    println("Устройство ${e.message} не найдено поблизости")
+} catch (e: DevicePairingException.ConnectionFailed) {
+    println("Не удалось подключиться: ${e.cause}")
+}
+```
+
+#### Интеграция с QR сканером (в :feature:onboarding)
+
+```kotlin
+// В модуле :feature:onboarding реализовать QrPairingReader
+class QrPairingReaderImpl @Inject constructor() : QrPairingReader {
+    override suspend fun scanQrCode(): PairingData? {
+        // Использовать CameraX + ML Kit Barcode Scanner
+        // Вернуть PairingData.fromQrCode(qrContent)
+    }
+}
+
+// Использование в UI
+val qrReader: QrPairingReader = ...
+val pairingData = qrReader.scanQrCode()
+if (pairingData != null) {
+    pairingHelper.findAndConnectDevice(pairingData)
+}
+```
+
+#### Интеграция с NFC (в :core:nfc)
+
+```kotlin
+// В модуле :core:nfc реализовать NfcPairingReader
+class NfcPairingReaderImpl @Inject constructor() : NfcPairingReader {
+    override suspend fun readPairingData(intent: Intent): PairingData? {
+        // Прочитать NDEF запись из NFC метки
+        // Вернуть PairingData.fromNfcPayload(payload)
+    }
+}
+
+// Использование в Activity/Fragment с NFC Intent
+override fun onNewIntent(intent: Intent) {
+    val nfcReader: NfcPairingReader = ...
+    val pairingData = nfcReader.readPairingData(intent)
+    if (pairingData != null) {
+        lifecycleScope.launch {
+            pairingHelper.findAndConnectDevice(pairingData)
+        }
+    }
 }
 ```
 

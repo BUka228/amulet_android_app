@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
@@ -117,7 +118,7 @@ class AmuletBleManagerImpl @Inject constructor(
         try {
             val device = bluetoothAdapter.getRemoteDevice(deviceAddress)
             
-            suspendCancellableCoroutine { continuation ->
+            suspendCancellableCoroutine<Unit> { continuation ->
                 bluetoothGatt = device.connectGatt(
                     context,
                     autoReconnect,
@@ -146,9 +147,9 @@ class AmuletBleManagerImpl @Inject constructor(
     }
     
     override suspend fun sendCommand(command: AmuletCommand): BleResult {
-        return retryPolicy.executeWithRetry {
-            sendCommandInternal(command)
-        }
+        return retryPolicy.executeWithRetry(
+            operation = { sendCommandInternal(command) }
+        )
     }
     
     @SuppressLint("MissingPermission")
@@ -287,7 +288,7 @@ class AmuletBleManagerImpl @Inject constructor(
     
     @SuppressLint("MissingPermission")
     private fun createGattCallback(
-        continuation: kotlin.coroutines.Continuation<Unit>? = null
+        continuation: CancellableContinuation<Unit>? = null
     ) = object : BluetoothGattCallback() {
         
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -339,8 +340,9 @@ class AmuletBleManagerImpl @Inject constructor(
                 
                 continuation?.resume(Unit)
             } else {
-                _connectionState.value = ConnectionState.Failed(Exception("Service discovery failed"))
-                continuation?.resumeWithException(Exception("Service discovery failed"))
+                val exception = Exception("Service discovery failed")
+                _connectionState.value = ConnectionState.Failed(exception)
+                continuation?.resumeWithException(exception)
             }
         }
         

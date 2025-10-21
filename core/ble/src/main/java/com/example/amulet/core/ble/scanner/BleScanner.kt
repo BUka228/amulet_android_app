@@ -36,10 +36,14 @@ class BleScanner @Inject constructor(
      * Фильтрует по Amulet Device Service UUID.
      * 
      * @param timeoutMs Таймаут сканирования (0 = бесконечно)
+     * @param serialNumberFilter Фильтр по серийному номеру (для паринга конкретного устройства)
      * @return Flow с найденными устройствами
      */
     @SuppressLint("MissingPermission")
-    fun scanForAmulets(timeoutMs: Long = 10_000L): Flow<ScannedDevice> = callbackFlow {
+    fun scanForAmulets(
+        timeoutMs: Long = 10_000L,
+        serialNumberFilter: String? = null
+    ): Flow<ScannedDevice> = callbackFlow {
         val scanner = bleScanner ?: run {
             close(IllegalStateException("Bluetooth LE scanner not available"))
             return@callbackFlow
@@ -47,11 +51,20 @@ class BleScanner @Inject constructor(
         
         val scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
+                // Извлечь serial number из Manufacturer Data или Device Name
+                val serialNumber = extractSerialNumber(result)
+                
+                // Фильтрация по serial number если указан
+                if (serialNumberFilter != null && serialNumber != serialNumberFilter) {
+                    return
+                }
+                
                 val device = ScannedDevice(
                     name = result.device.name ?: "Unknown",
                     address = result.device.address,
                     rssi = result.rssi,
-                    scanRecord = result.scanRecord?.bytes
+                    scanRecord = result.scanRecord?.bytes,
+                    serialNumber = serialNumber
                 )
                 trySend(device)
             }
@@ -82,6 +95,42 @@ class BleScanner @Inject constructor(
             scanner.stopScan(scanCallback)
         }
     }
+    
+    /**
+     * Извлечь serial number из BLE Scan Result.
+     * 
+     * Serial может быть закодирован в:
+     * 1. Device Name (например, "Amulet-AM001ABC123")
+     * 2. Manufacturer Data (Company ID + Serial)
+     * 3. Service Data (AMULET_DEVICE_SERVICE_UUID + Serial)
+     */
+    private fun extractSerialNumber(result: ScanResult): String? {
+        val scanRecord = result.scanRecord ?: return null
+        
+        // Вариант 1: Из имени устройства
+        val deviceName = result.device.name
+        if (deviceName?.startsWith("Amulet-") == true) {
+            return deviceName.substringAfter("Amulet-")
+        }
+        
+        // Вариант 2: Из Service Data (предпочтительный способ)
+        val serviceData = scanRecord.getServiceData(
+            android.os.ParcelUuid(GattConstants.AMULET_DEVICE_SERVICE_UUID)
+        )
+        if (serviceData != null && serviceData.isNotEmpty()) {
+            return String(serviceData, Charsets.UTF_8).trim()
+        }
+        
+        // Вариант 3: Из Manufacturer Data
+        // Company ID для Amulet (пример: 0xFFFF)
+        val manufacturerData = scanRecord.getManufacturerSpecificData(0xFFFF)
+        if (manufacturerData != null && manufacturerData.isNotEmpty()) {
+            // Формат: [Company ID: 2 bytes][Serial: N bytes]
+            return String(manufacturerData, Charsets.UTF_8).trim()
+        }
+        
+        return null
+    }
 }
 
 /**
@@ -91,7 +140,8 @@ data class ScannedDevice(
     val name: String,
     val address: String,
     val rssi: Int,
-    val scanRecord: ByteArray? = null
+    val scanRecord: ByteArray? = null,
+    val serialNumber: String? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
