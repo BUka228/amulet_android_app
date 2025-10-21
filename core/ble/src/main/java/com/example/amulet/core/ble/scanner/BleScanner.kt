@@ -104,6 +104,7 @@ class BleScanner @Inject constructor(
      * 2. Manufacturer Data (Company ID + Serial)
      * 3. Service Data (AMULET_DEVICE_SERVICE_UUID + Serial)
      */
+    @SuppressLint("MissingPermission")
     private fun extractSerialNumber(result: ScanResult): String? {
         val scanRecord = result.scanRecord ?: return null
         

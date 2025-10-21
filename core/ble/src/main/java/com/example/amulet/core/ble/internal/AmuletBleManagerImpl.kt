@@ -437,6 +437,7 @@ class AmuletBleManagerImpl @Inject constructor(
     
     fun cleanup() {
         scope.cancel()
+        @SuppressLint("MissingPermission")
         bluetoothGatt?.close()
     }
     

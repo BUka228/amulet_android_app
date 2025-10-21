@@ -1,7 +1,7 @@
 package com.example.amulet.data.devices.di
 
 import com.example.amulet.data.devices.DevicesRepositoryImpl
-import com.example.amulet.shared.domain.devices.DevicesRepository
+import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
