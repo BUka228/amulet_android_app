@@ -8,6 +8,8 @@ import com.example.amulet.core.network.serialization.JsonProvider
 import com.example.amulet.core.network.service.AdminApiService
 import com.example.amulet.core.network.service.DevicesApiService
 import com.example.amulet.core.network.service.HugsApiService
+import com.example.amulet.core.network.service.NotificationsApiService
+import com.example.amulet.core.network.service.OtaApiService
 import com.example.amulet.core.network.service.PairsApiService
 import com.example.amulet.core.network.service.PatternsApiService
 import com.example.amulet.core.network.service.PracticesApiService
@@ -131,5 +133,11 @@ object NetworkModule {
 
     @Provides
     fun provideAdminApiService(retrofit: Retrofit): AdminApiService = retrofit.create(AdminApiService::class.java)
+
+    @Provides
+    fun provideOtaApiService(retrofit: Retrofit): OtaApiService = retrofit.create(OtaApiService::class.java)
+
+    @Provides
+    fun provideNotificationsApiService(retrofit: Retrofit): NotificationsApiService = retrofit.create(NotificationsApiService::class.java)
 
 }
