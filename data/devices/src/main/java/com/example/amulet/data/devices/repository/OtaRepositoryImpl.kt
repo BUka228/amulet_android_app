@@ -9,6 +9,7 @@ import com.example.amulet.data.devices.datasource.remote.OtaRemoteDataSource
 import com.example.amulet.data.devices.mapper.OtaMapper
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.FirmwareUpdate
 import com.example.amulet.shared.domain.devices.model.OtaUpdateProgress
 import com.example.amulet.shared.domain.devices.model.OtaUpdateState
@@ -16,7 +17,6 @@ import com.example.amulet.shared.domain.devices.repository.OtaRepository
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.andThen
-import com.github.michaelbull.result.map
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -37,10 +37,10 @@ class OtaRepositoryImpl @Inject constructor(
     
     private var currentOtaJob: Job? = null
     
-    override suspend fun checkFirmwareUpdate(deviceId: String): AppResult<FirmwareUpdate?> {
+    override suspend fun checkFirmwareUpdate(deviceId: DeviceId): AppResult<FirmwareUpdate?> {
         // Получаем информацию об устройстве из БД
-        val device = devicesLocalDataSource.getDeviceById(deviceId)
-            ?: return Err(AppError.NotFound("Device not found: $deviceId"))
+        val device = devicesLocalDataSource.getDeviceById(deviceId.value)
+            ?: return Err(AppError.NotFound("Device not found: ${deviceId.value}"))
         
         val hardwareVersion = device.hardwareVersion
         val currentFirmware = device.firmwareVersion ?: "0.0.0"
@@ -60,7 +60,7 @@ class OtaRepositoryImpl @Inject constructor(
     }
     
     override fun startBleOtaUpdate(
-        deviceId: String,
+        deviceId: DeviceId,
         firmwareUpdate: FirmwareUpdate
     ): Flow<OtaUpdateProgress> {
         val firmwareInfo = FirmwareInfo(
@@ -77,7 +77,7 @@ class OtaRepositoryImpl @Inject constructor(
     }
     
     override fun startWifiOtaUpdate(
-        deviceId: String,
+        deviceId: DeviceId,
         ssid: String,
         password: String,
         firmwareUpdate: FirmwareUpdate
@@ -96,7 +96,7 @@ class OtaRepositoryImpl @Inject constructor(
     }
     
     override suspend fun reportFirmwareInstall(
-        deviceId: String,
+        deviceId: DeviceId,
         fromVersion: String,
         toVersion: String,
         success: Boolean,
@@ -105,7 +105,7 @@ class OtaRepositoryImpl @Inject constructor(
         val status = if (success) "success" else "failed"
         
         return remoteDataSource.reportFirmwareInstall(
-            deviceId = deviceId,
+            deviceId = deviceId.value,
             fromVersion = fromVersion,
             toVersion = toVersion,
             status = status,

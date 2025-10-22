@@ -1,6 +1,7 @@
 package com.example.amulet.shared.domain.devices.repository
 
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.FirmwareUpdate
 import com.example.amulet.shared.domain.devices.model.OtaUpdateProgress
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +18,7 @@ interface OtaRepository {
      * @param deviceId ID устройства
      * @return Информация об обновлении (null если обновление не требуется)
      */
-    suspend fun checkFirmwareUpdate(deviceId: String): AppResult<FirmwareUpdate?>
+    suspend fun checkFirmwareUpdate(deviceId: DeviceId): AppResult<FirmwareUpdate?>
     
     /**
      * Запустить OTA обновление через BLE.
@@ -27,7 +28,7 @@ interface OtaRepository {
      * @return Flow с прогрессом обновления
      */
     fun startBleOtaUpdate(
-        deviceId: String,
+        deviceId: DeviceId,
         firmwareUpdate: FirmwareUpdate
     ): Flow<OtaUpdateProgress>
     
@@ -42,7 +43,7 @@ interface OtaRepository {
      * @return Flow с прогрессом обновления
      */
     fun startWifiOtaUpdate(
-        deviceId: String,
+        deviceId: DeviceId,
         ssid: String,
         password: String,
         firmwareUpdate: FirmwareUpdate
@@ -58,7 +59,7 @@ interface OtaRepository {
      * @param errorMessage Сообщение об ошибке (если success = false)
      */
     suspend fun reportFirmwareInstall(
-        deviceId: String,
+        deviceId: DeviceId,
         fromVersion: String,
         toVersion: String,
         success: Boolean,

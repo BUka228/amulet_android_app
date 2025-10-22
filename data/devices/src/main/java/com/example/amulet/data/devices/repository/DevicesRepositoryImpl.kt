@@ -1,23 +1,22 @@
 package com.example.amulet.data.devices.repository
 
-import com.example.amulet.core.ble.model.ConnectionState
-import com.example.amulet.core.ble.model.DeviceStatus as BleDeviceStatus
 import com.example.amulet.data.devices.datasource.ble.DevicesBleDataSource
 import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSource
 import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSource
+import com.example.amulet.data.devices.mapper.BleMapper
 import com.example.amulet.data.devices.mapper.DeviceMapper
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.example.amulet.shared.domain.devices.model.ConnectionStatus
 import com.example.amulet.shared.domain.devices.model.Device
-import com.example.amulet.shared.domain.devices.repository.ConnectionStatus
-import com.example.amulet.shared.domain.devices.repository.DeviceConnectionProgress
-import com.example.amulet.shared.domain.devices.repository.DeviceLiveStatus
+import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
+import com.example.amulet.shared.domain.devices.model.DeviceId
+import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
+import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.PairingProgress
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
-import com.example.amulet.shared.domain.devices.repository.PairingDeviceFound
-import com.example.amulet.shared.domain.devices.repository.PairingProgress
-import com.example.amulet.shared.domain.devices.repository.SignalStrength
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.andThen
 import com.github.michaelbull.result.mapBoth
@@ -35,6 +34,7 @@ class DevicesRepositoryImpl @Inject constructor(
     private val localDataSource: DevicesLocalDataSource,
     private val bleDataSource: DevicesBleDataSource,
     private val deviceMapper: DeviceMapper,
+    private val bleMapper: BleMapper,
     private val userSessionProvider: UserSessionProvider
 ) : DevicesRepository {
     
@@ -45,15 +45,15 @@ class DevicesRepositoryImpl @Inject constructor(
             .map { entities -> entities.map { deviceMapper.toDomain(it) } }
     }
     
-    override suspend fun getDevice(deviceId: String): AppResult<Device> {
+    override suspend fun getDevice(deviceId: DeviceId): AppResult<Device> {
         // Сначала пытаемся получить из локальной БД
-        val localDevice = localDataSource.getDeviceById(deviceId)
+        val localDevice = localDataSource.getDeviceById(deviceId.value)
         if (localDevice != null) {
             return Ok(deviceMapper.toDomain(localDevice))
         }
         
         // Если нет в БД - загружаем с сервера
-        return remoteDataSource.fetchDevice(deviceId).andThen { dto ->
+        return remoteDataSource.fetchDevice(deviceId.value).andThen { dto ->
             val entity = deviceMapper.toEntity(dto)
             localDataSource.upsertDevice(entity)
             Ok(deviceMapper.toDomain(dto))
@@ -73,23 +73,23 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
-    override suspend fun unclaimDevice(deviceId: String): AppResult<Unit> {
-        return remoteDataSource.unclaimDevice(deviceId).andThen {
+    override suspend fun unclaimDevice(deviceId: DeviceId): AppResult<Unit> {
+        return remoteDataSource.unclaimDevice(deviceId.value).andThen {
             // Удаляем из локальной БД
-            localDataSource.deleteDeviceById(deviceId)
+            localDataSource.deleteDeviceById(deviceId.value)
             Ok(Unit)
         }
     }
     
     override suspend fun updateDeviceSettings(
-        deviceId: String,
+        deviceId: DeviceId,
         name: String?,
         brightness: Double?,
         haptics: Double?,
         gestures: Map<String, String>?
     ): AppResult<Device> {
         return remoteDataSource.updateDevice(
-            deviceId = deviceId,
+            deviceId = deviceId.value,
             name = name,
             brightness = brightness,
             haptics = haptics,
@@ -120,7 +120,7 @@ class DevicesRepositoryImpl @Inject constructor(
         return bleDataSource.scanForDevices(timeoutMs, serialNumberFilter).map { scanned ->
             PairingDeviceFound(
                 serialNumber = scanned.serialNumber ?: "Unknown",
-                signalStrength = mapRssiToSignalStrength(scanned.rssi),
+                signalStrength = bleMapper.mapRssiToSignalStrength(scanned.rssi),
                 deviceName = scanned.name
             )
         }
@@ -207,52 +207,28 @@ class DevicesRepositoryImpl @Inject constructor(
     
     override fun observeConnectionState(): Flow<ConnectionStatus> {
         return bleDataSource.observeConnectionState().map { state ->
-            mapConnectionState(state)
+            bleMapper.mapConnectionState(state)
         }
     }
     
     override fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?> {
         return bleDataSource.observeDeviceStatus().map { status ->
-            status?.let { mapDeviceStatus(it) }
+            status?.let { bleMapper.mapDeviceStatus(it) }
         }
     }
     
     /**
      * Получить ID текущего пользователя из сессии.
+     * Поддерживает как авторизованных пользователей, так и гостей.
      */
     private fun getCurrentUserId(): String? {
         return when (val context = userSessionProvider.currentContext) {
             is UserSessionContext.LoggedIn -> context.userId.value
+            is UserSessionContext.Guest -> context.sessionId // Гость использует sessionId как userId
             else -> null
         }
     }
     
-    /**
-     * Маппинг состояния BLE подключения.
-     */
-    private fun mapConnectionState(state: ConnectionState): ConnectionStatus {
-        return when (state) {
-            ConnectionState.Disconnected -> ConnectionStatus.DISCONNECTED
-            ConnectionState.Connecting -> ConnectionStatus.CONNECTING
-            ConnectionState.Connected, ConnectionState.ServicesDiscovered -> ConnectionStatus.CONNECTED
-            is ConnectionState.Reconnecting -> ConnectionStatus.RECONNECTING
-            is ConnectionState.Failed -> ConnectionStatus.FAILED
-        }
-    }
-    
-    /**
-     * Маппинг статуса BLE устройства.
-     */
-    private fun mapDeviceStatus(status: BleDeviceStatus): DeviceLiveStatus {
-        return DeviceLiveStatus(
-            serialNumber = status.serialNumber,
-            firmwareVersion = status.firmwareVersion,
-            hardwareVersion = status.hardwareVersion,
-            batteryLevel = status.batteryLevel,
-            isCharging = status.isCharging,
-            isOnline = status.isOnline
-        )
-    }
     
     /**
      * Поиск устройства по серийному номеру через BLE сканирование.
@@ -270,7 +246,7 @@ class DevicesRepositoryImpl @Inject constructor(
                     if (scanned.serialNumber == serialNumber) {
                         foundDevice = FoundDeviceInfo(
                             address = scanned.address,
-                            signalStrength = mapRssiToSignalStrength(scanned.rssi)
+                            signalStrength = bleMapper.mapRssiToSignalStrength(scanned.rssi)
                         )
                         throw DeviceFoundException()
                     }
@@ -283,23 +259,11 @@ class DevicesRepositoryImpl @Inject constructor(
     }
     
     /**
-     * Маппинг RSSI в доменную силу сигнала.
-     */
-    private fun mapRssiToSignalStrength(rssi: Int): SignalStrength {
-        return when {
-            rssi > -60 -> SignalStrength.EXCELLENT
-            rssi > -70 -> SignalStrength.GOOD
-            rssi > -80 -> SignalStrength.FAIR
-            else -> SignalStrength.WEAK
-        }
-    }
-    
-    /**
      * Внутренняя информация о найденном устройстве.
      */
     private data class FoundDeviceInfo(
         val address: String,
-        val signalStrength: SignalStrength
+        val signalStrength: com.example.amulet.shared.domain.devices.model.SignalStrength
     )
     
     /**

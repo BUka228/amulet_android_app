@@ -5,6 +5,7 @@ import com.example.amulet.core.database.entity.DeviceStatus as EntityDeviceStatu
 import com.example.amulet.core.network.dto.device.DeviceDto
 import com.example.amulet.core.network.dto.device.DeviceSettingsDto
 import com.example.amulet.shared.domain.devices.model.Device
+import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceSettings
 import com.example.amulet.shared.domain.devices.model.DeviceStatus
 import kotlinx.serialization.encodeToString
@@ -23,7 +24,7 @@ class DeviceMapper @Inject constructor(
      */
     fun toDomain(dto: DeviceDto): Device {
         return Device(
-            id = dto.id,
+            id = DeviceId(dto.id),
             ownerId = dto.ownerId ?: "",
             serialNumber = dto.serial ?: "",
             hardwareVersion = dto.hardwareVersion ?: 100,
@@ -47,7 +48,7 @@ class DeviceMapper @Inject constructor(
         }
         
         return Device(
-            id = entity.id,
+            id = DeviceId(entity.id),
             ownerId = entity.ownerId,
             serialNumber = entity.serial,
             hardwareVersion = entity.hardwareVersion,
@@ -90,7 +91,7 @@ class DeviceMapper @Inject constructor(
         val settingsJson = json.encodeToString(domain.settings)
         
         return DeviceEntity(
-            id = domain.id,
+            id = domain.id.value,
             ownerId = domain.ownerId,
             serial = domain.serialNumber,
             hardwareVersion = domain.hardwareVersion,

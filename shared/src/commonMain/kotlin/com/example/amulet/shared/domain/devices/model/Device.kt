@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Device(
-    val id: String,
+    val id: DeviceId,
     val ownerId: String,
     val serialNumber: String,
     val hardwareVersion: Int,

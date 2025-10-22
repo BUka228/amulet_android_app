@@ -1,7 +1,13 @@
 package com.example.amulet.shared.domain.devices.repository
 
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.devices.model.ConnectionStatus
 import com.example.amulet.shared.domain.devices.model.Device
+import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
+import com.example.amulet.shared.domain.devices.model.DeviceId
+import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
+import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.PairingProgress
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -24,7 +30,7 @@ interface DevicesRepository {
      *
      * @param deviceId ID устройства
      */
-    suspend fun getDevice(deviceId: String): AppResult<Device>
+    suspend fun getDevice(deviceId: DeviceId): AppResult<Device>
     
     /**
      * Обновить настройки устройства.
@@ -36,7 +42,7 @@ interface DevicesRepository {
      * @param gestures Пользовательские жесты
      */
     suspend fun updateDeviceSettings(
-        deviceId: String,
+        deviceId: DeviceId,
         name: String? = null,
         brightness: Double? = null,
         haptics: Double? = null,
@@ -48,7 +54,7 @@ interface DevicesRepository {
      *
      * @param deviceId ID устройства
      */
-    suspend fun unclaimDevice(deviceId: String): AppResult<Unit>
+    suspend fun unclaimDevice(deviceId: DeviceId): AppResult<Unit>
     
     /**
      * Синхронизировать устройства с сервером.
@@ -114,91 +120,3 @@ interface DevicesRepository {
      */
     fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?>
 }
-
-/**
- * Информация о найденном устройстве при сканировании для паринга.
- */
-data class PairingDeviceFound(
-    val serialNumber: String,
-    val signalStrength: SignalStrength,
-    val deviceName: String? = null
-)
-
-/**
- * Сила сигнала BLE (абстракция над RSSI).
- */
-enum class SignalStrength {
-    EXCELLENT, // > -60 dBm
-    GOOD,      // -60..-70 dBm
-    FAIR,      // -70..-80 dBm
-    WEAK       // < -80 dBm
-}
-
-/**
- * Прогресс паринга нового устройства.
- */
-sealed interface PairingProgress {
-    /** Поиск устройства по BLE */
-    data object SearchingDevice : PairingProgress
-    
-    /** Устройство найдено, начинаем подключение */
-    data class DeviceFound(val signalStrength: SignalStrength) : PairingProgress
-    
-    /** Подключение по BLE */
-    data object ConnectingBle : PairingProgress
-    
-    /** Привязка устройства на сервере (API claim) */
-    data object ClaimingOnServer : PairingProgress
-    
-    /** Настройка устройства (чтение характеристик, установка начальных параметров) */
-    data object ConfiguringDevice : PairingProgress
-    
-    /** Паринг завершен успешно */
-    data class Completed(val device: Device) : PairingProgress
-    
-    /** Ошибка паринга */
-    data class Failed(val error: AppError) : PairingProgress
-}
-
-/**
- * Прогресс подключения к уже привязанному устройству.
- */
-sealed interface DeviceConnectionProgress {
-    /** Поиск устройства по BLE */
-    data object Scanning : DeviceConnectionProgress
-    
-    /** Устройство найдено */
-    data class Found(val signalStrength: SignalStrength) : DeviceConnectionProgress
-    
-    /** Подключение */
-    data object Connecting : DeviceConnectionProgress
-    
-    /** Подключено и готово к работе */
-    data object Connected : DeviceConnectionProgress
-    
-    /** Ошибка подключения */
-    data class Failed(val error: AppError) : DeviceConnectionProgress
-}
-
-/**
- * Статус BLE подключения.
- */
-enum class ConnectionStatus {
-    DISCONNECTED,
-    CONNECTING,
-    CONNECTED,
-    RECONNECTING,
-    FAILED
-}
-
-/**
- * Живой статус подключенного устройства (через BLE).
- */
-data class DeviceLiveStatus(
-    val serialNumber: String,
-    val firmwareVersion: String,
-    val hardwareVersion: Int,
-    val batteryLevel: Int,
-    val isCharging: Boolean,
-    val isOnline: Boolean
-)
