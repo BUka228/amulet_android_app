@@ -12,13 +12,14 @@ import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.repository.ConnectionStatus
+import com.example.amulet.shared.domain.devices.repository.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.repository.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
-import com.example.amulet.shared.domain.devices.repository.ScannedDeviceInfo
-import com.github.michaelbull.result.Err
+import com.example.amulet.shared.domain.devices.repository.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.repository.PairingProgress
+import com.example.amulet.shared.domain.devices.repository.SignalStrength
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.andThen
-import com.github.michaelbull.result.map
 import com.github.michaelbull.result.mapBoth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -110,22 +111,94 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
-    override fun scanForDevices(
-        timeoutMs: Long,
-        serialNumberFilter: String?
-    ): Flow<ScannedDeviceInfo> {
+    // ========== Паринг и подключение ==========
+    
+    override fun scanForPairing(
+        serialNumberFilter: String?,
+        timeoutMs: Long
+    ): Flow<PairingDeviceFound> {
         return bleDataSource.scanForDevices(timeoutMs, serialNumberFilter).map { scanned ->
-            ScannedDeviceInfo(
-                name = scanned.name,
-                address = scanned.address,
-                rssi = scanned.rssi,
-                serialNumber = scanned.serialNumber
+            PairingDeviceFound(
+                serialNumber = scanned.serialNumber ?: "Unknown",
+                signalStrength = mapRssiToSignalStrength(scanned.rssi),
+                deviceName = scanned.name
             )
         }
     }
     
-    override suspend fun connectToDevice(deviceAddress: String): AppResult<Unit> {
-        return bleDataSource.connect(deviceAddress, autoReconnect = true)
+    override fun pairAndClaimDevice(
+        serialNumber: String,
+        claimToken: String,
+        deviceName: String?
+    ): Flow<PairingProgress> = kotlinx.coroutines.flow.flow {
+        try {
+            emit(PairingProgress.SearchingDevice)
+            
+            val foundDevice = findDeviceBySerial(serialNumber, 30_000L)
+            if (foundDevice == null) {
+                emit(PairingProgress.Failed(AppError.BleError.DeviceNotFound))
+                return@flow
+            }
+            
+            emit(PairingProgress.DeviceFound(foundDevice.signalStrength))
+            emit(PairingProgress.ConnectingBle)
+            
+            bleDataSource.connect(foundDevice.address, autoReconnect = false).mapBoth(
+                success = {
+                    emit(PairingProgress.ClaimingOnServer)
+                    
+                    remoteDataSource.claimDevice(serialNumber, claimToken, deviceName).mapBoth(
+                        success = { dto ->
+                            emit(PairingProgress.ConfiguringDevice)
+                            
+                            val entity = deviceMapper.toEntity(dto)
+                            localDataSource.upsertDevice(entity)
+                            
+                            val device = deviceMapper.toDomain(dto)
+                            emit(PairingProgress.Completed(device))
+                        },
+                        failure = { error ->
+                            bleDataSource.disconnect()
+                            emit(PairingProgress.Failed(error))
+                        }
+                    )
+                },
+                failure = { error ->
+                    emit(PairingProgress.Failed(error))
+                }
+            )
+        } catch (e: Exception) {
+            emit(PairingProgress.Failed(AppError.Unknown(e.message ?: "Pairing failed")))
+        }
+    }
+    
+    override fun connectToDevice(
+        serialNumber: String,
+        timeoutMs: Long
+    ): Flow<DeviceConnectionProgress> = kotlinx.coroutines.flow.flow {
+        try {
+            emit(DeviceConnectionProgress.Scanning)
+            
+            val foundDevice = findDeviceBySerial(serialNumber, timeoutMs)
+            if (foundDevice == null) {
+                emit(DeviceConnectionProgress.Failed(AppError.BleError.DeviceNotFound))
+                return@flow
+            }
+            
+            emit(DeviceConnectionProgress.Found(foundDevice.signalStrength))
+            emit(DeviceConnectionProgress.Connecting)
+            
+            bleDataSource.connect(foundDevice.address, autoReconnect = true).mapBoth(
+                success = {
+                    emit(DeviceConnectionProgress.Connected)
+                },
+                failure = { error ->
+                    emit(DeviceConnectionProgress.Failed(error))
+                }
+            )
+        } catch (e: Exception) {
+            emit(DeviceConnectionProgress.Failed(AppError.Unknown(e.message ?: "Connection failed")))
+        }
     }
     
     override suspend fun disconnectFromDevice(): AppResult<Unit> {
@@ -138,7 +211,7 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
-    override fun observeDeviceStatus(): Flow<DeviceLiveStatus?> {
+    override fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?> {
         return bleDataSource.observeDeviceStatus().map { status ->
             status?.let { mapDeviceStatus(it) }
         }
@@ -180,4 +253,57 @@ class DevicesRepositoryImpl @Inject constructor(
             isOnline = status.isOnline
         )
     }
+    
+    /**
+     * Поиск устройства по серийному номеру через BLE сканирование.
+     * Возвращает информацию о найденном устройстве или null.
+     */
+    private suspend fun findDeviceBySerial(
+        serialNumber: String,
+        timeoutMs: Long
+    ): FoundDeviceInfo? {
+        var foundDevice: FoundDeviceInfo? = null
+        
+        try {
+            bleDataSource.scanForDevices(timeoutMs, serialNumber)
+                .collect { scanned ->
+                    if (scanned.serialNumber == serialNumber) {
+                        foundDevice = FoundDeviceInfo(
+                            address = scanned.address,
+                            signalStrength = mapRssiToSignalStrength(scanned.rssi)
+                        )
+                        throw DeviceFoundException()
+                    }
+                }
+        } catch (e: DeviceFoundException) {
+            // Устройство найдено - это нормальный флоу
+        }
+        
+        return foundDevice
+    }
+    
+    /**
+     * Маппинг RSSI в доменную силу сигнала.
+     */
+    private fun mapRssiToSignalStrength(rssi: Int): SignalStrength {
+        return when {
+            rssi > -60 -> SignalStrength.EXCELLENT
+            rssi > -70 -> SignalStrength.GOOD
+            rssi > -80 -> SignalStrength.FAIR
+            else -> SignalStrength.WEAK
+        }
+    }
+    
+    /**
+     * Внутренняя информация о найденном устройстве.
+     */
+    private data class FoundDeviceInfo(
+        val address: String,
+        val signalStrength: SignalStrength
+    )
+    
+    /**
+     * Исключение для прерывания Flow сканирования когда устройство найдено.
+     */
+    private class DeviceFoundException : Exception()
 }
