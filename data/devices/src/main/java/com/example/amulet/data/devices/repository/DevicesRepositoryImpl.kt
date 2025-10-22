@@ -60,7 +60,7 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
-    override suspend fun claimDevice(
+    private suspend fun claimDevice(
         serial: String,
         claimToken: String,
         name: String?
@@ -168,7 +168,7 @@ class DevicesRepositoryImpl @Inject constructor(
                 }
             )
         } catch (e: Exception) {
-            emit(PairingProgress.Failed(AppError.Unknown(e.message ?: "Pairing failed")))
+            emit(PairingProgress.Failed(AppError.Unknown))
         }
     }
     
@@ -197,7 +197,7 @@ class DevicesRepositoryImpl @Inject constructor(
                 }
             )
         } catch (e: Exception) {
-            emit(DeviceConnectionProgress.Failed(AppError.Unknown(e.message ?: "Connection failed")))
+            emit(DeviceConnectionProgress.Failed(AppError.Unknown))
         }
     }
     

@@ -2,7 +2,6 @@ package com.example.amulet.shared.domain.devices.model
 
 import kotlinx.serialization.Serializable
 
-
 @Serializable
 data class Device(
     val id: DeviceId,

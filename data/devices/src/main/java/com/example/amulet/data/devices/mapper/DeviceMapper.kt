@@ -32,7 +32,7 @@ class DeviceMapper @Inject constructor(
             name = dto.name,
             batteryLevel = dto.batteryLevel,
             status = mapStatus(dto.status),
-            pairedAt = dto.pairedAt?.epochMillis ?: System.currentTimeMillis(),
+            pairedAt = dto.pairedAt?.value ?: System.currentTimeMillis(),
             settings = mapSettings(dto.settings)
         )
     }
@@ -79,7 +79,7 @@ class DeviceMapper @Inject constructor(
             batteryLevel = dto.batteryLevel,
             status = mapStatusToEntity(dto.status),
             settingsJson = settingsJson,
-            pairedAt = dto.pairedAt?.epochMillis,
+            pairedAt = dto.pairedAt?.value,
             updatedAt = System.currentTimeMillis()
         )
     }

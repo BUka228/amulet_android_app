@@ -11,6 +11,8 @@ import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
+import com.example.amulet.shared.domain.devices.repository.OtaRepository
+import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
@@ -45,6 +47,7 @@ object KoinBridgeModule {
         authRepository: AuthRepository,
         userRepository: UserRepository,
         devicesRepository: DevicesRepository,
+        otaRepository: OtaRepository,
         hugsRepository: HugsRepository,
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
@@ -60,6 +63,7 @@ object KoinBridgeModule {
                 single<AuthRepository> { authRepository }
                 single<UserRepository> { userRepository }
                 single<DevicesRepository> { devicesRepository }
+                single<OtaRepository> { otaRepository }
                 single<HugsRepository> { hugsRepository }
                 single<PatternsRepository> { patternsRepository }
                 single<PracticesRepository> { practicesRepository }
@@ -86,4 +90,51 @@ object KoinBridgeModule {
 
     @Provides
     fun provideEnableGuestModeUseCase(koin: Koin): EnableGuestModeUseCase = koin.get()
+
+    // Devices UseCases
+    @Provides
+    fun provideObserveDevicesUseCase(koin: Koin): ObserveDevicesUseCase = koin.get()
+
+    @Provides
+    fun provideGetDeviceUseCase(koin: Koin): GetDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideScanForPairingUseCase(koin: Koin): ScanForPairingUseCase = koin.get()
+
+    @Provides
+    fun providePairAndClaimDeviceUseCase(koin: Koin): PairAndClaimDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideConnectToDeviceUseCase(koin: Koin): ConnectToDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideDisconnectFromDeviceUseCase(koin: Koin): DisconnectFromDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideObserveConnectionStateUseCase(koin: Koin): ObserveConnectionStateUseCase = koin.get()
+
+    @Provides
+    fun provideObserveConnectedDeviceStatusUseCase(koin: Koin): ObserveConnectedDeviceStatusUseCase = koin.get()
+
+    @Provides
+    fun provideUpdateDeviceSettingsUseCase(koin: Koin): UpdateDeviceSettingsUseCase = koin.get()
+
+    @Provides
+    fun provideUnclaimDeviceUseCase(koin: Koin): UnclaimDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideSyncDevicesUseCase(koin: Koin): SyncDevicesUseCase = koin.get()
+
+    // OTA UseCases
+    @Provides
+    fun provideCheckFirmwareUpdateUseCase(koin: Koin): CheckFirmwareUpdateUseCase = koin.get()
+
+    @Provides
+    fun provideStartBleOtaUpdateUseCase(koin: Koin): StartBleOtaUpdateUseCase = koin.get()
+
+    @Provides
+    fun provideStartWifiOtaUpdateUseCase(koin: Koin): StartWifiOtaUpdateUseCase = koin.get()
+
+    @Provides
+    fun provideCancelOtaUpdateUseCase(koin: Koin): CancelOtaUpdateUseCase = koin.get()
 }

@@ -40,7 +40,7 @@ class OtaRepositoryImpl @Inject constructor(
     override suspend fun checkFirmwareUpdate(deviceId: DeviceId): AppResult<FirmwareUpdate?> {
         // Получаем информацию об устройстве из БД
         val device = devicesLocalDataSource.getDeviceById(deviceId.value)
-            ?: return Err(AppError.NotFound("Device not found: ${deviceId.value}"))
+            ?: return Err(AppError.NotFound)
         
         val hardwareVersion = device.hardwareVersion
         val currentFirmware = device.firmwareVersion ?: "0.0.0"

@@ -3,7 +3,6 @@ package com.example.amulet.core.network.service
 import com.example.amulet.core.network.dto.ota.FirmwareInfoDto
 import com.example.amulet.core.network.dto.ota.FirmwareReportRequestDto
 import com.example.amulet.core.network.dto.ota.OkResponseDto
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -26,14 +25,14 @@ interface OtaApiService {
      * 
      * @param hardware Версия оборудования устройства
      * @param currentFirmware Текущая версия прошивки устройства
-     * @return Response с FirmwareInfoDto если обновление доступно (200),
-     *         или пустой Response если обновление не требуется (204)
+     * @return FirmwareInfoDto если обновление доступно (200),
+     *         или null если обновление не требуется (204)
      */
     @GET("ota/firmware/latest")
     suspend fun getLatestFirmware(
         @Query("hardware") hardware: Int,
         @Query("currentFirmware") currentFirmware: String
-    ): Response<FirmwareInfoDto>
+    ): FirmwareInfoDto?
     
     /**
      * Отправка отчета об установке прошивки.

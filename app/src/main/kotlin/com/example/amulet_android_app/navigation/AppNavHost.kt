@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.example.amulet.feature.auth.navigation.AuthGraph
 import com.example.amulet.feature.auth.navigation.authGraph
 import com.example.amulet.feature.dashboard.navigation.dashboardGraph
+import com.example.amulet.feature.devices.navigation.devicesGraph
 
 @Composable
 fun AppNavHost(
@@ -27,6 +28,12 @@ fun AppNavHost(
             onNavigateToHugs = { navController.navigateToHugs() },
             onNavigateToPatterns = { navController.navigateToPatterns() },
             onNavigateToSettings = { navController.navigateToSettings() }
+        )
+
+        // Devices Graph - управление устройствами, паринг, OTA
+        devicesGraph(
+            navController = navController,
+            onNavigateBack = { navController.popBackStack() }
         )
 
         // Placeholder destinations для bottom navigation

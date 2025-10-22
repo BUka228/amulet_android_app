@@ -20,17 +20,8 @@ class OtaRemoteDataSourceImpl @Inject constructor(
         hardware: Int,
         currentFirmware: String
     ): AppResult<FirmwareInfoDto?> = safeApiCall(exceptionMapper) {
-        val response = apiService.getLatestFirmware(hardware, currentFirmware)
-        if (response.isSuccessful) {
-            response.body()
-        } else {
-            // 204 No Content означает, что обновление не требуется
-            if (response.code() == 204) {
-                null
-            } else {
-                throw Exception("Failed to check firmware update: ${response.code()}")
-            }
-        }
+        // API сервис должен возвращать null если обновление не требуется (204 No Content)
+        apiService.getLatestFirmware(hardware, currentFirmware)
     }
     
     override suspend fun reportFirmwareInstall(

@@ -88,7 +88,7 @@ class DevicesBleDataSourceImpl @Inject constructor(
             e.message?.contains("timeout", ignoreCase = true) == true ->
                 AppError.BleError.CommandTimeout(e.message ?: "Unknown command")
             
-            else -> AppError.Unknown(e.message ?: "BLE error")
+            else -> AppError.Unknown
         }
     }
 }

@@ -1,5 +1,6 @@
 plugins {
     id("amulet.kotlin.multiplatform.shared")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -10,6 +11,7 @@ kotlin {
                 api(libs.kotlin.result)
                 implementation(libs.kotlinx.coroutines.core)
                 api(libs.kotlinx.datetime)
+                api(libs.kotlinx.serialization.json)
                 implementation(libs.napier)
             }
         }

@@ -4,6 +4,8 @@ import androidx.navigation.NavController
 import com.example.amulet.feature.auth.navigation.AuthDestination
 import com.example.amulet.feature.auth.navigation.AuthGraph
 import com.example.amulet.feature.dashboard.navigation.DashboardGraph
+import com.example.amulet.feature.devices.navigation.DevicesGraph
+import com.example.amulet.feature.devices.navigation.navigateToPairing as navigateToDevicesPairing
 
 sealed interface AppDestination {
     val baseRoute: String
@@ -21,8 +23,11 @@ object DashboardGraphDestination : AppDestination {
     override val baseRoute: String = DashboardGraph.route
 }
 
+object DevicesGraphDestination : AppDestination {
+    override val baseRoute: String = DevicesGraph.route
+}
+
 // TODO: Добавить destinations по мере реализации feature модулей
-// object PairingGraphDestination : AppDestination { override val baseRoute: String = PairingGraph.route }
 // object LibraryGraphDestination : AppDestination { override val baseRoute: String = LibraryGraph.route }
 // object HugsGraphDestination : AppDestination { override val baseRoute: String = HugsGraph.route }
 // object PatternsGraphDestination : AppDestination { override val baseRoute: String = PatternsGraph.route }
@@ -30,8 +35,7 @@ object DashboardGraphDestination : AppDestination {
 
 // Navigation Extensions
 fun NavController.navigateToPairing() {
-    // TODO: Реализовать когда :feature:pairing будет готов
-    println("Навигация к Pairing (не реализовано)")
+    navigateToDevicesPairing()
 }
 
 fun NavController.navigateToLibrary() {
