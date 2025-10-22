@@ -65,7 +65,6 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: AuthInterceptor,
-        captchaInterceptor: CaptchaInterceptor,
         environment: SupabaseEnvironment
     ): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -86,7 +85,6 @@ object NetworkModule {
                     .build()
                 chain.proceed(request)
             }
-            .addInterceptor(captchaInterceptor)
             .addInterceptor(authInterceptor)
             .apply { if (loggingInterceptor.level != HttpLoggingInterceptor.Level.NONE) addInterceptor(loggingInterceptor) }
             .build()
