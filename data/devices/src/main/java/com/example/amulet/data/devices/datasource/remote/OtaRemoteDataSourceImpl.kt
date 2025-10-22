@@ -1,0 +1,54 @@
+package com.example.amulet.data.devices.datasource.remote
+
+import com.example.amulet.core.network.NetworkExceptionMapper
+import com.example.amulet.core.network.dto.ota.FirmwareInfoDto
+import com.example.amulet.core.network.dto.ota.FirmwareReportRequestDto
+import com.example.amulet.core.network.safeApiCall
+import com.example.amulet.core.network.service.OtaApiService
+import com.example.amulet.shared.core.AppResult
+import javax.inject.Inject
+
+/**
+ * Реализация источника удаленных данных для OTA обновлений.
+ */
+class OtaRemoteDataSourceImpl @Inject constructor(
+    private val apiService: OtaApiService,
+    private val exceptionMapper: NetworkExceptionMapper
+) : OtaRemoteDataSource {
+    
+    override suspend fun checkFirmwareUpdate(
+        hardware: Int,
+        currentFirmware: String
+    ): AppResult<FirmwareInfoDto?> = safeApiCall(exceptionMapper) {
+        val response = apiService.getLatestFirmware(hardware, currentFirmware)
+        if (response.isSuccessful) {
+            response.body()
+        } else {
+            // 204 No Content означает, что обновление не требуется
+            if (response.code() == 204) {
+                null
+            } else {
+                throw Exception("Failed to check firmware update: ${response.code()}")
+            }
+        }
+    }
+    
+    override suspend fun reportFirmwareInstall(
+        deviceId: String,
+        fromVersion: String,
+        toVersion: String,
+        status: String,
+        errorCode: String?,
+        errorMessage: String?
+    ): AppResult<Unit> = safeApiCall(exceptionMapper) {
+        val request = FirmwareReportRequestDto(
+            fromVersion = fromVersion,
+            toVersion = toVersion,
+            status = status,
+            errorCode = errorCode,
+            errorMessage = errorMessage
+        )
+        apiService.reportFirmwareInstall(deviceId, request)
+        Unit
+    }
+}

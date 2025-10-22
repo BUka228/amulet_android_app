@@ -20,6 +20,9 @@ interface DeviceDao {
     @Query("SELECT * FROM devices WHERE id = :deviceId")
     fun observeWithOwner(deviceId: String): Flow<DeviceWithOwner?>
 
+    @Query("SELECT * FROM devices WHERE id = :deviceId LIMIT 1")
+    suspend fun getById(deviceId: String): DeviceEntity?
+
     @Query("SELECT * FROM devices ORDER BY updatedAt DESC")
     fun pagingAll(): PagingSource<Int, DeviceEntity>
 

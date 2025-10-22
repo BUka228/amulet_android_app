@@ -1,18 +1,71 @@
 package com.example.amulet.data.devices.di
 
-import com.example.amulet.data.devices.DevicesRepositoryImpl
+import com.example.amulet.data.devices.datasource.ble.DevicesBleDataSource
+import com.example.amulet.data.devices.datasource.ble.DevicesBleDataSourceImpl
+import com.example.amulet.data.devices.datasource.ble.OtaBleDataSource
+import com.example.amulet.data.devices.datasource.ble.OtaBleDataSourceImpl
+import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSource
+import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSourceImpl
+import com.example.amulet.data.devices.datasource.local.OtaLocalDataSource
+import com.example.amulet.data.devices.datasource.local.OtaLocalDataSourceImpl
+import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSource
+import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSourceImpl
+import com.example.amulet.data.devices.datasource.remote.OtaRemoteDataSource
+import com.example.amulet.data.devices.datasource.remote.OtaRemoteDataSourceImpl
+import com.example.amulet.data.devices.repository.DevicesRepositoryImpl
+import com.example.amulet.data.devices.repository.OtaRepositoryImpl
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
+import com.example.amulet.shared.domain.devices.repository.OtaRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * DI модуль для Data Layer устройств и OTA.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 interface DevicesDataModule {
-
+    
+    // Repositories
+    
     @Binds
     @Singleton
     fun bindDevicesRepository(impl: DevicesRepositoryImpl): DevicesRepository
+    
+    @Binds
+    @Singleton
+    fun bindOtaRepository(impl: OtaRepositoryImpl): OtaRepository
+    
+    // Remote Data Sources
+    
+    @Binds
+    @Singleton
+    fun bindDevicesRemoteDataSource(impl: DevicesRemoteDataSourceImpl): DevicesRemoteDataSource
+    
+    @Binds
+    @Singleton
+    fun bindOtaRemoteDataSource(impl: OtaRemoteDataSourceImpl): OtaRemoteDataSource
+    
+    // Local Data Sources
+    
+    @Binds
+    @Singleton
+    fun bindDevicesLocalDataSource(impl: DevicesLocalDataSourceImpl): DevicesLocalDataSource
+    
+    @Binds
+    @Singleton
+    fun bindOtaLocalDataSource(impl: OtaLocalDataSourceImpl): OtaLocalDataSource
+    
+    // BLE Data Sources
+    
+    @Binds
+    @Singleton
+    fun bindDevicesBleDataSource(impl: DevicesBleDataSourceImpl): DevicesBleDataSource
+    
+    @Binds
+    @Singleton
+    fun bindOtaBleDataSource(impl: OtaBleDataSourceImpl): OtaBleDataSource
 }

@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 data class Device(
     val id: String,
     val ownerId: String,
-
     val serialNumber: String,
     val hardwareVersion: Int,
     val firmwareVersion: String,
