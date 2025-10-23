@@ -11,11 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
+import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.DeviceStatusChip
 import kotlinx.coroutines.flow.collectLatest
 
@@ -61,15 +63,15 @@ fun DeviceDetailsScreen(
     // Настраиваем TopBar через централизованный scaffold
     scaffoldState.ShowOnlyTopBar {
         TopAppBar(
-            title = { Text(state.device?.name ?: "Устройство") },
+            title = { Text(state.device?.name ?: stringResource(R.string.device_details_default_title)) },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
             },
             actions = {
                 IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.device_details_delete_button))
                 }
             }
         )
@@ -98,7 +100,7 @@ fun DeviceDetailsScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "Информация",
+                                text = stringResource(R.string.device_details_info_title),
                                 style = MaterialTheme.typography.titleMedium
                             )
 
@@ -106,7 +108,7 @@ fun DeviceDetailsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Серийный номер:")
+                                Text(stringResource(R.string.device_details_serial_label))
                                 Text(device.serialNumber, style = MaterialTheme.typography.bodyMedium)
                             }
 
@@ -114,7 +116,7 @@ fun DeviceDetailsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Версия прошивки:")
+                                Text(stringResource(R.string.device_details_firmware_label))
                                 Text(device.firmwareVersion, style = MaterialTheme.typography.bodyMedium)
                             }
 
@@ -123,7 +125,7 @@ fun DeviceDetailsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Статус:")
+                                Text(stringResource(R.string.device_details_status_label))
                                 DeviceStatusChip(status = device.status)
                             }
                         }
@@ -146,11 +148,11 @@ fun DeviceDetailsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Доступно обновление",
+                                        text = stringResource(R.string.device_details_update_available),
                                         style = MaterialTheme.typography.titleMedium
                                     )
                                     Text(
-                                        text = "Версия ${update.version}",
+                                        text = stringResource(R.string.device_details_update_version, update.version),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
@@ -160,7 +162,7 @@ fun DeviceDetailsScreen(
                                 ) {
                                     Icon(Icons.Default.SystemUpdate, contentDescription = null)
                                     Spacer(Modifier.width(8.dp))
-                                    Text("Обновить")
+                                    Text(stringResource(R.string.device_details_update_button))
                                 }
                             }
                         }
@@ -173,7 +175,7 @@ fun DeviceDetailsScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                text = "Настройки",
+                                text = stringResource(R.string.device_details_settings_title),
                                 style = MaterialTheme.typography.titleMedium
                             )
 
@@ -182,7 +184,7 @@ fun DeviceDetailsScreen(
                             OutlinedTextField(
                                 value = deviceName,
                                 onValueChange = { deviceName = it },
-                                label = { Text("Имя устройства") },
+                                label = { Text(stringResource(R.string.device_details_name_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 trailingIcon = {
@@ -190,7 +192,7 @@ fun DeviceDetailsScreen(
                                         TextButton(
                                             onClick = { onEvent(DeviceDetailsEvent.UpdateName(deviceName)) }
                                         ) {
-                                            Text("Сохранить")
+                                            Text(stringResource(R.string.device_details_save_button))
                                         }
                                     }
                                 }
@@ -198,7 +200,7 @@ fun DeviceDetailsScreen(
 
                             // Яркость
                             Column {
-                                Text("Яркость LED")
+                                Text(stringResource(R.string.device_details_brightness_label))
                                 Slider(
                                     value = device.settings.brightness.toFloat(),
                                     onValueChange = { 
@@ -210,7 +212,7 @@ fun DeviceDetailsScreen(
 
                             // Вибрация
                             Column {
-                                Text("Интенсивность вибрации")
+                                Text(stringResource(R.string.device_details_haptics_label))
                                 Slider(
                                     value = device.settings.haptics.toFloat(),
                                     onValueChange = { 
@@ -228,8 +230,8 @@ fun DeviceDetailsScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Отвязать устройство?") },
-            text = { Text("Это действие отвяжет устройство от вашего аккаунта. Вы сможете привязать его снова позже.") },
+            title = { Text(stringResource(R.string.device_details_unclaim_title)) },
+            text = { Text(stringResource(R.string.device_details_unclaim_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -237,12 +239,12 @@ fun DeviceDetailsScreen(
                         showDeleteDialog = false
                     }
                 ) {
-                    Text("Отвязать", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.device_details_unclaim_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )

@@ -11,7 +11,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.feature.devices.R
 import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceStatus
 
@@ -38,7 +40,7 @@ fun DeviceCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = device.name ?: "Амулет",
+                    text = device.name ?: stringResource(R.string.device_details_default_name),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
@@ -75,10 +77,10 @@ fun DeviceCard(
 @Composable
 fun DeviceStatusChip(status: DeviceStatus) {
     val (text, color) = when (status) {
-        DeviceStatus.ONLINE -> "Онлайн" to MaterialTheme.colorScheme.primary
-        DeviceStatus.OFFLINE -> "Офлайн" to MaterialTheme.colorScheme.error
-        DeviceStatus.CHARGING -> "Зарядка" to MaterialTheme.colorScheme.tertiary
-        DeviceStatus.UNKNOWN -> "Неизвестно" to MaterialTheme.colorScheme.onSurfaceVariant
+        DeviceStatus.ONLINE -> stringResource(R.string.devices_list_status_online) to MaterialTheme.colorScheme.primary
+        DeviceStatus.OFFLINE -> stringResource(R.string.devices_list_status_offline) to MaterialTheme.colorScheme.error
+        DeviceStatus.CHARGING -> stringResource(R.string.devices_list_status_charging) to MaterialTheme.colorScheme.tertiary
+        DeviceStatus.UNKNOWN -> stringResource(R.string.devices_list_status_unknown) to MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Surface(

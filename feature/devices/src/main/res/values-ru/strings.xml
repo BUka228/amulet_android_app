@@ -49,58 +49,75 @@
     
     <!-- Device Details Screen -->
     <string name="device_details_title">Детали Устройства</string>
+    <string name="device_details_default_title">Устройство</string>
     <string name="device_details_battery">Батарея: %d%%</string>
     <string name="device_details_status">Статус: %s</string>
     <string name="device_details_firmware">Прошивка: %s</string>
     <string name="device_details_serial">Серийный номер: %s</string>
+    <string name="device_details_info_title">Информация</string>
+    <string name="device_details_serial_label">Серийный номер:</string>
+    <string name="device_details_firmware_label">Версия прошивки:</string>
+    <string name="device_details_status_label">Статус:</string>
+    <string name="device_details_delete_button">Удалить</string>
     
     <string name="device_details_settings_title">Настройки</string>
-    <string name="device_details_name_label">Имя Устройства</string>
+    <string name="device_details_name_label">Имя устройства</string>
     <string name="device_details_name_hint">Введите имя устройства</string>
     <string name="device_details_brightness_label">Яркость LED</string>
-    <string name="device_details_haptics_label">Сила Вибрации</string>
+    <string name="device_details_haptics_label">Интенсивность вибрации</string>
+    <string name="device_details_save_button">Сохранить</string>
     
-    <string name="device_details_update_available">Доступно Обновление</string>
-    <string name="device_details_update_button">Обновить до %s</string>
+    <string name="device_details_update_available">Доступно обновление</string>
+    <string name="device_details_update_version">Версия %s</string>
+    <string name="device_details_update_button">Обновить</string>
     
-    <string name="device_details_unclaim_title">Удалить Устройство</string>
-    <string name="device_details_unclaim_message">Вы уверены, что хотите удалить это устройство из вашего аккаунта?</string>
+    <string name="device_details_unclaim_title">Отвязать устройство?</string>
+    <string name="device_details_unclaim_message">Это действие отвяжет устройство от вашего аккаунта. Вы сможете привязать его снова позже.</string>
     <string name="device_details_unclaim_button">Удалить Устройство</string>
-    <string name="device_details_unclaim_confirm">Удалить</string>
+    <string name="device_details_unclaim_confirm">Отвязать</string>
     <string name="device_details_unclaim_cancel">Отмена</string>
+    <string name="device_details_default_name">Амулет</string>
     
     <!-- OTA Update Screen -->
-    <string name="ota_title">Обновление Прошивки</string>
+    <string name="ota_title">Обновление прошивки</string>
     <string name="ota_current_version">Текущая: %s</string>
     <string name="ota_new_version">Новая: %s</string>
     <string name="ota_size">Размер: %s</string>
-    <string name="ota_release_notes">Список Изменений</string>
+    <string name="ota_size_kb">Размер: %d КБ</string>
+    <string name="ota_release_notes">Список изменений</string>
+    <string name="ota_update_available_title">Доступно обновление</string>
+    <string name="ota_version">Версия %s</string>
+    <string name="ota_choose_method">Выберите способ обновления:</string>
+    <string name="ota_no_update_title">Прошивка актуальна</string>
+    <string name="ota_no_update_message">У вас установлена последняя версия прошивки</string>
     
-    <string name="ota_method_title">Способ Обновления</string>
-    <string name="ota_method_ble">Bluetooth LE</string>
-    <string name="ota_method_ble_desc">Медленнее, но работает везде</string>
-    <string name="ota_method_wifi">Wi-Fi</string>
-    <string name="ota_method_wifi_desc">Быстрее при наличии Wi-Fi</string>
+    <string name="ota_method_title">Способ обновления</string>
+    <string name="ota_method_ble">Обновление через BLE</string>
+    <string name="ota_method_ble_desc">Медленнее, но надежнее. Устройство должно быть рядом.</string>
+    <string name="ota_method_wifi">Обновление через Wi-Fi</string>
+    <string name="ota_method_wifi_desc">Быстрее. Потребуется Wi-Fi сеть.</string>
     
-    <string name="ota_start_button">Начать Обновление</string>
-    <string name="ota_cancel_button">Отменить Обновление</string>
+    <string name="ota_start_button">Начать обновление</string>
+    <string name="ota_cancel_button">Отменить</string>
     
     <string name="ota_progress_title">Обновление…</string>
     <string name="ota_progress_preparing">Подготовка…</string>
     <string name="ota_progress_downloading">Загрузка прошивки…</string>
     <string name="ota_progress_transferring">Передача на устройство…</string>
-    <string name="ota_progress_verifying">Проверка…</string>
+    <string name="ota_progress_verifying">Проверка целостности…</string>
     <string name="ota_progress_installing">Установка…</string>
     <string name="ota_progress_completed">Обновление завершено!</string>
+    <string name="ota_progress_updating">Обновление…</string>
     <string name="ota_progress_percent">%d%%</string>
-    <string name="ota_progress_size">%1$s / %2$s</string>
+    <string name="ota_progress_size">%1$d / %2$d КБ</string>
+    <string name="ota_kb">КБ</string>
     
     <string name="ota_wifi_dialog_title">Настройка Wi-Fi</string>
-    <string name="ota_wifi_ssid_label">Wi-Fi Сеть</string>
+    <string name="ota_wifi_ssid_label">SSID (имя сети)</string>
     <string name="ota_wifi_ssid_hint">Имя сети</string>
     <string name="ota_wifi_password_label">Пароль</string>
     <string name="ota_wifi_password_hint">Пароль сети</string>
-    <string name="ota_wifi_connect_button">Подключить</string>
+    <string name="ota_wifi_connect_button">Подтвердить</string>
     <string name="ota_wifi_cancel_button">Отмена</string>
     
     <!-- Common -->

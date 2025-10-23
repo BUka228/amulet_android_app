@@ -11,12 +11,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
+import com.example.amulet.feature.devices.R
 import com.example.amulet.shared.domain.devices.model.OtaUpdateState as OtaProgressStage
 import kotlinx.coroutines.flow.collectLatest
 
@@ -62,13 +64,13 @@ fun OtaUpdateScreen(
     // Настраиваем TopBar через централизованный scaffold
     scaffoldState.ShowOnlyTopBar {
         TopAppBar(
-            title = { Text("Обновление прошивки") },
+            title = { Text(stringResource(R.string.ota_title)) },
             navigationIcon = {
                 IconButton(
                     onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
                     enabled = !state.isUpdating
                 ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
             }
         )
@@ -139,11 +141,11 @@ fun UpdateAvailableView(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Доступно обновление",
+                    text = stringResource(R.string.ota_update_available_title),
                     style = MaterialTheme.typography.titleLarge
                 )
                 Text(
-                    text = "Версия ${firmwareUpdate.version}",
+                    text = stringResource(R.string.ota_version, firmwareUpdate.version),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -155,7 +157,7 @@ fun UpdateAvailableView(
                     )
                 }
                 Text(
-                    text = "Размер: ${firmwareUpdate.size / 1024} КБ",
+                    text = stringResource(R.string.ota_size_kb, firmwareUpdate.size / 1024),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -163,7 +165,7 @@ fun UpdateAvailableView(
         }
 
         Text(
-            text = "Выберите способ обновления:",
+            text = stringResource(R.string.ota_choose_method),
             style = MaterialTheme.typography.titleMedium
         )
 
@@ -186,11 +188,11 @@ fun UpdateAvailableView(
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Обновление через BLE",
+                        text = stringResource(R.string.ota_method_ble),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = "Медленнее, но надежнее. Устройство должно быть рядом.",
+                        text = stringResource(R.string.ota_method_ble_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -217,11 +219,11 @@ fun UpdateAvailableView(
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Обновление через Wi-Fi",
+                        text = stringResource(R.string.ota_method_wifi),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = "Быстрее. Потребуется Wi-Fi сеть.",
+                        text = stringResource(R.string.ota_method_wifi_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -257,13 +259,13 @@ fun OtaProgressView(
 
         Text(
             text = when (progress?.state) {
-                OtaProgressStage.PREPARING -> "Подготовка..."
-                OtaProgressStage.DOWNLOADING -> "Загрузка прошивки..."
-                OtaProgressStage.TRANSFERRING -> "Передача на устройство..."
-                OtaProgressStage.VERIFYING -> "Проверка целостности..."
-                OtaProgressStage.INSTALLING -> "Установка..."
-                OtaProgressStage.COMPLETED -> "Обновление завершено!"
-                else -> "Обновление..."
+                OtaProgressStage.PREPARING -> stringResource(R.string.ota_progress_preparing)
+                OtaProgressStage.DOWNLOADING -> stringResource(R.string.ota_progress_downloading)
+                OtaProgressStage.TRANSFERRING -> stringResource(R.string.ota_progress_transferring)
+                OtaProgressStage.VERIFYING -> stringResource(R.string.ota_progress_verifying)
+                OtaProgressStage.INSTALLING -> stringResource(R.string.ota_progress_installing)
+                OtaProgressStage.COMPLETED -> stringResource(R.string.ota_progress_completed)
+                else -> stringResource(R.string.ota_progress_updating)
             },
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center
@@ -284,7 +286,7 @@ fun OtaProgressView(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "${prog.currentBytes / 1024} / ${prog.totalBytes / 1024} КБ",
+                    text = stringResource(R.string.ota_progress_size, prog.currentBytes / 1024, prog.totalBytes / 1024),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -305,7 +307,7 @@ fun OtaProgressView(
                 onClick = onCancel,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Отменить")
+                Text(stringResource(R.string.ota_cancel_button))
             }
         }
     }
@@ -329,18 +331,18 @@ fun NoUpdateAvailableView(
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Прошивка актуальна",
+            text = stringResource(R.string.ota_no_update_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "У вас установлена последняя версия прошивки",
+            text = stringResource(R.string.ota_no_update_message),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Button(onClick = onNavigateBack) {
-            Text("Назад")
+            Text(stringResource(R.string.common_back))
         }
     }
 }
@@ -355,19 +357,19 @@ fun WifiCredentialsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Настройка Wi-Fi") },
+        title = { Text(stringResource(R.string.ota_wifi_dialog_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = ssid,
                     onValueChange = { ssid = it },
-                    label = { Text("SSID (имя сети)") },
+                    label = { Text(stringResource(R.string.ota_wifi_ssid_label)) },
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Пароль") },
+                    label = { Text(stringResource(R.string.ota_wifi_password_label)) },
                     singleLine = true
                 )
             }
@@ -377,12 +379,12 @@ fun WifiCredentialsDialog(
                 onClick = { onConfirm(ssid, password) },
                 enabled = ssid.isNotBlank() && password.isNotBlank()
             ) {
-                Text("Подтвердить")
+                Text(stringResource(R.string.ota_wifi_connect_button))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
