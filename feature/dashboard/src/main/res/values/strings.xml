@@ -64,4 +64,23 @@
     <string name="dashboard_no_devices_title">No devices</string>
     <string name="dashboard_no_devices_subtitle">Connect your amulet to get started</string>
     <string name="dashboard_add_device_button">Add device</string>
+    
+    <!-- Dashboard TopBar -->
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_menu_notifications">Notifications</string>
+    <string name="dashboard_menu_profile">Profile</string>
+    
+    <!-- User Info -->
+    <string name="dashboard_guest_user">Guest</string>
+    <string name="dashboard_hello">Hello</string>
+    
+    <!-- Dashboard Actions -->
+    <string name="dashboard_action_sync">Sync</string>
+    <string name="dashboard_action_refresh">Refresh</string>
+    
+    <!-- Stats Compact -->
+    <string name="dashboard_stats_today">Today</string>
+    <string name="dashboard_practices_short">Practices</string>
+    <string name="dashboard_hugs_short">Hugs</string>
+    <string name="dashboard_calm_short">Calm</string>
 </resources>

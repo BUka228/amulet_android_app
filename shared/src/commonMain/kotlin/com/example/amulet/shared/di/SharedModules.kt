@@ -8,6 +8,7 @@ import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -22,6 +23,9 @@ private val sharedModule = module {
     factory { SignOutUseCase(get()) }
     factory { SignUpUseCase(get(), get()) }
     factory { EnableGuestModeUseCase(get()) }
+    
+    // User UseCases
+    factory { ObserveCurrentUserUseCase(get(), get()) }
 
     // Hugs UseCases
     factory<SendHugUseCase> { DefaultSendHugUseCase(get()) }

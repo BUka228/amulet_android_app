@@ -20,6 +20,7 @@ import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
+import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
 import dagger.Provides
@@ -90,6 +91,10 @@ object KoinBridgeModule {
 
     @Provides
     fun provideEnableGuestModeUseCase(koin: Koin): EnableGuestModeUseCase = koin.get()
+    
+    // User UseCases
+    @Provides
+    fun provideObserveCurrentUserUseCase(koin: Koin): ObserveCurrentUserUseCase = koin.get()
 
     // Devices UseCases
     @Provides

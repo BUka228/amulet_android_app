@@ -11,6 +11,8 @@ import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.fold
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -39,5 +41,10 @@ class UserRepositoryImpl @Inject constructor(
                 }
             }
         )
+    }
+
+    override fun observeUser(userId: UserId): Flow<User?> {
+        return localDataSource.observeById(userId.value)
+            .map { entity -> entity?.let { entityMapper.toDomain(it) } }
     }
 }

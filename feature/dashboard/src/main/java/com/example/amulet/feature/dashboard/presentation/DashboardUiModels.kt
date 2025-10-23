@@ -9,7 +9,7 @@ import com.example.amulet.shared.domain.devices.model.Device
  */
 data class DashboardUiState(
     val isLoading: Boolean = false,
-    val userName: String = "Пользователь",
+    val userName: String? = null,
     val devices: List<Device> = emptyList(),
     val connectedDevice: Device? = null,
     val dailyStats: DailyStats = DailyStats(),

@@ -64,4 +64,23 @@
     <string name="dashboard_no_devices_title">Нет устройств</string>
     <string name="dashboard_no_devices_subtitle">Подключите свой амулет для начала</string>
     <string name="dashboard_add_device_button">Добавить устройство</string>
+    
+    <!-- Dashboard TopBar -->
+    <string name="dashboard_title">Главная</string>
+    <string name="dashboard_menu_notifications">Уведомления</string>
+    <string name="dashboard_menu_profile">Профиль</string>
+    
+    <!-- User Info -->
+    <string name="dashboard_guest_user">Гость</string>
+    <string name="dashboard_hello">Привет</string>
+    
+    <!-- Dashboard Actions -->
+    <string name="dashboard_action_sync">Синхронизация</string>
+    <string name="dashboard_action_refresh">Обновить</string>
+    
+    <!-- Stats Compact -->
+    <string name="dashboard_stats_today">Сегодня</string>
+    <string name="dashboard_practices_short">Практик</string>
+    <string name="dashboard_hugs_short">Объятий</string>
+    <string name="dashboard_calm_short">Спокойствие</string>
 </resources>

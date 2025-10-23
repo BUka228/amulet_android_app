@@ -6,6 +6,7 @@ import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.ConnectionStatus
 import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
+import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val observeDevicesUseCase: ObserveDevicesUseCase,
-    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase
+    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase,
+    private val observeCurrentUserUseCase: ObserveCurrentUserUseCase
     // TODO: Inject practice UseCases when implemented
     // private val getDailyStatsUseCase: GetDailyStatsUseCase,
     // private val startPracticeUseCase: StartPracticeUseCase
@@ -34,6 +36,7 @@ class DashboardViewModel @Inject constructor(
         loadDashboardData()
         observeDevices()
         observeConnectionState()
+        observeCurrentUser()
     }
 
     /**
@@ -76,6 +79,15 @@ class DashboardViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
     }
+    
+    private fun observeCurrentUser() {
+        observeCurrentUserUseCase()
+            .onEach { user ->
+                _uiState.update { it.copy(userName = user?.displayName) }
+                Logger.d("Current user updated: ${user?.id?.value}", TAG)
+            }
+            .launchIn(viewModelScope)
+    }
 
     private fun loadDashboardData() {
         viewModelScope.launch {
@@ -86,10 +98,10 @@ class DashboardViewModel @Inject constructor(
             // val statsResult = getDailyStatsUseCase(LocalDate.now())
             
             // Mock data для статистики
+            // TODO: Replace with real statistics from use cases
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    userName = "Александр",
                     dailyStats = DailyStats(
                         practiceMinutes = 42,
                         hugsCount = 5,

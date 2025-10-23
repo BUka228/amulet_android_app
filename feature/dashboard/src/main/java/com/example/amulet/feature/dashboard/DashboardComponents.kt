@@ -47,7 +47,7 @@ fun DevicesSection(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.sm)
+        verticalArrangement = Arrangement.spacedBy(spacing.xs)
     ) {
         // Header с кнопкой "Все устройства"
         Row(
@@ -57,12 +57,15 @@ fun DevicesSection(
         ) {
             Text(
                 text = stringResource(R.string.dashboard_devices_title),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             if (devices.isNotEmpty()) {
                 TextButton(onClick = onNavigateToDevicesList) {
-                    Text(stringResource(R.string.dashboard_view_all))
+                    Text(
+                        stringResource(R.string.dashboard_view_all),
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
@@ -102,38 +105,39 @@ private fun EmptyDevicesCard(
 
     AmuletCard(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardElevation.Default
+        elevation = CardElevation.Low
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(spacing.lg),
+                .padding(spacing.md),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = Icons.Default.BluetoothDisabled,
                 contentDescription = null,
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(spacing.md))
+            Spacer(modifier = Modifier.height(spacing.sm))
             Text(
                 text = stringResource(R.string.dashboard_no_devices_title),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = stringResource(R.string.dashboard_no_devices_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(spacing.lg))
+            Spacer(modifier = Modifier.height(spacing.md))
             AmuletButton(
                 text = stringResource(R.string.dashboard_add_device_button),
                 onClick = onNavigateToPairing,
                 variant = ButtonVariant.Primary,
                 fullWidth = true,
+                size = ButtonSize.Small,
                 icon = Icons.AutoMirrored.Filled.BluetoothSearching
             )
         }
@@ -152,68 +156,73 @@ private fun ConnectedDeviceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        elevation = CardElevation.Default
+        elevation = CardElevation.Low
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(spacing.md),
+                .padding(spacing.sm),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = device.name ?: device.serialNumber,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Watch,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp),
+                    tint = if (isConnected) AmuletPalette.Primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(spacing.xs)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(if (isConnected) AmuletPalette.Success else MaterialTheme.colorScheme.onSurfaceVariant)
-                    )
+                
+                Column {
                     Text(
-                        text = if (isConnected) "Подключено" else device.status.name,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = device.name ?: device.serialNumber,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
-                }
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                device.batteryLevel?.let { battery ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(spacing.xs)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Battery4Bar,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = when {
-                                battery > 60 -> AmuletPalette.Success
-                                battery > 20 -> AmuletPalette.Warning
-                                else -> AmuletPalette.Error
-                            }
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(if (isConnected) AmuletPalette.Success else MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                         Text(
-                            text = "${battery.toInt()}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            text = if (isConnected) "Подключено" else device.status.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-                Text(
-                    text = device.firmwareVersion,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            }
+
+            device.batteryLevel?.let { battery ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BatteryChargingFull,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = when {
+                            battery > 60 -> AmuletPalette.Success
+                            battery > 20 -> AmuletPalette.Warning
+                            else -> AmuletPalette.Error
+                        }
+                    )
+                    Text(
+                        text = "${battery.toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -310,11 +319,11 @@ fun QuickStartSection(
     val spacing = AmuletTheme.spacing
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(spacing.md)
+        verticalArrangement = Arrangement.spacedBy(spacing.xs)
     ) {
         Text(
             text = stringResource(R.string.quick_start_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
@@ -325,168 +334,58 @@ fun QuickStartSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(spacing.md),
+                    .padding(spacing.sm),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.quick_start_breathing_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = stringResource(R.string.quick_start_breathing_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(spacing.md))
-
-                AmuletButton(
-                    text = stringResource(R.string.quick_start_button),
-                    onClick = { onStartPractice("breathing_4_7_8") },
-                    variant = ButtonVariant.Primary,
-                    size = ButtonSize.Small,
-                    fullWidth = false,
-                    icon = Icons.Default.PlayArrow
-                )
-            }
-        }
-    }
-}
-
-// ===== Статистика дня =====
-@Composable
-fun DailyStatsSection(
-    stats: DailyStats
-) {
-    val spacing = AmuletTheme.spacing
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(spacing.md)
-    ) {
-        Text(
-            text = stringResource(R.string.daily_stats_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(spacing.sm)
-        ) {
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Timer,
-                label = stringResource(R.string.daily_stats_practices),
-                value = stringResource(R.string.daily_stats_minutes, stats.practiceMinutes),
-                color = AmuletPalette.Primary
-            )
-            StatCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Default.Favorite,
-                label = stringResource(R.string.daily_stats_hugs),
-                value = stringResource(R.string.daily_stats_count, stats.hugsCount),
-                color = AmuletPalette.EmotionLove
-            )
-        }
-
-        AmuletCard(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardElevation.Low
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(spacing.md)
-            ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm)
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
-                        contentDescription = null,
-                        tint = AmuletPalette.Success
-                    )
-                    Text(
-                        text = stringResource(R.string.daily_stats_calm_level),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(AmuletPalette.Primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Air,
+                            contentDescription = null,
+                            tint = AmuletPalette.Primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    Column {
+                        Text(
+                            text = stringResource(R.string.quick_start_breathing_title),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = stringResource(R.string.quick_start_breathing_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(spacing.sm))
-
-                LinearProgressIndicator(
-                    progress = { stats.calmLevel / 100f },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(MaterialTheme.shapes.small),
-                    color = AmuletPalette.EmotionCalm,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(spacing.xs))
-
-                Text(
-                    text = stringResource(
-                        R.string.daily_stats_calm_percent,
-                        stats.calmLevel,
-                        getCalmLevelText(stats.calmLevel)
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                IconButton(onClick = { onStartPractice("breathing_4_7_8") }) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = stringResource(R.string.quick_start_button),
+                        tint = AmuletPalette.Primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     }
 }
 
-@Composable
-fun StatCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    label: String,
-    value: String,
-    color: Color
-) {
-    val spacing = AmuletTheme.spacing
 
-    AmuletCard(
-        modifier = modifier,
-        elevation = CardElevation.Low
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(spacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
 
 // ===== Быстрый доступ =====
 @Composable
@@ -498,11 +397,11 @@ fun QuickAccessGrid(
     val spacing = AmuletTheme.spacing
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(spacing.md)
+        verticalArrangement = Arrangement.spacedBy(spacing.xs)
     ) {
         Text(
             text = stringResource(R.string.quick_access_title),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
@@ -553,22 +452,22 @@ fun QuickAccessItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(spacing.md),
-            horizontalArrangement = Arrangement.spacedBy(spacing.md),
+                .padding(spacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
-                    .background(color.copy(alpha = 0.15f)),
+                    .background(color.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = color,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -577,7 +476,7 @@ fun QuickAccessItem(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
@@ -590,7 +489,8 @@ fun QuickAccessItem(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
             )
         }
     }

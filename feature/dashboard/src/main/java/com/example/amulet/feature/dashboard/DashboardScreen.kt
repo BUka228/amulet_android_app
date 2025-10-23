@@ -80,6 +80,7 @@ fun DashboardRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
@@ -88,68 +89,185 @@ fun DashboardScreen(
     val spacing = AmuletTheme.spacing
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = spacing.md)
-            .padding(top = spacing.lg, bottom = spacing.md),
-        verticalArrangement = Arrangement.spacedBy(spacing.md)
+    Scaffold(
+        topBar = {
+            DashboardTopBar(
+                userName = uiState.userName,
+                onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
+                onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(paddingValues)
+                .padding(horizontal = spacing.md)
+                .padding(bottom = spacing.md),
+            verticalArrangement = Arrangement.spacedBy(spacing.sm)
+        ) {
+            Spacer(modifier = Modifier.height(spacing.xs))
+            
+            // Компактная статистика в верхней части
+            CompactStatsRow(
+                stats = uiState.dailyStats
+            )
+
+            // Устройства - компактная версия
+            DevicesSection(
+                devices = uiState.devices,
+                connectedDevice = uiState.connectedDevice,
+                onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
+                onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
+                onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
+            )
+
+            // Быстрый старт практики - обновленный дизайн
+            QuickStartSection(
+                onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
+            )
+
+            // Рекомендации на основе данных
+            RecommendationsSection(
+                stats = uiState.dailyStats,
+                onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
+            )
+            
+            // Быстрый доступ к разделам
+            QuickAccessGrid(
+                onNavigateToLibrary = { onEvent(DashboardUiEvent.NavigateToLibrary) },
+                onNavigateToHugs = { onEvent(DashboardUiEvent.NavigateToHugs) },
+                onNavigateToPatterns = { onEvent(DashboardUiEvent.NavigateToPatterns) }
+            )
+
+            Spacer(modifier = Modifier.height(spacing.sm))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DashboardTopBar(
+    userName: String?,
+    onSettingsClick: () -> Unit,
+    onRefreshClick: () -> Unit
+) {
+    val spacing = AmuletTheme.spacing
+    
+    TopAppBar(
+        title = {
+            Column {
+                Text(
+                    text = stringResource(R.string.dashboard_hello),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = userName ?: stringResource(R.string.dashboard_guest_user),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onRefreshClick) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = stringResource(R.string.dashboard_action_refresh)
+                )
+            }
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = stringResource(R.string.dashboard_settings)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface
+        )
+    )
+}
+
+@Composable
+private fun CompactStatsRow(
+    stats: DailyStats
+) {
+    val spacing = AmuletTheme.spacing
+    
+    AmuletCard(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardElevation.Low
     ) {
-        // Компактный header с приветствием
-        DashboardHeader(
-            userName = uiState.userName
-        )
-
-        // Устройства - компактная версия
-        DevicesSection(
-            devices = uiState.devices,
-            connectedDevice = uiState.connectedDevice,
-            onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
-            onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
-            onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
-        )
-
-        // Статистика дня - улучшенная версия
-        DailyStatsSection(
-            stats = uiState.dailyStats
-        )
-
-        // Быстрый старт практики - обновленный дизайн
-        QuickStartSection(
-            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-        )
-
-        // Рекомендации на основе данных
-        RecommendationsSection(
-            stats = uiState.dailyStats,
-            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-        )
-
-        Spacer(modifier = Modifier.height(spacing.sm))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.md),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            CompactStatItem(
+                icon = Icons.Default.Timer,
+                value = "${stats.practiceMinutes}",
+                label = stringResource(R.string.dashboard_practices_short),
+                color = AmuletPalette.Primary
+            )
+            
+            VerticalDivider(
+                modifier = Modifier.height(48.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            
+            CompactStatItem(
+                icon = Icons.Default.Favorite,
+                value = "${stats.hugsCount}",
+                label = stringResource(R.string.dashboard_hugs_short),
+                color = AmuletPalette.EmotionLove
+            )
+            
+            VerticalDivider(
+                modifier = Modifier.height(48.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            
+            CompactStatItem(
+                icon = Icons.Default.FavoriteBorder,
+                value = "${stats.calmLevel}%",
+                label = stringResource(R.string.dashboard_calm_short),
+                color = AmuletPalette.EmotionCalm
+            )
+        }
     }
 }
 
 @Composable
-private fun DashboardHeader(
-    userName: String
+private fun CompactStatItem(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    color: Color
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = stringResource(R.string.dashboard_welcome),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(20.dp)
         )
-        Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = userName,
-            style = MaterialTheme.typography.headlineLarge,
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

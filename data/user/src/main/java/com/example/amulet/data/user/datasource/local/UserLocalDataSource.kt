@@ -5,11 +5,13 @@ import com.example.amulet.core.database.entity.UserEntity
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 interface UserLocalDataSource {
     suspend fun upsert(user: UserEntity)
     suspend fun findById(userId: String): UserEntity?
+    fun observeById(userId: String): Flow<UserEntity?>
 }
 
 @Singleton
@@ -26,4 +28,7 @@ class UserLocalDataSourceImpl @Inject constructor(
     override suspend fun findById(userId: String): UserEntity? = withContext(Dispatchers.IO) {
         userDao.getById(userId)
     }
+    
+    override fun observeById(userId: String): Flow<UserEntity?> = 
+        userDao.observeById(userId)
 }
