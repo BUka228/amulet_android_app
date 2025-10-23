@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +46,10 @@ fun MainScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    // Получаем цвета темы
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val contentColorValue = MaterialTheme.colorScheme.onBackground
+    
     // Автоматически управляем scaffold конфигурацией в зависимости от route
     // При смене route сбрасываем всю конфигурацию и устанавливаем только bottomBar если нужно
     LaunchedEffect(currentRoute) {
@@ -58,12 +63,20 @@ fun MainScaffold(
                             navController = navController,
                             currentRoute = currentRoute.orEmpty()
                         )
-                    }
+                    },
+                    containerColor = backgroundColor,
+                    contentColor = contentColorValue
                 )
             }
         } else {
             // Для вложенных экранов: сбрасываем bottomBar, topBar/FAB установят сами экраны
-            scaffoldState.reset()
+            // Но сохраняем правильные цвета темы
+            scaffoldState.updateConfig {
+                ScaffoldConfig(
+                    containerColor = backgroundColor,
+                    contentColor = contentColorValue
+                )
+            }
         }
     }
 
