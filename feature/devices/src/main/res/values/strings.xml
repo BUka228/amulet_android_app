@@ -20,6 +20,9 @@
     <string name="pairing_scan_qr_message">Scan the QR code on your Amulet device packaging</string>
     <string name="pairing_scan_qr_button">Scan QR Code</string>
     <string name="pairing_use_nfc_button">Use NFC</string>
+    <string name="pairing_nfc_unavailable">NFC not available</string>
+    <string name="pairing_nfc_ready_title">Tap NFC Tag</string>
+    <string name="pairing_nfc_ready_message">Hold your device close to the Amulet NFC tag</string>
     <string name="pairing_manual_entry_button">Enter serial number manually</string>
     
     <string name="pairing_step_scan">Scan</string>

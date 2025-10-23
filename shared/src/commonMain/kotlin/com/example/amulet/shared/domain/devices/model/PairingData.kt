@@ -61,12 +61,17 @@ data class PairingData(
             
             val params = qrContent.substringAfter("?")
                 .split("&")
-                .associate {
-                    val parts = it.split("=", limit = 2)
-                    if (parts.size == 2) parts[0] to parts[1] else null
+                .mapNotNull { param ->
+                    val parts = param.split("=", limit = 2)
+                    if (parts.size == 2) {
+                        parts[0] to parts[1]
+                    } else {
+                        null
+                    }
                 }
-                .filterNotNull()
-                .mapValues { java.net.URLDecoder.decode(it.value, "UTF-8") }
+                .associate { (key, value) ->
+                    key to urlDecode(value)
+                }
             
             val serial = params["serial"] ?: return null
             val token = params["token"] ?: return null
@@ -79,6 +84,20 @@ data class PairingData(
                 hardwareVersion = hw,
                 deviceName = name
             )
+        }
+        
+        /**
+         * URL декодирование с обработкой ошибок.
+         */
+        private fun urlDecode(value: String): String {
+            return try {
+                // Простое декодирование для KMP (без java.net.URLDecoder)
+                value.replace("+", " ")
+                    .replace("%20", " ")
+                    .replace("%2B", "+")
+            } catch (e: Exception) {
+                value
+            }
         }
         
         /**

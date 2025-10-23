@@ -20,6 +20,9 @@
     <string name="pairing_scan_qr_message">Отсканируйте QR-код на упаковке вашего устройства Amulet</string>
     <string name="pairing_scan_qr_button">Сканировать QR-код</string>
     <string name="pairing_use_nfc_button">Использовать NFC</string>
+    <string name="pairing_nfc_unavailable">NFC недоступен</string>
+    <string name="pairing_nfc_ready_title">Приложите NFC-метку</string>
+    <string name="pairing_nfc_ready_message">Поднесите устройство к NFC-метке Amulet</string>
     <string name="pairing_manual_entry_button">Ввести серийный номер вручную</string>
     
     <string name="pairing_step_scan">Сканирование</string>

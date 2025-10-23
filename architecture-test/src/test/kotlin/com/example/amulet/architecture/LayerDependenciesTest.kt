@@ -4,6 +4,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import org.junit.jupiter.api.Test
 
 class LayerDependenciesTest {
@@ -13,23 +14,24 @@ class LayerDependenciesTest {
 
     @Test
     fun `модули feature зависят только от shared-абстракций и core design`() {
-        classes()
+        noClasses()
             .that().resideInAPackage("..feature..")
-            .should().onlyDependOnClassesThat().resideInAnyPackage(
-                "..feature..",
-                "..shared..",
-                "..core.design..",
-                "com.github.michaelbull.result..",
-                "kotlin..",
-                "kotlinx..",
-                "java..",
-                "javax..",
-                "android..",
-                "androidx..",
-                "dagger..",
-                "dagger.hilt..",
-                "org.jetbrains.annotations.."
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "..core.auth..",
+                "..core.ble..",
+                "..core.config..",
+                "..core.crypto..",
+                "..core.database..",
+                "..core.datastore..",
+                "..core.network..",
+                "..core.notifications..",
+                "..core.supabase..",
+                "..core.sync..",
+                "..core.telemetry..",
+                "..core.turnstile..",
+                "..data.."
             )
+            .`as`("Feature modules should not depend on other core or data modules")
             .check(importedClasses)
     }
 

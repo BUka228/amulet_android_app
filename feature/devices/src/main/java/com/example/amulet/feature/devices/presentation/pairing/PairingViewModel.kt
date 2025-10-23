@@ -2,12 +2,15 @@ package com.example.amulet.feature.devices.presentation.pairing
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.feature.devices.scanner.NfcManager
+import com.example.amulet.feature.devices.scanner.QrScanManager
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.devices.model.PairingData
 import com.example.amulet.shared.domain.devices.model.PairingProgress
 import com.example.amulet.shared.domain.devices.usecase.PairAndClaimDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ScanForPairingUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -15,7 +18,9 @@ import javax.inject.Inject
 @HiltViewModel
 class PairingViewModel @Inject constructor(
     private val scanForPairingUseCase: ScanForPairingUseCase,
-    private val pairAndClaimDeviceUseCase: PairAndClaimDeviceUseCase
+    private val pairAndClaimDeviceUseCase: PairAndClaimDeviceUseCase,
+    val qrScanManager: QrScanManager,
+    val nfcManager: NfcManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PairingState())
@@ -23,9 +28,15 @@ class PairingViewModel @Inject constructor(
 
     private val _sideEffect = MutableSharedFlow<PairingSideEffect>()
     val sideEffect: SharedFlow<PairingSideEffect> = _sideEffect.asSharedFlow()
+    
+    private var qrScanJob: Job? = null
+    private var bleSearchJob: Job? = null
 
     fun handleEvent(event: PairingEvent) {
         when (event) {
+            is PairingEvent.ChooseQrScanning -> chooseQrScanning()
+            is PairingEvent.ChooseNfcReading -> chooseNfcReading()
+            is PairingEvent.ChooseManualEntry -> chooseManualEntry()
             is PairingEvent.QrCodeScanned -> handleQrCodeScanned(event.qrContent)
             is PairingEvent.NfcTagRead -> handleNfcTagRead(event.nfcPayload)
             is PairingEvent.ManualSerialEntered -> handleManualEntry(event.serialNumber, event.claimToken)
@@ -36,6 +47,36 @@ class PairingViewModel @Inject constructor(
                 _uiState.update { it.copy(error = null) }
             }
         }
+    }
+    
+    private fun chooseQrScanning() {
+        _uiState.update { 
+            it.copy(
+                step = PairingStep.QR_SCANNING,
+                scanMode = ScanMode.QR,
+                error = null
+            )
+        }
+    }
+    
+    private fun chooseNfcReading() {
+        _uiState.update { 
+            it.copy(
+                step = PairingStep.NFC_READING,
+                scanMode = ScanMode.NFC,
+                error = null
+            )
+        }
+    }
+    
+    private fun chooseManualEntry() {
+        _uiState.update { 
+            it.copy(
+                scanMode = ScanMode.MANUAL,
+                error = null
+            )
+        }
+        // TODO: Показать диалог ручного ввода
     }
 
     private fun handleQrCodeScanned(qrContent: String) {
@@ -175,7 +216,38 @@ class PairingViewModel @Inject constructor(
 
     private fun retryPairing() {
         _uiState.update { 
-            PairingState(step = PairingStep.SCAN_QR)
+            PairingState(step = PairingStep.CHOOSE_METHOD)
         }
+    }
+    
+    /**
+     * Установить доступность NFC (вызывается из Activity).
+     */
+    fun setNfcAvailability(isAvailable: Boolean) {
+        _uiState.update { it.copy(isNfcAvailable = isAvailable) }
+    }
+    
+    /**
+     * Обработка результата QR сканирования из менеджера.
+     * Вызывается при успешном распознавании QR кода.
+     */
+    fun onQrScanned(qrData: String) {
+        qrScanJob?.cancel()
+        handleQrCodeScanned(qrData)
+    }
+    
+    /**
+     * Обработка результата NFC чтения из менеджера.
+     * Вызывается при успешном чтении NFC тега.
+     */
+    fun onNfcRead(nfcPayload: String) {
+        handleNfcTagRead(nfcPayload)
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        qrScanJob?.cancel()
+        bleSearchJob?.cancel()
+        qrScanManager.release()
     }
 }

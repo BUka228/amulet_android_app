@@ -30,6 +30,12 @@ fun PairingRoute(
     onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Инициализация NFC доступности
+    LaunchedEffect(Unit) {
+        val isNfcAvailable = viewModel.nfcManager.isNfcAvailable()
+        viewModel.setNfcAvailability(isNfcAvailable)
+    }
 
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collectLatest { effect ->
@@ -47,7 +53,9 @@ fun PairingRoute(
     PairingScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        qrScanManager = viewModel.qrScanManager,
+        onQrScanned = viewModel::onQrScanned
     )
 }
 
@@ -56,7 +64,9 @@ fun PairingRoute(
 fun PairingScreen(
     state: PairingState,
     onEvent: (PairingEvent) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    qrScanManager: com.example.amulet.feature.devices.scanner.QrScanManager,
+    onQrScanned: (String) -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
 
@@ -83,10 +93,22 @@ fun PairingScreen(
                 label = "pairing_step"
             ) { step ->
                 when (step) {
-                    PairingStep.SCAN_QR -> {
-                        ScanQrStep(
+                    PairingStep.CHOOSE_METHOD -> {
+                        ChooseMethodStep(
                             onEvent = onEvent,
-                            isScanning = state.isScanning
+                            isNfcAvailable = state.isNfcAvailable
+                        )
+                    }
+                    PairingStep.QR_SCANNING -> {
+                        QrScanningStep(
+                            qrScanManager = qrScanManager,
+                            onQrScanned = onQrScanned,
+                            onCancel = { onEvent(PairingEvent.CancelPairing) }
+                        )
+                    }
+                    PairingStep.NFC_READING -> {
+                        NfcReadingStep(
+                            onCancel = { onEvent(PairingEvent.CancelPairing) }
                         )
                     }
                     PairingStep.CONFIRM_DEVICE -> {
@@ -119,9 +141,9 @@ fun PairingScreen(
 }
 
 @Composable
-fun ScanQrStep(
+fun ChooseMethodStep(
     onEvent: (PairingEvent) -> Unit,
-    isScanning: Boolean
+    isNfcAvailable: Boolean
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -149,7 +171,7 @@ fun ScanQrStep(
         )
 
         Button(
-            onClick = { /* TODO: Открыть сканер QR */ },
+            onClick = { onEvent(PairingEvent.ChooseQrScanning) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(Icons.Default.QrCodeScanner, contentDescription = null)
@@ -158,16 +180,17 @@ fun ScanQrStep(
         }
 
         OutlinedButton(
-            onClick = { /* TODO: Использовать NFC */ },
-            modifier = Modifier.fillMaxWidth()
+            onClick = { onEvent(PairingEvent.ChooseNfcReading) },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = isNfcAvailable
         ) {
             Icon(Icons.Default.Sensors, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.pairing_use_nfc_button))
+            Text(stringResource(if (isNfcAvailable) R.string.pairing_use_nfc_button else R.string.pairing_nfc_unavailable))
         }
 
         TextButton(
-            onClick = { /* TODO: Открыть ручной ввод */ }
+            onClick = { onEvent(PairingEvent.ChooseManualEntry) }
         ) {
             Text(stringResource(R.string.pairing_manual_entry_button))
         }
@@ -389,6 +412,80 @@ fun ErrorStep(
         ) {
             Text(stringResource(R.string.pairing_retry_button))
         }
+
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.common_cancel))
+        }
+    }
+}
+
+@Composable
+fun QrScanningStep(
+    qrScanManager: com.example.amulet.feature.devices.scanner.QrScanManager,
+    onQrScanned: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // QR Scanner View
+        com.example.amulet.feature.devices.presentation.pairing.components.QrScannerView(
+            qrScanManager = qrScanManager,
+            onQrScanned = onQrScanned,
+            modifier = Modifier.fillMaxSize()
+        )
+        
+        // Cancel button overlay
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+                .fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            )
+        ) {
+            Text(stringResource(R.string.common_cancel))
+        }
+    }
+}
+
+@Composable
+fun NfcReadingStep(
+    onCancel: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Sensors,
+            contentDescription = null,
+            modifier = Modifier.size(120.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        
+        CircularProgressIndicator(
+            modifier = Modifier.size(48.dp)
+        )
+
+        Text(
+            text = stringResource(R.string.pairing_nfc_ready_title),
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
+        )
+
+        Text(
+            text = stringResource(R.string.pairing_nfc_ready_message),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        Spacer(Modifier.weight(1f))
 
         OutlinedButton(
             onClick = onCancel,
