@@ -32,146 +32,188 @@ import com.example.amulet.core.design.components.card.CardElevation
 import com.example.amulet.core.design.foundation.color.AmuletPalette
 import com.example.amulet.core.design.foundation.theme.AmuletTheme
 import com.example.amulet.feature.dashboard.presentation.DailyStats
-import com.example.amulet.feature.dashboard.presentation.DeviceStatus
 import kotlin.math.sin
 
-// ===== Статус Амулета =====
+// ===== Секция Устройств =====
 @Composable
-fun AmuletStatusCard(
-    device: DeviceStatus?,
+fun DevicesSection(
+    devices: List<com.example.amulet.shared.domain.devices.model.Device>,
+    connectedDevice: com.example.amulet.shared.domain.devices.model.Device?,
+    onDeviceClick: (String) -> Unit,
+    onNavigateToPairing: () -> Unit,
+    onNavigateToDevicesList: () -> Unit
+) {
+    val spacing = AmuletTheme.spacing
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.sm)
+    ) {
+        // Header с кнопкой "Все устройства"
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.dashboard_devices_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            if (devices.isNotEmpty()) {
+                TextButton(onClick = onNavigateToDevicesList) {
+                    Text(stringResource(R.string.dashboard_view_all))
+                }
+            }
+        }
+
+        if (devices.isEmpty()) {
+            // Нет устройств - призыв к действию
+            EmptyDevicesCard(onNavigateToPairing = onNavigateToPairing)
+        } else {
+            // Показываем подключенное устройство или первое в списке
+            val displayDevice = connectedDevice ?: devices.firstOrNull()
+            displayDevice?.let { device ->
+                ConnectedDeviceCard(
+                    device = device,
+                    isConnected = device == connectedDevice,
+                    onClick = { onDeviceClick(device.id.value) }
+                )
+            }
+            
+            // Если есть еще устройства, показываем их количество
+            if (devices.size > 1) {
+                Text(
+                    text = stringResource(R.string.dashboard_more_devices, devices.size - 1),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = spacing.sm)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyDevicesCard(
     onNavigateToPairing: () -> Unit
 ) {
     val spacing = AmuletTheme.spacing
 
-    if (device == null) {
-        // Амулет не подключен
-        AmuletCard(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardElevation.Default
+    AmuletCard(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardElevation.Default
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(spacing.lg),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = Icons.Default.BluetoothDisabled,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(spacing.md))
+            Icon(
+                imageVector = Icons.Default.BluetoothDisabled,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(spacing.md))
+            Text(
+                text = stringResource(R.string.dashboard_no_devices_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.dashboard_no_devices_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(spacing.lg))
+            AmuletButton(
+                text = stringResource(R.string.dashboard_add_device_button),
+                onClick = onNavigateToPairing,
+                variant = ButtonVariant.Primary,
+                fullWidth = true,
+                icon = Icons.AutoMirrored.Filled.BluetoothSearching
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConnectedDeviceCard(
+    device: com.example.amulet.shared.domain.devices.model.Device,
+    isConnected: Boolean,
+    onClick: () -> Unit
+) {
+    val spacing = AmuletTheme.spacing
+
+    AmuletCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        elevation = CardElevation.Default
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(spacing.md),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.amulet_status_disconnected_title),
-                    style = MaterialTheme.typography.titleLarge,
+                    text = device.name ?: device.serialNumber,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Text(
-                    text = stringResource(R.string.amulet_status_disconnected_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(spacing.lg))
-                AmuletButton(
-                    text = stringResource(R.string.amulet_status_connect_button),
-                    onClick = onNavigateToPairing,
-                    variant = ButtonVariant.Primary,
-                    fullWidth = true,
-                    icon = Icons.AutoMirrored.Filled.BluetoothSearching
-                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(spacing.xs)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(if (isConnected) AmuletPalette.Success else MaterialTheme.colorScheme.onSurfaceVariant)
+                    )
+                    Text(
+                        text = if (isConnected) "Подключено" else device.status.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-        }
-    } else {
-        // Амулет подключен
-        AmuletCard(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardElevation.Default
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(spacing.lg)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = device.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+
+            Column(horizontalAlignment = Alignment.End) {
+                device.batteryLevel?.let { battery ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Battery4Bar,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = when {
+                                battery > 60 -> AmuletPalette.Success
+                                battery > 20 -> AmuletPalette.Warning
+                                else -> AmuletPalette.Error
+                            }
                         )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(spacing.xs)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        when (device.connectionStatus) {
-                                            "connected" -> AmuletPalette.Success
-                                            "connecting" -> AmuletPalette.Warning
-                                            else -> AmuletPalette.Error
-                                        }
-                                    )
-                            )
-                            Text(
-                                text = stringResource(
-                                    when (device.connectionStatus) {
-                                        "connected" -> R.string.amulet_status_connected
-                                        "connecting" -> R.string.amulet_status_connecting
-                                        else -> R.string.amulet_status_disconnected
-                                    }
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = "${battery.toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-
-                    // Анимированный аватар амулета
-                    AnimatedAmuletAvatar(
-                        currentAnimation = device.currentAnimation,
-                        modifier = Modifier.size(80.dp)
-                    )
                 }
-
-                Spacer(modifier = Modifier.height(spacing.lg))
-
-                // Статистика устройства
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    DeviceStatItem(
-                        icon = Icons.Default.Battery4Bar,
-                        label = stringResource(R.string.amulet_stat_battery),
-                        value = "${device.batteryLevel}%",
-                        color = when {
-                            device.batteryLevel > 60 -> AmuletPalette.Success
-                            device.batteryLevel > 20 -> AmuletPalette.Warning
-                            else -> AmuletPalette.Error
-                        }
-                    )
-                    DeviceStatItem(
-                        icon = Icons.Default.SignalCellularAlt,
-                        label = stringResource(R.string.amulet_stat_signal),
-                        value = stringResource(R.string.amulet_stat_signal_excellent),
-                        color = AmuletPalette.Success
-                    )
-                    DeviceStatItem(
-                        icon = Icons.Default.Lightbulb,
-                        label = stringResource(R.string.amulet_stat_state),
-                        value = device.currentAnimation ?: stringResource(R.string.amulet_stat_state_off),
-                        color = AmuletPalette.Primary
-                    )
-                }
+                Text(
+                    text = device.firmwareVersion,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

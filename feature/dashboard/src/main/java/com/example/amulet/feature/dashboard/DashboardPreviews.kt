@@ -22,12 +22,8 @@ private fun DashboardScreenConnectedPreview() {
         DashboardScreen(
             uiState = DashboardUiState(
                 userName = "Александр",
-                deviceStatus = DeviceStatus(
-                    name = "Amulet AMU-200",
-                    connectionStatus = "connected",
-                    batteryLevel = 85,
-                    currentAnimation = "Pulse"
-                ),
+                devices = emptyList(),
+                connectedDevice = null,
                 dailyStats = DailyStats(
                     practiceMinutes = 42,
                     hugsCount = 5,
@@ -51,7 +47,8 @@ private fun DashboardScreenNoDevicePreview() {
         DashboardScreen(
             uiState = DashboardUiState(
                 userName = "Мария",
-                deviceStatus = null,
+                devices = emptyList(),
+                connectedDevice = null,
                 dailyStats = DailyStats(
                     practiceMinutes = 0,
                     hugsCount = 0,
@@ -75,12 +72,8 @@ private fun DashboardScreenLowBatteryPreview() {
         DashboardScreen(
             uiState = DashboardUiState(
                 userName = "Дмитрий",
-                deviceStatus = DeviceStatus(
-                    name = "Amulet AMU-100",
-                    connectionStatus = "connected",
-                    batteryLevel = 15,
-                    currentAnimation = null
-                ),
+                devices = emptyList(),
+                connectedDevice = null,
                 dailyStats = DailyStats(
                     practiceMinutes = 120,
                     hugsCount = 12,
@@ -105,12 +98,8 @@ private fun DashboardScreenDarkPreview() {
         DashboardScreen(
             uiState = DashboardUiState(
                 userName = "Елена",
-                deviceStatus = DeviceStatus(
-                    name = "Amulet AMU-200",
-                    connectionStatus = "connected",
-                    batteryLevel = 65,
-                    currentAnimation = "Breathing"
-                ),
+                devices = emptyList(),
+                connectedDevice = null,
                 dailyStats = DailyStats(
                     practiceMinutes = 28,
                     hugsCount = 3,
@@ -118,34 +107,6 @@ private fun DashboardScreenDarkPreview() {
                 )
             ),
             onEvent = {}
-        )
-    }
-}
-
-// ===== Preview: Отдельные компоненты =====
-@Preview(name = "Amulet Status - Connected", showBackground = true)
-@Composable
-private fun AmuletStatusCardConnectedPreview() {
-    AmuletTheme {
-        AmuletStatusCard(
-            device = DeviceStatus(
-                name = "Amulet AMU-200",
-                connectionStatus = "connected",
-                batteryLevel = 85,
-                currentAnimation = "Pulse"
-            ),
-            onNavigateToPairing = {}
-        )
-    }
-}
-
-@Preview(name = "Amulet Status - No Device", showBackground = true)
-@Composable
-private fun AmuletStatusCardNoDevicePreview() {
-    AmuletTheme {
-        AmuletStatusCard(
-            device = null,
-            onNavigateToPairing = {}
         )
     }
 }

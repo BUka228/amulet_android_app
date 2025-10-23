@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Devices List Screen -->
+    <string name="devices_list_title">My Devices</string>
+    <string name="devices_list_empty_title">No Devices</string>
+    <string name="devices_list_empty_message">Add your first Amulet device to get started</string>
+    <string name="devices_list_add_button">Add Device</string>
+    <string name="devices_list_battery">Battery</string>
+    <string name="devices_list_status_online">Online</string>
+    <string name="devices_list_status_offline">Offline</string>
+    <string name="devices_list_status_charging">Charging</string>
+    <string name="devices_list_status_unknown">Unknown</string>
+    <string name="devices_list_connection_status">BLE: %s</string>
+    <string name="devices_list_connection_connected">Connected</string>
+    <string name="devices_list_connection_disconnected">Disconnected</string>
+    
+    <!-- Pairing Screen -->
+    <string name="pairing_title">Pair Device</string>
+    <string name="pairing_scan_qr_title">Scan QR Code</string>
+    <string name="pairing_scan_qr_message">Scan the QR code on your Amulet device packaging</string>
+    <string name="pairing_scan_qr_button">Scan QR Code</string>
+    <string name="pairing_use_nfc_button">Use NFC</string>
+    <string name="pairing_manual_entry_button">Enter serial number manually</string>
+    
+    <string name="pairing_step_scan">Scan</string>
+    <string name="pairing_step_connect">Connect</string>
+    <string name="pairing_step_claim">Claim</string>
+    <string name="pairing_step_configure">Configure</string>
+    
+    <string name="pairing_searching_device">Searching for device…</string>
+    <string name="pairing_device_found">Device found</string>
+    <string name="pairing_connecting_ble">Connecting via Bluetooth…</string>
+    <string name="pairing_claiming_server">Claiming to account…</string>
+    <string name="pairing_configuring_device">Configuring device…</string>
+    
+    <string name="pairing_success_title">Successfully Paired!</string>
+    <string name="pairing_success_message">Your Amulet device is ready to use</string>
+    <string name="pairing_success_button">Go to Device</string>
+    
+    <string name="pairing_error_title">Pairing Failed</string>
+    <string name="pairing_retry_button">Retry</string>
+    <string name="pairing_cancel_button">Cancel</string>
+    
+    <string name="pairing_error_invalid_qr">Invalid QR code format</string>
+    <string name="pairing_error_invalid_nfc">Invalid NFC tag format</string>
+    
+    <!-- Device Details Screen -->
+    <string name="device_details_title">Device Details</string>
+    <string name="device_details_battery">Battery: %d%%</string>
+    <string name="device_details_status">Status: %s</string>
+    <string name="device_details_firmware">Firmware: %s</string>
+    <string name="device_details_serial">Serial: %s</string>
+    
+    <string name="device_details_settings_title">Settings</string>
+    <string name="device_details_name_label">Device Name</string>
+    <string name="device_details_name_hint">Enter device name</string>
+    <string name="device_details_brightness_label">LED Brightness</string>
+    <string name="device_details_haptics_label">Vibration Strength</string>
+    
+    <string name="device_details_update_available">Update Available</string>
+    <string name="device_details_update_button">Update to %s</string>
+    
+    <string name="device_details_unclaim_title">Remove Device</string>
+    <string name="device_details_unclaim_message">Are you sure you want to remove this device from your account?</string>
+    <string name="device_details_unclaim_button">Remove Device</string>
+    <string name="device_details_unclaim_confirm">Remove</string>
+    <string name="device_details_unclaim_cancel">Cancel</string>
+    
+    <!-- OTA Update Screen -->
+    <string name="ota_title">Firmware Update</string>
+    <string name="ota_current_version">Current: %s</string>
+    <string name="ota_new_version">New: %s</string>
+    <string name="ota_size">Size: %s</string>
+    <string name="ota_release_notes">Release Notes</string>
+    
+    <string name="ota_method_title">Update Method</string>
+    <string name="ota_method_ble">Bluetooth LE</string>
+    <string name="ota_method_ble_desc">Slower but works anywhere</string>
+    <string name="ota_method_wifi">Wi-Fi</string>
+    <string name="ota_method_wifi_desc">Faster with Wi-Fi connection</string>
+    
+    <string name="ota_start_button">Start Update</string>
+    <string name="ota_cancel_button">Cancel Update</string>
+    
+    <string name="ota_progress_title">Updating…</string>
+    <string name="ota_progress_preparing">Preparing…</string>
+    <string name="ota_progress_downloading">Downloading firmware…</string>
+    <string name="ota_progress_transferring">Transferring to device…</string>
+    <string name="ota_progress_verifying">Verifying…</string>
+    <string name="ota_progress_installing">Installing…</string>
+    <string name="ota_progress_completed">Update completed!</string>
+    <string name="ota_progress_percent">%d%%</string>
+    <string name="ota_progress_size">%1$s / %2$s</string>
+    
+    <string name="ota_wifi_dialog_title">Wi-Fi Configuration</string>
+    <string name="ota_wifi_ssid_label">Wi-Fi Network</string>
+    <string name="ota_wifi_ssid_hint">Network name</string>
+    <string name="ota_wifi_password_label">Password</string>
+    <string name="ota_wifi_password_hint">Network password</string>
+    <string name="ota_wifi_connect_button">Connect</string>
+    <string name="ota_wifi_cancel_button">Cancel</string>
+    
+    <!-- Common -->
+    <string name="common_loading">Loading…</string>
+    <string name="common_error">Error</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_ok">OK</string>
+    <string name="common_back">Back</string>
+</resources>

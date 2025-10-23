@@ -7,7 +7,7 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.FirmwareUpdate
 import com.example.amulet.shared.domain.devices.model.OtaUpdateProgress
-import com.example.amulet.shared.domain.devices.model.OtaUpdateState
+import com.example.amulet.shared.domain.devices.model.OtaUpdateState as OtaProgressStage
 import com.example.amulet.shared.domain.devices.usecase.CancelOtaUpdateUseCase
 import com.example.amulet.shared.domain.devices.usecase.CheckFirmwareUpdateUseCase
 import com.example.amulet.shared.domain.devices.usecase.StartBleOtaUpdateUseCase
@@ -30,8 +30,8 @@ class OtaUpdateViewModel @Inject constructor(
 
     private val deviceId: String = checkNotNull(savedStateHandle["deviceId"])
 
-    private val _uiState = MutableStateFlow(OtaUpdateScreenState(isLoading = true))
-    val uiState: StateFlow<OtaUpdateScreenState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(OtaUpdateState(isLoading = true))
+    val uiState: StateFlow<OtaUpdateState> = _uiState.asStateFlow()
 
     private val _sideEffect = MutableSharedFlow<OtaUpdateSideEffect>()
     val sideEffect: SharedFlow<OtaUpdateSideEffect> = _sideEffect.asSharedFlow()
@@ -134,12 +134,12 @@ class OtaUpdateViewModel @Inject constructor(
         }
 
         when (progress.state) {
-            OtaUpdateState.COMPLETED -> {
+            OtaProgressStage.COMPLETED -> {
                 viewModelScope.launch {
                     _sideEffect.emit(OtaUpdateSideEffect.UpdateCompleted)
                 }
             }
-            OtaUpdateState.FAILED, OtaUpdateState.CANCELLED -> {
+            OtaProgressStage.FAILED, OtaProgressStage.CANCELLED -> {
                 _uiState.update { it.copy(isUpdating = false) }
             }
             else -> { /* Обновление в процессе */ }
@@ -160,31 +160,4 @@ class OtaUpdateViewModel @Inject constructor(
                 .onFailure { /* Игнорируем ошибку отмены */ }
         }
     }
-}
-
-data class OtaUpdateScreenState(
-    val firmwareUpdate: FirmwareUpdate? = null,
-    val isLoading: Boolean = false,
-    val isUpdating: Boolean = false,
-    val updateMethod: OtaUpdateMethod? = null,
-    val otaProgress: OtaUpdateProgress? = null,
-    val error: AppError? = null
-)
-
-enum class OtaUpdateMethod {
-    BLE,
-    WIFI
-}
-
-sealed interface OtaUpdateEvent {
-    data object StartBleUpdate : OtaUpdateEvent
-    data class StartWifiUpdate(val ssid: String, val password: String) : OtaUpdateEvent
-    data object CancelUpdate : OtaUpdateEvent
-    data object NavigateBack : OtaUpdateEvent
-    data object DismissError : OtaUpdateEvent
-}
-
-sealed interface OtaUpdateSideEffect {
-    data object UpdateCompleted : OtaUpdateSideEffect
-    data object NavigateBack : OtaUpdateSideEffect
 }

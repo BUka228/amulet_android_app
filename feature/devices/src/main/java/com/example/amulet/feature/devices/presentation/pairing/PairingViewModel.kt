@@ -3,9 +3,7 @@ package com.example.amulet.feature.devices.presentation.pairing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.AppError
-import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.PairingData
-import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
 import com.example.amulet.shared.domain.devices.model.PairingProgress
 import com.example.amulet.shared.domain.devices.usecase.PairAndClaimDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ScanForPairingUseCase
@@ -53,7 +51,7 @@ class PairingViewModel @Inject constructor(
             startScanningForDevice(pairingData.serialNumber)
         } else {
             _uiState.update { 
-                it.copy(error = AppError.Validation(mapOf("qr" to "Неверный формат QR кода")))
+                it.copy(error = AppError.Validation(mapOf("qr" to "invalid_qr_format")))
             }
         }
     }
@@ -71,7 +69,7 @@ class PairingViewModel @Inject constructor(
             startScanningForDevice(pairingData.serialNumber)
         } else {
             _uiState.update { 
-                it.copy(error = AppError.Validation(mapOf("nfc" to "Неверный формат NFC метки")))
+                it.copy(error = AppError.Validation(mapOf("nfc" to "invalid_nfc_format")))
             }
         }
     }
@@ -129,19 +127,19 @@ class PairingViewModel @Inject constructor(
     private fun handlePairingProgress(progress: PairingProgress) {
         when (progress) {
             is PairingProgress.SearchingDevice -> {
-                _uiState.update { it.copy(pairingProgress = "Поиск устройства...") }
+                _uiState.update { it.copy(pairingProgress = "searching_device") }
             }
             is PairingProgress.DeviceFound -> {
-                _uiState.update { it.copy(pairingProgress = "Устройство найдено") }
+                _uiState.update { it.copy(pairingProgress = "device_found") }
             }
             is PairingProgress.ConnectingBle -> {
-                _uiState.update { it.copy(pairingProgress = "Подключение...") }
+                _uiState.update { it.copy(pairingProgress = "connecting_ble") }
             }
             is PairingProgress.ClaimingOnServer -> {
-                _uiState.update { it.copy(pairingProgress = "Привязка к аккаунту...") }
+                _uiState.update { it.copy(pairingProgress = "claiming_server") }
             }
             is PairingProgress.ConfiguringDevice -> {
-                _uiState.update { it.copy(pairingProgress = "Настройка устройства...") }
+                _uiState.update { it.copy(pairingProgress = "configuring_device") }
             }
             is PairingProgress.Completed -> {
                 _uiState.update { 
@@ -180,38 +178,4 @@ class PairingViewModel @Inject constructor(
             PairingState(step = PairingStep.SCAN_QR)
         }
     }
-}
-
-data class PairingState(
-    val step: PairingStep = PairingStep.SCAN_QR,
-    val pairingData: PairingData? = null,
-    val foundDevice: PairingDeviceFound? = null,
-    val isScanning: Boolean = false,
-    val isPairing: Boolean = false,
-    val pairingProgress: String? = null,
-    val pairedDevice: Device? = null,
-    val error: AppError? = null
-)
-
-enum class PairingStep {
-    SCAN_QR,
-    CONFIRM_DEVICE,
-    PAIRING,
-    SUCCESS,
-    ERROR
-}
-
-sealed interface PairingEvent {
-    data class QrCodeScanned(val qrContent: String) : PairingEvent
-    data class NfcTagRead(val nfcPayload: String) : PairingEvent
-    data class ManualSerialEntered(val serialNumber: String, val claimToken: String) : PairingEvent
-    data object StartPairing : PairingEvent
-    data object CancelPairing : PairingEvent
-    data object RetryPairing : PairingEvent
-    data object DismissError : PairingEvent
-}
-
-sealed interface PairingSideEffect {
-    data class PairingComplete(val device: Device) : PairingSideEffect
-    data object NavigateBack : PairingSideEffect
 }

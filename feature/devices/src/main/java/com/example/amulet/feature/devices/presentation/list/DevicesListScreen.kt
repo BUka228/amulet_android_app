@@ -10,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.DeviceCard
 import kotlinx.coroutines.flow.collectLatest
 
@@ -56,10 +58,10 @@ fun DevicesListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Мои устройства") },
+                title = { Text(stringResource(R.string.devices_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -68,7 +70,7 @@ fun DevicesListScreen(
             FloatingActionButton(
                 onClick = { onEvent(DevicesListEvent.AddDeviceClicked) }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Добавить устройство")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.devices_list_add_button))
             }
         }
     ) { paddingValues ->
@@ -116,7 +118,7 @@ fun DevicesListScreen(
                         .padding(16.dp),
                     action = {
                         TextButton(onClick = { onEvent(DevicesListEvent.DismissError) }) {
-                            Text("OK")
+                            Text(stringResource(R.string.common_ok))
                         }
                     }
                 ) {
@@ -138,18 +140,18 @@ fun EmptyDevicesState(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "У вас пока нет устройств",
+            text = stringResource(R.string.devices_list_empty_title),
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Добавьте амулет, чтобы начать использовать приложение",
+            text = stringResource(R.string.devices_list_empty_message),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Button(onClick = onAddDevice) {
-            Text("Добавить устройство")
+            Text(stringResource(R.string.devices_list_add_button))
         }
     }
 }

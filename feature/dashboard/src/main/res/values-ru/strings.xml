@@ -55,4 +55,13 @@
     <string name="recommendation_restore_calm">Восстановите спокойствие</string>
     <string name="recommendation_restore_calm_description">Попробуйте медитацию для снятия стресса</string>
     <string name="recommendation_button_start">Начать</string>
+    
+    <!-- Dashboard Devices Section -->
+    <string name="dashboard_devices_title">Устройства</string>
+    <string name="dashboard_view_all">Все</string>
+    <string name="dashboard_more_devices">Еще %d</string>
+    
+    <string name="dashboard_no_devices_title">Нет устройств</string>
+    <string name="dashboard_no_devices_subtitle">Подключите свой амулет для начала</string>
+    <string name="dashboard_add_device_button">Добавить устройство</string>
 </resources>

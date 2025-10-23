@@ -23,11 +23,13 @@ fun AppNavHost(
     ) {
         // Dashboard Graph - главный экран после авторизации
         dashboardGraph(
-            onNavigateToPairing = { navController.navigateToPairing() },
-            onNavigateToLibrary = { navController.navigateToLibrary() },
-            onNavigateToHugs = { navController.navigateToHugs() },
-            onNavigateToPatterns = { navController.navigateToPatterns() },
-            onNavigateToSettings = { navController.navigateToSettings() }
+            onNavigateToDeviceDetails = navController::navigateToDeviceDetails,
+            onNavigateToDevicesList = navController::navigateToDevicesList,
+            onNavigateToPairing = navController::navigateToPairing,
+            onNavigateToLibrary = navController::navigateToLibrary,
+            onNavigateToHugs = navController::navigateToHugs,
+            onNavigateToPatterns = navController::navigateToPatterns,
+            onNavigateToSettings = navController::navigateToSettings
         )
 
         // Devices Graph - управление устройствами, паринг, OTA

@@ -3,27 +3,23 @@ package com.example.amulet.feature.dashboard.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.logging.Logger
+import com.example.amulet.shared.domain.devices.model.ConnectionStatus
+import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * ViewModel для Dashboard экрана.
  * Следует паттерну MVVM+MVI с Unidirectional Data Flow.
- * 
- * Использует заглушки для данных — UseCase и Repository не реализованы.
  */
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
-    // TODO: Inject UseCases when implemented
-    // private val getDeviceStatusUseCase: GetDeviceStatusUseCase,
+    private val observeDevicesUseCase: ObserveDevicesUseCase,
+    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase
+    // TODO: Inject practice UseCases when implemented
     // private val getDailyStatsUseCase: GetDailyStatsUseCase,
     // private val startPracticeUseCase: StartPracticeUseCase
 ) : ViewModel() {
@@ -36,6 +32,8 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadDashboardData()
+        observeDevices()
+        observeConnectionState()
     }
 
     /**
@@ -47,6 +45,8 @@ class DashboardViewModel @Inject constructor(
         when (event) {
             DashboardUiEvent.Refresh -> loadDashboardData()
             is DashboardUiEvent.StartPractice -> startPractice(event.practiceId)
+            is DashboardUiEvent.DeviceClicked -> navigateToDeviceDetails(event.deviceId)
+            DashboardUiEvent.NavigateToDevicesList -> navigateToDevicesList()
             DashboardUiEvent.NavigateToPairing -> navigateToPairing()
             DashboardUiEvent.NavigateToLibrary -> navigateToLibrary()
             DashboardUiEvent.NavigateToHugs -> navigateToHugs()
@@ -54,6 +54,27 @@ class DashboardViewModel @Inject constructor(
             DashboardUiEvent.NavigateToSettings -> navigateToSettings()
             DashboardUiEvent.ErrorConsumed -> _uiState.update { it.copy(error = null) }
         }
+    }
+    
+    private fun observeDevices() {
+        observeDevicesUseCase()
+            .onEach { devices ->
+                _uiState.update { it.copy(devices = devices) }
+                Logger.d("Devices updated: ${devices.size}", TAG)
+            }
+            .launchIn(viewModelScope)
+    }
+    
+    private fun observeConnectionState() {
+        observeConnectionStateUseCase()
+            .onEach { connectionStatus ->
+                val connectedDevice = if (connectionStatus == ConnectionStatus.CONNECTED) {
+                    _uiState.value.devices.firstOrNull()
+                } else null
+                _uiState.update { it.copy(connectedDevice = connectedDevice) }
+                Logger.d("Connection status: $connectionStatus", TAG)
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun loadDashboardData() {
@@ -64,17 +85,11 @@ class DashboardViewModel @Inject constructor(
             // val deviceResult = getDeviceStatusUseCase()
             // val statsResult = getDailyStatsUseCase(LocalDate.now())
             
-            // Mock data для разработки
+            // Mock data для статистики
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     userName = "Александр",
-                    deviceStatus = DeviceStatus(
-                        name = "Amulet AMU-200",
-                        connectionStatus = "connected",
-                        batteryLevel = 85,
-                        currentAnimation = "Pulse"
-                    ),
                     dailyStats = DailyStats(
                         practiceMinutes = 42,
                         hugsCount = 5,
@@ -90,21 +105,22 @@ class DashboardViewModel @Inject constructor(
     private fun startPractice(practiceId: String) {
         viewModelScope.launch {
             Logger.d("Starting practice: $practiceId", TAG)
-            
-            // TODO: Implement with StartPracticeUseCase
-            // val result = startPracticeUseCase(practiceId)
-            // result.fold(
-            //     success = { sessionId ->
-            //         _sideEffects.emit(DashboardSideEffect.StartPracticeSession(sessionId))
-            //     },
-            //     failure = { error ->
-            //         _uiState.update { it.copy(error = error) }
-            //     }
-            // )
-
-            // Заглушка - просто эмитим эффект
             _sideEffects.emit(DashboardSideEffect.StartPracticeSession(practiceId))
             _sideEffects.emit(DashboardSideEffect.ShowToast("Запуск практики: $practiceId"))
+        }
+    }
+
+    private fun navigateToDeviceDetails(deviceId: String) {
+        viewModelScope.launch {
+            Logger.d("Navigate to Device Details: $deviceId", TAG)
+            _sideEffects.emit(DashboardSideEffect.NavigateToDeviceDetails(deviceId))
+        }
+    }
+
+    private fun navigateToDevicesList() {
+        viewModelScope.launch {
+            Logger.d("Navigate to Devices List", TAG)
+            _sideEffects.emit(DashboardSideEffect.NavigateToDevicesList)
         }
     }
 

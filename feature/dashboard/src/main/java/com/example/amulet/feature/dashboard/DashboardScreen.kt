@@ -36,6 +36,8 @@ import kotlin.math.sin
 
 @Composable
 fun DashboardRoute(
+    onNavigateToDeviceDetails: (String) -> Unit,
+    onNavigateToDevicesList: () -> Unit,
     onNavigateToPairing: () -> Unit,
     onNavigateToLibrary: () -> Unit,
     onNavigateToHugs: () -> Unit,
@@ -49,6 +51,12 @@ fun DashboardRoute(
     LaunchedEffect(Unit) {
         viewModel.sideEffects.collect { effect ->
             when (effect) {
+                is DashboardSideEffect.NavigateToDeviceDetails -> {
+                    onNavigateToDeviceDetails(effect.deviceId)
+                }
+                DashboardSideEffect.NavigateToDevicesList -> {
+                    onNavigateToDevicesList()
+                }
                 DashboardSideEffect.NavigateToPairing -> onNavigateToPairing()
                 DashboardSideEffect.NavigateToLibrary -> onNavigateToLibrary()
                 DashboardSideEffect.NavigateToHugs -> onNavigateToHugs()
@@ -93,10 +101,13 @@ fun DashboardScreen(
             userName = uiState.userName
         )
 
-        // Статус амулета - компактная версия
-        AmuletStatusCard(
-            device = uiState.deviceStatus,
-            onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) }
+        // Устройства - компактная версия
+        DevicesSection(
+            devices = uiState.devices,
+            connectedDevice = uiState.connectedDevice,
+            onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
+            onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
+            onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
         )
 
         // Статистика дня - улучшенная версия

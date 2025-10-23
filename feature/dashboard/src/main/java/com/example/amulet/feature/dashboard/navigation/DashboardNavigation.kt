@@ -24,6 +24,8 @@ fun NavController.navigateToDashboard(popUpToInclusive: Boolean = false) {
 }
 
 fun NavGraphBuilder.dashboardGraph(
+    onNavigateToDeviceDetails: (String) -> Unit,
+    onNavigateToDevicesList: () -> Unit,
     onNavigateToPairing: () -> Unit,
     onNavigateToLibrary: () -> Unit,
     onNavigateToHugs: () -> Unit,
@@ -33,6 +35,8 @@ fun NavGraphBuilder.dashboardGraph(
     navigation(startDestination = DashboardDestination.main, route = DashboardGraph.route) {
         composable(route = DashboardDestination.main) {
             DashboardRoute(
+                onNavigateToDeviceDetails = onNavigateToDeviceDetails,
+                onNavigateToDevicesList = onNavigateToDevicesList,
                 onNavigateToPairing = onNavigateToPairing,
                 onNavigateToLibrary = onNavigateToLibrary,
                 onNavigateToHugs = onNavigateToHugs,

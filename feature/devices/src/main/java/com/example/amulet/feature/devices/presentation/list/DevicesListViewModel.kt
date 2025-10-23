@@ -2,24 +2,13 @@ package com.example.amulet.feature.devices.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.core.AppError
-import com.example.amulet.shared.domain.devices.model.ConnectionStatus
-import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import com.example.amulet.shared.domain.devices.usecase.SyncDevicesUseCase
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -97,25 +86,4 @@ class DevicesListViewModel @Inject constructor(
                 }
         }
     }
-}
-
-data class DevicesListState(
-    val devices: List<Device> = emptyList(),
-    val isLoading: Boolean = true,
-    val isRefreshing: Boolean = false,
-    val isEmpty: Boolean = false,
-    val connectionStatus: ConnectionStatus = ConnectionStatus.DISCONNECTED,
-    val error: AppError? = null
-)
-
-sealed interface DevicesListEvent {
-    data object Refresh : DevicesListEvent
-    data class DeviceClicked(val deviceId: String) : DevicesListEvent
-    data object AddDeviceClicked : DevicesListEvent
-    data object DismissError : DevicesListEvent
-}
-
-sealed interface DevicesListSideEffect {
-    data class NavigateToDeviceDetails(val deviceId: String) : DevicesListSideEffect
-    data object NavigateToPairing : DevicesListSideEffect
 }

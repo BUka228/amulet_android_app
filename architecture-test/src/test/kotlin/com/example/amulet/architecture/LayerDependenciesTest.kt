@@ -19,6 +19,7 @@ class LayerDependenciesTest {
                 "..feature..",
                 "..shared..",
                 "..core.design..",
+                "com.github.michaelbull.result..",
                 "kotlin..",
                 "kotlinx..",
                 "java..",
@@ -55,6 +56,8 @@ class LayerDependenciesTest {
                 "kotlinx..",
                 "java..",
                 "javax..",
+                "android..",
+                "androidx..",
                 "dagger..",
                 "org.jetbrains.annotations..",
                 "org.koin.."

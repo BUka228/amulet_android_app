@@ -55,4 +55,13 @@
     <string name="recommendation_restore_calm">Restore your calm</string>
     <string name="recommendation_restore_calm_description">Try meditation to relieve stress</string>
     <string name="recommendation_button_start">Start</string>
+    
+    <!-- Dashboard Devices Section -->
+    <string name="dashboard_devices_title">Devices</string>
+    <string name="dashboard_view_all">View all</string>
+    <string name="dashboard_more_devices">%d more</string>
+    
+    <string name="dashboard_no_devices_title">No devices</string>
+    <string name="dashboard_no_devices_subtitle">Connect your amulet to get started</string>
+    <string name="dashboard_add_device_button">Add device</string>
 </resources>

@@ -38,6 +38,18 @@ fun NavController.navigateToPairing() {
     navigateToDevicesPairing()
 }
 
+fun NavController.navigateToDeviceDetails(deviceId: String) {
+    navigate("devices/details/$deviceId") {
+        launchSingleTop = true
+    }
+}
+
+fun NavController.navigateToDevicesList() {
+    navigate("devices/list") {
+        launchSingleTop = true
+    }
+}
+
 fun NavController.navigateToLibrary() {
     navigate("library/main") {
         launchSingleTop = true

@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.amulet.shared.domain.devices.model.OtaUpdateState
+import com.example.amulet.shared.domain.devices.model.OtaUpdateState as OtaProgressStage
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -50,7 +50,7 @@ fun OtaUpdateRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OtaUpdateScreen(
-    state: OtaUpdateScreenState,
+    state: OtaUpdateState,
     onEvent: (OtaUpdateEvent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -257,12 +257,12 @@ fun OtaProgressView(
 
         Text(
             text = when (progress?.state) {
-                OtaUpdateState.PREPARING -> "Подготовка..."
-                OtaUpdateState.DOWNLOADING -> "Загрузка прошивки..."
-                OtaUpdateState.TRANSFERRING -> "Передача на устройство..."
-                OtaUpdateState.VERIFYING -> "Проверка целостности..."
-                OtaUpdateState.INSTALLING -> "Установка..."
-                OtaUpdateState.COMPLETED -> "Обновление завершено!"
+                OtaProgressStage.PREPARING -> "Подготовка..."
+                OtaProgressStage.DOWNLOADING -> "Загрузка прошивки..."
+                OtaProgressStage.TRANSFERRING -> "Передача на устройство..."
+                OtaProgressStage.VERIFYING -> "Проверка целостности..."
+                OtaProgressStage.INSTALLING -> "Установка..."
+                OtaProgressStage.COMPLETED -> "Обновление завершено!"
                 else -> "Обновление..."
             },
             style = MaterialTheme.typography.headlineSmall,
@@ -290,7 +290,7 @@ fun OtaProgressView(
                 )
             }
 
-            AnimatedVisibility(visible = prog.state == OtaUpdateState.COMPLETED) {
+            AnimatedVisibility(visible = prog.state == OtaProgressStage.COMPLETED) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
@@ -300,7 +300,7 @@ fun OtaProgressView(
             }
         }
 
-        if (progress?.state != OtaUpdateState.COMPLETED) {
+        if (progress?.state != OtaProgressStage.COMPLETED) {
             OutlinedButton(
                 onClick = onCancel,
                 modifier = Modifier.fillMaxWidth()

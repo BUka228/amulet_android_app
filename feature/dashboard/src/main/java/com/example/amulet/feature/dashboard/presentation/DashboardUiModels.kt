@@ -1,6 +1,7 @@
 package com.example.amulet.feature.dashboard.presentation
 
 import com.example.amulet.shared.core.AppError
+import com.example.amulet.shared.domain.devices.model.Device
 
 /**
  * UI State для Dashboard экрана.
@@ -9,19 +10,10 @@ import com.example.amulet.shared.core.AppError
 data class DashboardUiState(
     val isLoading: Boolean = false,
     val userName: String = "Пользователь",
-    val deviceStatus: DeviceStatus? = null,
+    val devices: List<Device> = emptyList(),
+    val connectedDevice: Device? = null,
     val dailyStats: DailyStats = DailyStats(),
     val error: AppError? = null
-)
-
-/**
- * Состояние подключенного устройства
- */
-data class DeviceStatus(
-    val name: String,
-    val connectionStatus: String, // connected, connecting, disconnected
-    val batteryLevel: Int,
-    val currentAnimation: String?
 )
 
 /**
@@ -39,6 +31,8 @@ data class DailyStats(
 sealed interface DashboardUiEvent {
     data object Refresh : DashboardUiEvent
     data class StartPractice(val practiceId: String) : DashboardUiEvent
+    data class DeviceClicked(val deviceId: String) : DashboardUiEvent
+    data object NavigateToDevicesList : DashboardUiEvent
     data object NavigateToPairing : DashboardUiEvent
     data object NavigateToLibrary : DashboardUiEvent
     data object NavigateToHugs : DashboardUiEvent
@@ -51,6 +45,8 @@ sealed interface DashboardUiEvent {
  * Side Effects - одноразовые события (навигация, toast)
  */
 sealed interface DashboardSideEffect {
+    data class NavigateToDeviceDetails(val deviceId: String) : DashboardSideEffect
+    data object NavigateToDevicesList : DashboardSideEffect
     data object NavigateToPairing : DashboardSideEffect
     data object NavigateToLibrary : DashboardSideEffect
     data object NavigateToHugs : DashboardSideEffect

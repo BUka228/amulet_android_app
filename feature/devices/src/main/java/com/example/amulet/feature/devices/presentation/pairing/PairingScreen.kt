@@ -12,10 +12,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.PairingStepIndicator
 import kotlinx.coroutines.flow.collectLatest
 
@@ -57,10 +59,10 @@ fun PairingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Добавить устройство") },
+                title = { Text(stringResource(R.string.pairing_title)) },
                 navigationIcon = {
                     IconButton(onClick = { onEvent(PairingEvent.CancelPairing) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -132,13 +134,13 @@ fun ScanQrStep(
         )
 
         Text(
-            text = "Отсканируйте QR код",
+            text = stringResource(R.string.pairing_scan_qr_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
 
         Text(
-            text = "Найдите QR код на упаковке вашего амулета",
+            text = stringResource(R.string.pairing_scan_qr_message),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -150,7 +152,7 @@ fun ScanQrStep(
         ) {
             Icon(Icons.Default.QrCodeScanner, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Сканировать QR код")
+            Text(stringResource(R.string.pairing_scan_qr_button))
         }
 
         OutlinedButton(
@@ -159,13 +161,13 @@ fun ScanQrStep(
         ) {
             Icon(Icons.Default.Sensors, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Использовать NFC")
+            Text(stringResource(R.string.pairing_use_nfc_button))
         }
 
         TextButton(
             onClick = { /* TODO: Открыть ручной ввод */ }
         ) {
-            Text("Ввести серийный номер вручную")
+            Text(stringResource(R.string.pairing_manual_entry_button))
         }
     }
 }
@@ -181,7 +183,7 @@ fun ConfirmDeviceStep(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Подтвердите устройство",
+            text = stringResource(R.string.pairing_scan_qr_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -194,7 +196,7 @@ fun ConfirmDeviceStep(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Серийный номер:",
+                    text = stringResource(R.string.device_details_serial),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -214,7 +216,7 @@ fun ConfirmDeviceStep(
                             strokeWidth = 2.dp
                         )
                         Text(
-                            text = "Поиск устройства...",
+                            text = stringResource(R.string.pairing_searching_device),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -238,7 +240,7 @@ fun ConfirmDeviceStep(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "Устройство найдено",
+                                text = stringResource(R.string.pairing_device_found),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -255,14 +257,14 @@ fun ConfirmDeviceStep(
             modifier = Modifier.fillMaxWidth(),
             enabled = state.foundDevice != null && !state.isScanning
         ) {
-            Text("Подключить устройство")
+            Text(stringResource(R.string.pairing_scan_qr_button))
         }
 
         OutlinedButton(
             onClick = { onEvent(PairingEvent.CancelPairing) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Отмена")
+            Text(stringResource(R.string.common_cancel))
         }
     }
 }
@@ -281,7 +283,7 @@ fun PairingInProgressStep(
         )
 
         Text(
-            text = "Подключение устройства...",
+            text = stringResource(R.string.pairing_connecting_ble),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -320,7 +322,7 @@ fun SuccessStep(
         )
 
         Text(
-            text = "Устройство подключено!",
+            text = stringResource(R.string.pairing_success_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -339,7 +341,7 @@ fun SuccessStep(
             onClick = onNavigateBack,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Готово")
+            Text(stringResource(R.string.pairing_success_button))
         }
     }
 }
@@ -363,7 +365,7 @@ fun ErrorStep(
         )
 
         Text(
-            text = "Ошибка подключения",
+            text = stringResource(R.string.pairing_error_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
@@ -383,14 +385,14 @@ fun ErrorStep(
             onClick = onRetry,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Попробовать снова")
+            Text(stringResource(R.string.pairing_retry_button))
         }
 
         OutlinedButton(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Отмена")
+            Text(stringResource(R.string.common_cancel))
         }
     }
 }
