@@ -15,6 +15,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.shared.domain.devices.model.OtaUpdateState as OtaProgressStage
 import kotlinx.coroutines.flow.collectLatest
 
@@ -54,28 +56,27 @@ fun OtaUpdateScreen(
     onEvent: (OtaUpdateEvent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    val scaffoldState = LocalScaffoldState.current
     var showWifiDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Обновление прошивки") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
-                        enabled = !state.isUpdating
-                    ) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
+    // Настраиваем TopBar через централизованный scaffold
+    scaffoldState.ShowOnlyTopBar {
+        TopAppBar(
+            title = { Text("Обновление прошивки") },
+            navigationIcon = {
+                IconButton(
+                    onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
+                    enabled = !state.isUpdating
+                ) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
                 }
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+            }
+        )
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
             when {
                 state.isLoading -> {
                     CircularProgressIndicator(
@@ -102,7 +103,6 @@ fun OtaUpdateScreen(
                     )
                 }
             }
-        }
     }
 
     if (showWifiDialog) {

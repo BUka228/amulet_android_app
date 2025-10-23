@@ -17,6 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.PairingStepIndicator
 import kotlinx.coroutines.flow.collectLatest
@@ -56,25 +58,26 @@ fun PairingScreen(
     onEvent: (PairingEvent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.pairing_title)) },
-                navigationIcon = {
-                    IconButton(onClick = { onEvent(PairingEvent.CancelPairing) }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                    }
+    val scaffoldState = LocalScaffoldState.current
+
+    // Настраиваем TopBar через централизованный scaffold
+    scaffoldState.ShowOnlyTopBar {
+        TopAppBar(
+            title = { Text(stringResource(R.string.pairing_title)) },
+            navigationIcon = {
+                IconButton(onClick = { onEvent(PairingEvent.CancelPairing) }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+            }
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
             AnimatedContent(
                 targetState = state.step,
                 label = "pairing_step"
@@ -113,7 +116,6 @@ fun PairingScreen(
                 }
             }
         }
-    }
 }
 
 @Composable

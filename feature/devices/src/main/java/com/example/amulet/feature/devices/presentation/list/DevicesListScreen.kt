@@ -15,6 +15,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.core.design.scaffold.SetupFAB
+import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.DeviceCard
 import kotlinx.coroutines.flow.collectLatest
@@ -55,30 +58,32 @@ fun DevicesListScreen(
     onEvent: (DevicesListEvent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.devices_list_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                    }
+    val scaffoldState = LocalScaffoldState.current
+
+    // Настраиваем TopBar через централизованный scaffold
+    scaffoldState.ShowOnlyTopBar {
+        TopAppBar(
+            title = { Text(stringResource(R.string.devices_list_title)) },
+            navigationIcon = {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onEvent(DevicesListEvent.AddDeviceClicked) }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.devices_list_add_button))
             }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+        )
+    }
+
+    // Настраиваем FAB через централизованный scaffold
+    scaffoldState.SetupFAB {
+        FloatingActionButton(
+            onClick = { onEvent(DevicesListEvent.AddDeviceClicked) }
         ) {
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.devices_list_add_button))
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
             when {
                 state.isLoading -> {
                     CircularProgressIndicator(
@@ -126,7 +131,6 @@ fun DevicesListScreen(
                 }
             }
         }
-    }
 }
 
 @Composable

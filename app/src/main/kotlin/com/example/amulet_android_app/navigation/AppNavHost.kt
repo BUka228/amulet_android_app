@@ -14,7 +14,7 @@ import com.example.amulet.feature.devices.navigation.devicesGraph
 fun AppNavHost(
     navController: NavHostController,
     startDestination: AppDestination,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,

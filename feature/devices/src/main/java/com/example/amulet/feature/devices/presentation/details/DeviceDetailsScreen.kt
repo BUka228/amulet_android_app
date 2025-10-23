@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.presentation.components.DeviceStatusChip
 import kotlinx.coroutines.flow.collectLatest
 
@@ -53,44 +55,42 @@ fun DeviceDetailsScreen(
     onEvent: (DeviceDetailsEvent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    val scaffoldState = LocalScaffoldState.current
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(state.device?.name ?: "Устройство") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Удалить")
-                    }
+    // Настраиваем TopBar через централизованный scaffold
+    scaffoldState.ShowOnlyTopBar {
+        TopAppBar(
+            title = { Text(state.device?.name ?: "Устройство") },
+            navigationIcon = {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
                 }
-            )
+            },
+            actions = {
+                IconButton(onClick = { showDeleteDialog = true }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                }
+            }
+        )
+    }
+
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-    ) { paddingValues ->
-        if (state.isLoading) {
-            Box(
+    } else {
+        state.device?.let { device ->
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            state.device?.let { device ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
                     // Основная информация
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -223,7 +223,6 @@ fun DeviceDetailsScreen(
                     }
                 }
             }
-        }
     }
 
     if (showDeleteDialog) {
