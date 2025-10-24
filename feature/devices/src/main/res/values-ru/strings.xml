@@ -15,17 +15,10 @@
     <string name="devices_list_connection_disconnected">Отключено</string>
     
     <!-- Pairing Screen -->
-    <string name="pairing_title">Подключение устройства</string>
+    <string name="pairing_title">Подключение Устройства</string>
     <string name="pairing_scan_qr_title">Сканирование QR-кода</string>
     <string name="pairing_scan_qr_message">Отсканируйте QR-код на упаковке вашего устройства Amulet</string>
     <string name="pairing_scan_qr_button">Сканировать QR-код</string>
-    <string name="pairing_quick_easy">Быстро и просто</string>
-    <string name="pairing_tap_tag">Приложите метку</string>
-    <string name="pairing_nfc_not_available">Недоступно на устройстве</string>
-    <string name="pairing_confirm_device">Подтвердите устройство</string>
-    <string name="pairing_serial_number">Серийный номер</string>
-    <string name="pairing_keep_bluetooth_on">Не выключайте Bluetooth</string>
-    <string name="pairing_device_ready">Устройство готово к использованию</string>
     <string name="pairing_use_nfc_button">Использовать NFC</string>
     <string name="pairing_nfc_unavailable">NFC недоступен</string>
     <string name="pairing_nfc_ready_title">Приложите NFC-метку</string>
