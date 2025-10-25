@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -16,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
-import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.DeviceStatusChip
 import kotlinx.coroutines.flow.collectLatest
@@ -60,21 +60,28 @@ fun DeviceDetailsScreen(
     val scaffoldState = LocalScaffoldState.current
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Настраиваем TopBar через централизованный scaffold
-    scaffoldState.ShowOnlyTopBar {
-        TopAppBar(
-            title = { Text(state.device?.name ?: stringResource(R.string.device_details_default_title)) },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                }
-            },
-            actions = {
-                IconButton(onClick = { showDeleteDialog = true }) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.device_details_delete_button))
-                }
-            }
-        )
+    // Устанавливаем только topBar, FAB обнуляем
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(state.device?.name ?: stringResource(R.string.device_details_default_title)) },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                            }
+                        },
+                        actions = {
+                            IconButton(onClick = { showDeleteDialog = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.device_details_delete_button))
+                            }
+                        }
+                    )
+                },
+                floatingActionButton = {} // Обнуляем FAB
+            )
+        }
     }
 
     if (state.isLoading) {

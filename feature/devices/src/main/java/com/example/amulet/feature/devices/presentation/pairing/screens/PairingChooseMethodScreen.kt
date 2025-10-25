@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -20,7 +21,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
-import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
 
@@ -35,15 +35,22 @@ fun PairingChooseMethodScreen(
     val scaffoldState = LocalScaffoldState.current
     val isNfcAvailable by viewModel.isNfcAvailable.collectAsState()
 
-    scaffoldState.ShowOnlyTopBar {
-        TopAppBar(
-            title = { Text(stringResource(R.string.pairing_title)) },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                }
-            }
-        )
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.pairing_title)) },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                            }
+                        }
+                    )
+                },
+                floatingActionButton = {} // Обнуляем FAB
+            )
+        }
     }
 
     Column(

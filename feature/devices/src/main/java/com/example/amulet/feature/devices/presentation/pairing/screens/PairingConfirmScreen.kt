@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
-import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
 
@@ -31,15 +31,22 @@ fun PairingConfirmScreen(
     val scaffoldState = LocalScaffoldState.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    scaffoldState.ShowOnlyTopBar {
-        TopAppBar(
-            title = { Text(stringResource(R.string.pairing_confirm_title)) },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                }
-            }
-        )
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.pairing_confirm_title)) },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                            }
+                        }
+                    )
+                },
+                floatingActionButton = {} // Обнуляем FAB
+            )
+        }
     }
 
     Column(

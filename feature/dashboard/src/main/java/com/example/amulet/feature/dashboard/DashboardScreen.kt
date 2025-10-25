@@ -10,7 +10,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
-import com.example.amulet.core.design.scaffold.ConfigureTopBar
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,14 +92,20 @@ fun DashboardScreen(
     val scrollState = rememberScrollState()
     val scaffoldState = LocalScaffoldState.current
 
-    // Настраиваем TopBar через централизованный конфиг
-    // Используем userName как ключ для переустановки при изменениях и restoreState
-    scaffoldState.ConfigureTopBar(uiState.userName) {
-        DashboardTopBar(
-            userName = uiState.userName,
-            onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
-            onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
-        )
+    // Устанавливаем TopBar синхронно
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(
+                topBar = {
+                    DashboardTopBar(
+                        userName = uiState.userName,
+                        onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
+                        onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
+                    )
+                },
+                floatingActionButton = {} // Обнуляем FAB
+            )
+        }
     }
 
     Column(

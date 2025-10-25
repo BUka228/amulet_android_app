@@ -2,221 +2,86 @@ package com.example.amulet.core.design.scaffold
 
 import androidx.compose.material3.FabPosition
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 
 /**
- * Extension functions для упрощённой работы со ScaffoldState.
- * Enterprise-паттерн: Declarative API для управления UI state.
- */
-
-/**
- * Декларативно устанавливает top bar при входе на экран.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * Использование:
+ * Extension functions для работы со ScaffoldState.
+ * 
+ * УПРОЩЕННЫЙ ПОДХОД: прямые вызовы updateConfig в SideEffect для синхронного выполнения.
+ * 
+ * **КРИТИЧЕСКИ ВАЖНО**: всегда оборачивать updateConfig в SideEffect!
+ * Это гарантирует:
+ * - Немедленное синхронное выполнение
+ * - Отсутствие задержек при быстрой навигации
+ * - Корректную работу при рекомпозиции
+ * 
+ * Пример использования в экране:
  * ```kotlin
- * scaffoldState.SetupTopBar {
- *     TopAppBar(
- *         title = { Text("My Screen") },
- *         navigationIcon = { BackButton() }
- *     )
- * }
- * ```
- *
- * @param topBar Composable функция для top app bar
- */
-@Composable
-fun ScaffoldState.SetupTopBar(topBar: @Composable () -> Unit) {
-    LaunchedEffect(Unit) {
-        updateTopBar(topBar)
-    }
-}
-
-/**
- * Устанавливает top bar с ключом для отслеживания изменений.
- * Используется когда нужно обновить topBar при изменении state или при навигации с restoreState.
- *
- * Использование:
- * ```kotlin
- * scaffoldState.ConfigureTopBar(uiState.userName) {
- *     TopAppBar(
- *         title = { Text(uiState.userName) },
- *         navigationIcon = { BackButton() }
- *     )
- * }
- * ```
- *
- * @param key Ключи для отслеживания изменений (как в LaunchedEffect)
- * @param topBar Composable функция для top app bar
- */
-@Composable
-fun ScaffoldState.ConfigureTopBar(
-    vararg key: Any?,
-    topBar: @Composable () -> Unit
-) {
-    LaunchedEffect(*key) {
-        updateConfig {
-            copy(topBar = topBar)
-        }
-    }
-}
-
-/**
- * Декларативно устанавливает bottom bar при входе на экран.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * @param bottomBar Composable функция для bottom navigation bar
- */
-@Composable
-fun ScaffoldState.SetupBottomBar(bottomBar: @Composable () -> Unit) {
-    LaunchedEffect(Unit) {
-        updateBottomBar(bottomBar)
-    }
-}
-
-/**
- * Устанавливает bottom bar с ключом для отслеживания изменений.
- *
- * @param key Ключи для отслеживания изменений
- * @param bottomBar Composable функция для bottom navigation bar
- */
-@Composable
-fun ScaffoldState.ConfigureBottomBar(
-    vararg key: Any?,
-    bottomBar: @Composable () -> Unit
-) {
-    LaunchedEffect(*key) {
-        updateConfig {
-            copy(bottomBar = bottomBar)
-        }
-    }
-}
-
-/**
- * Декларативно устанавливает FAB при входе на экран.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * @param position Позиция FAB (по умолчанию End)
- * @param fab Composable функция для floating action button
- */
-@Composable
-fun ScaffoldState.SetupFAB(
-    position: FabPosition = FabPosition.End,
-    fab: @Composable () -> Unit
-) {
-    LaunchedEffect(Unit) {
-        updateConfig {
-            copy(
-                floatingActionButton = fab,
-                floatingActionButtonPosition = position
-            )
-        }
-    }
-}
-
-/**
- * Устанавливает FAB с ключом для отслеживания изменений.
- *
- * @param key Ключи для отслеживания изменений
- * @param position Позиция FAB (по умолчанию End)
- * @param fab Composable функция для floating action button
- */
-@Composable
-fun ScaffoldState.ConfigureFAB(
-    vararg key: Any?,
-    position: FabPosition = FabPosition.End,
-    fab: @Composable () -> Unit
-) {
-    LaunchedEffect(*key) {
-        updateConfig {
-            copy(
-                floatingActionButton = fab,
-                floatingActionButtonPosition = position
-            )
-        }
-    }
-}
-
-/**
- * Декларативно устанавливает полную конфигурацию scaffold при входе на экран.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * @param config Функция обновления конфигурации
- */
-@Composable
-fun ScaffoldState.SetupScaffold(config: ScaffoldConfig.() -> ScaffoldConfig) {
-    LaunchedEffect(Unit) {
-        updateConfig(config)
-    }
-}
-
-/**
- * Императивно обновляет scaffold конфигурацию в LaunchedEffect.
- * Используется когда нужно обновить scaffold в ответ на изменение state.
- *
- * Использование:
- * ```kotlin
- * LaunchedEffect(isEditMode) {
- *     scaffoldState.configure {
- *         copy(
- *             topBar = if (isEditMode) { EditTopBar() } else { ViewTopBar() }
- *         )
+ * @Composable
+ * fun MyScreen() {
+ *     val scaffoldState = LocalScaffoldState.current
+ *     
+ *     // ✅ ПРАВИЛЬНО: updateConfig в SideEffect
+ *     SideEffect {
+ *         scaffoldState.updateConfig {
+ *             copy(
+ *                 topBar = {
+ *                     TopAppBar(
+ *                         title = { Text("My Screen") },
+ *                         navigationIcon = { 
+ *                             IconButton(onClick = onBack) {
+ *                                 Icon(Icons.Default.ArrowBack, null)
+ *                             }
+ *                         }
+ *                     )
+ *                 },
+ *                 floatingActionButton = {} // Явно обнуляем FAB
+ *             )
+ *         }
  *     }
+ *     
+ *     // Контент экрана
+ *     MyContent()
  * }
  * ```
- *
- * @param key Ключи для отслеживания изменений (как в LaunchedEffect)
- * @param config Функция обновления конфигурации
+ * 
+ * ❌ НЕПРАВИЛЬНО - вызов напрямую:
+ * ```kotlin
+ * scaffoldState.updateConfig { ... } // Будет задержка!
+ * ```
+ * 
+ * Правило: каждый экран точечно указывает что нужно, обнуляя ненужное:
+ * - Основные экраны с bottom bar: обнуляем topBar и FAB
+ * - Детальные экраны: устанавливаем topBar, обнуляем FAB
+ * - Списки с действиями: устанавливаем topBar и FAB
  */
-@Composable
-fun ScaffoldState.Configure(
-    vararg key: Any?,
-    config: ScaffoldConfig.() -> ScaffoldConfig
+
+/**
+ * Хелпер для установки только topBar, сбрасывая FAB.
+ * Используется для экранов с навигацией назад.
+ */
+fun ScaffoldState.setTopBarOnly(topBar: @Composable () -> Unit) {
+    updateConfig {
+        copy(
+            topBar = topBar,
+            floatingActionButton = {}
+        )
+    }
+}
+
+/**
+ * Хелпер для установки topBar и FAB.
+ * Используется для экранов со списками и действиями.
+ */
+fun ScaffoldState.setTopBarWithFab(
+    topBar: @Composable () -> Unit,
+    fab: @Composable () -> Unit,
+    fabPosition: FabPosition = FabPosition.End
 ) {
-    LaunchedEffect(*key) {
-        updateConfig(config)
-    }
-}
-
-/**
- * Показывает только bottom bar, скрывая остальные элементы scaffold.
- * Удобно для экранов верхнего уровня навигации.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * @param bottomBar Composable функция для bottom navigation bar
- */
-@Composable
-fun ScaffoldState.ShowOnlyBottomBar(bottomBar: @Composable () -> Unit) {
-    LaunchedEffect(Unit) {
-        updateConfig {
-            ScaffoldConfig(bottomBar = bottomBar)
-        }
-    }
-}
-
-/**
- * Показывает только top bar, скрывая остальные элементы scaffold.
- * Удобно для экранов деталей с навигацией назад.
- * MainScaffold автоматически очистит конфигурацию при смене route.
- *
- * @param topBar Composable функция для top app bar
- */
-@Composable
-fun ScaffoldState.ShowOnlyTopBar(topBar: @Composable () -> Unit) {
-    LaunchedEffect(Unit) {
-        updateConfig {
-            ScaffoldConfig(topBar = topBar)
-        }
-    }
-}
-
-/**
- * Скрывает все элементы scaffold (чистый экран без bars).
- * Используется для fullscreen экранов (splash, onboarding, etc).
- */
-@Composable
-fun ScaffoldState.HideAll() {
-    LaunchedEffect(Unit) {
-        reset()
+    updateConfig {
+        copy(
+            topBar = topBar,
+            floatingActionButton = fab,
+            floatingActionButtonPosition = fabPosition
+        )
     }
 }

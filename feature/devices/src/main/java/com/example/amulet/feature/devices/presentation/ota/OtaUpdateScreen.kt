@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -17,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
-import com.example.amulet.core.design.scaffold.ShowOnlyTopBar
 import com.example.amulet.feature.devices.R
 import com.example.amulet.shared.domain.devices.model.OtaUpdateState as OtaProgressStage
 import kotlinx.coroutines.flow.collectLatest
@@ -61,19 +61,26 @@ fun OtaUpdateScreen(
     val scaffoldState = LocalScaffoldState.current
     var showWifiDialog by remember { mutableStateOf(false) }
 
-    // Настраиваем TopBar через централизованный scaffold
-    scaffoldState.ShowOnlyTopBar {
-        TopAppBar(
-            title = { Text(stringResource(R.string.ota_title)) },
-            navigationIcon = {
-                IconButton(
-                    onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
-                    enabled = !state.isUpdating
-                ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
-                }
-            }
-        )
+    // Устанавливаем только topBar, FAB обнуляем
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.ota_title)) },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
+                                enabled = !state.isUpdating
+                            ) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                            }
+                        }
+                    )
+                },
+                floatingActionButton = {} // Обнуляем FAB
+            )
+        }
     }
 
     Box(

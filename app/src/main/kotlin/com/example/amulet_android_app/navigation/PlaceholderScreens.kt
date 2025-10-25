@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -14,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.amulet_android_app.R
 import com.example.amulet.core.design.foundation.color.AmuletPalette
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
 
 /**
  * Placeholder экраны для bottom navigation items
@@ -22,6 +24,14 @@ import com.example.amulet.core.design.foundation.color.AmuletPalette
 
 @Composable
 fun LibraryPlaceholderScreen() {
+    val scaffoldState = LocalScaffoldState.current
+    // Обнуляем topBar и FAB, bottomBar управляется в MainScaffold
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(topBar = {}, floatingActionButton = {})
+        }
+    }
+    
     PlaceholderContent(
         icon = Icons.AutoMirrored.Filled.List,
         titleRes = R.string.placeholder_library_title,
@@ -31,6 +41,14 @@ fun LibraryPlaceholderScreen() {
 
 @Composable
 fun HugsPlaceholderScreen() {
+    val scaffoldState = LocalScaffoldState.current
+    // Обнуляем topBar и FAB, bottomBar управляется в MainScaffold
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(topBar = {}, floatingActionButton = {})
+        }
+    }
+    
     PlaceholderContent(
         icon = Icons.Default.Favorite,
         titleRes = R.string.placeholder_hugs_title,
@@ -40,6 +58,14 @@ fun HugsPlaceholderScreen() {
 
 @Composable
 fun PatternsPlaceholderScreen() {
+    val scaffoldState = LocalScaffoldState.current
+    // Обнуляем topBar и FAB, bottomBar управляется в MainScaffold
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(topBar = {}, floatingActionButton = {})
+        }
+    }
+    
     PlaceholderContent(
         icon = Icons.Default.Notifications,
         titleRes = R.string.placeholder_patterns_title,
@@ -49,6 +75,14 @@ fun PatternsPlaceholderScreen() {
 
 @Composable
 fun SettingsPlaceholderScreen() {
+    val scaffoldState = LocalScaffoldState.current
+    // Обнуляем topBar и FAB, bottomBar управляется в MainScaffold
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(topBar = {}, floatingActionButton = {})
+        }
+    }
+    
     PlaceholderContent(
         icon = Icons.Default.Settings,
         titleRes = R.string.placeholder_settings_title,

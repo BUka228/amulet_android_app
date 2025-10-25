@@ -5,14 +5,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -20,20 +16,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.amulet_android_app.R
 import com.example.amulet.core.design.components.navigation.AmuletBottomNavigationBar
 import com.example.amulet.core.design.components.navigation.BottomNavItem
-import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.core.design.scaffold.ProvideScaffoldState
-import com.example.amulet.core.design.scaffold.ScaffoldConfig
 import com.example.amulet.core.design.scaffold.rememberScaffoldState
 
 /**
- * Main Scaffold с централизованным управлением через ScaffoldState.
- * Enterprise-паттерн: Single Scaffold with Shared State.
- *
- * Преимущества:
- * - Нет вложенных Scaffold - правильная работа с padding и insets
- * - Гибкое управление topBar/bottomBar/FAB из любого экрана через LocalScaffoldState
- * - Поддержка всех Material 3 анимаций и transitions
- * - Масштабируемая архитектура для сложных UX паттернов
+ * Main Scaffold с упрощенным управлением через ScaffoldState.
+ * 
+ * Управление:
+ * - Bottom bar устанавливается автоматически для основных экранов
+ * - Top bar, FAB и другие элементы управляются напрямую из экранов через scaffoldState.updateConfig
+ * - Цвета берутся из темы Material 3 автоматически
+ * - При переходах навигационный граф обнуляет конфиг (scaffoldState.reset())
  *
  * @param navController NavHostController для навигации
  * @param modifier Modifier для scaffold
@@ -49,67 +42,30 @@ fun MainScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Получаем цвета темы
-    val backgroundColor = MaterialTheme.colorScheme.background
-    val contentColorValue = MaterialTheme.colorScheme.onBackground
-    
-    // Инициализируем конфиг с правильными цветами темы один раз
-    LaunchedEffect(Unit) {
-        scaffoldState.updateConfig {
-            copy(
-                containerColor = backgroundColor,
-                contentColor = contentColorValue
-            )
-        }
-    }
-    
-    // Отслеживаем предыдущий route для определения реальной смены
-    var previousRoute by remember { mutableStateOf<String?>(null) }
-    
-    // Автоматически управляем scaffold конфигурацией в зависимости от route
-    // При смене route сбрасываем экранно-специфичные элементы (topBar, FAB)
-    // и устанавливаем bottomBar для главных экранов
+    // Управляем только bottom bar для основных экранов
+    // Все остальное (topBar, FAB) управляется напрямую из экранов
     LaunchedEffect(currentRoute) {
-        val isRouteChanged = previousRoute != null && previousRoute != currentRoute
         val showBottomBar = currentRoute != null && shouldShowBottomBar(currentRoute)
         
-        if (showBottomBar) {
-            // Для главных экранов: bottomBar показываем
-            scaffoldState.updateConfig {
-                copy(
-                    // Очищаем topBar и FAB только при реальной смене route
-                    topBar = if (isRouteChanged) ({}) else topBar,
-                    bottomBar = {
+        scaffoldState.updateConfig {
+            copy(
+                bottomBar = if (showBottomBar) {
+                    {
                         AppBottomNavigationBar(
                             navController = navController,
                             currentRoute = currentRoute.orEmpty()
                         )
-                    },
-                    floatingActionButton = if (isRouteChanged) ({}) else floatingActionButton,
-                    containerColor = backgroundColor,
-                    contentColor = contentColorValue
-                )
-            }
-        } else {
-            // Для вложенных экранов: bottomBar убираем
-            scaffoldState.updateConfig {
-                copy(
-                    // Очищаем topBar и FAB только при реальной смене route
-                    topBar = if (isRouteChanged) ({}) else topBar,
-                    bottomBar = {},
-                    floatingActionButton = if (isRouteChanged) ({}) else floatingActionButton,
-                    containerColor = backgroundColor,
-                    contentColor = contentColorValue
-                )
-            }
+                    }
+                } else {
+                    {}
+                }
+            )
         }
-        
-        // Обновляем предыдущий route
-        previousRoute = currentRoute
     }
 
     val config = scaffoldState.config
 
+    // Scaffold без цветов - берет автоматически из Material 3 темы
     Scaffold(
         modifier = modifier,
         topBar = config.topBar,
@@ -117,12 +73,8 @@ fun MainScaffold(
         snackbarHost = config.snackbarHost,
         floatingActionButton = config.floatingActionButton,
         floatingActionButtonPosition = config.floatingActionButtonPosition,
-        containerColor = config.containerColor,
-        contentColor = config.contentColor,
         contentWindowInsets = config.contentWindowInsets
     ) { paddingValues ->
-        // Предоставляем ScaffoldState через CompositionLocal для доступа из любого экрана
-        // Оборачиваем контент в Box с padding для корректной работы с topBar/bottomBar/FAB
         ProvideScaffoldState(scaffoldState) {
             Box(modifier = Modifier.padding(paddingValues)) {
                 content()
