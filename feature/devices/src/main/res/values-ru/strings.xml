@@ -47,6 +47,7 @@
     <string name="pairing_confirm_info">Устройство будет привязано к вашему аккаунту</string>
     <string name="pairing_confirm_button">Подключить устройство</string>
     
+    <!-- Progress -->
     <string name="pairing_step_scan">Сканирование</string>
     <string name="pairing_step_connect">Подключение</string>
     <string name="pairing_step_claim">Привязка</string>
@@ -57,14 +58,14 @@
     <string name="pairing_connecting_ble">Подключение по Bluetooth…</string>
     <string name="pairing_claiming_server">Привязка к аккаунту…</string>
     
-    <!-- Progress & Success -->
+    <!-- Success -->
     <string name="pairing_success_title">Успешно подключено!</string>
-    <string name="pairing_success_message">Ваше устройство Amulet готово к использованию</string>
-    <string name="pairing_success_button">Перейти к устройству</string>
-    <string name="pairing_configuring_device">Настройка устройства…</string>
-    <string name="pairing_error_title">Ошибка подключения</string>
-    <string name="pairing_retry_button">Повторить</string>
+    <string name="pairing_success_message">Ваш Amulet готов к использованию</string>
+    <string name="pairing_success_button">К моим устройствам</string>
     
+    <!-- Progress-->
+    <string name="pairing_error_title">Подключение неуспешно</string>
+    <string name="pairing_retry_button">Повторить</string>
     <string name="pairing_error_invalid_qr">Неверный формат QR-кода</string>
     <string name="pairing_error_invalid_nfc">Неверный формат NFC-метки</string>
     

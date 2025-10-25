@@ -1,9 +1,5 @@
 package com.example.amulet.feature.devices.presentation.pairing.screens
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,7 +9,6 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -56,40 +51,36 @@ fun PairingChooseMethodScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(24.dp))
-        
-        // Заголовок
+        // Компактный заголовок
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(bottom = 24.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.QrCodeScanner,
                 contentDescription = null,
-                modifier = Modifier.size(96.dp),
+                modifier = Modifier.size(100.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             
             Text(
                 text = stringResource(R.string.pairing_choose_method_title),
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
             
             Text(
                 text = stringResource(R.string.pairing_choose_method_subtitle),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        Spacer(Modifier.weight(1f))
-        
         // Карточки методов
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -119,10 +110,10 @@ fun PairingChooseMethodScreen(
                 onClick = onNfcSelected
             )
         }
-        
-        Spacer(Modifier.height(16.dp))
-        
-        // Ручной ввод - текстовая кнопка
+
+        Spacer(Modifier.weight(1f))
+
+        // Ручной ввод внизу
         TextButton(
             onClick = { /* TODO: Manual entry */ },
             modifier = Modifier.fillMaxWidth()
@@ -135,8 +126,6 @@ fun PairingChooseMethodScreen(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.pairing_manual_entry_button))
         }
-        
-        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -151,14 +140,7 @@ private fun PairingMethodCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ),
+        modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
         enabled = enabled,
         colors = if (recommended) {
@@ -169,74 +151,60 @@ private fun PairingMethodCard(
             CardDefaults.cardColors()
         }
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Иконка
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (recommended) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                modifier = Modifier.size(48.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (recommended) {
-                        MaterialTheme.colorScheme.primary
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = if (recommended) {
+                        MaterialTheme.colorScheme.onPrimary
                     } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                    modifier = Modifier.size(56.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = if (recommended) {
-                                MaterialTheme.colorScheme.onPrimary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (recommended) {
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primary
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.pairing_method_recommended),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
 
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (enabled) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            // Текст
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
-            )
+                
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    }
+                )
+            }
         }
     }
 }

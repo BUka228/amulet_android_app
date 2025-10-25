@@ -47,6 +47,7 @@
     <string name="pairing_confirm_info">This will pair the device to your account</string>
     <string name="pairing_confirm_button">Pair Device</string>
     
+    <!-- Progress -->
     <string name="pairing_step_scan">Scan</string>
     <string name="pairing_step_connect">Connect</string>
     <string name="pairing_step_claim">Claim</string>
@@ -57,11 +58,12 @@
     <string name="pairing_connecting_ble">Connecting via Bluetooth…</string>
     <string name="pairing_claiming_server">Claiming to account…</string>
     
-    <!-- Progress & Success -->
+    <!-- Success -->
     <string name="pairing_success_title">Successfully Paired!</string>
-    <string name="pairing_success_message">Your Amulet device is ready to use</string>
-    <string name="pairing_success_button">Go to Device</string>
-    <string name="pairing_configuring_device">Configuring device…</string>
+    <string name="pairing_success_message">Your Amulet is ready to use</string>
+    <string name="pairing_success_button">Go to My Devices</string>
+    
+    <!-- Progress & Success -->
     <string name="pairing_error_title">Pairing Failed</string>
     <string name="pairing_retry_button">Retry</string>
     
