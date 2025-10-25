@@ -16,14 +16,36 @@
     
     <!-- Pairing Screen -->
     <string name="pairing_title">Pair Device</string>
+    
+    <!-- Choose Method -->
+    <string name="pairing_choose_method_title">Add Your Amulet</string>
+    <string name="pairing_choose_method_subtitle">Choose how to connect your device</string>
+    <string name="pairing_method_qr_title">Scan QR Code</string>
+    <string name="pairing_method_qr_desc">Quick and easy. Scan the code on device packaging</string>
+    <string name="pairing_method_nfc_title">Use NFC</string>
+    <string name="pairing_method_nfc_desc">Touch device with NFC tag for instant pairing</string>
+    <string name="pairing_method_recommended">Recommended</string>
+    <string name="pairing_manual_entry_button">Enter serial number manually</string>
+    
+    <!-- QR Scan -->
     <string name="pairing_scan_qr_title">Scan QR Code</string>
     <string name="pairing_scan_qr_message">Scan the QR code on your Amulet device packaging</string>
     <string name="pairing_scan_qr_button">Scan QR Code</string>
+    <string name="pairing_qr_scan_instruction_title">Point camera at QR code</string>
+    <string name="pairing_qr_scan_instruction_desc">Align QR code within frame</string>
+    
+    <!-- NFC -->
     <string name="pairing_use_nfc_button">Use NFC</string>
     <string name="pairing_nfc_unavailable">NFC not available</string>
-    <string name="pairing_nfc_ready_title">Tap NFC Tag</string>
-    <string name="pairing_nfc_ready_message">Hold your device close to the Amulet NFC tag</string>
-    <string name="pairing_manual_entry_button">Enter serial number manually</string>
+    <string name="pairing_nfc_ready_title">Ready to Scan</string>
+    <string name="pairing_nfc_ready_message">Hold your phone close to the Amulet</string>
+    <string name="pairing_nfc_hint">Keep phone steady near device until connected</string>
+    
+    <!-- Confirm -->
+    <string name="pairing_confirm_title">Confirm Device</string>
+    <string name="pairing_confirm_device_title">Device Found!</string>
+    <string name="pairing_confirm_info">This will pair the device to your account</string>
+    <string name="pairing_confirm_button">Pair Device</string>
     
     <string name="pairing_step_scan">Scan</string>
     <string name="pairing_step_connect">Connect</string>
@@ -34,15 +56,14 @@
     <string name="pairing_device_found">Device found</string>
     <string name="pairing_connecting_ble">Connecting via Bluetooth…</string>
     <string name="pairing_claiming_server">Claiming to account…</string>
-    <string name="pairing_configuring_device">Configuring device…</string>
     
+    <!-- Progress & Success -->
     <string name="pairing_success_title">Successfully Paired!</string>
     <string name="pairing_success_message">Your Amulet device is ready to use</string>
     <string name="pairing_success_button">Go to Device</string>
-    
+    <string name="pairing_configuring_device">Configuring device…</string>
     <string name="pairing_error_title">Pairing Failed</string>
     <string name="pairing_retry_button">Retry</string>
-    <string name="pairing_cancel_button">Cancel</string>
     
     <string name="pairing_error_invalid_qr">Invalid QR code format</string>
     <string name="pairing_error_invalid_nfc">Invalid NFC tag format</string>

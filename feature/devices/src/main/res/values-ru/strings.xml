@@ -15,15 +15,37 @@
     <string name="devices_list_connection_disconnected">Отключено</string>
     
     <!-- Pairing Screen -->
-    <string name="pairing_title">Подключение Устройства</string>
+    <string name="pairing_title">Подключение устройства</string>
+    
+    <!-- Choose Method -->
+    <string name="pairing_choose_method_title">Добавьте Amulet</string>
+    <string name="pairing_choose_method_subtitle">Выберите способ подключения</string>
+    <string name="pairing_method_qr_title">Сканировать QR-код</string>
+    <string name="pairing_method_qr_desc">Быстро и просто. Отсканируйте код на упаковке</string>
+    <string name="pairing_method_nfc_title">Использовать NFC</string>
+    <string name="pairing_method_nfc_desc">Коснитесь устройства NFC-меткой для мгновенного подключения</string>
+    <string name="pairing_method_recommended">Рекомендуется</string>
+    <string name="pairing_manual_entry_button">Ввести серийный номер вручную</string>
+    
+    <!-- QR Scan -->
     <string name="pairing_scan_qr_title">Сканирование QR-кода</string>
     <string name="pairing_scan_qr_message">Отсканируйте QR-код на упаковке вашего устройства Amulet</string>
     <string name="pairing_scan_qr_button">Сканировать QR-код</string>
+    <string name="pairing_qr_scan_instruction_title">Наведите камеру на QR-код</string>
+    <string name="pairing_qr_scan_instruction_desc">Совместите QR-код с рамкой</string>
+    
+    <!-- NFC -->
     <string name="pairing_use_nfc_button">Использовать NFC</string>
     <string name="pairing_nfc_unavailable">NFC недоступен</string>
-    <string name="pairing_nfc_ready_title">Приложите NFC-метку</string>
-    <string name="pairing_nfc_ready_message">Поднесите устройство к NFC-метке Amulet</string>
-    <string name="pairing_manual_entry_button">Ввести серийный номер вручную</string>
+    <string name="pairing_nfc_ready_title">Готов к сканированию</string>
+    <string name="pairing_nfc_ready_message">Поднесите телефон к Amulet</string>
+    <string name="pairing_nfc_hint">Держите телефон рядом с устройством до подключения</string>
+    
+    <!-- Confirm -->
+    <string name="pairing_confirm_title">Подтверждение устройства</string>
+    <string name="pairing_confirm_device_title">Устройство найдено!</string>
+    <string name="pairing_confirm_info">Устройство будет привязано к вашему аккаунту</string>
+    <string name="pairing_confirm_button">Подключить устройство</string>
     
     <string name="pairing_step_scan">Сканирование</string>
     <string name="pairing_step_connect">Подключение</string>
@@ -34,15 +56,14 @@
     <string name="pairing_device_found">Устройство найдено</string>
     <string name="pairing_connecting_ble">Подключение по Bluetooth…</string>
     <string name="pairing_claiming_server">Привязка к аккаунту…</string>
-    <string name="pairing_configuring_device">Настройка устройства…</string>
     
-    <string name="pairing_success_title">Успешно Подключено!</string>
+    <!-- Progress & Success -->
+    <string name="pairing_success_title">Успешно подключено!</string>
     <string name="pairing_success_message">Ваше устройство Amulet готово к использованию</string>
-    <string name="pairing_success_button">Перейти к Устройству</string>
-    
-    <string name="pairing_error_title">Ошибка Подключения</string>
+    <string name="pairing_success_button">Перейти к устройству</string>
+    <string name="pairing_configuring_device">Настройка устройства…</string>
+    <string name="pairing_error_title">Ошибка подключения</string>
     <string name="pairing_retry_button">Повторить</string>
-    <string name="pairing_cancel_button">Отмена</string>
     
     <string name="pairing_error_invalid_qr">Неверный формат QR-кода</string>
     <string name="pairing_error_invalid_nfc">Неверный формат NFC-метки</string>

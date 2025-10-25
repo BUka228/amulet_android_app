@@ -33,6 +33,35 @@ fun ScaffoldState.SetupTopBar(topBar: @Composable () -> Unit) {
 }
 
 /**
+ * Устанавливает top bar с ключом для отслеживания изменений.
+ * Используется когда нужно обновить topBar при изменении state или при навигации с restoreState.
+ *
+ * Использование:
+ * ```kotlin
+ * scaffoldState.ConfigureTopBar(uiState.userName) {
+ *     TopAppBar(
+ *         title = { Text(uiState.userName) },
+ *         navigationIcon = { BackButton() }
+ *     )
+ * }
+ * ```
+ *
+ * @param key Ключи для отслеживания изменений (как в LaunchedEffect)
+ * @param topBar Composable функция для top app bar
+ */
+@Composable
+fun ScaffoldState.ConfigureTopBar(
+    vararg key: Any?,
+    topBar: @Composable () -> Unit
+) {
+    LaunchedEffect(*key) {
+        updateConfig {
+            copy(topBar = topBar)
+        }
+    }
+}
+
+/**
  * Декларативно устанавливает bottom bar при входе на экран.
  * MainScaffold автоматически очистит конфигурацию при смене route.
  *
@@ -42,6 +71,24 @@ fun ScaffoldState.SetupTopBar(topBar: @Composable () -> Unit) {
 fun ScaffoldState.SetupBottomBar(bottomBar: @Composable () -> Unit) {
     LaunchedEffect(Unit) {
         updateBottomBar(bottomBar)
+    }
+}
+
+/**
+ * Устанавливает bottom bar с ключом для отслеживания изменений.
+ *
+ * @param key Ключи для отслеживания изменений
+ * @param bottomBar Composable функция для bottom navigation bar
+ */
+@Composable
+fun ScaffoldState.ConfigureBottomBar(
+    vararg key: Any?,
+    bottomBar: @Composable () -> Unit
+) {
+    LaunchedEffect(*key) {
+        updateConfig {
+            copy(bottomBar = bottomBar)
+        }
     }
 }
 
@@ -58,6 +105,29 @@ fun ScaffoldState.SetupFAB(
     fab: @Composable () -> Unit
 ) {
     LaunchedEffect(Unit) {
+        updateConfig {
+            copy(
+                floatingActionButton = fab,
+                floatingActionButtonPosition = position
+            )
+        }
+    }
+}
+
+/**
+ * Устанавливает FAB с ключом для отслеживания изменений.
+ *
+ * @param key Ключи для отслеживания изменений
+ * @param position Позиция FAB (по умолчанию End)
+ * @param fab Composable функция для floating action button
+ */
+@Composable
+fun ScaffoldState.ConfigureFAB(
+    vararg key: Any?,
+    position: FabPosition = FabPosition.End,
+    fab: @Composable () -> Unit
+) {
+    LaunchedEffect(*key) {
         updateConfig {
             copy(
                 floatingActionButton = fab,

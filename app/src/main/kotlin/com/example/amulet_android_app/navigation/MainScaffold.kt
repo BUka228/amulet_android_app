@@ -10,6 +10,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
@@ -50,34 +53,59 @@ fun MainScaffold(
     val backgroundColor = MaterialTheme.colorScheme.background
     val contentColorValue = MaterialTheme.colorScheme.onBackground
     
+    // Инициализируем конфиг с правильными цветами темы один раз
+    LaunchedEffect(Unit) {
+        scaffoldState.updateConfig {
+            copy(
+                containerColor = backgroundColor,
+                contentColor = contentColorValue
+            )
+        }
+    }
+    
+    // Отслеживаем предыдущий route для определения реальной смены
+    var previousRoute by remember { mutableStateOf<String?>(null) }
+    
     // Автоматически управляем scaffold конфигурацией в зависимости от route
-    // При смене route сбрасываем всю конфигурацию и устанавливаем только bottomBar если нужно
+    // При смене route сбрасываем экранно-специфичные элементы (topBar, FAB)
+    // и устанавливаем bottomBar для главных экранов
     LaunchedEffect(currentRoute) {
+        val isRouteChanged = previousRoute != null && previousRoute != currentRoute
         val showBottomBar = currentRoute != null && shouldShowBottomBar(currentRoute)
+        
         if (showBottomBar) {
-            // Для главных экранов: только bottomBar, без topBar и FAB
+            // Для главных экранов: bottomBar показываем
             scaffoldState.updateConfig {
-                ScaffoldConfig(
+                copy(
+                    // Очищаем topBar и FAB только при реальной смене route
+                    topBar = if (isRouteChanged) ({}) else topBar,
                     bottomBar = {
                         AppBottomNavigationBar(
                             navController = navController,
                             currentRoute = currentRoute.orEmpty()
                         )
                     },
+                    floatingActionButton = if (isRouteChanged) ({}) else floatingActionButton,
                     containerColor = backgroundColor,
                     contentColor = contentColorValue
                 )
             }
         } else {
-            // Для вложенных экранов: сбрасываем bottomBar, topBar/FAB установят сами экраны
-            // Но сохраняем правильные цвета темы
+            // Для вложенных экранов: bottomBar убираем
             scaffoldState.updateConfig {
-                ScaffoldConfig(
+                copy(
+                    // Очищаем topBar и FAB только при реальной смене route
+                    topBar = if (isRouteChanged) ({}) else topBar,
+                    bottomBar = {},
+                    floatingActionButton = if (isRouteChanged) ({}) else floatingActionButton,
                     containerColor = backgroundColor,
                     contentColor = contentColorValue
                 )
             }
         }
+        
+        // Обновляем предыдущий route
+        previousRoute = currentRoute
     }
 
     val config = scaffoldState.config

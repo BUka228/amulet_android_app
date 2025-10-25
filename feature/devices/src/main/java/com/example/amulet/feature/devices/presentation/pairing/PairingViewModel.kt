@@ -29,6 +29,9 @@ class PairingViewModel @Inject constructor(
     private val _sideEffect = MutableSharedFlow<PairingSideEffect>()
     val sideEffect: SharedFlow<PairingSideEffect> = _sideEffect.asSharedFlow()
     
+    private val _isNfcAvailable = MutableStateFlow(false)
+    val isNfcAvailable: StateFlow<Boolean> = _isNfcAvailable.asStateFlow()
+    
     private var qrScanJob: Job? = null
     private var bleSearchJob: Job? = null
 
@@ -224,6 +227,7 @@ class PairingViewModel @Inject constructor(
      * Установить доступность NFC (вызывается из Activity).
      */
     fun setNfcAvailability(isAvailable: Boolean) {
+        _isNfcAvailable.value = isAvailable
         _uiState.update { it.copy(isNfcAvailable = isAvailable) }
     }
     

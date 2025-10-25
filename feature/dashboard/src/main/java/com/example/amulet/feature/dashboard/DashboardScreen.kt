@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.core.design.scaffold.ConfigureTopBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -88,61 +90,61 @@ fun DashboardScreen(
 ) {
     val spacing = AmuletTheme.spacing
     val scrollState = rememberScrollState()
+    val scaffoldState = LocalScaffoldState.current
 
-    Scaffold(
-        topBar = {
-            DashboardTopBar(
-                userName = uiState.userName,
-                onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
-                onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(paddingValues)
-                .padding(horizontal = spacing.md)
-                .padding(bottom = spacing.md),
-            verticalArrangement = Arrangement.spacedBy(spacing.sm)
-        ) {
-            Spacer(modifier = Modifier.height(spacing.xs))
-            
-            // Компактная статистика в верхней части
-            CompactStatsRow(
-                stats = uiState.dailyStats
-            )
+    // Настраиваем TopBar через централизованный конфиг
+    // Используем userName как ключ для переустановки при изменениях и restoreState
+    scaffoldState.ConfigureTopBar(uiState.userName) {
+        DashboardTopBar(
+            userName = uiState.userName,
+            onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
+            onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
+        )
+    }
 
-            // Устройства - компактная версия
-            DevicesSection(
-                devices = uiState.devices,
-                connectedDevice = uiState.connectedDevice,
-                onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
-                onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
-                onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = spacing.md)
+            .padding(bottom = spacing.md),
+        verticalArrangement = Arrangement.spacedBy(spacing.sm)
+    ) {
+        Spacer(modifier = Modifier.height(spacing.xs))
+        
+        // Компактная статистика в верхней части
+        CompactStatsRow(
+            stats = uiState.dailyStats
+        )
 
-            // Быстрый старт практики - обновленный дизайн
-            QuickStartSection(
-                onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-            )
+        // Устройства - компактная версия
+        DevicesSection(
+            devices = uiState.devices,
+            connectedDevice = uiState.connectedDevice,
+            onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
+            onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
+            onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
+        )
 
-            // Рекомендации на основе данных
-            RecommendationsSection(
-                stats = uiState.dailyStats,
-                onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-            )
-            
-            // Быстрый доступ к разделам
-            QuickAccessGrid(
-                onNavigateToLibrary = { onEvent(DashboardUiEvent.NavigateToLibrary) },
-                onNavigateToHugs = { onEvent(DashboardUiEvent.NavigateToHugs) },
-                onNavigateToPatterns = { onEvent(DashboardUiEvent.NavigateToPatterns) }
-            )
+        // Быстрый старт практики - обновленный дизайн
+        QuickStartSection(
+            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
+        )
 
-            Spacer(modifier = Modifier.height(spacing.sm))
-        }
+        // Рекомендации на основе данных
+        RecommendationsSection(
+            stats = uiState.dailyStats,
+            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
+        )
+        
+        // Быстрый доступ к разделам
+        QuickAccessGrid(
+            onNavigateToLibrary = { onEvent(DashboardUiEvent.NavigateToLibrary) },
+            onNavigateToHugs = { onEvent(DashboardUiEvent.NavigateToHugs) },
+            onNavigateToPatterns = { onEvent(DashboardUiEvent.NavigateToPatterns) }
+        )
+
+        Spacer(modifier = Modifier.height(spacing.sm))
     }
 }
 

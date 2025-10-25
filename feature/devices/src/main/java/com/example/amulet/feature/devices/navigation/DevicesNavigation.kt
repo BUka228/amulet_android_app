@@ -9,7 +9,8 @@ import androidx.navigation.navigation
 import com.example.amulet.feature.devices.presentation.details.DeviceDetailsRoute
 import com.example.amulet.feature.devices.presentation.list.DevicesListRoute
 import com.example.amulet.feature.devices.presentation.ota.OtaUpdateRoute
-import com.example.amulet.feature.devices.presentation.pairing.PairingRoute
+import com.example.amulet.feature.devices.presentation.pairing.navigation.PairingGraph
+import com.example.amulet.feature.devices.presentation.pairing.navigation.pairingGraph
 
 object DevicesGraph {
     const val route: String = "devices_graph"
@@ -17,7 +18,6 @@ object DevicesGraph {
 
 object DevicesDestination {
     const val list: String = "devices/list"
-    const val pairing: String = "devices/pairing"
     const val details: String = "devices/details/{deviceId}"
     const val otaUpdate: String = "devices/ota/{deviceId}"
 }
@@ -32,7 +32,7 @@ fun NavController.navigateToDevicesList(popUpToInclusive: Boolean = false) {
 }
 
 fun NavController.navigateToPairing() {
-    navigate(DevicesDestination.pairing) {
+    navigate(PairingGraph.route) {
         launchSingleTop = true
     }
 }
@@ -58,14 +58,16 @@ fun NavGraphBuilder.devicesGraph(
             )
         }
 
-        composable(route = DevicesDestination.pairing) {
-            PairingRoute(
-                onPairingComplete = { 
-                    navController.popBackStack()
-                },
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
+        // Вложенный граф паринга
+        pairingGraph(
+            navController = navController,
+            onPairingComplete = { 
+                navController.popBackStack(DevicesDestination.list, inclusive = false)
+            },
+            onNavigateBack = { 
+                navController.popBackStack()
+            }
+        )
 
         composable(
             route = DevicesDestination.details,
