@@ -2,264 +2,190 @@ package com.example.amulet.feature.devices.presentation.pairing
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.feature.devices.scanner.NfcManager
-import com.example.amulet.feature.devices.scanner.QrScanManager
-import com.example.amulet.shared.core.AppError
-import com.example.amulet.shared.domain.devices.model.PairingData
-import com.example.amulet.shared.domain.devices.model.PairingProgress
-import com.example.amulet.shared.domain.devices.usecase.PairAndClaimDeviceUseCase
-import com.example.amulet.shared.domain.devices.usecase.ScanForPairingUseCase
+import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
+import com.example.amulet.shared.domain.devices.usecase.AddDeviceUseCase
+import com.example.amulet.shared.domain.devices.usecase.ConnectToDeviceUseCase
+import com.example.amulet.shared.domain.devices.usecase.ScanForDevicesUseCase
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel для экрана добавления устройства.
+ * Упрощенный флоу без QR/NFC - только BLE сканирование.
+ */
 @HiltViewModel
 class PairingViewModel @Inject constructor(
-    private val scanForPairingUseCase: ScanForPairingUseCase,
-    private val pairAndClaimDeviceUseCase: PairAndClaimDeviceUseCase,
-    val qrScanManager: QrScanManager,
-    val nfcManager: NfcManager
+    private val scanForDevicesUseCase: ScanForDevicesUseCase,
+    private val connectToDeviceUseCase: ConnectToDeviceUseCase,
+    private val addDeviceUseCase: AddDeviceUseCase
 ) : ViewModel() {
-
-    private val _uiState = MutableStateFlow(PairingState())
-    val uiState: StateFlow<PairingState> = _uiState.asStateFlow()
-
-    private val _sideEffect = MutableSharedFlow<PairingSideEffect>()
-    val sideEffect: SharedFlow<PairingSideEffect> = _sideEffect.asSharedFlow()
     
-    private val _isNfcAvailable = MutableStateFlow(false)
-    val isNfcAvailable: StateFlow<Boolean> = _isNfcAvailable.asStateFlow()
+    private val _state = MutableStateFlow(PairingState())
+    val state = _state.asStateFlow()
     
-    private var qrScanJob: Job? = null
-    private var bleSearchJob: Job? = null
-
-    fun handleEvent(event: PairingEvent) {
+    private val _sideEffects = MutableSharedFlow<PairingSideEffect>()
+    val sideEffects = _sideEffects.asSharedFlow()
+    
+    private var scanJob: Job? = null
+    private var connectionJob: Job? = null
+    
+    fun onEvent(event: PairingEvent) {
         when (event) {
-            is PairingEvent.ChooseQrScanning -> chooseQrScanning()
-            is PairingEvent.ChooseNfcReading -> chooseNfcReading()
-            is PairingEvent.ChooseManualEntry -> chooseManualEntry()
-            is PairingEvent.QrCodeScanned -> handleQrCodeScanned(event.qrContent)
-            is PairingEvent.NfcTagRead -> handleNfcTagRead(event.nfcPayload)
-            is PairingEvent.ManualSerialEntered -> handleManualEntry(event.serialNumber, event.claimToken)
-            is PairingEvent.StartPairing -> startPairing()
-            is PairingEvent.CancelPairing -> cancelPairing()
-            is PairingEvent.RetryPairing -> retryPairing()
-            is PairingEvent.DismissError -> {
-                _uiState.update { it.copy(error = null) }
-            }
+            is PairingEvent.StartScanning -> startScanning()
+            is PairingEvent.StopScanning -> stopScanning()
+            is PairingEvent.SelectDevice -> selectDevice(event.device)
+            is PairingEvent.ConnectAndAddDevice -> connectAndAddDevice(event.deviceName)
+            is PairingEvent.CancelConnection -> cancelConnection()
+            is PairingEvent.DismissError -> dismissError()
+            is PairingEvent.NavigateBack -> navigateBack()
         }
     }
     
-    private fun chooseQrScanning() {
-        _uiState.update { 
-            it.copy(
-                step = PairingStep.QR_SCANNING,
-                scanMode = ScanMode.QR,
-                error = null
-            )
-        }
-    }
-    
-    private fun chooseNfcReading() {
-        _uiState.update { 
-            it.copy(
-                step = PairingStep.NFC_READING,
-                scanMode = ScanMode.NFC,
-                error = null
-            )
-        }
-    }
-    
-    private fun chooseManualEntry() {
-        _uiState.update { 
-            it.copy(
-                scanMode = ScanMode.MANUAL,
-                error = null
-            )
-        }
-        // TODO: Показать диалог ручного ввода
-    }
-
-    private fun handleQrCodeScanned(qrContent: String) {
-        val pairingData = PairingData.fromQrCode(qrContent)
-        if (pairingData != null) {
-            _uiState.update { 
-                it.copy(
-                    pairingData = pairingData,
-                    step = PairingStep.CONFIRM_DEVICE,
-                    error = null
-                )
-            }
-            startScanningForDevice(pairingData.serialNumber)
-        } else {
-            _uiState.update { 
-                it.copy(error = AppError.Validation(mapOf("qr" to "invalid_qr_format")))
-            }
-        }
-    }
-
-    private fun handleNfcTagRead(nfcPayload: String) {
-        val pairingData = PairingData.fromNfcPayload(nfcPayload)
-        if (pairingData != null) {
-            _uiState.update { 
-                it.copy(
-                    pairingData = pairingData,
-                    step = PairingStep.CONFIRM_DEVICE,
-                    error = null
-                )
-            }
-            startScanningForDevice(pairingData.serialNumber)
-        } else {
-            _uiState.update { 
-                it.copy(error = AppError.Validation(mapOf("nfc" to "invalid_nfc_format")))
-            }
-        }
-    }
-
-    private fun handleManualEntry(serialNumber: String, claimToken: String) {
-        val pairingData = PairingData(serialNumber, claimToken)
-        _uiState.update { 
-            it.copy(
-                pairingData = pairingData,
-                step = PairingStep.CONFIRM_DEVICE,
-                error = null
-            )
-        }
-        startScanningForDevice(serialNumber)
-    }
-
-    private fun startScanningForDevice(serialNumber: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isScanning = true) }
-            scanForPairingUseCase(serialNumberFilter = serialNumber, timeoutMs = 10_000L)
-                .take(1) // Берем первое найденное устройство
-                .collect { device ->
-                    _uiState.update { 
-                        it.copy(
-                            foundDevice = device,
-                            isScanning = false
-                        )
+    private fun startScanning() {
+        stopScanning()
+        
+        _state.update { it.copy(
+            isScanning = true,
+            foundDevices = emptyList(),
+            error = null
+        ) }
+        
+        scanJob = viewModelScope.launch {
+            scanForDevicesUseCase(timeoutMs = 30_000L)
+                .catch { error ->
+                    _state.update { it.copy(
+                        isScanning = false,
+                        error = com.example.amulet.shared.core.AppError.BleError.DeviceNotFound
+                    ) }
+                }
+                .collect { foundDevice ->
+                    _state.update { currentState ->
+                        val updatedDevices = currentState.foundDevices
+                            .filter { it.bleAddress != foundDevice.bleAddress } + foundDevice
+                        currentState.copy(foundDevices = updatedDevices)
                     }
                 }
         }
     }
-
-    private fun startPairing() {
-        val pairingData = _uiState.value.pairingData ?: return
+    
+    private fun stopScanning() {
+        scanJob?.cancel()
+        scanJob = null
+        _state.update { it.copy(isScanning = false) }
+    }
+    
+    private fun selectDevice(device: com.example.amulet.shared.domain.devices.model.PairingDeviceFound) {
+        stopScanning()
+        _state.update { it.copy(selectedDevice = device) }
+    }
+    
+    private fun connectAndAddDevice(deviceName: String) {
+        val device = _state.value.selectedDevice ?: return
         
-        viewModelScope.launch {
-            _uiState.update { 
-                it.copy(
-                    step = PairingStep.PAIRING,
-                    isPairing = true,
-                    error = null
+        _state.update { it.copy(
+            isConnecting = true,
+            connectionProgress = "Подключение...",
+            error = null
+        ) }
+        
+        connectionJob = viewModelScope.launch {
+            // Шаг 1: Подключаемся по BLE
+            var connected = false
+            var hardwareVersion = device.hardwareVersion ?: 100
+            
+            connectToDeviceUseCase(device.bleAddress)
+                .catch { error ->
+                    _state.update { it.copy(
+                        isConnecting = false,
+                        connectionProgress = null,
+                        error = com.example.amulet.shared.core.AppError.BleError.ConnectionFailed
+                    ) }
+                }
+                .collect { progress ->
+                    when (progress) {
+                        is DeviceConnectionProgress.Scanning -> {
+                            _state.update { it.copy(connectionProgress = "Поиск устройства...") }
+                        }
+                        is DeviceConnectionProgress.Found -> {
+                            _state.update { it.copy(connectionProgress = "Устройство найдено") }
+                        }
+                        is DeviceConnectionProgress.Connecting -> {
+                            _state.update { it.copy(connectionProgress = "Подключение...") }
+                        }
+                        is DeviceConnectionProgress.Connected -> {
+                            connected = true
+                            _state.update { it.copy(connectionProgress = "Сохранение...") }
+                        }
+                        is DeviceConnectionProgress.Failed -> {
+                            _state.update { it.copy(
+                                isConnecting = false,
+                                connectionProgress = null,
+                                error = progress.error
+                            ) }
+                        }
+                    }
+                }
+            
+            // Шаг 2: Добавляем в БД
+            if (connected) {
+                addDeviceUseCase(
+                    bleAddress = device.bleAddress,
+                    name = deviceName.ifBlank { device.deviceName ?: "Amulet" },
+                    hardwareVersion = hardwareVersion
                 )
-            }
-
-            pairAndClaimDeviceUseCase(
-                serialNumber = pairingData.serialNumber,
-                claimToken = pairingData.claimToken,
-                deviceName = null
-            ).collect { progress ->
-                handlePairingProgress(progress)
-            }
-        }
-    }
-
-    private fun handlePairingProgress(progress: PairingProgress) {
-        when (progress) {
-            is PairingProgress.SearchingDevice -> {
-                _uiState.update { it.copy(pairingProgress = "searching_device") }
-            }
-            is PairingProgress.DeviceFound -> {
-                _uiState.update { it.copy(pairingProgress = "device_found") }
-            }
-            is PairingProgress.ConnectingBle -> {
-                _uiState.update { it.copy(pairingProgress = "connecting_ble") }
-            }
-            is PairingProgress.ClaimingOnServer -> {
-                _uiState.update { it.copy(pairingProgress = "claiming_server") }
-            }
-            is PairingProgress.ConfiguringDevice -> {
-                _uiState.update { it.copy(pairingProgress = "configuring_device") }
-            }
-            is PairingProgress.Completed -> {
-                _uiState.update { 
-                    it.copy(
-                        step = PairingStep.SUCCESS,
-                        isPairing = false,
-                        pairedDevice = progress.device,
-                        pairingProgress = null
-                    )
-                }
-                viewModelScope.launch {
-                    _sideEffect.emit(PairingSideEffect.PairingComplete(progress.device))
-                }
-            }
-            is PairingProgress.Failed -> {
-                _uiState.update { 
-                    it.copy(
-                        step = PairingStep.ERROR,
-                        isPairing = false,
-                        error = progress.error,
-                        pairingProgress = null
-                    )
-                }
+                    .onSuccess { addedDevice ->
+                        _state.update { it.copy(
+                            isConnecting = false,
+                            connectionProgress = null,
+                            addedDevice = addedDevice
+                        ) }
+                        _sideEffects.emit(PairingSideEffect.DeviceAdded(addedDevice))
+                    }
+                    .onFailure { error ->
+                        _state.update { it.copy(
+                            isConnecting = false,
+                            connectionProgress = null,
+                            error = error
+                        ) }
+                    }
             }
         }
     }
-
-    private fun cancelPairing() {
+    
+    private fun cancelConnection() {
+        connectionJob?.cancel()
+        connectionJob = null
+        _state.update { it.copy(
+            isConnecting = false,
+            connectionProgress = null,
+            selectedDevice = null
+        ) }
+    }
+    
+    private fun dismissError() {
+        _state.update { it.copy(error = null) }
+    }
+    
+    private fun navigateBack() {
         viewModelScope.launch {
-            _sideEffect.emit(PairingSideEffect.NavigateBack)
+            _sideEffects.emit(PairingSideEffect.NavigateBack)
         }
-    }
-
-    private fun retryPairing() {
-        _uiState.update { 
-            PairingState(step = PairingStep.CHOOSE_METHOD)
-        }
-    }
-    
-    /**
-     * Установить доступность NFC (вызывается из Activity).
-     */
-    fun setNfcAvailability(isAvailable: Boolean) {
-        _isNfcAvailable.value = isAvailable
-        _uiState.update { it.copy(isNfcAvailable = isAvailable) }
-    }
-    
-    /**
-     * Обработка результата QR сканирования из менеджера.
-     * Вызывается при успешном распознавании QR кода.
-     */
-    fun onQrScanned(qrData: String) {
-        qrScanJob?.cancel()
-        handleQrCodeScanned(qrData)
-    }
-    
-    /**
-     * Обработка результата NFC чтения из менеджера.
-     * Вызывается при успешном чтении NFC тега.
-     */
-    fun onNfcRead(nfcPayload: String) {
-        handleNfcTagRead(nfcPayload)
-    }
-    
-    /**
-     * Обработка ручного ввода серийного номера и claim token.
-     * Вызывается из ManualEntryBottomSheet.
-     */
-    fun onManualEntry(serialNumber: String, claimToken: String) {
-        handleManualEntry(serialNumber, claimToken)
     }
     
     override fun onCleared() {
         super.onCleared()
-        qrScanJob?.cancel()
-        bleSearchJob?.cancel()
-        qrScanManager.release()
+        stopScanning()
+        connectionJob?.cancel()
     }
 }

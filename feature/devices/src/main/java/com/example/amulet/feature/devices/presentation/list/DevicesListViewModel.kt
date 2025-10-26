@@ -4,9 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
-import com.example.amulet.shared.domain.devices.usecase.SyncDevicesUseCase
-import com.github.michaelbull.result.onFailure
-import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -15,7 +12,6 @@ import javax.inject.Inject
 @HiltViewModel
 class DevicesListViewModel @Inject constructor(
     private val observeDevicesUseCase: ObserveDevicesUseCase,
-    private val syncDevicesUseCase: SyncDevicesUseCase,
     private val observeConnectionStateUseCase: ObserveConnectionStateUseCase
 ) : ViewModel() {
 
@@ -28,12 +24,14 @@ class DevicesListViewModel @Inject constructor(
     init {
         observeDevices()
         observeConnectionState()
-        syncDevices()
     }
 
     fun handleEvent(event: DevicesListEvent) {
         when (event) {
-            is DevicesListEvent.Refresh -> syncDevices()
+            is DevicesListEvent.Refresh -> {
+                // Локальная работа - ничего не синхронизируем
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
             is DevicesListEvent.DeviceClicked -> {
                 viewModelScope.launch {
                     _sideEffect.emit(DevicesListSideEffect.NavigateToDeviceDetails(event.deviceId))
@@ -70,20 +68,5 @@ class DevicesListViewModel @Inject constructor(
                 _uiState.update { it.copy(connectionStatus = connectionStatus) }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun syncDevices() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
-            syncDevicesUseCase()
-                .onSuccess {
-                    _uiState.update { it.copy(isRefreshing = false, error = null) }
-                }
-                .onFailure { error ->
-                    _uiState.update { 
-                        it.copy(isRefreshing = false, error = error)
-                    }
-                }
-        }
     }
 }

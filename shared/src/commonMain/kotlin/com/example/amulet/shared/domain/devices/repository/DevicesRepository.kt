@@ -7,39 +7,48 @@ import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
-import com.example.amulet.shared.domain.devices.model.PairingProgress
 import kotlinx.coroutines.flow.Flow
 
 /**
  * Репозиторий для управления устройствами амулета.
- * Инкапсулирует работу с API, локальной БД и BLE подключениями.
+ * Работает только локально: БД + BLE подключения.
  * 
  * Все BLE-специфичные детали (MAC адреса, сканирование, GATT) скрыты внутри.
- * UseCase'ы работают только с доменными концепциями (серийный номер, статус и т.д.).
  */
 interface DevicesRepository {
     
     /**
-     * Наблюдать за списком устройств текущего пользователя.
+     * Наблюдать за списком всех добавленных устройств.
      * Источник истины - локальная БД.
      */
     fun observeDevices(): Flow<List<Device>>
     
     /**
      * Получить устройство по ID.
-     *
-     * @param deviceId ID устройства
      */
     suspend fun getDevice(deviceId: DeviceId): AppResult<Device>
     
     /**
+     * Добавить новое устройство в локальную БД.
+     * 
+     * @param bleAddress BLE MAC адрес устройства
+     * @param name Имя устройства
+     * @param hardwareVersion Версия железа
+     * @return Добавленное устройство
+     */
+    suspend fun addDevice(
+        bleAddress: String,
+        name: String,
+        hardwareVersion: Int
+    ): AppResult<Device>
+    
+    /**
+     * Удалить устройство из локальной БД.
+     */
+    suspend fun removeDevice(deviceId: DeviceId): AppResult<Unit>
+    
+    /**
      * Обновить настройки устройства.
-     *
-     * @param deviceId ID устройства
-     * @param name Новое имя устройства
-     * @param brightness Яркость LED (0.0-1.0)
-     * @param haptics Интенсивность вибрации (0.0-1.0)
-     * @param gestures Пользовательские жесты
      */
     suspend fun updateDeviceSettings(
         deviceId: DeviceId,
@@ -49,60 +58,26 @@ interface DevicesRepository {
         gestures: Map<String, String>? = null
     ): AppResult<Device>
     
-    /**
-     * Отвязать устройство от аккаунта.
-     *
-     * @param deviceId ID устройства
-     */
-    suspend fun unclaimDevice(deviceId: DeviceId): AppResult<Unit>
+    // ========== BLE сканирование и подключение ==========
     
     /**
-     * Синхронизировать устройства с сервером.
-     * Загружает актуальный список устройств и обновляет локальную БД.
-     */
-    suspend fun syncDevices(): AppResult<Unit>
-    
-    // ========== Паринг и подключение ==========
-    
-    /**
-     * Сканировать устройства для паринга.
-     * Используется на экране паринга для показа найденных устройств.
-     *
-     * @param serialNumberFilter Фильтр по серийному номеру (из QR/NFC)
+     * Сканировать доступные BLE устройства в реальном времени.
+     * 
      * @param timeoutMs Таймаут сканирования
      * @return Flow с найденными устройствами
      */
-    fun scanForPairing(
-        serialNumberFilter: String? = null,
-        timeoutMs: Long = 10_000L
+    fun scanForDevices(
+        timeoutMs: Long = 30_000L
     ): Flow<PairingDeviceFound>
     
     /**
-     * Подключиться и привязать новое устройство (полный паринг флоу).
-     * Инкапсулирует: сканирование BLE -> подключение -> claim на сервере -> конфигурация.
-     *
-     * @param serialNumber Серийный номер устройства (из QR/NFC)
-     * @param claimToken Токен для привязки (из QR/NFC)
-     * @param deviceName Опциональное имя устройства
-     * @return Flow с прогрессом паринга
-     */
-    fun pairAndClaimDevice(
-        serialNumber: String,
-        claimToken: String,
-        deviceName: String? = null
-    ): Flow<PairingProgress>
-    
-    /**
-     * Подключиться к уже привязанному устройству по серийному номеру.
-     * Инкапсулирует: сканирование BLE -> подключение -> GATT discovery.
-     *
-     * @param serialNumber Серийный номер устройства
-     * @param timeoutMs Таймаут поиска устройства
+     * Подключиться к устройству по BLE адресу.
+     * 
+     * @param bleAddress MAC адрес устройства
      * @return Flow с прогрессом подключения
      */
     fun connectToDevice(
-        serialNumber: String,
-        timeoutMs: Long = 30_000L
+        bleAddress: String
     ): Flow<DeviceConnectionProgress>
     
     /**

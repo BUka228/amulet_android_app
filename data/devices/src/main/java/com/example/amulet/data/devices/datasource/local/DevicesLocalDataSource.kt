@@ -11,37 +11,26 @@ interface DevicesLocalDataSource {
     
     /**
      * Наблюдать за устройствами владельца.
-     *
-     * @param ownerId ID владельца
-     * @return Реактивный поток устройств
      */
     fun observeDevicesByOwner(ownerId: String): Flow<List<DeviceEntity>>
     
     /**
      * Получить устройство по ID.
-     *
-     * @param deviceId ID устройства
      */
     suspend fun getDeviceById(deviceId: String): DeviceEntity?
     
     /**
+     * Получить устройство по BLE адресу для конкретного владельца.
+     */
+    suspend fun getDeviceByBleAddress(bleAddress: String, ownerId: String): DeviceEntity?
+    
+    /**
      * Сохранить или обновить устройство.
-     *
-     * @param device Устройство для сохранения
      */
     suspend fun upsertDevice(device: DeviceEntity)
     
     /**
-     * Сохранить или обновить несколько устройств.
-     *
-     * @param devices Список устройств
-     */
-    suspend fun upsertDevices(devices: List<DeviceEntity>)
-    
-    /**
      * Удалить устройство по ID.
-     *
-     * @param deviceId ID устройства
      */
     suspend fun deleteDeviceById(deviceId: String)
     

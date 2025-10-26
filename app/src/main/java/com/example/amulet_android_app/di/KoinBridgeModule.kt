@@ -104,10 +104,13 @@ object KoinBridgeModule {
     fun provideGetDeviceUseCase(koin: Koin): GetDeviceUseCase = koin.get()
 
     @Provides
-    fun provideScanForPairingUseCase(koin: Koin): ScanForPairingUseCase = koin.get()
+    fun provideScanForDevicesUseCase(koin: Koin): ScanForDevicesUseCase = koin.get()
 
     @Provides
-    fun providePairAndClaimDeviceUseCase(koin: Koin): PairAndClaimDeviceUseCase = koin.get()
+    fun provideAddDeviceUseCase(koin: Koin): AddDeviceUseCase = koin.get()
+
+    @Provides
+    fun provideRemoveDeviceUseCase(koin: Koin): RemoveDeviceUseCase = koin.get()
 
     @Provides
     fun provideConnectToDeviceUseCase(koin: Koin): ConnectToDeviceUseCase = koin.get()
@@ -123,12 +126,6 @@ object KoinBridgeModule {
 
     @Provides
     fun provideUpdateDeviceSettingsUseCase(koin: Koin): UpdateDeviceSettingsUseCase = koin.get()
-
-    @Provides
-    fun provideUnclaimDeviceUseCase(koin: Koin): UnclaimDeviceUseCase = koin.get()
-
-    @Provides
-    fun provideSyncDevicesUseCase(koin: Koin): SyncDevicesUseCase = koin.get()
 
     // OTA UseCases
     @Provides

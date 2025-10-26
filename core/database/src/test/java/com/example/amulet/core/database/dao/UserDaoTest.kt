@@ -56,15 +56,15 @@ class UserDaoTest : BaseDatabaseTest() {
         val device = DeviceEntity(
             id = "device-1",
             ownerId = user.id,
-            serial = "serial-1",
+            bleAddress = "AA:BB:CC:DD:EE:FF",
             hardwareVersion = 100,
             firmwareVersion = "1.0.0",
             name = "Device",
             batteryLevel = 0.9,
             status = DeviceStatus.ONLINE,
             settingsJson = "{}",
-            pairedAt = 100L,
-            updatedAt = 200L
+            addedAt = 100L,
+            lastConnectedAt = 200L
         )
 
         userDao.upsert(user)

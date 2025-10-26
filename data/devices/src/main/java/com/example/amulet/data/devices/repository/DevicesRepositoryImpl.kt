@@ -2,82 +2,108 @@ package com.example.amulet.data.devices.repository
 
 import com.example.amulet.data.devices.datasource.ble.DevicesBleDataSource
 import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSource
-import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSource
 import com.example.amulet.data.devices.mapper.BleMapper
-import com.example.amulet.data.devices.mapper.DeviceMapper
+import com.example.amulet.data.devices.mapper.toDevice
+import com.example.amulet.data.devices.mapper.toDeviceEntity
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.onFailure
+import com.github.michaelbull.result.onSuccess
 import com.example.amulet.shared.domain.devices.model.ConnectionStatus
 import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
+import com.example.amulet.shared.domain.devices.model.DeviceSettings
 import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
-import com.example.amulet.shared.domain.devices.model.PairingProgress
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.andThen
-import com.github.michaelbull.result.mapBoth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Реализация репозитория для управления устройствами.
+ * Реализация репозитория устройств.
+ * Работает только локально: БД + BLE.
+ * Устройства привязаны к текущему пользователю.
  */
 @Singleton
 class DevicesRepositoryImpl @Inject constructor(
-    private val remoteDataSource: DevicesRemoteDataSource,
     private val localDataSource: DevicesLocalDataSource,
     private val bleDataSource: DevicesBleDataSource,
-    private val deviceMapper: DeviceMapper,
-    private val bleMapper: BleMapper,
-    private val userSessionProvider: UserSessionProvider
+    private val sessionProvider: UserSessionProvider,
+    private val bleMapper: BleMapper
 ) : DevicesRepository {
     
+    private val currentUserId: String
+        get() {
+            val context = sessionProvider.currentContext
+            return when (context) {
+                is com.example.amulet.shared.core.auth.UserSessionContext.LoggedIn -> context.userId.value
+                is com.example.amulet.shared.core.auth.UserSessionContext.Guest -> context.sessionId
+                else -> throw IllegalStateException("User not authenticated")
+            }
+        }
+    
     override fun observeDevices(): Flow<List<Device>> {
-        val userId = getCurrentUserId() ?: return kotlinx.coroutines.flow.flowOf(emptyList())
-        
-        return localDataSource.observeDevicesByOwner(userId)
-            .map { entities -> entities.map { deviceMapper.toDomain(it) } }
+        return localDataSource.observeDevicesByOwner(currentUserId)
+            .map { entities -> entities.map { it.toDevice() } }
     }
     
     override suspend fun getDevice(deviceId: DeviceId): AppResult<Device> {
-        // Сначала пытаемся получить из локальной БД
-        val localDevice = localDataSource.getDeviceById(deviceId.value)
-        if (localDevice != null) {
-            return Ok(deviceMapper.toDomain(localDevice))
-        }
-        
-        // Если нет в БД - загружаем с сервера
-        return remoteDataSource.fetchDevice(deviceId.value).andThen { dto ->
-            val entity = deviceMapper.toEntity(dto)
-            localDataSource.upsertDevice(entity)
-            Ok(deviceMapper.toDomain(dto))
+        return try {
+            val entity = localDataSource.getDeviceById(deviceId.value)
+                ?: return Err(AppError.NotFound)
+            Ok(entity.toDevice())
+        } catch (e: Exception) {
+            Err(AppError.DatabaseError)
         }
     }
     
-    private suspend fun claimDevice(
-        serial: String,
-        claimToken: String,
-        name: String?
+    override suspend fun addDevice(
+        bleAddress: String,
+        name: String,
+        hardwareVersion: Int
     ): AppResult<Device> {
-        return remoteDataSource.claimDevice(serial, claimToken, name).andThen { dto ->
-            // Сохраняем в локальную БД
-            val entity = deviceMapper.toEntity(dto)
-            localDataSource.upsertDevice(entity)
-            Ok(deviceMapper.toDomain(dto))
+        return try {
+            // Проверяем, не добавлено ли уже для текущего пользователя
+            val existing = localDataSource.getDeviceByBleAddress(bleAddress, currentUserId)
+            if (existing != null) {
+                return Err(AppError.Validation(mapOf("bleAddress" to "Device already added")))
+            }
+            
+            val device = Device(
+                id = DeviceId(UUID.randomUUID().toString()),
+                ownerId = currentUserId,
+                bleAddress = bleAddress,
+                hardwareVersion = hardwareVersion,
+                firmwareVersion = "unknown",
+                name = name,
+                batteryLevel = null,
+                status = com.example.amulet.shared.domain.devices.model.DeviceStatus.OFFLINE,
+                addedAt = System.currentTimeMillis(),
+                lastConnectedAt = null,
+                settings = DeviceSettings()
+            )
+            
+            localDataSource.upsertDevice(device.toDeviceEntity())
+            Ok(device)
+        } catch (e: Exception) {
+            Err(AppError.DatabaseError)
         }
     }
     
-    override suspend fun unclaimDevice(deviceId: DeviceId): AppResult<Unit> {
-        return remoteDataSource.unclaimDevice(deviceId.value).andThen {
-            // Удаляем из локальной БД
+    override suspend fun removeDevice(deviceId: DeviceId): AppResult<Unit> {
+        return try {
             localDataSource.deleteDeviceById(deviceId.value)
             Ok(Unit)
+        } catch (e: Exception) {
+            Err(AppError.DatabaseError)
         }
     }
     
@@ -88,116 +114,66 @@ class DevicesRepositoryImpl @Inject constructor(
         haptics: Double?,
         gestures: Map<String, String>?
     ): AppResult<Device> {
-        return remoteDataSource.updateDevice(
-            deviceId = deviceId.value,
-            name = name,
-            brightness = brightness,
-            haptics = haptics,
-            gestures = gestures
-        ).andThen { dto ->
-            // Обновляем в локальной БД
-            val entity = deviceMapper.toEntity(dto)
-            localDataSource.upsertDevice(entity)
-            Ok(deviceMapper.toDomain(dto))
+        return try {
+            val entity = localDataSource.getDeviceById(deviceId.value)
+                ?: return Err(AppError.NotFound)
+            
+            val device = entity.toDevice()
+            val updatedSettings = device.settings.copy(
+                brightness = brightness ?: device.settings.brightness,
+                haptics = haptics ?: device.settings.haptics,
+                gestures = gestures ?: device.settings.gestures
+            )
+            
+            val updatedDevice = device.copy(
+                name = name ?: device.name,
+                settings = updatedSettings
+            )
+            
+            localDataSource.upsertDevice(updatedDevice.toDeviceEntity())
+            Ok(updatedDevice)
+        } catch (e: Exception) {
+            Err(AppError.DatabaseError)
         }
     }
     
-    override suspend fun syncDevices(): AppResult<Unit> {
-        return remoteDataSource.fetchDevices().andThen { dtoList ->
-            // Сохраняем в локальную БД
-            val entities = dtoList.map { deviceMapper.toEntity(it) }
-            localDataSource.upsertDevices(entities)
-            Ok(Unit)
-        }
-    }
-    
-    // ========== Паринг и подключение ==========
-    
-    override fun scanForPairing(
-        serialNumberFilter: String?,
-        timeoutMs: Long
-    ): Flow<PairingDeviceFound> {
-        return bleDataSource.scanForDevices(timeoutMs, serialNumberFilter).map { scanned ->
+    override fun scanForDevices(timeoutMs: Long): Flow<PairingDeviceFound> {
+        return bleDataSource.scanForDevices(timeoutMs).map { scannedDevice ->
             PairingDeviceFound(
-                serialNumber = scanned.serialNumber ?: "Unknown",
-                signalStrength = bleMapper.mapRssiToSignalStrength(scanned.rssi),
-                deviceName = scanned.name
+                bleAddress = scannedDevice.address,
+                signalStrength = bleMapper.mapRssiToSignalStrength(scannedDevice.rssi),
+                deviceName = scannedDevice.name,
+                hardwareVersion = null // Получим при подключении
             )
         }
     }
     
-    override fun pairAndClaimDevice(
-        serialNumber: String,
-        claimToken: String,
-        deviceName: String?
-    ): Flow<PairingProgress> = kotlinx.coroutines.flow.flow {
-        try {
-            emit(PairingProgress.SearchingDevice)
-            
-            val foundDevice = findDeviceBySerial(serialNumber, 30_000L)
-            if (foundDevice == null) {
-                emit(PairingProgress.Failed(AppError.BleError.DeviceNotFound))
-                return@flow
-            }
-            
-            emit(PairingProgress.DeviceFound(foundDevice.signalStrength))
-            emit(PairingProgress.ConnectingBle)
-            
-            bleDataSource.connect(foundDevice.address, autoReconnect = false).mapBoth(
-                success = {
-                    emit(PairingProgress.ClaimingOnServer)
-                    
-                    remoteDataSource.claimDevice(serialNumber, claimToken, deviceName).mapBoth(
-                        success = { dto ->
-                            emit(PairingProgress.ConfiguringDevice)
-                            
-                            val entity = deviceMapper.toEntity(dto)
-                            localDataSource.upsertDevice(entity)
-                            
-                            val device = deviceMapper.toDomain(dto)
-                            emit(PairingProgress.Completed(device))
-                        },
-                        failure = { error ->
-                            bleDataSource.disconnect()
-                            emit(PairingProgress.Failed(error))
-                        }
-                    )
-                },
-                failure = { error ->
-                    emit(PairingProgress.Failed(error))
-                }
-            )
-        } catch (e: Exception) {
-            emit(PairingProgress.Failed(AppError.Unknown))
-        }
-    }
-    
-    override fun connectToDevice(
-        serialNumber: String,
-        timeoutMs: Long
-    ): Flow<DeviceConnectionProgress> = kotlinx.coroutines.flow.flow {
-        try {
-            emit(DeviceConnectionProgress.Scanning)
-            
-            val foundDevice = findDeviceBySerial(serialNumber, timeoutMs)
-            if (foundDevice == null) {
-                emit(DeviceConnectionProgress.Failed(AppError.BleError.DeviceNotFound))
-                return@flow
-            }
-            
-            emit(DeviceConnectionProgress.Found(foundDevice.signalStrength))
-            emit(DeviceConnectionProgress.Connecting)
-            
-            bleDataSource.connect(foundDevice.address, autoReconnect = true).mapBoth(
-                success = {
-                    emit(DeviceConnectionProgress.Connected)
-                },
-                failure = { error ->
+    override fun connectToDevice(bleAddress: String): Flow<DeviceConnectionProgress> {
+        // Используем observeConnectionState для отслеживания прогресса подключения
+        return kotlinx.coroutines.flow.flow {
+            // Запускаем подключение
+            bleDataSource.connect(bleAddress)
+                .onFailure { error ->
                     emit(DeviceConnectionProgress.Failed(error))
+                    return@flow
                 }
-            )
-        } catch (e: Exception) {
-            emit(DeviceConnectionProgress.Failed(AppError.Unknown))
+            
+            // Наблюдаем за состоянием подключения
+            bleDataSource.observeConnectionState().collect { state ->
+                when (state) {
+                    com.example.amulet.core.ble.model.ConnectionState.Connecting -> 
+                        emit(DeviceConnectionProgress.Connecting)
+                    
+                    com.example.amulet.core.ble.model.ConnectionState.Connected,
+                    com.example.amulet.core.ble.model.ConnectionState.ServicesDiscovered -> 
+                        emit(DeviceConnectionProgress.Connected)
+                    
+                    is com.example.amulet.core.ble.model.ConnectionState.Failed -> 
+                        emit(DeviceConnectionProgress.Failed(AppError.BleError.ConnectionFailed))
+                    
+                    else -> { /* Игнорируем другие состояния */ }
+                }
+            }
         }
     }
     
@@ -216,58 +192,4 @@ class DevicesRepositoryImpl @Inject constructor(
             status?.let { bleMapper.mapDeviceStatus(it) }
         }
     }
-    
-    /**
-     * Получить ID текущего пользователя из сессии.
-     * Поддерживает как авторизованных пользователей, так и гостей.
-     */
-    private fun getCurrentUserId(): String? {
-        return when (val context = userSessionProvider.currentContext) {
-            is UserSessionContext.LoggedIn -> context.userId.value
-            is UserSessionContext.Guest -> context.sessionId // Гость использует sessionId как userId
-            else -> null
-        }
-    }
-    
-    
-    /**
-     * Поиск устройства по серийному номеру через BLE сканирование.
-     * Возвращает информацию о найденном устройстве или null.
-     */
-    private suspend fun findDeviceBySerial(
-        serialNumber: String,
-        timeoutMs: Long
-    ): FoundDeviceInfo? {
-        var foundDevice: FoundDeviceInfo? = null
-        
-        try {
-            bleDataSource.scanForDevices(timeoutMs, serialNumber)
-                .collect { scanned ->
-                    if (scanned.serialNumber == serialNumber) {
-                        foundDevice = FoundDeviceInfo(
-                            address = scanned.address,
-                            signalStrength = bleMapper.mapRssiToSignalStrength(scanned.rssi)
-                        )
-                        throw DeviceFoundException()
-                    }
-                }
-        } catch (e: DeviceFoundException) {
-            // Устройство найдено - это нормальный флоу
-        }
-        
-        return foundDevice
-    }
-    
-    /**
-     * Внутренняя информация о найденном устройстве.
-     */
-    private data class FoundDeviceInfo(
-        val address: String,
-        val signalStrength: com.example.amulet.shared.domain.devices.model.SignalStrength
-    )
-    
-    /**
-     * Исключение для прерывания Flow сканирования когда устройство найдено.
-     */
-    private class DeviceFoundException : Exception()
 }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "29bce90d3863624ca74b2194b8c95806",
+    "identityHash": "780b6f1a91ef812f89df80f5e7eb4df8",
     "entities": [
       {
         "tableName": "users",
@@ -17,26 +17,22 @@
           {
             "fieldPath": "displayName",
             "columnName": "displayName",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "avatarUrl",
             "columnName": "avatarUrl",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "timezone",
             "columnName": "timezone",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "language",
             "columnName": "language",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "consentsJson",
@@ -47,14 +43,12 @@
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "updatedAt",
             "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -73,12 +67,11 @@
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_users_updatedAt` ON `${TABLE_NAME}` (`updatedAt`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       },
       {
         "tableName": "devices",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `serial` TEXT NOT NULL, `hardwareVersion` INTEGER NOT NULL, `firmwareVersion` TEXT, `name` TEXT, `batteryLevel` REAL, `status` TEXT, `settingsJson` TEXT NOT NULL, `pairedAt` INTEGER, `updatedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`ownerId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `ownerId` TEXT NOT NULL, `bleAddress` TEXT NOT NULL, `hardwareVersion` INTEGER NOT NULL, `firmwareVersion` TEXT, `name` TEXT, `batteryLevel` REAL, `status` TEXT, `settingsJson` TEXT NOT NULL, `addedAt` INTEGER NOT NULL, `lastConnectedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`ownerId`) REFERENCES `users`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -93,8 +86,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "serial",
-            "columnName": "serial",
+            "fieldPath": "bleAddress",
+            "columnName": "bleAddress",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -107,26 +100,22 @@
           {
             "fieldPath": "firmwareVersion",
             "columnName": "firmwareVersion",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "name",
             "columnName": "name",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "batteryLevel",
             "columnName": "batteryLevel",
-            "affinity": "REAL",
-            "notNull": false
+            "affinity": "REAL"
           },
           {
             "fieldPath": "status",
             "columnName": "status",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "settingsJson",
@@ -135,16 +124,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "pairedAt",
-            "columnName": "pairedAt",
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
             "affinity": "INTEGER",
-            "notNull": false
+            "notNull": true
           },
           {
-            "fieldPath": "updatedAt",
-            "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "fieldPath": "lastConnectedAt",
+            "columnName": "lastConnectedAt",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -162,15 +150,6 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_devices_ownerId` ON `${TABLE_NAME}` (`ownerId`)"
-          },
-          {
-            "name": "index_devices_serial",
-            "unique": true,
-            "columnNames": [
-              "serial"
-            ],
-            "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_devices_serial` ON `${TABLE_NAME}` (`serial`)"
           }
         ],
         "foreignKeys": [
@@ -200,50 +179,42 @@
           {
             "fieldPath": "fromUserId",
             "columnName": "fromUserId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "toUserId",
             "columnName": "toUserId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "pairId",
             "columnName": "pairId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "emotionColor",
             "columnName": "emotionColor",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "emotionPatternId",
             "columnName": "emotionPatternId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "payloadJson",
             "columnName": "payloadJson",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "inReplyToHugId",
             "columnName": "inReplyToHugId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "deliveredAt",
             "columnName": "deliveredAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
@@ -356,8 +327,7 @@
           {
             "fieldPath": "ownerId",
             "columnName": "ownerId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "kind",
@@ -380,8 +350,7 @@
           {
             "fieldPath": "description",
             "columnName": "description",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "specJson",
@@ -398,26 +367,22 @@
           {
             "fieldPath": "reviewStatus",
             "columnName": "reviewStatus",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "usageCount",
             "columnName": "usageCount",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "updatedAt",
             "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -495,8 +460,7 @@
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `${TABLE_NAME}` (`name`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       },
       {
         "tableName": "pattern_tags",
@@ -637,14 +601,12 @@
           {
             "fieldPath": "blockedBy",
             "columnName": "blockedBy",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "blockedAt",
             "columnName": "blockedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "createdAt",
@@ -795,26 +757,22 @@
           {
             "fieldPath": "description",
             "columnName": "description",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "durationSec",
             "columnName": "durationSec",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "patternId",
             "columnName": "patternId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "audioUrl",
             "columnName": "audioUrl",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "localesJson",
@@ -825,14 +783,12 @@
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "updatedAt",
             "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -909,8 +865,7 @@
           {
             "fieldPath": "deviceId",
             "columnName": "deviceId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "status",
@@ -927,14 +882,12 @@
           {
             "fieldPath": "completedAt",
             "columnName": "completedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "durationSec",
             "columnName": "durationSec",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "completed",
@@ -946,14 +899,12 @@
           {
             "fieldPath": "intensity",
             "columnName": "intensity",
-            "affinity": "REAL",
-            "notNull": false
+            "affinity": "REAL"
           },
           {
             "fieldPath": "brightness",
             "columnName": "brightness",
-            "affinity": "REAL",
-            "notNull": false
+            "affinity": "REAL"
           }
         ],
         "primaryKey": {
@@ -1085,20 +1036,17 @@
           {
             "fieldPath": "scheduleJson",
             "columnName": "scheduleJson",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "updatedAt",
             "columnName": "updatedAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -1184,8 +1132,7 @@
           {
             "fieldPath": "sentAt",
             "columnName": "sentAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -1297,8 +1244,7 @@
           {
             "fieldPath": "expiresAt",
             "columnName": "expiresAt",
-            "affinity": "INTEGER",
-            "notNull": false
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -1396,8 +1342,7 @@
           {
             "fieldPath": "changelog",
             "columnName": "changelog",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "mandatory",
@@ -1438,8 +1383,7 @@
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_firmware_info_versionCode` ON `${TABLE_NAME}` (`versionCode`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       },
       {
         "tableName": "outbox_actions",
@@ -1478,14 +1422,12 @@
           {
             "fieldPath": "lastError",
             "columnName": "lastError",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "idempotencyKey",
             "columnName": "idempotencyKey",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "createdAt",
@@ -1514,8 +1456,7 @@
           {
             "fieldPath": "targetEntityId",
             "columnName": "targetEntityId",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -1564,8 +1505,7 @@
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_outbox_actions_idempotencyKey` ON `${TABLE_NAME}` (`idempotencyKey`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       },
       {
         "tableName": "remote_keys",
@@ -1592,14 +1532,12 @@
           {
             "fieldPath": "nextCursor",
             "columnName": "nextCursor",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "prevCursor",
             "columnName": "prevCursor",
-            "affinity": "TEXT",
-            "notNull": false
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "updatedAt",
@@ -1625,14 +1563,12 @@
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_remote_keys_tableName_partition` ON `${TABLE_NAME}` (`tableName`, `partition`)"
           }
-        ],
-        "foreignKeys": []
+        ]
       }
     ],
-    "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '29bce90d3863624ca74b2194b8c95806')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '780b6f1a91ef812f89df80f5e7eb4df8')"
     ]
   }
 }

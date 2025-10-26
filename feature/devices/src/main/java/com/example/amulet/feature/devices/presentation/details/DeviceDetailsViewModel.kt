@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.usecase.CheckFirmwareUpdateUseCase
 import com.example.amulet.shared.domain.devices.usecase.GetDeviceUseCase
-import com.example.amulet.shared.domain.devices.usecase.UnclaimDeviceUseCase
+import com.example.amulet.shared.domain.devices.usecase.RemoveDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.UpdateDeviceSettingsUseCase
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
@@ -20,7 +20,7 @@ class DeviceDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getDeviceUseCase: GetDeviceUseCase,
     private val updateDeviceSettingsUseCase: UpdateDeviceSettingsUseCase,
-    private val unclaimDeviceUseCase: UnclaimDeviceUseCase,
+    private val removeDeviceUseCase: RemoveDeviceUseCase,
     private val checkFirmwareUpdateUseCase: CheckFirmwareUpdateUseCase
 ) : ViewModel() {
 
@@ -153,7 +153,7 @@ class DeviceDetailsViewModel @Inject constructor(
         
         viewModelScope.launch {
             _uiState.update { it.copy(isDeleting = true) }
-            unclaimDeviceUseCase(currentDevice.id)
+            removeDeviceUseCase(currentDevice.id)
                 .onSuccess {
                     _sideEffect.emit(DeviceDetailsSideEffect.DeviceUnclaimedNavigateBack)
                 }

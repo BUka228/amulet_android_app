@@ -6,7 +6,6 @@ import com.example.amulet.core.network.interceptor.AuthInterceptor
 import com.example.amulet.core.network.interceptor.CaptchaInterceptor
 import com.example.amulet.core.network.serialization.JsonProvider
 import com.example.amulet.core.network.service.AdminApiService
-import com.example.amulet.core.network.service.DevicesApiService
 import com.example.amulet.core.network.service.HugsApiService
 import com.example.amulet.core.network.service.NotificationsApiService
 import com.example.amulet.core.network.service.OtaApiService
@@ -104,9 +103,6 @@ object NetworkModule {
 
     @Provides
     fun provideUsersApiService(retrofit: Retrofit): UsersApiService = retrofit.create(UsersApiService::class.java)
-
-    @Provides
-    fun provideDevicesApiService(retrofit: Retrofit): DevicesApiService = retrofit.create(DevicesApiService::class.java)
 
     @Provides
     fun provideHugsApiService(retrofit: Retrofit): HugsApiService = retrofit.create(HugsApiService::class.java)

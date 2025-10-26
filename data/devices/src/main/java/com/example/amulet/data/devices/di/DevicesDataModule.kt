@@ -8,8 +8,6 @@ import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSource
 import com.example.amulet.data.devices.datasource.local.DevicesLocalDataSourceImpl
 import com.example.amulet.data.devices.datasource.local.OtaLocalDataSource
 import com.example.amulet.data.devices.datasource.local.OtaLocalDataSourceImpl
-import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSource
-import com.example.amulet.data.devices.datasource.remote.DevicesRemoteDataSourceImpl
 import com.example.amulet.data.devices.datasource.remote.OtaRemoteDataSource
 import com.example.amulet.data.devices.datasource.remote.OtaRemoteDataSourceImpl
 import com.example.amulet.data.devices.repository.DevicesRepositoryImpl
@@ -24,6 +22,7 @@ import javax.inject.Singleton
 
 /**
  * DI модуль для Data Layer устройств и OTA.
+ * Devices работают только локально (БД + BLE), OTA сохраняет remote источник.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -39,11 +38,7 @@ interface DevicesDataModule {
     @Singleton
     fun bindOtaRepository(impl: OtaRepositoryImpl): OtaRepository
     
-    // Remote Data Sources
-    
-    @Binds
-    @Singleton
-    fun bindDevicesRemoteDataSource(impl: DevicesRemoteDataSourceImpl): DevicesRemoteDataSource
+    // Remote Data Sources (только для OTA)
     
     @Binds
     @Singleton

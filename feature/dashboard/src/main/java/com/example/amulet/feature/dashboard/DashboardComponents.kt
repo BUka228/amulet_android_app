@@ -179,7 +179,7 @@ private fun ConnectedDeviceCard(
                 
                 Column {
                     Text(
-                        text = device.name ?: device.serialNumber,
+                        text = device.name ?: device.bleAddress,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )

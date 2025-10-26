@@ -42,15 +42,15 @@ class PracticeDaoTest : BaseDatabaseTest() {
         val device = DeviceEntity(
             id = "device",
             ownerId = user.id,
-            serial = "serial",
+            bleAddress = "AA:BB:CC:DD:EE:FF",
             hardwareVersion = 100,
-            firmwareVersion = null,
+            firmwareVersion = "1.0.0",
             name = "Device",
             batteryLevel = null,
             status = null,
             settingsJson = "{}",
-            pairedAt = null,
-            updatedAt = null
+            addedAt = System.currentTimeMillis(),
+            lastConnectedAt = null
         )
         val session = PracticeSessionEntity(
             id = "session",

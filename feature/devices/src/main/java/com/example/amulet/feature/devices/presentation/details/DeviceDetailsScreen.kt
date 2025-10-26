@@ -116,7 +116,6 @@ fun DeviceDetailsScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(stringResource(R.string.device_details_serial_label))
-                                Text(device.serialNumber, style = MaterialTheme.typography.bodyMedium)
                             }
 
                             Row(

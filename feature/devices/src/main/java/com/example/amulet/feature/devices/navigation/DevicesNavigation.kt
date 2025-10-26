@@ -9,7 +9,7 @@ import androidx.navigation.navigation
 import com.example.amulet.feature.devices.presentation.details.DeviceDetailsRoute
 import com.example.amulet.feature.devices.presentation.list.DevicesListRoute
 import com.example.amulet.feature.devices.presentation.ota.OtaUpdateRoute
-import com.example.amulet.feature.devices.presentation.pairing.navigation.PairingGraph
+import com.example.amulet.feature.devices.presentation.pairing.navigation.PairingDestination
 import com.example.amulet.feature.devices.presentation.pairing.navigation.pairingGraph
 
 object DevicesGraph {
@@ -32,7 +32,7 @@ fun NavController.navigateToDevicesList(popUpToInclusive: Boolean = false) {
 }
 
 fun NavController.navigateToPairing() {
-    navigate(PairingGraph.route) {
+    navigate(PairingDestination.pairing) {
         launchSingleTop = true
     }
 }
@@ -60,12 +60,11 @@ fun NavGraphBuilder.devicesGraph(
 
         // Вложенный граф паринга
         pairingGraph(
-            navController = navController,
-            onPairingComplete = { 
-                navController.popBackStack(DevicesDestination.list, inclusive = false)
-            },
             onNavigateBack = { 
                 navController.popBackStack()
+            },
+            onPairingComplete = { 
+                navController.popBackStack(DevicesDestination.list, inclusive = false)
             }
         )
 

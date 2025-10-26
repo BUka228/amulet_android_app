@@ -16,22 +16,21 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["ownerId"]),
-        Index(value = ["serial"], unique = true)
+        Index(value = ["ownerId"])
     ]
 )
 data class DeviceEntity(
     @PrimaryKey val id: String,
     val ownerId: String,
-    val serial: String,
+    val bleAddress: String,
     val hardwareVersion: Int,
     val firmwareVersion: String?,
     val name: String?,
     val batteryLevel: Double?,
     val status: DeviceStatus?,
     val settingsJson: String,
-    val pairedAt: Long?,
-    val updatedAt: Long?
+    val addedAt: Long,
+    val lastConnectedAt: Long?
 )
 
 enum class DeviceStatus(val value: String) {

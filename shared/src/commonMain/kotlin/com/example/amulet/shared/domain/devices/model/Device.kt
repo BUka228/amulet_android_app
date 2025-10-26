@@ -6,13 +6,14 @@ import kotlinx.serialization.Serializable
 data class Device(
     val id: DeviceId,
     val ownerId: String,
-    val serialNumber: String,
+    val bleAddress: String,
     val hardwareVersion: Int,
     val firmwareVersion: String,
     val name: String?,
     val batteryLevel: Double?,
     val status: DeviceStatus,
-    val pairedAt: Long,
+    val addedAt: Long,
+    val lastConnectedAt: Long?,
     val settings: DeviceSettings
 )
 

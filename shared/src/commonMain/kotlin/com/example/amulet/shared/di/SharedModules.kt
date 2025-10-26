@@ -30,18 +30,17 @@ private val sharedModule = module {
     // Hugs UseCases
     factory<SendHugUseCase> { DefaultSendHugUseCase(get()) }
 
-    // Devices UseCases
+    // Devices UseCases (локальная работа без серверной привязки)
     factory { ObserveDevicesUseCase(get()) }
     factory { GetDeviceUseCase(get()) }
-    factory { ScanForPairingUseCase(get()) }
-    factory { PairAndClaimDeviceUseCase(get()) }
+    factory { AddDeviceUseCase(get()) }
+    factory { RemoveDeviceUseCase(get()) }
+    factory { ScanForDevicesUseCase(get()) }
     factory { ConnectToDeviceUseCase(get()) }
     factory { DisconnectFromDeviceUseCase(get()) }
     factory { ObserveConnectionStateUseCase(get()) }
     factory { ObserveConnectedDeviceStatusUseCase(get()) }
     factory { UpdateDeviceSettingsUseCase(get()) }
-    factory { UnclaimDeviceUseCase(get()) }
-    factory { SyncDevicesUseCase(get()) }
 
     // OTA UseCases
     factory { CheckFirmwareUpdateUseCase(get()) }

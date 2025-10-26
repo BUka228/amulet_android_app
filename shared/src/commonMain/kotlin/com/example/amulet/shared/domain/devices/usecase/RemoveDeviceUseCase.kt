@@ -5,12 +5,12 @@ import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 
 /**
- * UseCase для отвязки устройства от аккаунта.
+ * Use case для удаления устройства из локальной БД.
  */
-class UnclaimDeviceUseCase(
+class RemoveDeviceUseCase(
     private val devicesRepository: DevicesRepository
 ) {
     suspend operator fun invoke(deviceId: DeviceId): AppResult<Unit> {
-        return devicesRepository.unclaimDevice(deviceId)
+        return devicesRepository.removeDevice(deviceId)
     }
 }

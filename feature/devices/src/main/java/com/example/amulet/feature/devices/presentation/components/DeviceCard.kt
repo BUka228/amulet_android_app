@@ -43,11 +43,6 @@ fun DeviceCard(
                     text = device.name ?: stringResource(R.string.device_details_default_name),
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = device.serialNumber,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically

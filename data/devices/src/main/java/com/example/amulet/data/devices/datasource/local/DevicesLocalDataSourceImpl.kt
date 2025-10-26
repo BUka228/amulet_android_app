@@ -3,7 +3,6 @@ package com.example.amulet.data.devices.datasource.local
 import com.example.amulet.core.database.dao.DeviceDao
 import com.example.amulet.core.database.entity.DeviceEntity
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 /**
@@ -18,15 +17,15 @@ class DevicesLocalDataSourceImpl @Inject constructor(
     }
     
     override suspend fun getDeviceById(deviceId: String): DeviceEntity? {
-        return deviceDao.observeWithOwner(deviceId).firstOrNull()?.device
+        return deviceDao.getById(deviceId)
+    }
+    
+    override suspend fun getDeviceByBleAddress(bleAddress: String, ownerId: String): DeviceEntity? {
+        return deviceDao.getByBleAddress(bleAddress, ownerId)
     }
     
     override suspend fun upsertDevice(device: DeviceEntity) {
         deviceDao.upsert(device)
-    }
-    
-    override suspend fun upsertDevices(devices: List<DeviceEntity>) {
-        deviceDao.upsert(devices)
     }
     
     override suspend fun deleteDeviceById(deviceId: String) {
