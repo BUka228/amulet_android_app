@@ -14,15 +14,14 @@ interface DevicesBleDataSource {
     
     /**
      * Сканировать BLE устройства амулета.
+     * Возвращает поток списков всех найденных устройств.
      *
      * @param timeoutMs Таймаут сканирования (0 = бесконечно)
-     * @param serialNumberFilter Фильтр по серийному номеру (для паринга конкретного устройства)
-     * @return Flow с найденными устройствами
+     * @return Flow со списками найденных устройств
      */
     fun scanForDevices(
-        timeoutMs: Long = 10_000L,
-        serialNumberFilter: String? = null
-    ): Flow<ScannedDevice>
+        timeoutMs: Long = 10_000L
+    ): Flow<List<ScannedDevice>>
     
     /**
      * Подключиться к устройству по MAC адресу.

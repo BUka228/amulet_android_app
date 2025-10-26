@@ -3,7 +3,7 @@ package com.example.amulet.feature.dashboard.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.logging.Logger
-import com.example.amulet.shared.domain.devices.model.ConnectionStatus
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
@@ -71,7 +71,7 @@ class DashboardViewModel @Inject constructor(
     private fun observeConnectionState() {
         observeConnectionStateUseCase()
             .onEach { connectionStatus ->
-                val connectedDevice = if (connectionStatus == ConnectionStatus.CONNECTED) {
+                val connectedDevice = if (connectionStatus is BleConnectionState.Connected) {
                     _uiState.value.devices.firstOrNull()
                 } else null
                 _uiState.update { it.copy(connectedDevice = connectedDevice) }

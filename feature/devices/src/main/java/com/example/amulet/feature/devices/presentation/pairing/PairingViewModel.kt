@@ -2,8 +2,6 @@ package com.example.amulet.feature.devices.presentation.pairing
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.usecase.AddDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ConnectToDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ScanForDevicesUseCase
@@ -69,12 +67,8 @@ class PairingViewModel @Inject constructor(
                         error = com.example.amulet.shared.core.AppError.BleError.DeviceNotFound
                     ) }
                 }
-                .collect { foundDevice ->
-                    _state.update { currentState ->
-                        val updatedDevices = currentState.foundDevices
-                            .filter { it.bleAddress != foundDevice.bleAddress } + foundDevice
-                        currentState.copy(foundDevices = updatedDevices)
-                    }
+                .collect { devicesList ->
+                    _state.update { it.copy(foundDevices = devicesList) }
                 }
         }
     }
@@ -85,7 +79,7 @@ class PairingViewModel @Inject constructor(
         _state.update { it.copy(isScanning = false) }
     }
     
-    private fun selectDevice(device: com.example.amulet.shared.domain.devices.model.PairingDeviceFound) {
+    private fun selectDevice(device: com.example.amulet.shared.domain.devices.model.ScannedAmulet) {
         stopScanning()
         _state.update { it.copy(selectedDevice = device) }
     }
@@ -102,7 +96,7 @@ class PairingViewModel @Inject constructor(
         connectionJob = viewModelScope.launch {
             // Шаг 1: Подключаемся по BLE
             var connected = false
-            var hardwareVersion = device.hardwareVersion ?: 100
+            val hardwareVersion = 100 // Получим из DeviceStatus после подключения
             
             connectToDeviceUseCase(device.bleAddress)
                 .catch { error ->
@@ -112,28 +106,23 @@ class PairingViewModel @Inject constructor(
                         error = com.example.amulet.shared.core.AppError.BleError.ConnectionFailed
                     ) }
                 }
-                .collect { progress ->
-                    when (progress) {
-                        is DeviceConnectionProgress.Scanning -> {
-                            _state.update { it.copy(connectionProgress = "Поиск устройства...") }
-                        }
-                        is DeviceConnectionProgress.Found -> {
-                            _state.update { it.copy(connectionProgress = "Устройство найдено") }
-                        }
-                        is DeviceConnectionProgress.Connecting -> {
+                .collect { state ->
+                    when (state) {
+                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connecting -> {
                             _state.update { it.copy(connectionProgress = "Подключение...") }
                         }
-                        is DeviceConnectionProgress.Connected -> {
+                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected -> {
                             connected = true
                             _state.update { it.copy(connectionProgress = "Сохранение...") }
                         }
-                        is DeviceConnectionProgress.Failed -> {
+                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Failed -> {
                             _state.update { it.copy(
                                 isConnecting = false,
                                 connectionProgress = null,
-                                error = progress.error
+                                error = state.error
                             ) }
                         }
+                        else -> { /* Игнорируем другие состояния */ }
                     }
                 }
             
@@ -141,7 +130,7 @@ class PairingViewModel @Inject constructor(
             if (connected) {
                 addDeviceUseCase(
                     bleAddress = device.bleAddress,
-                    name = deviceName.ifBlank { device.deviceName ?: "Amulet" },
+                    name = deviceName.ifBlank { device.deviceName },
                     hardwareVersion = hardwareVersion
                 )
                     .onSuccess { addedDevice ->

@@ -399,7 +399,6 @@ class AmuletBleManagerImpl @Inject constructor(
             }
             
             val status = DeviceStatus(
-                serialNumber = parts["SERIAL"] ?: "",
                 firmwareVersion = parts["FIRMWARE"] ?: "",
                 hardwareVersion = parts["HARDWARE"]?.toIntOrNull() ?: 0,
                 batteryLevel = parts["BATTERY"]?.toIntOrNull() ?: 0,

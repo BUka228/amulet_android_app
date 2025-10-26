@@ -65,17 +65,18 @@ fun MainScaffold(
 
     val config = scaffoldState.config
 
-    // Scaffold без цветов - берет автоматически из Material 3 темы
-    Scaffold(
-        modifier = modifier,
-        topBar = config.topBar,
-        bottomBar = config.bottomBar,
-        snackbarHost = config.snackbarHost,
-        floatingActionButton = config.floatingActionButton,
-        floatingActionButtonPosition = config.floatingActionButtonPosition,
-        contentWindowInsets = config.contentWindowInsets
-    ) { paddingValues ->
-        ProvideScaffoldState(scaffoldState) {
+    // ProvideScaffoldState должен быть снаружи Scaffold, чтобы content имел доступ к LocalScaffoldState
+    ProvideScaffoldState(scaffoldState) {
+        // Scaffold без цветов - берет автоматически из Material 3 темы
+        Scaffold(
+            modifier = modifier,
+            topBar = config.topBar,
+            bottomBar = config.bottomBar,
+            snackbarHost = config.snackbarHost,
+            floatingActionButton = config.floatingActionButton,
+            floatingActionButtonPosition = config.floatingActionButtonPosition,
+            contentWindowInsets = config.contentWindowInsets
+        ) { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
                 content()
             }

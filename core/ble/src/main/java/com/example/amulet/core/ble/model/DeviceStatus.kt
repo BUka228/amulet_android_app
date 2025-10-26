@@ -4,7 +4,6 @@ package com.example.amulet.core.ble.model
  * Статус физического устройства амулета.
  */
 data class DeviceStatus(
-    val serialNumber: String,
     val firmwareVersion: String,
     val hardwareVersion: Int,
     val batteryLevel: Int, // 0-100

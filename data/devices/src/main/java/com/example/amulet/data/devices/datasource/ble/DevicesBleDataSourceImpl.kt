@@ -23,10 +23,9 @@ class DevicesBleDataSourceImpl @Inject constructor(
 ) : DevicesBleDataSource {
     
     override fun scanForDevices(
-        timeoutMs: Long,
-        serialNumberFilter: String?
-    ): Flow<ScannedDevice> {
-        return bleScanner.scanForAmulets(timeoutMs, serialNumberFilter)
+        timeoutMs: Long
+    ): Flow<List<ScannedDevice>> {
+        return bleScanner.scanForAmulets(timeoutMs)
     }
     
     override suspend fun connect(

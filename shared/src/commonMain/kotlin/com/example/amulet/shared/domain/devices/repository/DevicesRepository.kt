@@ -1,12 +1,11 @@
 package com.example.amulet.shared.domain.devices.repository
 
 import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.domain.devices.model.ConnectionStatus
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.model.Device
-import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
-import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.ScannedAmulet
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -62,23 +61,24 @@ interface DevicesRepository {
     
     /**
      * Сканировать доступные BLE устройства в реальном времени.
+     * Возвращает поток списков всех найденных устройств.
      * 
      * @param timeoutMs Таймаут сканирования
-     * @return Flow с найденными устройствами
+     * @return Flow со списками найденных устройств
      */
     fun scanForDevices(
         timeoutMs: Long = 30_000L
-    ): Flow<PairingDeviceFound>
+    ): Flow<List<ScannedAmulet>>
     
     /**
      * Подключиться к устройству по BLE адресу.
      * 
      * @param bleAddress MAC адрес устройства
-     * @return Flow с прогрессом подключения
+     * @return Flow с состоянием подключения
      */
     fun connectToDevice(
         bleAddress: String
-    ): Flow<DeviceConnectionProgress>
+    ): Flow<BleConnectionState>
     
     /**
      * Отключиться от текущего подключенного устройства.
@@ -88,7 +88,7 @@ interface DevicesRepository {
     /**
      * Наблюдать за состоянием BLE подключения.
      */
-    fun observeConnectionState(): Flow<ConnectionStatus>
+    fun observeConnectionState(): Flow<BleConnectionState>
     
     /**
      * Наблюдать за статусом подключенного устройства (батарея, прошивка и т.д.).

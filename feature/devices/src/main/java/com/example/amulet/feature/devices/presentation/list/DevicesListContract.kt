@@ -1,7 +1,7 @@
 package com.example.amulet.feature.devices.presentation.list
 
 import com.example.amulet.shared.core.AppError
-import com.example.amulet.shared.domain.devices.model.ConnectionStatus
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.model.Device
 
 /**
@@ -13,7 +13,7 @@ data class DevicesListState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isEmpty: Boolean = false,
-    val connectionStatus: ConnectionStatus = ConnectionStatus.DISCONNECTED,
+    val connectionStatus: BleConnectionState = BleConnectionState.Disconnected,
     val error: AppError? = null
 )
 

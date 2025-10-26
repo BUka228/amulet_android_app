@@ -2,7 +2,7 @@ package com.example.amulet.feature.devices.presentation.pairing
 
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.devices.model.Device
-import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.ScannedAmulet
 
 /**
  * Контракт для экрана добавления устройства.
@@ -11,8 +11,8 @@ import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
 
 data class PairingState(
     val isScanning: Boolean = false,
-    val foundDevices: List<PairingDeviceFound> = emptyList(),
-    val selectedDevice: PairingDeviceFound? = null,
+    val foundDevices: List<ScannedAmulet> = emptyList(),
+    val selectedDevice: ScannedAmulet? = null,
     val isConnecting: Boolean = false,
     val connectionProgress: String? = null,
     val addedDevice: Device? = null,
@@ -23,7 +23,7 @@ data class PairingState(
 sealed interface PairingEvent {
     data object StartScanning : PairingEvent
     data object StopScanning : PairingEvent
-    data class SelectDevice(val device: PairingDeviceFound) : PairingEvent
+    data class SelectDevice(val device: ScannedAmulet) : PairingEvent
     data class ConnectAndAddDevice(val deviceName: String) : PairingEvent
     data object CancelConnection : PairingEvent
     data object DismissError : PairingEvent

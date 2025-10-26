@@ -10,16 +10,13 @@ import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.onFailure
-import com.github.michaelbull.result.onSuccess
-import com.example.amulet.shared.domain.devices.model.ConnectionStatus
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.model.Device
-import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.DeviceSettings
-import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.ScannedAmulet
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -137,42 +134,24 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
-    override fun scanForDevices(timeoutMs: Long): Flow<PairingDeviceFound> {
-        return bleDataSource.scanForDevices(timeoutMs).map { scannedDevice ->
-            PairingDeviceFound(
-                bleAddress = scannedDevice.address,
-                signalStrength = bleMapper.mapRssiToSignalStrength(scannedDevice.rssi),
-                deviceName = scannedDevice.name,
-                hardwareVersion = null // Получим при подключении
-            )
+    override fun scanForDevices(timeoutMs: Long): Flow<List<ScannedAmulet>> {
+        return bleDataSource.scanForDevices(timeoutMs).map { scannedDevices ->
+            scannedDevices.map { bleMapper.mapScannedDevice(it) }
         }
     }
     
-    override fun connectToDevice(bleAddress: String): Flow<DeviceConnectionProgress> {
-        // Используем observeConnectionState для отслеживания прогресса подключения
+    override fun connectToDevice(bleAddress: String): Flow<BleConnectionState> {
         return kotlinx.coroutines.flow.flow {
             // Запускаем подключение
             bleDataSource.connect(bleAddress)
                 .onFailure { error ->
-                    emit(DeviceConnectionProgress.Failed(error))
+                    emit(BleConnectionState.Failed(error))
                     return@flow
                 }
             
             // Наблюдаем за состоянием подключения
             bleDataSource.observeConnectionState().collect { state ->
-                when (state) {
-                    com.example.amulet.core.ble.model.ConnectionState.Connecting -> 
-                        emit(DeviceConnectionProgress.Connecting)
-                    
-                    com.example.amulet.core.ble.model.ConnectionState.Connected,
-                    com.example.amulet.core.ble.model.ConnectionState.ServicesDiscovered -> 
-                        emit(DeviceConnectionProgress.Connected)
-                    
-                    is com.example.amulet.core.ble.model.ConnectionState.Failed -> 
-                        emit(DeviceConnectionProgress.Failed(AppError.BleError.ConnectionFailed))
-                    
-                    else -> { /* Игнорируем другие состояния */ }
-                }
+                emit(bleMapper.mapConnectionState(state))
             }
         }
     }
@@ -181,7 +160,7 @@ class DevicesRepositoryImpl @Inject constructor(
         return bleDataSource.disconnect()
     }
     
-    override fun observeConnectionState(): Flow<ConnectionStatus> {
+    override fun observeConnectionState(): Flow<BleConnectionState> {
         return bleDataSource.observeConnectionState().map { state ->
             bleMapper.mapConnectionState(state)
         }

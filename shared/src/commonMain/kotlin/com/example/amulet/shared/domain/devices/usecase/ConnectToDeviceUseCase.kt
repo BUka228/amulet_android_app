@@ -1,6 +1,6 @@
 package com.example.amulet.shared.domain.devices.usecase
 
-import com.example.amulet.shared.domain.devices.model.DeviceConnectionProgress
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import kotlinx.coroutines.flow.Flow
 
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 class ConnectToDeviceUseCase(
     private val devicesRepository: DevicesRepository
 ) {
-    operator fun invoke(bleAddress: String): Flow<DeviceConnectionProgress> {
+    operator fun invoke(bleAddress: String): Flow<BleConnectionState> {
         return devicesRepository.connectToDevice(bleAddress)
     }
 }

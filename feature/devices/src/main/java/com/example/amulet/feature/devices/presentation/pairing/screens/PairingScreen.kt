@@ -19,7 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.feature.devices.presentation.pairing.PairingEvent
 import com.example.amulet.feature.devices.presentation.pairing.PairingSideEffect
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
-import com.example.amulet.shared.domain.devices.model.PairingDeviceFound
+import com.example.amulet.shared.domain.devices.model.ScannedAmulet
 import com.example.amulet.shared.domain.devices.model.SignalStrength
 
 /**
@@ -244,7 +244,7 @@ fun PairingScreen(
 
 @Composable
 private fun DeviceCard(
-    device: PairingDeviceFound,
+    device: ScannedAmulet,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
