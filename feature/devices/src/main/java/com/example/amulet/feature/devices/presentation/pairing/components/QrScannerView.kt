@@ -1,29 +1,34 @@
 package com.example.amulet.feature.devices.presentation.pairing.components
 
 import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.scanner.QrScanManager
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Composable для отображения QR сканера.
  * 
  * Использует QrScanManager для работы с камерой и распознавания QR кодов.
- * Автоматически запрашивает разрешения камеры.
+ * Автоматически запрашивает разрешения камеры при первом отображении.
  */
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun QrScannerView(
     qrScanManager: QrScanManager,
@@ -32,17 +37,34 @@ fun QrScannerView(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
     
+    // Состояние разрешения камеры
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    
+    // Launcher для запроса разрешения
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasCameraPermission = isGranted
+    }
+    
+    // Автоматический запрос разрешения при первом открытии
     LaunchedEffect(Unit) {
-        if (!cameraPermissionState.status.isGranted) {
-            cameraPermissionState.launchPermissionRequest()
+        if (!hasCameraPermission) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
     
     Box(modifier = modifier.fillMaxSize()) {
         when {
-            cameraPermissionState.status.isGranted -> {
+            hasCameraPermission -> {
                 // Камера доступна - показываем preview
                 var previewView: PreviewView? by remember { mutableStateOf(null) }
                 
@@ -74,7 +96,7 @@ fun QrScannerView(
                 // Разрешение не предоставлено
                 CameraPermissionDenied(
                     onRequestPermission = {
-                        cameraPermissionState.launchPermissionRequest()
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
                     },
                     modifier = Modifier.align(Alignment.Center)
                 )
@@ -114,7 +136,7 @@ private fun QrScannerOverlay(
             Spacer(modifier = Modifier.height(24.dp))
             
             Text(
-                text = "Наведите камеру на QR-код",
+                text = stringResource(R.string.pairing_qr_scan_instruction_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -130,23 +152,56 @@ private fun CameraPermissionDenied(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.padding(32.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text(
-            text = "Необходим доступ к камере",
-            style = MaterialTheme.typography.titleLarge
-        )
+        // Иконка камеры
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.errorContainer,
+            modifier = Modifier.size(96.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
         
-        Text(
-            text = "Для сканирования QR-кода требуется разрешение на использование камеры",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.pairing_camera_permission_title),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            
+            Text(
+                text = stringResource(R.string.pairing_camera_permission_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
         
-        Button(onClick = onRequestPermission) {
-            Text("Предоставить доступ")
+        Button(
+            onClick = onRequestPermission,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.pairing_camera_permission_button),
+                style = MaterialTheme.typography.titleMedium
+            )
         }
     }
 }

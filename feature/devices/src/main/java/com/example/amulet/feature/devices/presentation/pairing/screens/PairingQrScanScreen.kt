@@ -3,6 +3,7 @@ package com.example.amulet.feature.devices.presentation.pairing.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,8 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
 import com.example.amulet.feature.devices.presentation.pairing.components.QrScannerView
@@ -24,7 +27,15 @@ fun PairingQrScanScreen(
 ) {
     var hasScanned by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val scaffoldState = LocalScaffoldState.current
+
+    SideEffect {
+        scaffoldState.updateConfig {
+            copy(topBar = {}, floatingActionButton = {})
+        }
+    }
+
+    Box(modifier = Modifier.padding(top = 32.dp).fillMaxSize()) {
         // QR Scanner в полный экран
         QrScannerView(
             qrScanManager = viewModel.qrScanManager,
@@ -64,7 +75,8 @@ fun PairingQrScanScreen(
                     Text(
                         text = stringResource(R.string.pairing_qr_scan_instruction_desc),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
                 }
             }

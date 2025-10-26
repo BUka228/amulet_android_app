@@ -248,6 +248,14 @@ class PairingViewModel @Inject constructor(
         handleNfcTagRead(nfcPayload)
     }
     
+    /**
+     * Обработка ручного ввода серийного номера и claim token.
+     * Вызывается из ManualEntryBottomSheet.
+     */
+    fun onManualEntry(serialNumber: String, claimToken: String) {
+        handleManualEntry(serialNumber, claimToken)
+    }
+    
     override fun onCleared() {
         super.onCleared()
         qrScanJob?.cancel()

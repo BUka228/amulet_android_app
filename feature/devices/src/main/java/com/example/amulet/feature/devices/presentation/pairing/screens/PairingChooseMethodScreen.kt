@@ -18,6 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
+import com.example.amulet.feature.devices.presentation.pairing.components.ManualEntryBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +30,7 @@ fun PairingChooseMethodScreen(
 ) {
     val scaffoldState = LocalScaffoldState.current
     val isNfcAvailable by viewModel.isNfcAvailable.collectAsState()
+    var showManualEntrySheet by remember { mutableStateOf(false) }
 
     SideEffect {
         scaffoldState.updateConfig {
@@ -63,7 +65,7 @@ fun PairingChooseMethodScreen(
             Icon(
                 imageVector = Icons.Default.QrCodeScanner,
                 contentDescription = null,
-                modifier = Modifier.size(100.dp),
+                modifier = Modifier.size(100.dp).padding(top = 24.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             
@@ -115,7 +117,7 @@ fun PairingChooseMethodScreen(
 
         // Ручной ввод внизу
         TextButton(
-            onClick = { /* TODO: Manual entry */ },
+            onClick = { showManualEntrySheet = true },
             modifier = Modifier.fillMaxWidth()
         ) {
             Icon(
@@ -126,6 +128,16 @@ fun PairingChooseMethodScreen(
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.pairing_manual_entry_button))
         }
+    }
+    
+    // BottomSheet для ручного ввода
+    if (showManualEntrySheet) {
+        ManualEntryBottomSheet(
+            onDismiss = { showManualEntrySheet = false },
+            onSubmit = { serialNumber, claimToken ->
+                viewModel.onManualEntry(serialNumber, claimToken)
+            }
+        )
     }
 }
 

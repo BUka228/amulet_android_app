@@ -69,6 +69,30 @@
     <string name="pairing_error_invalid_qr">Неверный формат QR-кода</string>
     <string name="pairing_error_invalid_nfc">Неверный формат NFC-метки</string>
     
+    <!-- Camera Permission -->
+    <string name="pairing_camera_permission_title">Необходим доступ к камере</string>
+    <string name="pairing_camera_permission_message">Для сканирования QR-кода требуется разрешение на использование камеры</string>
+    <string name="pairing_camera_permission_button">Предоставить доступ</string>
+    
+    <!-- Common -->
+    <string name="common_close">Закрыть</string>
+    
+    <!-- Manual Entry -->
+    <string name="pairing_manual_entry_title">Введите данные устройства</string>
+    <string name="pairing_manual_entry_subtitle">Введите серийный номер и claim token вручную</string>
+    <string name="pairing_manual_entry_hint">Эту информацию можно найти на упаковке устройства или в документации</string>
+    <string name="pairing_manual_serial_label">Серийный номер</string>
+    <string name="pairing_manual_serial_placeholder">AMULET-XXXX-XXXX</string>
+    <string name="pairing_manual_serial_format">Формат: буквы, цифры и дефисы</string>
+    <string name="pairing_manual_token_label">Claim Token</string>
+    <string name="pairing_manual_token_placeholder">Введите токен (16+ символов)</string>
+    <string name="pairing_manual_token_format">Только буквы и цифры</string>
+    <string name="pairing_manual_submit_button">Продолжить</string>
+    <string name="pairing_manual_error_serial_required">Серийный номер обязателен</string>
+    <string name="pairing_manual_error_serial_short">Серийный номер слишком короткий</string>
+    <string name="pairing_manual_error_token_required">Claim token обязателен</string>
+    <string name="pairing_manual_error_token_short">Claim token слишком короткий</string>
+    
     <!-- Device Details Screen -->
     <string name="device_details_title">Детали Устройства</string>
     <string name="device_details_default_title">Устройство</string>

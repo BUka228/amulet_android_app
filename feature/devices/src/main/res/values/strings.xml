@@ -70,6 +70,30 @@
     <string name="pairing_error_invalid_qr">Invalid QR code format</string>
     <string name="pairing_error_invalid_nfc">Invalid NFC tag format</string>
     
+    <!-- Camera Permission -->
+    <string name="pairing_camera_permission_title">Camera Access Required</string>
+    <string name="pairing_camera_permission_message">Camera permission is needed to scan QR codes</string>
+    <string name="pairing_camera_permission_button">Grant Access</string>
+    
+    <!-- Common -->
+    <string name="common_close">Close</string>
+    
+    <!-- Manual Entry -->
+    <string name="pairing_manual_entry_title">Enter Device Details</string>
+    <string name="pairing_manual_entry_subtitle">Manually enter serial number and claim token</string>
+    <string name="pairing_manual_entry_hint">You can find this information on the device packaging or in the documentation</string>
+    <string name="pairing_manual_serial_label">Serial Number</string>
+    <string name="pairing_manual_serial_placeholder">AMULET-XXXX-XXXX</string>
+    <string name="pairing_manual_serial_format">Format: Letters, numbers, and dashes</string>
+    <string name="pairing_manual_token_label">Claim Token</string>
+    <string name="pairing_manual_token_placeholder">Enter 16+ character token</string>
+    <string name="pairing_manual_token_format">Alphanumeric characters only</string>
+    <string name="pairing_manual_submit_button">Continue</string>
+    <string name="pairing_manual_error_serial_required">Serial number is required</string>
+    <string name="pairing_manual_error_serial_short">Serial number is too short</string>
+    <string name="pairing_manual_error_token_required">Claim token is required</string>
+    <string name="pairing_manual_error_token_short">Claim token is too short</string>
+    
     <!-- Device Details Screen -->
     <string name="device_details_title">Device Details</string>
     <string name="device_details_default_title">Device</string>
