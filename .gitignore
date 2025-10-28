@@ -52,6 +52,8 @@ render.experimental.xml
 .externalNativeBuild
 .cxx/
 
+
+.kiro
 # Google Services (e.g. APIs or Firebase)
 # google-services.json
 

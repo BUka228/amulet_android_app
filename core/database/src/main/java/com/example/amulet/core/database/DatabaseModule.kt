@@ -60,13 +60,20 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Добавляем поле version в таблицу patterns для оптимистической блокировки
+            db.execSQL("ALTER TABLE patterns ADD COLUMN version INTEGER NOT NULL DEFAULT 1")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context
     ): AmuletDatabase =
         Room.databaseBuilder(context, AmuletDatabase::class.java, DATABASE_NAME)
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
 

@@ -31,6 +31,7 @@ data class PatternEntity(
     val public: Boolean,
     val reviewStatus: String?,
     val usageCount: Int?,
+    val version: Int = 1,
     val createdAt: Long?,
     val updatedAt: Long?
 )

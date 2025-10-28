@@ -53,7 +53,7 @@ import com.example.amulet.core.database.entity.UserEntity
         OutboxActionEntity::class,
         RemoteKeyEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(DatabaseTypeConverters::class)
