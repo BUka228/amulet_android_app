@@ -9,6 +9,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.example.amulet.core.design.AmuletTheme
+import com.example.amulet.core.design.scaffold.ProvideScaffoldState
+import com.example.amulet.core.design.scaffold.rememberScaffoldState
 import com.example.amulet_android_app.presentation.session.AuthState
 import com.example.amulet_android_app.presentation.session.SessionViewModel
 import com.example.amulet_android_app.presentation.splash.SplashScreen
@@ -23,34 +25,37 @@ fun AmuletApp(
     sessionViewModel: SessionViewModel = hiltViewModel()
 ) {
     val authState by sessionViewModel.state.collectAsStateWithLifecycle()
+    val scaffoldState = rememberScaffoldState()
 
     AmuletTheme {
-        Crossfade(targetState = authState, modifier = modifier, label = "authState") { state ->
-            when (state) {
-                AuthState.Loading -> SplashScreen()
-                AuthState.LoggedOut -> key(AuthState.LoggedOut) {
-                    val navController = rememberNavController()
-                    AppNavHost(
-                        navController = navController,
-                        startDestination = AuthGraphDestination,
-                    )
-                }
-                is AuthState.LoggedIn -> key(AuthState.LoggedIn) {
-                    val navController = rememberNavController()
-                    MainScaffold(navController = navController) {
+        ProvideScaffoldState(scaffoldState) {
+            Crossfade(targetState = authState, modifier = modifier, label = "authState") { state ->
+                when (state) {
+                    AuthState.Loading -> SplashScreen()
+                    AuthState.LoggedOut -> key(AuthState.LoggedOut) {
+                        val navController = rememberNavController()
                         AppNavHost(
                             navController = navController,
-                            startDestination = DashboardGraphDestination
+                            startDestination = AuthGraphDestination,
                         )
                     }
-                }
-                AuthState.Guest -> key(AuthState.Guest) {
-                    val navController = rememberNavController()
-                    MainScaffold(navController = navController) {
-                        AppNavHost(
-                            navController = navController,
-                            startDestination = DashboardGraphDestination
-                        )
+                    is AuthState.LoggedIn -> key(AuthState.LoggedIn) {
+                        val navController = rememberNavController()
+                        MainScaffold(navController = navController) {
+                            AppNavHost(
+                                navController = navController,
+                                startDestination = DashboardGraphDestination
+                            )
+                        }
+                    }
+                    AuthState.Guest -> key(AuthState.Guest) {
+                        val navController = rememberNavController()
+                        MainScaffold(navController = navController) {
+                            AppNavHost(
+                                navController = navController,
+                                startDestination = DashboardGraphDestination
+                            )
+                        }
                     }
                 }
             }

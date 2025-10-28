@@ -20,7 +20,8 @@ import javax.inject.Inject
 
 /**
  * ViewModel для экрана добавления устройства.
- * Упрощенный флоу без QR/NFC - только BLE сканирование.
+ * Поддерживает непрерывное BLE сканирование в реальном времени.
+ * Сканирование автоматически запускается при открытии экрана и обновляет список устройств динамически.
  */
 @HiltViewModel
 class PairingViewModel @Inject constructor(
@@ -55,11 +56,12 @@ class PairingViewModel @Inject constructor(
         
         _state.update { it.copy(
             isScanning = true,
-            foundDevices = emptyList(),
             error = null
         ) }
         
         scanJob = viewModelScope.launch {
+            // Сканирование с таймаутом 30 секунд
+            // Устройства обновляются в реальном времени по мере обнаружения
             scanForDevicesUseCase(timeoutMs = 30_000L)
                 .catch { error ->
                     _state.update { it.copy(
@@ -68,8 +70,12 @@ class PairingViewModel @Inject constructor(
                     ) }
                 }
                 .collect { devicesList ->
+                    // Динамическое обновление списка найденных устройств
                     _state.update { it.copy(foundDevices = devicesList) }
                 }
+            
+            // После завершения flow (timeout или ошибка) - останавливаем сканирование
+            _state.update { it.copy(isScanning = false) }
         }
     }
     

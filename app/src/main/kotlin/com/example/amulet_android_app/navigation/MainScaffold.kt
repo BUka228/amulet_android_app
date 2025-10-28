@@ -16,11 +16,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.amulet_android_app.R
 import com.example.amulet.core.design.components.navigation.AmuletBottomNavigationBar
 import com.example.amulet.core.design.components.navigation.BottomNavItem
-import com.example.amulet.core.design.scaffold.ProvideScaffoldState
-import com.example.amulet.core.design.scaffold.rememberScaffoldState
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
 
 /**
  * Main Scaffold с упрощенным управлением через ScaffoldState.
+ * 
+ * Использует глобальный LocalScaffoldState, предоставленный на уровне AmuletApp.
  * 
  * Управление:
  * - Bottom bar устанавливается автоматически для основных экранов
@@ -38,7 +39,7 @@ fun MainScaffold(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val scaffoldState = rememberScaffoldState()
+    val scaffoldState = LocalScaffoldState.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -65,21 +66,18 @@ fun MainScaffold(
 
     val config = scaffoldState.config
 
-    // ProvideScaffoldState должен быть снаружи Scaffold, чтобы content имел доступ к LocalScaffoldState
-    ProvideScaffoldState(scaffoldState) {
-        // Scaffold без цветов - берет автоматически из Material 3 темы
-        Scaffold(
-            modifier = modifier,
-            topBar = config.topBar,
-            bottomBar = config.bottomBar,
-            snackbarHost = config.snackbarHost,
-            floatingActionButton = config.floatingActionButton,
-            floatingActionButtonPosition = config.floatingActionButtonPosition,
-            contentWindowInsets = config.contentWindowInsets
-        ) { paddingValues ->
-            Box(modifier = Modifier.padding(paddingValues)) {
-                content()
-            }
+    // Scaffold без цветов - берет автоматически из Material 3 темы
+    Scaffold(
+        modifier = modifier,
+        topBar = config.topBar,
+        bottomBar = config.bottomBar,
+        snackbarHost = config.snackbarHost,
+        floatingActionButton = config.floatingActionButton,
+        floatingActionButtonPosition = config.floatingActionButtonPosition,
+        contentWindowInsets = config.contentWindowInsets
+    ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
+            content()
         }
     }
 }

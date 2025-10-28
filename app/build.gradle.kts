@@ -76,6 +76,7 @@ dependencies {
     implementation(project(":feature:auth"))
     implementation(project(":feature:dashboard"))
     implementation(project(":feature:devices"))
+    implementation(project(":feature:onboarding"))
     implementation(libs.koin.android)
     implementation(libs.kotlinx.datetime)
     testImplementation(libs.junit)
