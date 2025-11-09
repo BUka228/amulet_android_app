@@ -1,7 +1,6 @@
 package com.example.amulet.data.devices.datasource.ble
 
 import com.example.amulet.core.ble.AmuletBleManager
-import com.example.amulet.core.ble.model.AmuletCommand
 import com.example.amulet.core.ble.model.BleResult
 import com.example.amulet.core.ble.model.ConnectionState
 import com.example.amulet.core.ble.model.DeviceStatus
@@ -9,6 +8,7 @@ import com.example.amulet.core.ble.scanner.BleScanner
 import com.example.amulet.core.ble.scanner.ScannedDevice
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.Flow

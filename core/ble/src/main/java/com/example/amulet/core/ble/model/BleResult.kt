@@ -1,5 +1,7 @@
 package com.example.amulet.core.ble.model
 
+import com.example.amulet.shared.domain.devices.model.AmuletCommand
+
 /**
  * Результат выполнения BLE операции.
  */

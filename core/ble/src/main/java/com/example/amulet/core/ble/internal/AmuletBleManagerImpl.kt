@@ -13,7 +13,6 @@ import android.content.Context
 import android.util.Log
 import com.example.amulet.core.ble.AmuletBleManager
 import com.example.amulet.core.ble.model.AnimationPlan
-import com.example.amulet.core.ble.model.AmuletCommand
 import com.example.amulet.core.ble.model.BleResult
 import com.example.amulet.core.ble.model.ConnectionState
 import com.example.amulet.core.ble.model.DeviceReadyState
@@ -23,6 +22,8 @@ import com.example.amulet.core.ble.model.OtaProgress
 import com.example.amulet.core.ble.model.OtaState
 import com.example.amulet.core.ble.model.UploadProgress
 import com.example.amulet.core.ble.model.UploadState
+import com.example.amulet.core.ble.model.toCommandString
+import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
