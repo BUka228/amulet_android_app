@@ -9,10 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.PatternElementEditor
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
@@ -67,15 +70,28 @@ fun PatternEditorScreen(
             copy(
                 topBar = {
                     TopAppBar(
-                        title = { Text(if (state.isEditing) "Редактор паттерна" else "Новый паттерн") },
+                        title = { 
+                            Text(
+                                stringResource(
+                                    if (state.isEditing) R.string.pattern_editor_title_edit 
+                                    else R.string.pattern_editor_title_new
+                                )
+                            ) 
+                        },
                         navigationIcon = {
                             IconButton(onClick = { onEvent(PatternEditorEvent.DiscardChanges) }) {
-                                Icon(Icons.Default.Close, contentDescription = "Закрыть")
+                                Icon(
+                                    Icons.Default.Close, 
+                                    contentDescription = stringResource(R.string.cd_close_editor)
+                                )
                             }
                         },
                         actions = {
                             IconButton(onClick = { onEvent(PatternEditorEvent.PreviewPattern) }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Предпросмотр")
+                                Icon(
+                                    Icons.Default.PlayArrow, 
+                                    contentDescription = stringResource(R.string.cd_preview_pattern)
+                                )
                             }
                             IconButton(
                                 onClick = { onEvent(PatternEditorEvent.SavePattern) },
@@ -87,7 +103,10 @@ fun PatternEditorScreen(
                                         strokeWidth = 2.dp
                                     )
                                 } else {
-                                    Icon(Icons.Default.Check, contentDescription = "Сохранить")
+                                    Icon(
+                                        Icons.Default.Check, 
+                                        contentDescription = stringResource(R.string.cd_save_pattern)
+                                    )
                                 }
                             }
                         }
@@ -113,49 +132,59 @@ fun PatternEditorScreen(
         ) {
             // Основная информация
             item {
-                Card {
+                ElevatedCard {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        OutlinedTextField(
+                        AmuletTextField(
                             value = state.title,
                             onValueChange = { onEvent(PatternEditorEvent.UpdateTitle(it)) },
-                            label = { Text("Название") },
+                            label = stringResource(R.string.pattern_editor_title_label),
+                            placeholder = stringResource(R.string.pattern_editor_title_hint),
                             modifier = Modifier.fillMaxWidth(),
-                            isError = state.validationErrors.containsKey("title"),
-                            supportingText = state.validationErrors["title"]?.let { { Text(it) } }
+                            errorText = state.validationErrors["title"],
+                            singleLine = true
                         )
 
-                        OutlinedTextField(
+                        AmuletTextField(
                             value = state.description,
                             onValueChange = { onEvent(PatternEditorEvent.UpdateDescription(it)) },
-                            label = { Text("Описание (опционально)") },
+                            label = stringResource(R.string.pattern_editor_description_label),
+                            placeholder = stringResource(R.string.pattern_editor_description_hint),
                             modifier = Modifier.fillMaxWidth(),
-                            minLines = 2,
-                            maxLines = 4
+                            singleLine = false
                         )
 
                         // Тип паттерна
-                        Text("Тип паттерна", style = MaterialTheme.typography.titleSmall)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            PatternKind.values().forEach { kind ->
-                                FilterChip(
-                                    selected = state.kind == kind,
-                                    onClick = { onEvent(PatternEditorEvent.UpdateKind(kind)) },
-                                    label = {
-                                        Text(
-                                            when (kind) {
-                                                PatternKind.LIGHT -> "Свет"
-                                                PatternKind.HAPTIC -> "Вибрация"
-                                                PatternKind.COMBO -> "Комбо"
-                                            }
-                                        )
-                                    }
-                                )
+                            Text(
+                                stringResource(R.string.pattern_editor_kind_label),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                PatternKind.values().forEach { kind ->
+                                    FilterChip(
+                                        selected = state.kind == kind,
+                                        onClick = { onEvent(PatternEditorEvent.UpdateKind(kind)) },
+                                        label = {
+                                            Text(
+                                                stringResource(
+                                                    when (kind) {
+                                                        PatternKind.LIGHT -> R.string.pattern_kind_light
+                                                        PatternKind.HAPTIC -> R.string.pattern_kind_haptic
+                                                        PatternKind.COMBO -> R.string.pattern_kind_combo
+                                                    }
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
                             }
                         }
 
@@ -165,7 +194,19 @@ fun PatternEditorScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Зацикливание", style = MaterialTheme.typography.bodyLarge)
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    stringResource(R.string.pattern_editor_loop_label),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Text(
+                                    stringResource(R.string.pattern_editor_loop_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                             Switch(
                                 checked = state.loop,
                                 onCheckedChange = { onEvent(PatternEditorEvent.UpdateLoop(it)) }
@@ -183,15 +224,18 @@ fun PatternEditorScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "Элементы паттерна (${state.elements.size})",
+                        stringResource(R.string.pattern_editor_elements_header) + " (${state.elements.size})",
                         style = MaterialTheme.typography.titleMedium
                     )
                     FilledTonalButton(
                         onClick = { onEvent(PatternEditorEvent.AddElement(createDefaultElement())) }
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(
+                            Icons.Default.Add, 
+                            contentDescription = stringResource(R.string.cd_add_element)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Добавить")
+                        Text(stringResource(R.string.pattern_editor_add_element))
                     }
                 }
             }
@@ -218,33 +262,41 @@ fun PatternEditorScreen(
 
             if (state.elements.isEmpty()) {
                 item {
-                    Card {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                "Паттерн пуст",
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                "Добавьте элементы для создания анимации",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    EmptyElementsState()
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EmptyElementsState() {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                stringResource(R.string.empty_elements_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                stringResource(R.string.empty_elements_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
