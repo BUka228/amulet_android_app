@@ -56,7 +56,7 @@ class PatternDaoTest : BaseDatabaseTest() {
             sharedUserIds = listOf(recipient.id)
         )
 
-        val stored = patternDao.observeById(pattern.id).first()
+        val stored = patternDao.observeByIdWithRelations(pattern.id).first()
         assertEquals(pattern, stored?.pattern)
         assertEquals(tags.toSet(), stored?.tags?.toSet())
         assertEquals(listOf(recipient), stored?.sharedWith)

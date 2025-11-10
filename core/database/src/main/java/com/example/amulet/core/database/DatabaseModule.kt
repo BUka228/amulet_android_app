@@ -16,6 +16,8 @@ import com.example.amulet.core.database.dao.RemoteKeyDao
 import com.example.amulet.core.database.dao.RuleDao
 import com.example.amulet.core.database.dao.TelemetryDao
 import com.example.amulet.core.database.dao.UserDao
+import com.example.amulet.core.database.internal.RoomTransactionRunner
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -112,4 +114,13 @@ object DatabaseModule {
 
     @Provides
     fun provideRemoteKeyDao(database: AmuletDatabase): RemoteKeyDao = database.remoteKeyDao()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+interface DatabaseBindingsModule {
+    
+    @Binds
+    @Singleton
+    fun bindTransactionRunner(impl: RoomTransactionRunner): TransactionRunner
 }

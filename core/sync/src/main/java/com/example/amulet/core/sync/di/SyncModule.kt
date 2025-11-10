@@ -1,5 +1,7 @@
 package com.example.amulet.core.sync.di
 
+import android.content.Context
+import androidx.work.WorkManager
 import com.example.amulet.core.database.AmuletDatabase
 import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.sync.internal.ActionErrorResolver
@@ -20,6 +22,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -38,6 +41,11 @@ abstract class SyncModule {
         private const val DEFAULT_IN_FLIGHT_TIMEOUT_MINUTES = 5L
         private const val DEFAULT_BASE_BACKOFF_MILLIS = 5_000L
         private const val DEFAULT_MAX_BACKOFF_MILLIS = 5 * 60_000L
+
+        @Provides
+        @Singleton
+        fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+            WorkManager.getInstance(context)
 
         @Provides
         @Singleton

@@ -18,15 +18,42 @@ interface PatternDao {
 
     @Transaction
     @Query("SELECT * FROM patterns WHERE id = :id")
-    fun observeById(id: String): Flow<PatternWithRelations?>
+    fun observeById(id: String): Flow<PatternEntity?>
+    
+    @Transaction
+    @Query("SELECT * FROM patterns WHERE id = :id")
+    fun observeByIdWithRelations(id: String): Flow<PatternWithRelations?>
 
     @Transaction
     @Query("SELECT * FROM patterns WHERE ownerId = :ownerId ORDER BY updatedAt DESC, createdAt DESC")
-    fun pagingOwned(ownerId: String): PagingSource<Int, PatternWithRelations>
+    fun observeByOwner(ownerId: String): Flow<List<PatternEntity>>
 
     @Transaction
     @Query("SELECT * FROM patterns WHERE public = 1 ORDER BY createdAt DESC")
+    fun observePublic(): Flow<List<PatternEntity>>
+    
+    @Transaction
+    @Query("SELECT * FROM patterns WHERE public = 1 ORDER BY createdAt DESC")
     fun pagingPublic(): PagingSource<Int, PatternWithRelations>
+    
+    @Transaction
+    @Query("""
+        SELECT p.* FROM patterns p
+        INNER JOIN pattern_shares ps ON p.id = ps.patternId
+        WHERE ps.userId = :userId
+        ORDER BY p.updatedAt DESC, p.createdAt DESC
+    """)
+    fun observeSharedWith(userId: String): Flow<List<PatternEntity>>
+    
+    @Query("""
+        SELECT t.* FROM tags t
+        INNER JOIN pattern_tags pt ON t.id = pt.tagId
+        WHERE pt.patternId = :patternId
+    """)
+    suspend fun getTagsForPattern(patternId: String): List<TagEntity>
+    
+    @Query("SELECT * FROM pattern_shares WHERE patternId = :patternId")
+    suspend fun getSharesForPattern(patternId: String): List<PatternShareEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPattern(pattern: PatternEntity)

@@ -1,7 +1,6 @@
 package com.example.amulet.shared.domain.patterns.model
 
 import com.example.amulet.shared.domain.user.model.UserId
-import kotlinx.datetime.Instant
 
 /**
  * Основная доменная модель паттерна.
@@ -21,6 +20,6 @@ data class Pattern(
     val tags: List<String> = emptyList(),
     val usageCount: Int? = null,
     val sharedWith: List<UserId> = emptyList(),
-    val createdAt: Instant?,
-    val updatedAt: Instant?
+    val createdAt: Long?,
+    val updatedAt: Long?
 )
