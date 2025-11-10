@@ -8,6 +8,9 @@ import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
+import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
+import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -47,6 +50,24 @@ private val sharedModule = module {
     factory { StartBleOtaUpdateUseCase(get()) }
     factory { StartWifiOtaUpdateUseCase(get()) }
     factory { CancelOtaUpdateUseCase(get()) }
+    
+    // Patterns Compiler
+    single<PatternCompiler> { PatternCompilerImpl() }
+    
+    // Patterns UseCases
+    factory { PatternValidator() }
+    factory { CreatePatternUseCase(get(), get()) }
+    factory { UpdatePatternUseCase(get(), get()) }
+    factory { DeletePatternUseCase(get()) }
+    factory { GetPatternsStreamUseCase(get()) }
+    factory { GetPatternByIdUseCase(get()) }
+    factory { ObserveMyPatternsUseCase(get()) }
+    factory { SyncPatternsUseCase(get()) }
+    factory { PublishPatternUseCase(get()) }
+    factory { SharePatternUseCase(get()) }
+    factory { AddTagToPatternUseCase(get()) }
+    factory { RemoveTagFromPatternUseCase(get()) }
+    factory { PreviewPatternOnDeviceUseCase(get(), get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

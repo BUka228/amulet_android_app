@@ -16,6 +16,8 @@ import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
+import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
+import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
@@ -139,4 +141,48 @@ object KoinBridgeModule {
 
     @Provides
     fun provideCancelOtaUpdateUseCase(koin: Koin): CancelOtaUpdateUseCase = koin.get()
+    
+    // Patterns Compiler
+    @Provides
+    fun providePatternCompiler(koin: Koin): PatternCompiler = koin.get()
+    
+    // Patterns UseCases
+    @Provides
+    fun providePatternValidator(koin: Koin): PatternValidator = koin.get()
+    
+    @Provides
+    fun provideCreatePatternUseCase(koin: Koin): CreatePatternUseCase = koin.get()
+    
+    @Provides
+    fun provideUpdatePatternUseCase(koin: Koin): UpdatePatternUseCase = koin.get()
+    
+    @Provides
+    fun provideDeletePatternUseCase(koin: Koin): DeletePatternUseCase = koin.get()
+    
+    @Provides
+    fun provideGetPatternsStreamUseCase(koin: Koin): GetPatternsStreamUseCase = koin.get()
+    
+    @Provides
+    fun provideGetPatternByIdUseCase(koin: Koin): GetPatternByIdUseCase = koin.get()
+    
+    @Provides
+    fun provideObserveMyPatternsUseCase(koin: Koin): ObserveMyPatternsUseCase = koin.get()
+    
+    @Provides
+    fun provideSyncPatternsUseCase(koin: Koin): SyncPatternsUseCase = koin.get()
+    
+    @Provides
+    fun providePublishPatternUseCase(koin: Koin): PublishPatternUseCase = koin.get()
+    
+    @Provides
+    fun provideSharePatternUseCase(koin: Koin): SharePatternUseCase = koin.get()
+    
+    @Provides
+    fun provideAddTagToPatternUseCase(koin: Koin): AddTagToPatternUseCase = koin.get()
+    
+    @Provides
+    fun provideRemoveTagFromPatternUseCase(koin: Koin): RemoveTagFromPatternUseCase = koin.get()
+    
+    @Provides
+    fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
 }

@@ -1,0 +1,21 @@
+package com.example.amulet.shared.domain.patterns.usecase
+
+import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.patterns.PatternsRepository
+import com.example.amulet.shared.domain.patterns.model.Pattern
+import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.model.PublishMetadata
+
+/**
+ * UseCase для публикации паттерна в общий каталог.
+ */
+class PublishPatternUseCase(
+    private val repository: PatternsRepository
+) {
+    suspend operator fun invoke(
+        id: PatternId,
+        metadata: PublishMetadata
+    ): AppResult<Pattern> {
+        return repository.publishPattern(id, metadata)
+    }
+}
