@@ -83,11 +83,14 @@
     <string name="pattern_element_color_secondary">Secondary Color</string>
     <string name="pattern_element_duration_label">Duration</string>
     <string name="pattern_element_speed_label">Speed</string>
+    <string name="pattern_element_repeats_label">Repeats</string>
     <string name="pattern_element_direction_label">Direction</string>
     <string name="pattern_element_direction_cw">Clockwise</string>
     <string name="pattern_element_direction_ccw">Counter-clockwise</string>
     <string name="pattern_element_active_leds_label">Active LEDs</string>
     <string name="pattern_element_intensity_label">Intensity</string>
+    <string name="pattern_element_sequence_steps">Sequence with %d steps</string>
+    <string name="pattern_element_sequence_editor_wip">Sequence editing is in development</string>
     
     <!-- Color Picker -->
     <string name="color_picker_preset_colors">Preset Colors</string>

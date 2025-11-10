@@ -83,11 +83,14 @@
     <string name="pattern_element_color_secondary">Дополнительный цвет</string>
     <string name="pattern_element_duration_label">Длительность</string>
     <string name="pattern_element_speed_label">Скорость</string>
+    <string name="pattern_element_repeats_label">Повторы</string>
     <string name="pattern_element_direction_label">Направление</string>
     <string name="pattern_element_direction_cw">По часовой</string>
     <string name="pattern_element_direction_ccw">Против часовой</string>
     <string name="pattern_element_active_leds_label">Активных диодов</string>
     <string name="pattern_element_intensity_label">Интенсивность</string>
+    <string name="pattern_element_sequence_steps">Последовательность из %d шагов</string>
+    <string name="pattern_element_sequence_editor_wip">Редактирование последовательностей в разработке</string>
     
     <!-- Color Picker -->
     <string name="color_picker_preset_colors">Готовые цвета</string>

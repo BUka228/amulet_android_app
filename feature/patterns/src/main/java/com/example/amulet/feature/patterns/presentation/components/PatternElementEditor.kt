@@ -1,5 +1,12 @@
 package com.example.amulet.feature.patterns.presentation.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseInOutCubic
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -49,17 +56,19 @@ fun PatternElementEditor(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         getElementIcon(element),
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "${index + 1}. ${getElementName(element)}",
-                            style = MaterialTheme.typography.titleSmall
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Text(
                             text = getElementDescription(element),
@@ -69,12 +78,12 @@ fun PatternElementEditor(
                     }
                 }
 
-                Row {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     // Кнопки перемещения
                     if (onMoveUp != null) {
                         IconButton(
                             onClick = onMoveUp,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
@@ -86,7 +95,7 @@ fun PatternElementEditor(
                     if (onMoveDown != null) {
                         IconButton(
                             onClick = onMoveDown,
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
@@ -98,18 +107,19 @@ fun PatternElementEditor(
 
                     IconButton(
                         onClick = onRemove,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = stringResource(R.string.cd_delete_element),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
 
                     IconButton(
                         onClick = { showDetails = !showDetails },
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -124,20 +134,48 @@ fun PatternElementEditor(
                 }
             }
 
-            // Детали элемента (раскрывающиеся)
-            if (showDetails) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider()
-                Spacer(modifier = Modifier.height(16.dp))
+            // Детали элемента (раскрывающиеся с анимацией)
+            AnimatedVisibility(
+                visible = showDetails,
+                enter = expandVertically(
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = EaseInOutCubic
+                    ),
+                    expandFrom = Alignment.Top
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = EaseInOutCubic
+                    )
+                ),
+                exit = shrinkVertically(
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = EaseInOutCubic
+                    ),
+                    shrinkTowards = Alignment.Top
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = 300,
+                        easing = EaseInOutCubic
+                    )
+                )
+            ) {
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                when (element) {
-                    is PatternElementBreathing -> BreathingEditor(element, onUpdate)
-                    is PatternElementPulse -> PulseEditor(element, onUpdate)
-                    is PatternElementChase -> ChaseEditor(element, onUpdate)
-                    is PatternElementFill -> FillEditor(element, onUpdate)
-                    is PatternElementSpinner -> SpinnerEditor(element, onUpdate)
-                    is PatternElementProgress -> ProgressEditor(element, onUpdate)
-                    is PatternElementSequence -> SequenceEditor(element, onUpdate)
+                    when (element) {
+                        is PatternElementBreathing -> BreathingEditor(element, onUpdate)
+                        is PatternElementPulse -> PulseEditor(element, onUpdate)
+                        is PatternElementChase -> ChaseEditor(element, onUpdate)
+                        is PatternElementFill -> FillEditor(element, onUpdate)
+                        is PatternElementSpinner -> SpinnerEditor(element, onUpdate)
+                        is PatternElementProgress -> ProgressEditor(element, onUpdate)
+                        is PatternElementSequence -> SequenceEditor(element, onUpdate)
+                    }
                 }
             }
         }
@@ -149,23 +187,42 @@ private fun BreathingEditor(
     element: PatternElementBreathing,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Color Picker
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text(
-            text = stringResource(R.string.pattern_element_duration_label) + ": ${element.durationMs} мс",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.durationMs.toFloat(),
-            onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
-            valueRange = 100f..10000f,
-            steps = 98
-        )
+        // Duration Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_duration_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(R.string.time_format_ms, element.durationMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.durationMs.toFloat(),
+                onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
+                valueRange = 100f..10000f,
+                steps = 98,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -174,31 +231,71 @@ private fun PulseEditor(
     element: PatternElementPulse,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Color Picker
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text(
-            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speed} мс",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.speed.toFloat(),
-            onValueChange = { onUpdate(element.copy(speed = it.toInt())) },
-            valueRange = 100f..2000f,
-            steps = 18
-        )
+        // Speed Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_speed_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(R.string.time_format_ms, element.speed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.speed.toFloat(),
+                onValueChange = { onUpdate(element.copy(speed = it.toInt())) },
+                valueRange = 100f..2000f,
+                steps = 18,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
 
-        Text("Повторы: ${element.repeats}", style = MaterialTheme.typography.bodySmall)
-        Slider(
-            value = element.repeats.toFloat(),
-            onValueChange = { onUpdate(element.copy(repeats = it.toInt())) },
-            valueRange = 1f..10f,
-            steps = 8
-        )
+        // Repeats Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_repeats_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = element.repeats.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.repeats.toFloat(),
+                onValueChange = { onUpdate(element.copy(repeats = it.toInt())) },
+                valueRange = 1f..10f,
+                steps = 8,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -207,40 +304,73 @@ private fun ChaseEditor(
     element: PatternElementChase,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Color Picker
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
 
-        Text(
-            text = stringResource(R.string.pattern_element_direction_label),
-            style = MaterialTheme.typography.bodySmall
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = element.direction == ChaseDirection.CLOCKWISE,
-                onClick = { onUpdate(element.copy(direction = ChaseDirection.CLOCKWISE)) },
-                label = { Text(stringResource(R.string.pattern_element_direction_cw)) }
+        // Direction Selector
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.pattern_element_direction_label),
+                style = MaterialTheme.typography.labelLarge
             )
-            FilterChip(
-                selected = element.direction == ChaseDirection.COUNTER_CLOCKWISE,
-                onClick = { onUpdate(element.copy(direction = ChaseDirection.COUNTER_CLOCKWISE)) },
-                label = { Text(stringResource(R.string.pattern_element_direction_ccw)) }
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                FilterChip(
+                    selected = element.direction == ChaseDirection.CLOCKWISE,
+                    onClick = { onUpdate(element.copy(direction = ChaseDirection.CLOCKWISE)) },
+                    label = { Text(stringResource(R.string.pattern_element_direction_cw)) },
+                    leadingIcon = if (element.direction == ChaseDirection.CLOCKWISE) {
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = element.direction == ChaseDirection.COUNTER_CLOCKWISE,
+                    onClick = { onUpdate(element.copy(direction = ChaseDirection.COUNTER_CLOCKWISE)) },
+                    label = { Text(stringResource(R.string.pattern_element_direction_ccw)) },
+                    leadingIcon = if (element.direction == ChaseDirection.COUNTER_CLOCKWISE) {
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    } else null,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
         
-        Text(
-            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speedMs} мс",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.speedMs.toFloat(),
-            onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
-            valueRange = 50f..1000f,
-            steps = 18
-        )
+        // Speed Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_speed_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(R.string.time_format_ms, element.speedMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.speedMs.toFloat(),
+                onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
+                valueRange = 50f..1000f,
+                steps = 18,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -249,23 +379,42 @@ private fun FillEditor(
     element: PatternElementFill,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Color Picker
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text(
-            text = stringResource(R.string.pattern_element_duration_label) + ": ${element.durationMs} мс",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.durationMs.toFloat(),
-            onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
-            valueRange = 100f..5000f,
-            steps = 48
-        )
+        // Duration Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_duration_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(R.string.time_format_ms, element.durationMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.durationMs.toFloat(),
+                onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
+                valueRange = 100f..5000f,
+                steps = 48,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -274,17 +423,23 @@ private fun SpinnerEditor(
     element: PatternElementSpinner,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Primary Color Picker
         ColorPicker(
             color = element.colors.getOrNull(0) ?: "#FFFFFF",
             onColorChange = { 
                 val newColors = element.colors.toMutableList()
-                newColors[0] = it
+                if (newColors.isEmpty()) {
+                    newColors.add(it)
+                } else {
+                    newColors[0] = it
+                }
                 onUpdate(element.copy(colors = newColors))
             },
             label = stringResource(R.string.pattern_element_color_primary)
         )
 
+        // Secondary Color Picker
         ColorPicker(
             color = element.colors.getOrNull(1) ?: "#000000",
             onColorChange = { 
@@ -292,23 +447,43 @@ private fun SpinnerEditor(
                 if (newColors.size > 1) {
                     newColors[1] = it
                 } else {
-                    newColors.add(it)
+                    while (newColors.size < 2) {
+                        newColors.add(it)
+                    }
                 }
                 onUpdate(element.copy(colors = newColors))
             },
             label = stringResource(R.string.pattern_element_color_secondary)
         )
         
-        Text(
-            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speedMs} мс",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.speedMs.toFloat(),
-            onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
-            valueRange = 50f..1000f,
-            steps = 18
-        )
+        // Speed Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_speed_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = stringResource(R.string.time_format_ms, element.speedMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.speedMs.toFloat(),
+                onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
+                valueRange = 50f..1000f,
+                steps = 18,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -317,23 +492,42 @@ private fun ProgressEditor(
     element: PatternElementProgress,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Color Picker
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text(
-            text = stringResource(R.string.pattern_element_active_leds_label) + ": ${element.activeLeds}",
-            style = MaterialTheme.typography.bodySmall
-        )
-        Slider(
-            value = element.activeLeds.toFloat(),
-            onValueChange = { onUpdate(element.copy(activeLeds = it.toInt())) },
-            valueRange = 1f..8f,
-            steps = 6
-        )
+        // Active LEDs Slider
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.pattern_element_active_leds_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Text(
+                    text = element.activeLeds.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Slider(
+                value = element.activeLeds.toFloat(),
+                onValueChange = { onUpdate(element.copy(activeLeds = it.toInt())) },
+                valueRange = 1f..8f,
+                steps = 6,
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+        }
     }
 }
 
@@ -342,13 +536,38 @@ private fun SequenceEditor(
     element: PatternElementSequence,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Последовательность из ${element.steps.size} шагов", style = MaterialTheme.typography.bodySmall)
-        Text(
-            "Редактирование последовательностей в разработке",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        text = stringResource(R.string.pattern_element_sequence_steps, element.steps.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = stringResource(R.string.pattern_element_sequence_editor_wip),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
     }
 }
 
