@@ -40,10 +40,9 @@ class PatternPreviewViewModel @Inject constructor(
         when (event) {
             is PatternPreviewEvent.LoadDevices -> loadDevices()
             is PatternPreviewEvent.SelectDevice -> selectDevice(event.deviceId)
-            is PatternPreviewEvent.TogglePreviewMode -> togglePreviewMode()
-            is PatternPreviewEvent.PlayPattern -> playPattern()
-            is PatternPreviewEvent.PausePattern -> pausePattern()
-            is PatternPreviewEvent.StopPattern -> stopPattern()
+            is PatternPreviewEvent.PlayPause -> togglePlayPause()
+            is PatternPreviewEvent.Restart -> restart()
+            is PatternPreviewEvent.UpdateLoop -> updateLoop(event.loop)
             is PatternPreviewEvent.SendToDevice -> sendToDevice()
             is PatternPreviewEvent.DismissError -> dismissError()
         }
@@ -90,39 +89,21 @@ class PatternPreviewViewModel @Inject constructor(
         }
     }
 
-    private fun togglePreviewMode() {
-        _uiState.update { it.copy(localPreview = !it.localPreview) }
+    private fun togglePlayPause() {
+        _uiState.update { it.copy(isPlaying = !it.isPlaying) }
     }
 
-    private fun playPattern() {
-        val currentState = _uiState.value
-
-        if (!currentState.localPreview && currentState.selectedDevice == null) {
-            viewModelScope.launch {
-                _sideEffect.emit(PatternPreviewSideEffect.ShowDeviceRequired)
-            }
-            return
-        }
-
-        _uiState.update { it.copy(isPlaying = true, isPaused = false) }
-
-        if (!currentState.localPreview) {
-            sendToDevice()
-        }
-    }
-
-    private fun pausePattern() {
-        _uiState.update { it.copy(isPaused = true) }
-    }
-
-    private fun stopPattern() {
+    private fun restart() {
         _uiState.update {
             it.copy(
-                isPlaying = false,
-                isPaused = false,
+                isPlaying = true,
                 progress = null
             )
         }
+    }
+
+    private fun updateLoop(loop: Boolean) {
+        _uiState.update { it.copy(isLooping = loop) }
     }
 
     private fun sendToDevice() {
@@ -131,6 +112,8 @@ class PatternPreviewViewModel @Inject constructor(
         val device = currentState.selectedDevice ?: return
 
         viewModelScope.launch {
+            _uiState.update { it.copy(isSendingToDevice = true) }
+            
             previewPatternOnDeviceUseCase(spec, device.id)
                 .collect { progress ->
                     when (progress) {
@@ -141,13 +124,20 @@ class PatternPreviewViewModel @Inject constructor(
                             _uiState.update { it.copy(progress = progress) }
                         }
                         is PreviewProgress.Playing -> {
-                            _uiState.update { it.copy(progress = progress, isPlaying = true) }
+                            _uiState.update { 
+                                it.copy(
+                                    progress = progress, 
+                                    isPlaying = true,
+                                    isSendingToDevice = false
+                                ) 
+                            }
                             _sideEffect.emit(PatternPreviewSideEffect.ShowSnackbar("Паттерн отправлен на устройство"))
                         }
                         is PreviewProgress.Failed -> {
                             _uiState.update {
                                 it.copy(
                                     isPlaying = false,
+                                    isSendingToDevice = false,
                                     progress = null
                                 )
                             }

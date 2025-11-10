@@ -34,6 +34,7 @@ sealed interface PatternEditorEvent {
     data class UpdateDescription(val description: String) : PatternEditorEvent
     data class UpdateKind(val kind: PatternKind) : PatternEditorEvent
     data class UpdateLoop(val loop: Boolean) : PatternEditorEvent
+    data object ShowElementPicker : PatternEditorEvent
     data class AddElement(val element: PatternElement) : PatternEditorEvent
     data class UpdateElement(val index: Int, val element: PatternElement) : PatternEditorEvent
     data class RemoveElement(val index: Int) : PatternEditorEvent

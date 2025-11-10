@@ -42,6 +42,7 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.UpdateDescription -> updateDescription(event.description)
             is PatternEditorEvent.UpdateKind -> updateKind(event.kind)
             is PatternEditorEvent.UpdateLoop -> updateLoop(event.loop)
+            is PatternEditorEvent.ShowElementPicker -> showElementPicker()
             is PatternEditorEvent.AddElement -> addElement(event.element)
             is PatternEditorEvent.UpdateElement -> updateElement(event.index, event.element)
             is PatternEditorEvent.RemoveElement -> removeElement(event.index)
@@ -117,6 +118,12 @@ class PatternEditorViewModel @Inject constructor(
                 loop = loop,
                 hasUnsavedChanges = true
             )
+        }
+    }
+
+    private fun showElementPicker() {
+        viewModelScope.launch {
+            _sideEffect.emit(PatternEditorSideEffect.ShowElementPicker)
         }
     }
 

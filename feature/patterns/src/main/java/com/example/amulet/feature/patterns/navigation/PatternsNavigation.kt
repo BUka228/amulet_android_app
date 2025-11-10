@@ -91,9 +91,13 @@ fun NavGraphBuilder.patternsGraph(
                     type = NavType.StringType
                 }
             )
-        ) {
+        ) { backStackEntry ->
+            val patternId = backStackEntry.arguments?.getString("patternId")
             PatternPreviewRoute(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToEditor = {
+                    patternId?.let { navController.navigateToPatternEditor(it) }
+                }
             )
         }
     }

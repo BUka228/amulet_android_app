@@ -17,6 +17,7 @@ import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.PatternElementEditor
+import com.example.amulet.feature.patterns.presentation.components.PatternElementPickerDialog
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
 
@@ -27,6 +28,7 @@ fun PatternEditorRoute(
     onNavigateToPreview: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showElementPicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collectLatest { effect ->
@@ -43,7 +45,7 @@ fun PatternEditorRoute(
                     // Handle publish dialog
                 }
                 is PatternEditorSideEffect.ShowElementPicker -> {
-                    // Handle element picker
+                    showElementPicker = true
                 }
             }
         }
@@ -52,7 +54,9 @@ fun PatternEditorRoute(
     PatternEditorScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        showElementPicker = showElementPicker,
+        onDismissElementPicker = { showElementPicker = false }
     )
 }
 
@@ -61,9 +65,22 @@ fun PatternEditorRoute(
 fun PatternEditorScreen(
     state: PatternEditorState,
     onEvent: (PatternEditorEvent) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    showElementPicker: Boolean,
+    onDismissElementPicker: () -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
+
+    // Element Picker Dialog
+    if (showElementPicker) {
+        PatternElementPickerDialog(
+            onDismiss = onDismissElementPicker,
+            onElementTypeSelected = { elementType ->
+                onEvent(PatternEditorEvent.AddElement(elementType.createDefaultElement()))
+                onDismissElementPicker()
+            }
+        )
+    }
 
     SideEffect {
         scaffoldState.updateConfig {
@@ -228,7 +245,7 @@ fun PatternEditorScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     FilledTonalButton(
-                        onClick = { onEvent(PatternEditorEvent.AddElement(createDefaultElement())) }
+                        onClick = { onEvent(PatternEditorEvent.ShowElementPicker) }
                     ) {
                         Icon(
                             Icons.Default.Add, 
@@ -299,12 +316,4 @@ private fun EmptyElementsState() {
             )
         }
     }
-}
-
-// Вспомогательная функция для создания элемента по умолчанию
-private fun createDefaultElement(): com.example.amulet.shared.domain.patterns.model.PatternElement {
-    return com.example.amulet.shared.domain.patterns.model.PatternElementBreathing(
-        color = "#FF0000",
-        durationMs = 2000
-    )
 }
