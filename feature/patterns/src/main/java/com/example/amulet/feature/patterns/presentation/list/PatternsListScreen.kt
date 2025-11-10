@@ -172,6 +172,7 @@ fun PatternsListScreen(
                             pattern = pattern,
                             onClick = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                             onPreview = { onEvent(PatternsListEvent.PreviewPattern(pattern.id.value)) },
+                            onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                             onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
                             onDuplicate = { onEvent(PatternsListEvent.DuplicatePattern(pattern.id.value)) }
                         )

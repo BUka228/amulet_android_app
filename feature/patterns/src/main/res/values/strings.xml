@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Patterns List Screen -->
+    <string name="patterns_screen_title">Patterns</string>
+    <string name="patterns_tab_my">My Patterns</string>
+    <string name="patterns_tab_public">Public</string>
+    <string name="patterns_tab_presets">Presets</string>
+    <string name="patterns_search_hint">Search patterns…</string>
+    <string name="patterns_filter_button">Filter</string>
+    <string name="patterns_create_button">Create pattern</string>
+    
+    <!-- Pattern Card -->
+    <string name="pattern_card_preview">Preview</string>
+    <string name="pattern_card_menu">More options</string>
+    <string name="pattern_card_edit">Edit</string>
+    <string name="pattern_card_duplicate">Duplicate</string>
+    <string name="pattern_card_delete">Delete</string>
+    <string name="pattern_card_share">Share</string>
+    <string name="pattern_card_downloads">%d downloads</string>
+    <string name="pattern_card_rating">Rating: %.1f</string>
+    
+    <!-- Pattern Types -->
+    <string name="pattern_kind_light">Light</string>
+    <string name="pattern_kind_haptic">Haptic</string>
+    <string name="pattern_kind_combo">Combo</string>
+    
+    <!-- Pattern Editor Screen -->
+    <string name="pattern_editor_title_new">New Pattern</string>
+    <string name="pattern_editor_title_edit">Edit Pattern</string>
+    <string name="pattern_editor_save">Save</string>
+    <string name="pattern_editor_preview">Preview</string>
+    <string name="pattern_editor_close">Close</string>
+    
+    <!-- Pattern Basic Info -->
+    <string name="pattern_editor_title_label">Title</string>
+    <string name="pattern_editor_title_hint">Enter pattern name</string>
+    <string name="pattern_editor_description_label">Description</string>
+    <string name="pattern_editor_description_hint">Describe your pattern</string>
+    <string name="pattern_editor_kind_label">Pattern Type</string>
+    <string name="pattern_editor_loop_label">Loop</string>
+    <string name="pattern_editor_loop_description">Repeat pattern continuously</string>
+    
+    <!-- Pattern Elements -->
+    <string name="pattern_editor_elements_header">Pattern Elements</string>
+    <string name="pattern_editor_add_element">Add element</string>
+    <string name="pattern_editor_element_move_up">Move up</string>
+    <string name="pattern_editor_element_move_down">Move down</string>
+    <string name="pattern_editor_element_delete">Delete element</string>
+    <string name="pattern_editor_element_expand">Expand</string>
+    <string name="pattern_editor_element_collapse">Collapse</string>
+    
+    <!-- Pattern Element Types -->
+    <string name="pattern_element_breathing">Breathing</string>
+    <string name="pattern_element_breathing_desc">Smooth fade in and out</string>
+    <string name="pattern_element_pulse">Pulse</string>
+    <string name="pattern_element_pulse_desc">Quick flash effect</string>
+    <string name="pattern_element_chase">Chase</string>
+    <string name="pattern_element_chase_desc">Running lights around the ring</string>
+    <string name="pattern_element_fill">Fill</string>
+    <string name="pattern_element_fill_desc">Sequential LED activation</string>
+    <string name="pattern_element_spinner">Spinner</string>
+    <string name="pattern_element_spinner_desc">Rotating two-color effect</string>
+    <string name="pattern_element_progress">Progress</string>
+    <string name="pattern_element_progress_desc">Static progress indicator</string>
+    <string name="pattern_element_sequence">Sequence</string>
+    <string name="pattern_element_sequence_desc">Custom LED sequence</string>
+    
+    <!-- Pattern Element Picker -->
+    <string name="pattern_element_picker_title">Choose Element Type</string>
+    <string name="pattern_element_picker_category_basic">Basic</string>
+    <string name="pattern_element_picker_category_motion">Motion</string>
+    <string name="pattern_element_picker_category_effects">Effects</string>
+    
+    <!-- Pattern Element Editor -->
+    <string name="pattern_element_color_label">Color</string>
+    <string name="pattern_element_color_primary">Primary Color</string>
+    <string name="pattern_element_color_secondary">Secondary Color</string>
+    <string name="pattern_element_duration_label">Duration</string>
+    <string name="pattern_element_speed_label">Speed</string>
+    <string name="pattern_element_direction_label">Direction</string>
+    <string name="pattern_element_direction_cw">Clockwise</string>
+    <string name="pattern_element_direction_ccw">Counter-clockwise</string>
+    <string name="pattern_element_active_leds_label">Active LEDs</string>
+    <string name="pattern_element_intensity_label">Intensity</string>
+    
+    <!-- Color Picker -->
+    <string name="color_picker_preset_colors">Preset Colors</string>
+    <string name="color_picker_custom">Custom Color</string>
+    <string name="color_picker_hex_label">HEX Color</string>
+    <string name="color_picker_hex_hint">#RRGGBB</string>
+    <string name="color_picker_preview">Color preview</string>
+    
+    <!-- Pattern Preview Screen -->
+    <string name="pattern_preview_title">Preview</string>
+    <string name="pattern_preview_edit">Edit</string>
+    <string name="pattern_preview_share">Share</string>
+    <string name="pattern_preview_play">Play</string>
+    <string name="pattern_preview_pause">Pause</string>
+    <string name="pattern_preview_restart">Restart</string>
+    <string name="pattern_preview_loop">Loop</string>
+    <string name="pattern_preview_send_to_device">Send to Device</string>
+    <string name="pattern_preview_device_connected">Connected</string>
+    <string name="pattern_preview_device_disconnected">Disconnected</string>
+    <string name="pattern_preview_device_battery">Battery: %d%%</string>
+    <string name="pattern_preview_device_signal">Signal: %s</string>
+    <string name="pattern_preview_signal_excellent">Excellent</string>
+    <string name="pattern_preview_signal_good">Good</string>
+    <string name="pattern_preview_signal_fair">Fair</string>
+    <string name="pattern_preview_signal_poor">Poor</string>
+    <string name="pattern_preview_metadata">Metadata</string>
+    <string name="pattern_preview_author">Author: %s</string>
+    <string name="pattern_preview_duration">Duration: %s</string>
+    
+    <!-- Dialogs -->
+    <string name="dialog_delete_pattern_title">Delete pattern?</string>
+    <string name="dialog_delete_pattern_message">This action cannot be undone</string>
+    <string name="dialog_delete_pattern_confirm">Delete</string>
+    <string name="dialog_delete_pattern_cancel">Cancel</string>
+    
+    <string name="dialog_discard_changes_title">Unsaved changes</string>
+    <string name="dialog_discard_changes_message">Save changes before leaving?</string>
+    <string name="dialog_discard_changes_save">Save</string>
+    <string name="dialog_discard_changes_discard">Don\'t save</string>
+    <string name="dialog_discard_changes_cancel">Cancel</string>
+    
+    <string name="dialog_publish_pattern_title">Publish pattern</string>
+    <string name="dialog_publish_pattern_public_title">Public Title</string>
+    <string name="dialog_publish_pattern_public_description">Public Description</string>
+    <string name="dialog_publish_pattern_tags">Tags</string>
+    <string name="dialog_publish_pattern_category">Category</string>
+    <string name="dialog_publish_pattern_make_public">Make public immediately</string>
+    <string name="dialog_publish_pattern_confirm">Publish</string>
+    <string name="dialog_publish_pattern_cancel">Cancel</string>
+    
+    <!-- Empty States -->
+    <string name="empty_patterns_title">No patterns</string>
+    <string name="empty_patterns_description">Create your first pattern</string>
+    <string name="empty_patterns_button">Create pattern</string>
+    
+    <string name="empty_search_title">Nothing found</string>
+    <string name="empty_search_description">Try changing your search query</string>
+    
+    <string name="empty_elements_title">Pattern is empty</string>
+    <string name="empty_elements_description">Add elements to create animation</string>
+    
+    <string name="empty_public_patterns_title">No public patterns</string>
+    <string name="empty_public_patterns_description">Check back later for community patterns</string>
+    
+    <string name="empty_presets_title">No presets available</string>
+    <string name="empty_presets_description">Presets will be added in future updates</string>
+    
+    <!-- Success Messages -->
+    <string name="message_pattern_saved">Pattern saved</string>
+    <string name="message_pattern_deleted">Pattern deleted</string>
+    <string name="message_pattern_duplicated">Pattern duplicated</string>
+    <string name="message_pattern_published">Pattern published</string>
+    <string name="message_pattern_sent_to_device">Pattern sent to device</string>
+    
+    <!-- Error Messages -->
+    <string name="error_pattern_save_failed">Failed to save pattern</string>
+    <string name="error_pattern_load_failed">Failed to load pattern</string>
+    <string name="error_pattern_delete_failed">Failed to delete pattern</string>
+    <string name="error_pattern_publish_failed">Failed to publish pattern</string>
+    <string name="error_device_not_connected">Device not connected</string>
+    <string name="error_device_send_failed">Failed to send pattern to device</string>
+    <string name="error_network_unavailable">Network unavailable</string>
+    <string name="error_unknown">An error occurred</string>
+    
+    <!-- Validation Errors -->
+    <string name="error_invalid_pattern_title">Please enter a pattern name</string>
+    <string name="error_pattern_title_too_short">Pattern name is too short</string>
+    <string name="error_pattern_title_too_long">Pattern name is too long</string>
+    <string name="error_pattern_no_elements">Pattern must have at least one element</string>
+    <string name="error_invalid_hex_color">Invalid HEX color format</string>
+    <string name="error_invalid_duration">Duration must be between 100ms and 10s</string>
+    <string name="error_invalid_speed">Speed must be between 50ms and 2s</string>
+    
+    <!-- Loading States -->
+    <string name="loading_patterns">Loading patterns…</string>
+    <string name="loading_pattern">Loading pattern…</string>
+    <string name="saving_pattern">Saving…</string>
+    <string name="sending_to_device">Sending to device…</string>
+    
+    <!-- Content Descriptions -->
+    <string name="cd_create_pattern">Create new pattern</string>
+    <string name="cd_search_patterns">Search patterns</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_filter_patterns">Filter patterns</string>
+    <string name="cd_pattern_preview">Pattern preview</string>
+    <string name="cd_pattern_menu">Pattern options</string>
+    <string name="cd_close_editor">Close editor</string>
+    <string name="cd_save_pattern">Save pattern</string>
+    <string name="cd_preview_pattern">Preview pattern</string>
+    <string name="cd_add_element">Add element</string>
+    <string name="cd_delete_element">Delete element</string>
+    <string name="cd_move_element_up">Move element up</string>
+    <string name="cd_move_element_down">Move element down</string>
+    <string name="cd_expand_element">Expand element details</string>
+    <string name="cd_collapse_element">Collapse element details</string>
+    <string name="cd_color_preview">Color preview</string>
+    <string name="cd_play_pattern">Play pattern</string>
+    <string name="cd_pause_pattern">Pause pattern</string>
+    <string name="cd_restart_pattern">Restart pattern</string>
+    <string name="cd_send_to_device">Send pattern to device</string>
+    <string name="cd_edit_pattern">Edit pattern</string>
+    <string name="cd_share_pattern">Share pattern</string>
+    <string name="cd_back">Back</string>
+    
+    <!-- Time Formats -->
+    <string name="time_format_ms">%d ms</string>
+    <string name="time_format_seconds">%.1f s</string>
+    <string name="time_format_minutes">%d min</string>
+    
+    <!-- Plurals -->
+    <plurals name="pattern_elements_count">
+        <item quantity="one">%d element</item>
+        <item quantity="other">%d elements</item>
+    </plurals>
+    
+    <plurals name="pattern_duration_seconds">
+        <item quantity="one">%d second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
+    
+    <plurals name="pattern_downloads_count">
+        <item quantity="one">%d download</item>
+        <item quantity="other">%d downloads</item>
+    </plurals>
+</resources>

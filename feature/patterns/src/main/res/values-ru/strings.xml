@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Patterns List Screen -->
+    <string name="patterns_screen_title">Паттерны</string>
+    <string name="patterns_tab_my">Мои паттерны</string>
+    <string name="patterns_tab_public">Публичные</string>
+    <string name="patterns_tab_presets">Пресеты</string>
+    <string name="patterns_search_hint">Поиск паттернов…</string>
+    <string name="patterns_filter_button">Фильтр</string>
+    <string name="patterns_create_button">Создать паттерн</string>
+    
+    <!-- Pattern Card -->
+    <string name="pattern_card_preview">Предпросмотр</string>
+    <string name="pattern_card_menu">Дополнительно</string>
+    <string name="pattern_card_edit">Редактировать</string>
+    <string name="pattern_card_duplicate">Дублировать</string>
+    <string name="pattern_card_delete">Удалить</string>
+    <string name="pattern_card_share">Поделиться</string>
+    <string name="pattern_card_downloads">%d скачиваний</string>
+    <string name="pattern_card_rating">Рейтинг: %.1f</string>
+    
+    <!-- Pattern Types -->
+    <string name="pattern_kind_light">Световой</string>
+    <string name="pattern_kind_haptic">Вибрация</string>
+    <string name="pattern_kind_combo">Комбо</string>
+    
+    <!-- Pattern Editor Screen -->
+    <string name="pattern_editor_title_new">Новый паттерн</string>
+    <string name="pattern_editor_title_edit">Редактор паттерна</string>
+    <string name="pattern_editor_save">Сохранить</string>
+    <string name="pattern_editor_preview">Предпросмотр</string>
+    <string name="pattern_editor_close">Закрыть</string>
+    
+    <!-- Pattern Basic Info -->
+    <string name="pattern_editor_title_label">Название</string>
+    <string name="pattern_editor_title_hint">Введите название паттерна</string>
+    <string name="pattern_editor_description_label">Описание</string>
+    <string name="pattern_editor_description_hint">Опишите ваш паттерн</string>
+    <string name="pattern_editor_kind_label">Тип паттерна</string>
+    <string name="pattern_editor_loop_label">Зациклить</string>
+    <string name="pattern_editor_loop_description">Повторять паттерн непрерывно</string>
+    
+    <!-- Pattern Elements -->
+    <string name="pattern_editor_elements_header">Элементы паттерна</string>
+    <string name="pattern_editor_add_element">Добавить элемент</string>
+    <string name="pattern_editor_element_move_up">Переместить вверх</string>
+    <string name="pattern_editor_element_move_down">Переместить вниз</string>
+    <string name="pattern_editor_element_delete">Удалить элемент</string>
+    <string name="pattern_editor_element_expand">Развернуть</string>
+    <string name="pattern_editor_element_collapse">Свернуть</string>
+    
+    <!-- Pattern Element Types -->
+    <string name="pattern_element_breathing">Дыхание</string>
+    <string name="pattern_element_breathing_desc">Плавное затухание и появление</string>
+    <string name="pattern_element_pulse">Пульс</string>
+    <string name="pattern_element_pulse_desc">Быстрая вспышка</string>
+    <string name="pattern_element_chase">Бегущие огни</string>
+    <string name="pattern_element_chase_desc">Огни бегут по кругу</string>
+    <string name="pattern_element_fill">Заполнение</string>
+    <string name="pattern_element_fill_desc">Последовательная активация диодов</string>
+    <string name="pattern_element_spinner">Спиннер</string>
+    <string name="pattern_element_spinner_desc">Вращающийся двухцветный эффект</string>
+    <string name="pattern_element_progress">Прогресс</string>
+    <string name="pattern_element_progress_desc">Статичный индикатор прогресса</string>
+    <string name="pattern_element_sequence">Последовательность</string>
+    <string name="pattern_element_sequence_desc">Пользовательская последовательность диодов</string>
+    
+    <!-- Pattern Element Picker -->
+    <string name="pattern_element_picker_title">Выберите тип элемента</string>
+    <string name="pattern_element_picker_category_basic">Базовые</string>
+    <string name="pattern_element_picker_category_motion">Движение</string>
+    <string name="pattern_element_picker_category_effects">Эффекты</string>
+    
+    <!-- Pattern Element Editor -->
+    <string name="pattern_element_color_label">Цвет</string>
+    <string name="pattern_element_color_primary">Основной цвет</string>
+    <string name="pattern_element_color_secondary">Дополнительный цвет</string>
+    <string name="pattern_element_duration_label">Длительность</string>
+    <string name="pattern_element_speed_label">Скорость</string>
+    <string name="pattern_element_direction_label">Направление</string>
+    <string name="pattern_element_direction_cw">По часовой</string>
+    <string name="pattern_element_direction_ccw">Против часовой</string>
+    <string name="pattern_element_active_leds_label">Активных диодов</string>
+    <string name="pattern_element_intensity_label">Интенсивность</string>
+    
+    <!-- Color Picker -->
+    <string name="color_picker_preset_colors">Готовые цвета</string>
+    <string name="color_picker_custom">Свой цвет</string>
+    <string name="color_picker_hex_label">HEX цвет</string>
+    <string name="color_picker_hex_hint">#RRGGBB</string>
+    <string name="color_picker_preview">Предпросмотр цвета</string>
+    
+    <!-- Pattern Preview Screen -->
+    <string name="pattern_preview_title">Предпросмотр</string>
+    <string name="pattern_preview_edit">Редактировать</string>
+    <string name="pattern_preview_share">Поделиться</string>
+    <string name="pattern_preview_play">Воспроизвести</string>
+    <string name="pattern_preview_pause">Пауза</string>
+    <string name="pattern_preview_restart">Перезапустить</string>
+    <string name="pattern_preview_loop">Зациклить</string>
+    <string name="pattern_preview_send_to_device">Отправить на устройство</string>
+    <string name="pattern_preview_device_connected">Подключено</string>
+    <string name="pattern_preview_device_disconnected">Отключено</string>
+    <string name="pattern_preview_device_battery">Батарея: %d%%</string>
+    <string name="pattern_preview_device_signal">Сигнал: %s</string>
+    <string name="pattern_preview_signal_excellent">Отлично</string>
+    <string name="pattern_preview_signal_good">Хорошо</string>
+    <string name="pattern_preview_signal_fair">Средне</string>
+    <string name="pattern_preview_signal_poor">Слабо</string>
+    <string name="pattern_preview_metadata">Метаданные</string>
+    <string name="pattern_preview_author">Автор: %s</string>
+    <string name="pattern_preview_duration">Длительность: %s</string>
+    
+    <!-- Dialogs -->
+    <string name="dialog_delete_pattern_title">Удалить паттерн?</string>
+    <string name="dialog_delete_pattern_message">Это действие нельзя отменить</string>
+    <string name="dialog_delete_pattern_confirm">Удалить</string>
+    <string name="dialog_delete_pattern_cancel">Отмена</string>
+    
+    <string name="dialog_discard_changes_title">Несохранённые изменения</string>
+    <string name="dialog_discard_changes_message">Сохранить изменения перед выходом?</string>
+    <string name="dialog_discard_changes_save">Сохранить</string>
+    <string name="dialog_discard_changes_discard">Не сохранять</string>
+    <string name="dialog_discard_changes_cancel">Отмена</string>
+    
+    <string name="dialog_publish_pattern_title">Опубликовать паттерн</string>
+    <string name="dialog_publish_pattern_public_title">Публичное название</string>
+    <string name="dialog_publish_pattern_public_description">Публичное описание</string>
+    <string name="dialog_publish_pattern_tags">Теги</string>
+    <string name="dialog_publish_pattern_category">Категория</string>
+    <string name="dialog_publish_pattern_make_public">Сделать публичным сразу</string>
+    <string name="dialog_publish_pattern_confirm">Опубликовать</string>
+    <string name="dialog_publish_pattern_cancel">Отмена</string>
+    
+    <!-- Empty States -->
+    <string name="empty_patterns_title">Нет паттернов</string>
+    <string name="empty_patterns_description">Создайте свой первый паттерн</string>
+    <string name="empty_patterns_button">Создать паттерн</string>
+    
+    <string name="empty_search_title">Ничего не найдено</string>
+    <string name="empty_search_description">Попробуйте изменить поисковый запрос</string>
+    
+    <string name="empty_elements_title">Паттерн пуст</string>
+    <string name="empty_elements_description">Добавьте элементы для создания анимации</string>
+    
+    <string name="empty_public_patterns_title">Нет публичных паттернов</string>
+    <string name="empty_public_patterns_description">Загляните позже за паттернами от сообщества</string>
+    
+    <string name="empty_presets_title">Нет доступных пресетов</string>
+    <string name="empty_presets_description">Пресеты будут добавлены в будущих обновлениях</string>
+    
+    <!-- Success Messages -->
+    <string name="message_pattern_saved">Паттерн сохранён</string>
+    <string name="message_pattern_deleted">Паттерн удалён</string>
+    <string name="message_pattern_duplicated">Паттерн дублирован</string>
+    <string name="message_pattern_published">Паттерн опубликован</string>
+    <string name="message_pattern_sent_to_device">Паттерн отправлен на устройство</string>
+    
+    <!-- Error Messages -->
+    <string name="error_pattern_save_failed">Не удалось сохранить паттерн</string>
+    <string name="error_pattern_load_failed">Не удалось загрузить паттерн</string>
+    <string name="error_pattern_delete_failed">Не удалось удалить паттерн</string>
+    <string name="error_pattern_publish_failed">Не удалось опубликовать паттерн</string>
+    <string name="error_device_not_connected">Устройство не подключено</string>
+    <string name="error_device_send_failed">Не удалось отправить паттерн на устройство</string>
+    <string name="error_network_unavailable">Сеть недоступна</string>
+    <string name="error_unknown">Произошла ошибка</string>
+    
+    <!-- Validation Errors -->
+    <string name="error_invalid_pattern_title">Введите название паттерна</string>
+    <string name="error_pattern_title_too_short">Название паттерна слишком короткое</string>
+    <string name="error_pattern_title_too_long">Название паттерна слишком длинное</string>
+    <string name="error_pattern_no_elements">Паттерн должен содержать хотя бы один элемент</string>
+    <string name="error_invalid_hex_color">Неверный формат HEX цвета</string>
+    <string name="error_invalid_duration">Длительность должна быть от 100мс до 10с</string>
+    <string name="error_invalid_speed">Скорость должна быть от 50мс до 2с</string>
+    
+    <!-- Loading States -->
+    <string name="loading_patterns">Загрузка паттернов…</string>
+    <string name="loading_pattern">Загрузка паттерна…</string>
+    <string name="saving_pattern">Сохранение…</string>
+    <string name="sending_to_device">Отправка на устройство…</string>
+    
+    <!-- Content Descriptions -->
+    <string name="cd_create_pattern">Создать новый паттерн</string>
+    <string name="cd_search_patterns">Поиск паттернов</string>
+    <string name="cd_clear_search">Очистить поиск</string>
+    <string name="cd_filter_patterns">Фильтровать паттерны</string>
+    <string name="cd_pattern_preview">Предпросмотр паттерна</string>
+    <string name="cd_pattern_menu">Опции паттерна</string>
+    <string name="cd_close_editor">Закрыть редактор</string>
+    <string name="cd_save_pattern">Сохранить паттерн</string>
+    <string name="cd_preview_pattern">Предпросмотр паттерна</string>
+    <string name="cd_add_element">Добавить элемент</string>
+    <string name="cd_delete_element">Удалить элемент</string>
+    <string name="cd_move_element_up">Переместить элемент вверх</string>
+    <string name="cd_move_element_down">Переместить элемент вниз</string>
+    <string name="cd_expand_element">Развернуть детали элемента</string>
+    <string name="cd_collapse_element">Свернуть детали элемента</string>
+    <string name="cd_color_preview">Предпросмотр цвета</string>
+    <string name="cd_play_pattern">Воспроизвести паттерн</string>
+    <string name="cd_pause_pattern">Приостановить паттерн</string>
+    <string name="cd_restart_pattern">Перезапустить паттерн</string>
+    <string name="cd_send_to_device">Отправить паттерн на устройство</string>
+    <string name="cd_edit_pattern">Редактировать паттерн</string>
+    <string name="cd_share_pattern">Поделиться паттерном</string>
+    <string name="cd_back">Назад</string>
+    
+    <!-- Time Formats -->
+    <string name="time_format_ms">%d мс</string>
+    <string name="time_format_seconds">%.1f с</string>
+    <string name="time_format_minutes">%d мин</string>
+    
+    <!-- Plurals -->
+    <plurals name="pattern_elements_count">
+        <item quantity="one">%d элемент</item>
+        <item quantity="few">%d элемента</item>
+        <item quantity="many">%d элементов</item>
+    </plurals>
+    
+    <plurals name="pattern_duration_seconds">
+        <item quantity="one">%d секунда</item>
+        <item quantity="few">%d секунды</item>
+        <item quantity="many">%d секунд</item>
+    </plurals>
+    
+    <plurals name="pattern_downloads_count">
+        <item quantity="one">%d скачивание</item>
+        <item quantity="few">%d скачивания</item>
+        <item quantity="many">%d скачиваний</item>
+    </plurals>
+</resources>
