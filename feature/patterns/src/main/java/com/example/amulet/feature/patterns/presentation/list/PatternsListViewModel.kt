@@ -43,6 +43,7 @@ class PatternsListViewModel @Inject constructor(
             is PatternsListEvent.DeletePattern -> deletePattern(event.patternId)
             is PatternsListEvent.DuplicatePattern -> duplicatePattern(event.patternId)
             is PatternsListEvent.PreviewPattern -> navigateToPreview(event.patternId)
+            is PatternsListEvent.ToggleFilters -> toggleFilters()
             is PatternsListEvent.DismissError -> dismissError()
         }
     }
@@ -154,6 +155,10 @@ class PatternsListViewModel @Inject constructor(
                     _uiState.update { it.copy(error = error) }
                 }
         }
+    }
+
+    private fun toggleFilters() {
+        _uiState.update { it.copy(showFilters = !it.showFilters) }
     }
 
     private fun dismissError() {

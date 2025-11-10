@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,7 +78,7 @@ fun PatternElementEditor(
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Вверх",
+                                contentDescription = stringResource(R.string.cd_move_element_up),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -88,7 +90,7 @@ fun PatternElementEditor(
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Вниз",
+                                contentDescription = stringResource(R.string.cd_move_element_down),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -100,7 +102,7 @@ fun PatternElementEditor(
                     ) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Удалить",
+                            contentDescription = stringResource(R.string.cd_delete_element),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -111,7 +113,11 @@ fun PatternElementEditor(
                     ) {
                         Icon(
                             if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (showDetails) "Свернуть" else "Развернуть",
+                            contentDescription = if (showDetails) {
+                                stringResource(R.string.cd_collapse_element)
+                            } else {
+                                stringResource(R.string.cd_expand_element)
+                            },
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -146,10 +152,14 @@ private fun BreathingEditor(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorPicker(
             color = element.color,
-            onColorChange = { onUpdate(element.copy(color = it)) }
+            onColorChange = { onUpdate(element.copy(color = it)) },
+            label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text("Длительность: ${element.durationMs} мс", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_duration_label) + ": ${element.durationMs} мс",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.durationMs.toFloat(),
             onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
@@ -167,10 +177,14 @@ private fun PulseEditor(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorPicker(
             color = element.color,
-            onColorChange = { onUpdate(element.copy(color = it)) }
+            onColorChange = { onUpdate(element.copy(color = it)) },
+            label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text("Скорость: ${element.speed} мс", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speed} мс",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.speed.toFloat(),
             onValueChange = { onUpdate(element.copy(speed = it.toInt())) },
@@ -196,24 +210,31 @@ private fun ChaseEditor(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorPicker(
             color = element.color,
-            onColorChange = { onUpdate(element.copy(color = it)) }
+            onColorChange = { onUpdate(element.copy(color = it)) },
+            label = stringResource(R.string.pattern_element_color_label)
         )
 
-        Text("Направление", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_direction_label),
+            style = MaterialTheme.typography.bodySmall
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = element.direction == ChaseDirection.CLOCKWISE,
                 onClick = { onUpdate(element.copy(direction = ChaseDirection.CLOCKWISE)) },
-                label = { Text("По часовой") }
+                label = { Text(stringResource(R.string.pattern_element_direction_cw)) }
             )
             FilterChip(
                 selected = element.direction == ChaseDirection.COUNTER_CLOCKWISE,
                 onClick = { onUpdate(element.copy(direction = ChaseDirection.COUNTER_CLOCKWISE)) },
-                label = { Text("Против часовой") }
+                label = { Text(stringResource(R.string.pattern_element_direction_ccw)) }
             )
         }
         
-        Text("Скорость: ${element.speedMs} мс", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speedMs} мс",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.speedMs.toFloat(),
             onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
@@ -231,10 +252,14 @@ private fun FillEditor(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorPicker(
             color = element.color,
-            onColorChange = { onUpdate(element.copy(color = it)) }
+            onColorChange = { onUpdate(element.copy(color = it)) },
+            label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text("Длительность: ${element.durationMs} мс", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_duration_label) + ": ${element.durationMs} мс",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.durationMs.toFloat(),
             onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
@@ -250,17 +275,16 @@ private fun SpinnerEditor(
     onUpdate: (PatternElement) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Цвет 1", style = MaterialTheme.typography.bodySmall)
         ColorPicker(
             color = element.colors.getOrNull(0) ?: "#FFFFFF",
             onColorChange = { 
                 val newColors = element.colors.toMutableList()
                 newColors[0] = it
                 onUpdate(element.copy(colors = newColors))
-            }
+            },
+            label = stringResource(R.string.pattern_element_color_primary)
         )
 
-        Text("Цвет 2", style = MaterialTheme.typography.bodySmall)
         ColorPicker(
             color = element.colors.getOrNull(1) ?: "#000000",
             onColorChange = { 
@@ -271,10 +295,14 @@ private fun SpinnerEditor(
                     newColors.add(it)
                 }
                 onUpdate(element.copy(colors = newColors))
-            }
+            },
+            label = stringResource(R.string.pattern_element_color_secondary)
         )
         
-        Text("Скорость: ${element.speedMs} мс", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_speed_label) + ": ${element.speedMs} мс",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.speedMs.toFloat(),
             onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
@@ -292,10 +320,14 @@ private fun ProgressEditor(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ColorPicker(
             color = element.color,
-            onColorChange = { onUpdate(element.copy(color = it)) }
+            onColorChange = { onUpdate(element.copy(color = it)) },
+            label = stringResource(R.string.pattern_element_color_label)
         )
         
-        Text("Активных диодов: ${element.activeLeds}", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = stringResource(R.string.pattern_element_active_leds_label) + ": ${element.activeLeds}",
+            style = MaterialTheme.typography.bodySmall
+        )
         Slider(
             value = element.activeLeds.toFloat(),
             onValueChange = { onUpdate(element.copy(activeLeds = it.toInt())) },
@@ -320,46 +352,6 @@ private fun SequenceEditor(
     }
 }
 
-@Composable
-private fun ColorPicker(
-    color: String,
-    onColorChange: (String) -> Unit
-) {
-    val presetColors = listOf(
-        "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF",
-        "#FF8800", "#8800FF", "#00FF88", "#FFFFFF"
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Цвет: $color", style = MaterialTheme.typography.bodySmall)
-        
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            presetColors.take(5).forEach { presetColor ->
-                FilterChip(
-                    selected = color.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorChange(presetColor) },
-                    label = { Text(presetColor.takeLast(6)) }
-                )
-            }
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            presetColors.drop(5).forEach { presetColor ->
-                FilterChip(
-                    selected = color.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorChange(presetColor) },
-                    label = { Text(presetColor.takeLast(6)) }
-                )
-            }
-        }
-    }
-}
-
 // Вспомогательные функции
 
 private fun getElementIcon(element: PatternElement) = when (element) {
@@ -372,14 +364,15 @@ private fun getElementIcon(element: PatternElement) = when (element) {
     is PatternElementSequence -> Icons.Default.ViewList
 }
 
+@Composable
 private fun getElementName(element: PatternElement) = when (element) {
-    is PatternElementBreathing -> "Дыхание"
-    is PatternElementPulse -> "Пульсация"
-    is PatternElementChase -> "Бегущие огни"
-    is PatternElementFill -> "Заполнение"
-    is PatternElementSpinner -> "Спиннер"
-    is PatternElementProgress -> "Прогресс"
-    is PatternElementSequence -> "Последовательность"
+    is PatternElementBreathing -> stringResource(R.string.pattern_element_breathing)
+    is PatternElementPulse -> stringResource(R.string.pattern_element_pulse)
+    is PatternElementChase -> stringResource(R.string.pattern_element_chase)
+    is PatternElementFill -> stringResource(R.string.pattern_element_fill)
+    is PatternElementSpinner -> stringResource(R.string.pattern_element_spinner)
+    is PatternElementProgress -> stringResource(R.string.pattern_element_progress)
+    is PatternElementSequence -> stringResource(R.string.pattern_element_sequence)
 }
 
 private fun getElementDescription(element: PatternElement) = when (element) {

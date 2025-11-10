@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Patterns List Screen -->
+    <string name="screen_patterns_list">Patterns</string>
     <string name="patterns_screen_title">Patterns</string>
+    <string name="tab_my_patterns">My Patterns</string>
+    <string name="tab_public_patterns">Public</string>
+    <string name="tab_presets">Presets</string>
     <string name="patterns_tab_my">My Patterns</string>
     <string name="patterns_tab_public">Public</string>
     <string name="patterns_tab_presets">Presets</string>
+    <string name="search_patterns_placeholder">Search patterns…</string>
     <string name="patterns_search_hint">Search patterns…</string>
     <string name="patterns_filter_button">Filter</string>
+    <string name="action_create_pattern">Create pattern</string>
     <string name="patterns_create_button">Create pattern</string>
     
     <!-- Pattern Card -->
@@ -138,7 +144,7 @@
     <string name="empty_patterns_button">Create pattern</string>
     
     <string name="empty_search_title">Nothing found</string>
-    <string name="empty_search_description">Try changing your search query</string>
+    <string name="empty_search_description">No patterns match \"%1$s\"</string>
     
     <string name="empty_elements_title">Pattern is empty</string>
     <string name="empty_elements_description">Add elements to create animation</string>
@@ -204,6 +210,7 @@
     <string name="cd_send_to_device">Send pattern to device</string>
     <string name="cd_edit_pattern">Edit pattern</string>
     <string name="cd_share_pattern">Share pattern</string>
+    <string name="cd_navigate_back">Back</string>
     <string name="cd_back">Back</string>
     
     <!-- Time Formats -->

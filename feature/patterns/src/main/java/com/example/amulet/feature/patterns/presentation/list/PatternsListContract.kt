@@ -18,6 +18,7 @@ data class PatternsListState(
     val selectedTab: PatternTab = PatternTab.MY_PATTERNS,
     val selectedFilter: PatternKind? = null,
     val searchQuery: String = "",
+    val showFilters: Boolean = false,
     val error: AppError? = null
 )
 
@@ -37,6 +38,7 @@ sealed interface PatternsListEvent {
     data class DeletePattern(val patternId: String) : PatternsListEvent
     data class DuplicatePattern(val patternId: String) : PatternsListEvent
     data class PreviewPattern(val patternId: String) : PatternsListEvent
+    data object ToggleFilters : PatternsListEvent
     data object DismissError : PatternsListEvent
 }
 

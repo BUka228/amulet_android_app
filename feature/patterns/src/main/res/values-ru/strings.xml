@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Patterns List Screen -->
+    <string name="screen_patterns_list">Паттерны</string>
     <string name="patterns_screen_title">Паттерны</string>
+    <string name="tab_my_patterns">Мои паттерны</string>
+    <string name="tab_public_patterns">Публичные</string>
+    <string name="tab_presets">Пресеты</string>
     <string name="patterns_tab_my">Мои паттерны</string>
     <string name="patterns_tab_public">Публичные</string>
     <string name="patterns_tab_presets">Пресеты</string>
+    <string name="search_patterns_placeholder">Поиск паттернов…</string>
     <string name="patterns_search_hint">Поиск паттернов…</string>
     <string name="patterns_filter_button">Фильтр</string>
+    <string name="action_create_pattern">Создать паттерн</string>
     <string name="patterns_create_button">Создать паттерн</string>
     
     <!-- Pattern Card -->
@@ -138,7 +144,7 @@
     <string name="empty_patterns_button">Создать паттерн</string>
     
     <string name="empty_search_title">Ничего не найдено</string>
-    <string name="empty_search_description">Попробуйте изменить поисковый запрос</string>
+    <string name="empty_search_description">Нет паттернов, соответствующих запросу \"%1$s\"</string>
     
     <string name="empty_elements_title">Паттерн пуст</string>
     <string name="empty_elements_description">Добавьте элементы для создания анимации</string>
@@ -204,6 +210,7 @@
     <string name="cd_send_to_device">Отправить паттерн на устройство</string>
     <string name="cd_edit_pattern">Редактировать паттерн</string>
     <string name="cd_share_pattern">Поделиться паттерном</string>
+    <string name="cd_navigate_back">Назад</string>
     <string name="cd_back">Назад</string>
     
     <!-- Time Formats -->
