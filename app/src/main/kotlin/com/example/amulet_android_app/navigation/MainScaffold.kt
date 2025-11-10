@@ -142,7 +142,7 @@ private fun getBottomNavItems() = listOf(
         label = stringResource(R.string.bottom_nav_hugs)
     ),
     BottomNavItem(
-        route = "patterns/main",
+        route = "patterns/list",
         icon = Icons.Default.Notifications,
         label = stringResource(R.string.bottom_nav_patterns)
     ),

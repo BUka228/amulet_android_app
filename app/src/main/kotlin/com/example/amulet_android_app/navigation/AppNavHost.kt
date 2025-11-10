@@ -9,6 +9,7 @@ import com.example.amulet.feature.auth.navigation.AuthGraph
 import com.example.amulet.feature.auth.navigation.authGraph
 import com.example.amulet.feature.dashboard.navigation.dashboardGraph
 import com.example.amulet.feature.devices.navigation.devicesGraph
+import com.example.amulet.feature.patterns.navigation.patternsGraph
 
 @Composable
 fun AppNavHost(
@@ -38,6 +39,12 @@ fun AppNavHost(
             onNavigateBack = { navController.popBackStack() }
         )
 
+        // Patterns Graph - управление паттернами световых анимаций
+        patternsGraph(
+            navController = navController,
+            onNavigateBack = { navController.popBackStack() }
+        )
+
         // Placeholder destinations для bottom navigation
         composable("library/main") {
             LibraryPlaceholderScreen()
@@ -45,10 +52,6 @@ fun AppNavHost(
         
         composable("hugs/main") {
             HugsPlaceholderScreen()
-        }
-        
-        composable("patterns/main") {
-            PatternsPlaceholderScreen()
         }
         
         composable("settings/main") {

@@ -1,0 +1,100 @@
+package com.example.amulet.feature.patterns.navigation
+
+import androidx.navigation.NavController
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
+import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import androidx.navigation.navigation
+import com.example.amulet.feature.patterns.presentation.editor.PatternEditorRoute
+import com.example.amulet.feature.patterns.presentation.list.PatternsListRoute
+import com.example.amulet.feature.patterns.presentation.preview.PatternPreviewRoute
+
+object PatternsGraph {
+    const val route: String = "patterns_graph"
+}
+
+object PatternsDestination {
+    const val list: String = "patterns/list"
+    const val editor: String = "patterns/editor?patternId={patternId}"
+    const val preview: String = "patterns/preview/{patternId}"
+}
+
+fun NavController.navigateToPatternsList(popUpToInclusive: Boolean = false) {
+    navigate(PatternsDestination.list) {
+        if (popUpToInclusive) {
+            popUpTo(PatternsDestination.list) { inclusive = true }
+        }
+        launchSingleTop = true
+    }
+}
+
+fun NavController.navigateToPatternEditor(patternId: String? = null) {
+    val route = if (patternId != null) {
+        "patterns/editor?patternId=$patternId"
+    } else {
+        "patterns/editor"
+    }
+    navigate(route) {
+        launchSingleTop = true
+    }
+}
+
+fun NavController.navigateToPatternPreview(patternId: String) {
+    navigate("patterns/preview/$patternId") {
+        launchSingleTop = true
+    }
+}
+
+fun NavGraphBuilder.patternsGraph(
+    navController: NavController,
+    onNavigateBack: () -> Unit
+) {
+    navigation(startDestination = PatternsDestination.list, route = PatternsGraph.route) {
+        // Список паттернов
+        composable(route = PatternsDestination.list) {
+            PatternsListRoute(
+                onNavigateToEditor = { patternId ->
+                    navController.navigateToPatternEditor(patternId)
+                },
+                onNavigateToPreview = { patternId ->
+                    navController.navigateToPatternPreview(patternId)
+                },
+                onNavigateBack = onNavigateBack
+            )
+        }
+
+        // Редактор паттернов
+        composable(
+            route = PatternsDestination.editor,
+            arguments = listOf(
+                navArgument("patternId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) {
+            PatternEditorRoute(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPreview = {
+                    // Предпросмотр из редактора будет реализован позже
+                }
+            )
+        }
+
+        // Предпросмотр паттерна
+        composable(
+            route = PatternsDestination.preview,
+            arguments = listOf(
+                navArgument("patternId") {
+                    type = NavType.StringType
+                }
+            )
+        ) {
+            PatternPreviewRoute(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
