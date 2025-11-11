@@ -28,11 +28,9 @@ import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
-import com.github.michaelbull.result.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 import javax.inject.Inject
@@ -132,7 +130,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 patternsUpdated = 0,
                 patternsDeleted = 0
             ))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.Unknown)
         }
     }
@@ -194,10 +192,10 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             
             // Планируем синхронизацию
-            outboxScheduler.scheduleSync()
+            //outboxScheduler.scheduleSync()
             
             Ok(pattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -259,10 +257,10 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            outboxScheduler.scheduleSync()
+            //outboxScheduler.scheduleSync()
             
             Ok(updatedPattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -293,10 +291,10 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            outboxScheduler.scheduleSync()
+            //outboxScheduler.scheduleSync()
             
             Ok(Unit)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -315,9 +313,9 @@ class PatternsRepositoryImpl @Inject constructor(
             
             val updatedPattern = currentPattern.copy(
                 public = true,
-                title = metadata.title ?: currentPattern.title,
-                description = metadata.description ?: currentPattern.description,
-                tags = metadata.tags ?: currentPattern.tags,
+                title = metadata.title,
+                description = metadata.description,
+                tags = metadata.tags,
                 updatedAt = System.currentTimeMillis()
             )
             
@@ -354,10 +352,10 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            outboxScheduler.scheduleSync()
+            //outboxScheduler.scheduleSync()
             
             Ok(updatedPattern)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -394,10 +392,10 @@ class PatternsRepositoryImpl @Inject constructor(
                 }
             }
             
-            outboxScheduler.scheduleSync()
+            //outboxScheduler.scheduleSync()
             
             Ok(Unit)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -423,7 +421,7 @@ class PatternsRepositoryImpl @Inject constructor(
             )
             
             Ok(Unit)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
@@ -445,7 +443,7 @@ class PatternsRepositoryImpl @Inject constructor(
             )
             
             Ok(Unit)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Err(AppError.DatabaseError)
         }
     }
