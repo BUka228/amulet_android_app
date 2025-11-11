@@ -16,9 +16,8 @@ data class PatternsListState(
     val isRefreshing: Boolean = false,
     val isEmpty: Boolean = false,
     val selectedTab: PatternTab = PatternTab.MY_PATTERNS,
-    val selectedFilter: PatternKind? = null,
     val searchQuery: String = "",
-    val showFilters: Boolean = false,
+    val isSearchActive: Boolean = false,
     val error: AppError? = null
 )
 
@@ -31,14 +30,13 @@ enum class PatternTab {
 sealed interface PatternsListEvent {
     data object Refresh : PatternsListEvent
     data class SelectTab(val tab: PatternTab) : PatternsListEvent
-    data class SelectFilter(val kind: PatternKind?) : PatternsListEvent
     data class UpdateSearchQuery(val query: String) : PatternsListEvent
     data class PatternClicked(val patternId: String) : PatternsListEvent
     data object CreatePatternClicked : PatternsListEvent
     data class DeletePattern(val patternId: String) : PatternsListEvent
     data class DuplicatePattern(val patternId: String) : PatternsListEvent
     data class PreviewPattern(val patternId: String) : PatternsListEvent
-    data object ToggleFilters : PatternsListEvent
+    data object ToggleSearch : PatternsListEvent
     data object DismissError : PatternsListEvent
 }
 

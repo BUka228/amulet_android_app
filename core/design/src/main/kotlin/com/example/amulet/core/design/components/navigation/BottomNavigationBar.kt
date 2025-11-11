@@ -37,19 +37,14 @@ fun AmuletBottomNavigationBar(
 ) {
     Surface(
         modifier = modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-            ),
+            .fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -87,14 +82,14 @@ private fun AmuletBottomNavItem(
     )
 
     val animatedIconSize by animateDpAsState(
-        targetValue = if (isSelected) 28.dp else 24.dp,
+        targetValue = if (isSelected) 24.dp else 22.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
         label = "size"
     )
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(animatedBackgroundColor)
             .selectable(
                 selected = isSelected,
@@ -102,7 +97,7 @@ private fun AmuletBottomNavItem(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
             )
-            .padding(vertical = 8.dp, horizontal = 12.dp),
+            .padding(vertical = 6.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -116,15 +111,5 @@ private fun AmuletBottomNavItem(
                 tint = animatedContentColor
             )
         }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        Text(
-            text = item.label,
-            color = animatedContentColor,
-            fontSize = if (isSelected) 12.sp else 11.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            maxLines = 1
-        )
     }
 }

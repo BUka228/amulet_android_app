@@ -190,9 +190,18 @@
     <string name="saving_pattern">Saving…</string>
     <string name="sending_to_device">Sending to device…</string>
     
+    <!-- Filters -->
+    <string name="filter_all">All</string>
+    <string name="pattern_kind_breathing">Breathing</string>
+    <string name="pattern_kind_meditation">Meditation</string>
+    <string name="pattern_kind_notification">Notification</string>
+    <string name="pattern_kind_ambient">Ambient</string>
+    <string name="pattern_kind_custom">Custom</string>
+    
     <!-- Content Descriptions -->
     <string name="cd_create_pattern">Create new pattern</string>
     <string name="cd_search_patterns">Search patterns</string>
+    <string name="cd_close_search">Close search</string>
     <string name="cd_clear_search">Clear search</string>
     <string name="cd_filter_patterns">Filter patterns</string>
     <string name="cd_pattern_preview">Pattern preview</string>

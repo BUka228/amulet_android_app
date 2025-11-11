@@ -190,9 +190,18 @@
     <string name="saving_pattern">Сохранение…</string>
     <string name="sending_to_device">Отправка на устройство…</string>
     
+    <!-- Filters -->
+    <string name="filter_all">Все</string>
+    <string name="pattern_kind_breathing">Дыхание</string>
+    <string name="pattern_kind_meditation">Медитация</string>
+    <string name="pattern_kind_notification">Уведомление</string>
+    <string name="pattern_kind_ambient">Фоновый</string>
+    <string name="pattern_kind_custom">Пользовательский</string>
+    
     <!-- Content Descriptions -->
     <string name="cd_create_pattern">Создать новый паттерн</string>
     <string name="cd_search_patterns">Поиск паттернов</string>
+    <string name="cd_close_search">Закрыть поиск</string>
     <string name="cd_clear_search">Очистить поиск</string>
     <string name="cd_filter_patterns">Фильтровать паттерны</string>
     <string name="cd_pattern_preview">Предпросмотр паттерна</string>

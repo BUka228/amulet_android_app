@@ -36,14 +36,13 @@ class PatternsListViewModel @Inject constructor(
         when (event) {
             is PatternsListEvent.Refresh -> refresh()
             is PatternsListEvent.SelectTab -> selectTab(event.tab)
-            is PatternsListEvent.SelectFilter -> selectFilter(event.kind)
             is PatternsListEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
             is PatternsListEvent.PatternClicked -> navigateToEditor(event.patternId)
             is PatternsListEvent.CreatePatternClicked -> navigateToEditor(null)
             is PatternsListEvent.DeletePattern -> deletePattern(event.patternId)
             is PatternsListEvent.DuplicatePattern -> duplicatePattern(event.patternId)
             is PatternsListEvent.PreviewPattern -> navigateToPreview(event.patternId)
-            is PatternsListEvent.ToggleFilters -> toggleFilters()
+            is PatternsListEvent.ToggleSearch -> toggleSearch()
             is PatternsListEvent.DismissError -> dismissError()
         }
     }
@@ -101,10 +100,6 @@ class PatternsListViewModel @Inject constructor(
         }
     }
 
-    private fun selectFilter(kind: com.example.amulet.shared.domain.patterns.model.PatternKind?) {
-        _uiState.update { it.copy(selectedFilter = kind) }
-    }
-
     private fun updateSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
@@ -157,8 +152,13 @@ class PatternsListViewModel @Inject constructor(
         }
     }
 
-    private fun toggleFilters() {
-        _uiState.update { it.copy(showFilters = !it.showFilters) }
+    private fun toggleSearch() {
+        _uiState.update { 
+            it.copy(
+                isSearchActive = !it.isSearchActive,
+                searchQuery = if (!it.isSearchActive) it.searchQuery else ""
+            )
+        }
     }
 
     private fun dismissError() {

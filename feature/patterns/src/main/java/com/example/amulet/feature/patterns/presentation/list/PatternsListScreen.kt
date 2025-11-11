@@ -1,27 +1,28 @@
 package com.example.amulet.feature.patterns.presentation.list
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.PatternCard
@@ -69,23 +70,40 @@ fun PatternsListScreen(
     onEvent: (PatternsListEvent) -> Unit,
 ) {
     val scaffoldState = LocalScaffoldState.current
+    var searchText by remember { mutableStateOf(state.searchQuery) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // Настройка TopBar и FAB
     SideEffect {
         scaffoldState.updateConfig {
             copy(
                 topBar = {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.screen_patterns_list)) },
-                        actions = {
-                            IconButton(onClick = { onEvent(PatternsListEvent.ToggleFilters) }) {
-                                Icon(
-                                    Icons.Default.FilterList,
-                                    contentDescription = stringResource(R.string.cd_filter_patterns)
-                                )
+                    if (state.isSearchActive) {
+                        SearchTopBar(
+                            searchText = searchText,
+                            onSearchTextChange = { searchText = it },
+                            onClose = {
+                                searchText = ""
+                                onEvent(PatternsListEvent.ToggleSearch)
+                            },
+                            onClear = { searchText = "" },
+                            keyboardController = keyboardController
+                        )
+                    } else {
+                        TopAppBar(
+                            title = { Text(stringResource(R.string.screen_patterns_list)) },
+                            actions = {
+                                IconButton(
+                                    onClick = { onEvent(PatternsListEvent.ToggleSearch) }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(R.string.cd_search_patterns)
+                                    )
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 },
                 floatingActionButton = {
                     FloatingActionButton(
@@ -101,19 +119,32 @@ fun PatternsListScreen(
         }
     }
 
+    // Обновление поискового запроса с debounce
+    LaunchedEffect(searchText) {
+        snapshotFlow { searchText }
+            .debounce(300)
+            .collect { query ->
+                onEvent(PatternsListEvent.UpdateSearchQuery(query))
+            }
+    }
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Табы
         ScrollableTabRow(
             selectedTabIndex = state.selectedTab.ordinal,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            edgePadding = 0.dp
         ) {
             PatternTab.entries.forEach { tab ->
                 Tab(
                     selected = state.selectedTab == tab,
                     onClick = { onEvent(PatternsListEvent.SelectTab(tab)) },
-                    text = { 
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+                        ),
+                    text = {
                         Text(
                             when (tab) {
                                 PatternTab.MY_PATTERNS -> stringResource(R.string.tab_my_patterns)
@@ -125,38 +156,6 @@ fun PatternsListScreen(
                 )
             }
         }
-
-        // Поисковая строка
-        var searchText by remember { mutableStateOf(state.searchQuery) }
-        
-        LaunchedEffect(searchText) {
-            snapshotFlow { searchText }
-                .debounce(300)
-                .collect { query ->
-                    onEvent(PatternsListEvent.UpdateSearchQuery(query))
-                }
-        }
-        
-        AmuletTextField(
-            value = searchText,
-            onValueChange = { searchText = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = stringResource(R.string.search_patterns_placeholder),
-            leadingIcon = Icons.Default.Search,
-            trailingIconContent = if (searchText.isNotEmpty()) {
-                {
-                    IconButton(onClick = { searchText = "" }) {
-                        Icon(
-                            Icons.Default.Clear,
-                            contentDescription = stringResource(R.string.cd_clear_search)
-                        )
-                    }
-                }
-            } else null,
-            singleLine = true
-        )
 
         when {
             state.isLoading -> {
@@ -177,8 +176,7 @@ fun PatternsListScreen(
 
             else -> {
                 val filteredPatterns = state.patterns.filter { pattern ->
-                    (state.selectedFilter == null || pattern.kind == state.selectedFilter) &&
-                    (state.searchQuery.isEmpty() || pattern.title.contains(state.searchQuery, ignoreCase = true))
+                    state.searchQuery.isEmpty() || pattern.title.contains(state.searchQuery, ignoreCase = true)
                 }
 
                 if (filteredPatterns.isEmpty() && state.searchQuery.isNotEmpty()) {
@@ -210,6 +208,71 @@ fun PatternsListScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchTopBar(
+    searchText: String,
+    onSearchTextChange: (String) -> Unit,
+    onClose: () -> Unit,
+    onClear: () -> Unit,
+    keyboardController: androidx.compose.ui.platform.SoftwareKeyboardController?
+) {
+    val focusRequester = remember { FocusRequester() }
+
+    DisposableEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+        onDispose { }
+    }
+
+    TopAppBar(
+        title = {
+            TextField(
+                value = searchText,
+                onValueChange = onSearchTextChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .focusRequester(focusRequester),
+                placeholder = {
+                    Text(
+                        stringResource(R.string.search_patterns_placeholder),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyLarge,
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                )
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onClose) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.cd_close_search)
+                )
+            }
+        },
+        actions = {
+            if (searchText.isNotEmpty()) {
+                IconButton(onClick = onClear) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = stringResource(R.string.cd_clear_search)
+                    )
+                }
+            }
+        }
+    )
 }
 
 @Composable

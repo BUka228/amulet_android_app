@@ -26,6 +26,8 @@ import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.PatternElementEditor
 import com.example.amulet.feature.patterns.presentation.components.PatternElementPickerDialog
+import com.example.amulet.feature.patterns.presentation.components.PublishPatternData
+import com.example.amulet.feature.patterns.presentation.components.PublishPatternDialog
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
 
@@ -36,7 +38,11 @@ fun PatternEditorRoute(
     onNavigateToPreview: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     var showElementPicker by remember { mutableStateOf(false) }
+    var showDiscardDialog by remember { mutableStateOf(false) }
+    var showPublishDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.sideEffect.collectLatest { effect ->
@@ -44,13 +50,16 @@ fun PatternEditorRoute(
                 is PatternEditorSideEffect.NavigateBack -> onNavigateBack()
                 is PatternEditorSideEffect.NavigateToPreview -> onNavigateToPreview()
                 is PatternEditorSideEffect.ShowSnackbar -> {
-                    // Handle snackbar
+                    snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        duration = SnackbarDuration.Short
+                    )
                 }
                 is PatternEditorSideEffect.ShowDiscardConfirmation -> {
-                    // Handle confirmation dialog
+                    showDiscardDialog = true
                 }
                 is PatternEditorSideEffect.ShowPublishDialog -> {
-                    // Handle publish dialog
+                    showPublishDialog = true
                 }
                 is PatternEditorSideEffect.ShowElementPicker -> {
                     showElementPicker = true
@@ -62,9 +71,13 @@ fun PatternEditorRoute(
     PatternEditorScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
-        onNavigateBack = onNavigateBack,
+        snackbarHostState = snackbarHostState,
         showElementPicker = showElementPicker,
-        onDismissElementPicker = { showElementPicker = false }
+        onDismissElementPicker = { showElementPicker = false },
+        showDiscardDialog = showDiscardDialog,
+        onDismissDiscardDialog = { showDiscardDialog = false },
+        showPublishDialog = showPublishDialog,
+        onDismissPublishDialog = { showPublishDialog = false }
     )
 }
 
