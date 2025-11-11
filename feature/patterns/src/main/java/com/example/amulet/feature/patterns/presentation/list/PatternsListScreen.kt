@@ -34,7 +34,6 @@ fun PatternsListRoute(
     viewModel: PatternsListViewModel = hiltViewModel(),
     onNavigateToEditor: (String?) -> Unit,
     onNavigateToPreview: (String) -> Unit,
-    onNavigateBack: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -60,16 +59,14 @@ fun PatternsListRoute(
     PatternsListScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
-        onNavigateBack = onNavigateBack
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, FlowPreview::class)
 @Composable
 fun PatternsListScreen(
     state: PatternsListState,
     onEvent: (PatternsListEvent) -> Unit,
-    onNavigateBack: () -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
 
@@ -80,14 +77,6 @@ fun PatternsListScreen(
                 topBar = {
                     TopAppBar(
                         title = { Text(stringResource(R.string.screen_patterns_list)) },
-                        navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = stringResource(R.string.cd_navigate_back)
-                                )
-                            }
-                        },
                         actions = {
                             IconButton(onClick = { onEvent(PatternsListEvent.ToggleFilters) }) {
                                 Icon(
@@ -120,7 +109,7 @@ fun PatternsListScreen(
             selectedTabIndex = state.selectedTab.ordinal,
             modifier = Modifier.fillMaxWidth()
         ) {
-            PatternTab.values().forEach { tab ->
+            PatternTab.entries.forEach { tab ->
                 Tab(
                     selected = state.selectedTab == tab,
                     onClick = { onEvent(PatternsListEvent.SelectTab(tab)) },
@@ -207,48 +196,14 @@ fun PatternsListScreen(
                             items = filteredPatterns,
                             key = { it.id.value }
                         ) { pattern ->
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn(
-                                    animationSpec = tween(
-                                        durationMillis = 300,
-                                        easing = FastOutSlowInEasing
-                                    )
-                                ) + scaleIn(
-                                    initialScale = 0.9f,
-                                    animationSpec = tween(
-                                        durationMillis = 300,
-                                        easing = FastOutSlowInEasing
-                                    )
-                                ),
-                                exit = fadeOut(
-                                    animationSpec = tween(
-                                        durationMillis = 200,
-                                        easing = FastOutSlowInEasing
-                                    )
-                                ) + scaleOut(
-                                    targetScale = 0.9f,
-                                    animationSpec = tween(
-                                        durationMillis = 200,
-                                        easing = FastOutSlowInEasing
-                                    )
-                                )
-                            ) {
-                                PatternCard(
-                                    pattern = pattern,
-                                    onClick = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
-                                    onPreview = { onEvent(PatternsListEvent.PreviewPattern(pattern.id.value)) },
-                                    onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
-                                    onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
-                                    onDuplicate = { onEvent(PatternsListEvent.DuplicatePattern(pattern.id.value)) },
-                                    modifier = Modifier.animateItemPlacement(
-                                        animationSpec = tween(
-                                            durationMillis = 300,
-                                            easing = FastOutSlowInEasing
-                                        )
-                                    )
-                                )
-                            }
+                            PatternCard(
+                                pattern = pattern,
+                                onClick = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
+                                onPreview = { onEvent(PatternsListEvent.PreviewPattern(pattern.id.value)) },
+                                onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
+                                onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
+                                onDuplicate = { onEvent(PatternsListEvent.DuplicatePattern(pattern.id.value)) }
+                            )
                         }
                     }
                 }

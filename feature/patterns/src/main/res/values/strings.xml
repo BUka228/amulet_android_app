@@ -215,6 +215,17 @@
     <string name="cd_share_pattern">Share pattern</string>
     <string name="cd_navigate_back">Back</string>
     <string name="cd_back">Back</string>
+    <string name="cd_pattern_kind_icon">Pattern type icon</string>
+    <string name="cd_element_type_icon">Element type icon</string>
+    <string name="cd_color_indicator">Color indicator</string>
+    <string name="cd_device_status">Device status</string>
+    <string name="cd_battery_level">Battery level</string>
+    <string name="cd_connection_status">Connection status</string>
+    <string name="cd_loop_toggle">Toggle loop</string>
+    <string name="cd_element_icon">Element icon</string>
+    <string name="cd_close_dialog">Close dialog</string>
+    <string name="cd_select_color">Select color %s</string>
+    <string name="cd_pattern_type_filter">Filter by pattern type</string>
     
     <!-- Time Formats -->
     <string name="time_format_ms">%d ms</string>

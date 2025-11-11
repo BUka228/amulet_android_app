@@ -1,5 +1,13 @@
 package com.example.amulet.feature.patterns.presentation.editor
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -60,7 +68,7 @@ fun PatternEditorRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PatternEditorScreen(
     state: PatternEditorState,
@@ -259,22 +267,64 @@ fun PatternEditorScreen(
 
             itemsIndexed(
                 items = state.elements,
-                key = { index, _ -> index }
+                key = { index, element -> "$index-${element.hashCode()}" }
             ) { index, element ->
-                PatternElementEditor(
-                    element = element,
-                    index = index,
-                    isSelected = state.selectedElementIndex == index,
-                    onSelect = { onEvent(PatternEditorEvent.SelectElement(index)) },
-                    onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
-                    onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
-                    onMoveUp = if (index > 0) {
-                        { onEvent(PatternEditorEvent.MoveElement(index, index - 1)) }
-                    } else null,
-                    onMoveDown = if (index < state.elements.size - 1) {
-                        { onEvent(PatternEditorEvent.MoveElement(index, index + 1)) }
-                    } else null
-                )
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 300,
+                            easing = FastOutSlowInEasing
+                        )
+                    ) + scaleIn(
+                        initialScale = 0.9f,
+                        animationSpec = tween(
+                            durationMillis = 300,
+                            easing = FastOutSlowInEasing
+                        )
+                    ),
+                    exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    ) + scaleOut(
+                        targetScale = 0.9f,
+                        animationSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        )
+                    ),
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = tween(
+                            durationMillis = 300,
+                            easing = FastOutSlowInEasing
+                        ),
+                        fadeOutSpec = tween(
+                            durationMillis = 200,
+                            easing = FastOutSlowInEasing
+                        ),
+                        placementSpec = tween(
+                            durationMillis = 300,
+                            easing = FastOutSlowInEasing
+                        )
+                    )
+                ) {
+                    PatternElementEditor(
+                        element = element,
+                        index = index,
+                        isSelected = state.selectedElementIndex == index,
+                        onSelect = { onEvent(PatternEditorEvent.SelectElement(index)) },
+                        onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
+                        onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
+                        onMoveUp = if (index > 0) {
+                            { onEvent(PatternEditorEvent.MoveElement(index, index - 1)) }
+                        } else null,
+                        onMoveDown = if (index < state.elements.size - 1) {
+                            { onEvent(PatternEditorEvent.MoveElement(index, index + 1)) }
+                        } else null
+                    )
+                }
             }
 
             if (state.elements.isEmpty()) {

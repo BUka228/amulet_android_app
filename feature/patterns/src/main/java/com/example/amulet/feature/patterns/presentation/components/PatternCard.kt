@@ -100,7 +100,7 @@ fun PatternCard(
                                     PatternKind.HAPTIC -> Icons.Default.SettingsInputComponent
                                     PatternKind.COMBO -> Icons.Default.Star
                                 },
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.cd_pattern_kind_icon),
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -139,7 +139,7 @@ fun PatternCard(
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Download,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.pattern_card_downloads),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }

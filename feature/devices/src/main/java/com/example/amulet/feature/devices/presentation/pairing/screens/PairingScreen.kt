@@ -447,7 +447,7 @@ private fun DeviceCard(
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    device.deviceName ?: "Amulet",
+                    device.deviceName,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(

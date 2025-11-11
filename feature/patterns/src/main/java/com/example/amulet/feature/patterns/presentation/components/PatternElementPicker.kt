@@ -55,7 +55,7 @@ fun PatternElementPickerDialog(
                         IconButton(onClick = onDismiss) {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = stringResource(R.string.cd_back)
+                                contentDescription = stringResource(R.string.cd_close_dialog)
                             )
                         }
                     },

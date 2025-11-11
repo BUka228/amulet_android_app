@@ -1,5 +1,11 @@
 package com.example.amulet.feature.patterns.navigation
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -48,19 +54,23 @@ fun NavController.navigateToPatternPreview(patternId: String) {
 
 fun NavGraphBuilder.patternsGraph(
     navController: NavController,
-    onNavigateBack: () -> Unit
 ) {
+    // Константы для анимаций
+    val animationDuration = 300
+    
     navigation(startDestination = PatternsDestination.list, route = PatternsGraph.route) {
         // Список паттернов
-        composable(route = PatternsDestination.list) {
+        composable(
+            route = PatternsDestination.list,
+
+        ) {
             PatternsListRoute(
                 onNavigateToEditor = { patternId ->
                     navController.navigateToPatternEditor(patternId)
                 },
                 onNavigateToPreview = { patternId ->
                     navController.navigateToPatternPreview(patternId)
-                },
-                onNavigateBack = onNavigateBack
+                }
             )
         }
 
@@ -73,7 +83,63 @@ fun NavGraphBuilder.patternsGraph(
                     nullable = true
                     defaultValue = null
                 }
-            )
+            ),
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            exitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            popEnterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            popExitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            }
         ) {
             PatternEditorRoute(
                 onNavigateBack = { navController.popBackStack() },
@@ -90,7 +156,63 @@ fun NavGraphBuilder.patternsGraph(
                 navArgument("patternId") {
                     type = NavType.StringType
                 }
-            )
+            ),
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            exitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            popEnterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeIn(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            },
+            popExitTransition = {
+                slideOutHorizontally(
+                    targetOffsetX = { it },
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                ) + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = animationDuration,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            }
         ) { backStackEntry ->
             val patternId = backStackEntry.arguments?.getString("patternId")
             PatternPreviewRoute(

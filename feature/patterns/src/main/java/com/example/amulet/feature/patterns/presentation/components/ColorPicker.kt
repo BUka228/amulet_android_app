@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.amulet.feature.patterns.R
 
@@ -91,12 +93,14 @@ private fun PresetColorGrid(
             modifier = Modifier.fillMaxWidth()
         ) {
             presetColors.take(5).forEach { presetColor ->
-                ColorChip(
-                    color = presetColor,
-                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorSelected(presetColor) },
-                    modifier = Modifier.weight(1f)
-                )
+                key(presetColor) {
+                    ColorChip(
+                        color = presetColor,
+                        isSelected = selectedColor.equals(presetColor, ignoreCase = true),
+                        onClick = { onColorSelected(presetColor) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
@@ -106,12 +110,14 @@ private fun PresetColorGrid(
             modifier = Modifier.fillMaxWidth()
         ) {
             presetColors.drop(5).forEach { presetColor ->
-                ColorChip(
-                    color = presetColor,
-                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorSelected(presetColor) },
-                    modifier = Modifier.weight(1f)
-                )
+                key(presetColor) {
+                    ColorChip(
+                        color = presetColor,
+                        isSelected = selectedColor.equals(presetColor, ignoreCase = true),
+                        onClick = { onColorSelected(presetColor) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
@@ -152,6 +158,9 @@ private fun ColorChip(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                             shape = CircleShape
                         )
+                        .semantics {
+                            contentDescription = color
+                        }
                 )
                 
                 // Color code (last 6 characters)

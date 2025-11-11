@@ -82,7 +82,7 @@ fun PlaybackControls(
                 ) {
                     Icon(
                         Icons.Default.Repeat,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_loop_toggle),
                         tint = if (isLooping) {
                             MaterialTheme.colorScheme.primary
                         } else {

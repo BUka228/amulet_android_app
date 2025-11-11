@@ -61,7 +61,7 @@ fun PatternElementEditor(
                 ) {
                     Icon(
                         getElementIcon(element),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_element_icon),
                         modifier = Modifier.size(24.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -83,43 +83,43 @@ fun PatternElementEditor(
                     if (onMoveUp != null) {
                         IconButton(
                             onClick = onMoveUp,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
                                 contentDescription = stringResource(R.string.cd_move_element_up),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
                     if (onMoveDown != null) {
                         IconButton(
                             onClick = onMoveDown,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowDown,
                                 contentDescription = stringResource(R.string.cd_move_element_down),
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
 
                     IconButton(
                         onClick = onRemove,
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = stringResource(R.string.cd_delete_element),
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
 
                     IconButton(
                         onClick = { showDetails = !showDetails },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -128,7 +128,7 @@ fun PatternElementEditor(
                             } else {
                                 stringResource(R.string.cd_expand_element)
                             },
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -327,7 +327,7 @@ private fun ChaseEditor(
                     onClick = { onUpdate(element.copy(direction = ChaseDirection.CLOCKWISE)) },
                     label = { Text(stringResource(R.string.pattern_element_direction_cw)) },
                     leadingIcon = if (element.direction == ChaseDirection.CLOCKWISE) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        { Icon(Icons.Default.Check, contentDescription = stringResource(R.string.pattern_element_direction_cw), modifier = Modifier.size(18.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -336,7 +336,7 @@ private fun ChaseEditor(
                     onClick = { onUpdate(element.copy(direction = ChaseDirection.COUNTER_CLOCKWISE)) },
                     label = { Text(stringResource(R.string.pattern_element_direction_ccw)) },
                     leadingIcon = if (element.direction == ChaseDirection.COUNTER_CLOCKWISE) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        { Icon(Icons.Default.Check, contentDescription = stringResource(R.string.pattern_element_direction_ccw), modifier = Modifier.size(18.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -550,7 +550,7 @@ private fun SequenceEditor(
             ) {
                 Icon(
                     Icons.Default.Info,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.pattern_element_sequence_editor_wip),
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(20.dp)
                 )

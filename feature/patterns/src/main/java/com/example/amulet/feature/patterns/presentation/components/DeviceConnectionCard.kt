@@ -44,7 +44,7 @@ fun DeviceConnectionCard(
                 ) {
                     Icon(
                         Icons.Default.Bluetooth,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_connection_status),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
@@ -103,7 +103,7 @@ fun DeviceConnectionCard(
                                     battery > 20 -> Icons.Default.Battery3Bar
                                     else -> Icons.Default.Battery1Bar
                                 },
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.cd_battery_level),
                                 modifier = Modifier.size(20.dp),
                                 tint = when {
                                     battery > 20 -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -131,7 +131,7 @@ fun DeviceConnectionCard(
                     ) {
                         Icon(
                             Icons.Default.Info,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.cd_device_status),
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -161,7 +161,7 @@ fun DeviceConnectionCard(
                 } else {
                     Icon(
                         Icons.Default.Send,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_send_to_device),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))

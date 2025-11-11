@@ -41,8 +41,7 @@ fun AppNavHost(
 
         // Patterns Graph - управление паттернами световых анимаций
         patternsGraph(
-            navController = navController,
-            onNavigateBack = { navController.popBackStack() }
+            navController = navController
         )
 
         // Placeholder destinations для bottom navigation
