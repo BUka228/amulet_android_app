@@ -14,10 +14,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.feature.patterns.R
 
 /**
- * ColorPicker component with preset colors and HEX input
+ * Компактный ColorPicker с пресетами и HEX вводом
  */
 @Composable
 fun ColorPicker(
@@ -28,9 +29,8 @@ fun ColorPicker(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Label
         if (label != null) {
             Text(
                 text = label,
@@ -39,19 +39,11 @@ fun ColorPicker(
             )
         }
 
-        // Preset colors section
-        Text(
-            text = stringResource(R.string.color_picker_preset_colors),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
         PresetColorGrid(
             selectedColor = color,
             onColorSelected = onColorChange
         )
 
-        // HEX color input
         HexColorInput(
             color = color,
             onColorChange = onColorChange
@@ -60,7 +52,7 @@ fun ColorPicker(
 }
 
 /**
- * Grid of preset color chips
+ * Компактная сетка пресетов цветов
  */
 @Composable
 private fun PresetColorGrid(
@@ -70,61 +62,47 @@ private fun PresetColorGrid(
 ) {
     val presetColors = remember {
         listOf(
-            "#FF0000", // Red
-            "#00FF00", // Green
-            "#0000FF", // Blue
-            "#FFFF00", // Yellow
-            "#FF00FF", // Magenta
-            "#00FFFF", // Cyan
-            "#FF8800", // Orange
-            "#8800FF", // Purple
-            "#00FF88", // Spring Green
-            "#FFFFFF"  // White
+            "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF",
+            "#00FFFF", "#FF8800", "#8800FF", "#00FF88", "#FFFFFF"
         )
     }
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // First row (5 colors)
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             presetColors.take(5).forEach { presetColor ->
-                key(presetColor) {
-                    ColorChip(
-                        color = presetColor,
-                        isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                        onClick = { onColorSelected(presetColor) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                ColorChip(
+                    color = presetColor,
+                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
+                    onClick = { onColorSelected(presetColor) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
 
-        // Second row (5 colors)
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             presetColors.drop(5).forEach { presetColor ->
-                key(presetColor) {
-                    ColorChip(
-                        color = presetColor,
-                        isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                        onClick = { onColorSelected(presetColor) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                ColorChip(
+                    color = presetColor,
+                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
+                    onClick = { onColorSelected(presetColor) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
 
 /**
- * Individual color chip with visual feedback
+ * Компактный чип цвета
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,48 +112,81 @@ private fun ColorChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val chipColor = remember(color) {
-        parseHexColor(color)
-    }
+    val chipColor = remember(color) { parseHexColor(color) }
 
     FilterChip(
         selected = isSelected,
         onClick = onClick,
         label = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Color indicator circle
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(chipColor)
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                            shape = CircleShape
-                        )
-                        .semantics {
-                            contentDescription = color
-                        }
-                )
-                
-                // Color code (last 6 characters)
-                Text(
-                    text = color.takeLast(6),
-                    style = MaterialTheme.typography.labelSmall
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .clip(CircleShape)
+                    .background(chipColor)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        shape = CircleShape
+                    )
+                    .semantics { contentDescription = color }
+            )
         },
         modifier = modifier
     )
 }
 
 /**
- * Parse HEX color string to Compose Color
+ * Компактный HEX ввод
+ */
+@Composable
+private fun HexColorInput(
+    color: String,
+    onColorChange: (String) -> Unit
+) {
+    var hexValue by remember(color) { mutableStateOf(color.removePrefix("#")) }
+    var isError by remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(parseHexColor(color))
+                .border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                    shape = CircleShape
+                )
+        )
+
+        AmuletTextField(
+            value = hexValue,
+            onValueChange = { newValue ->
+                val cleaned = newValue.removePrefix("#").uppercase()
+                if (cleaned.length <= 6 && cleaned.all { it in "0123456789ABCDEF" }) {
+                    hexValue = cleaned
+                    isError = cleaned.length != 6
+                    if (cleaned.length == 6) {
+                        onColorChange("#$cleaned")
+                    }
+                }
+            },
+            label = stringResource(R.string.color_picker_hex_label),
+            placeholder = "RRGGBB",
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+            prefix = { Text("#") },
+            errorText = if (isError) stringResource(R.string.color_picker_hex_error) else null
+        )
+    }
+}
+
+/**
+ * Парсинг HEX в Color
  */
 private fun parseHexColor(hex: String): Color {
     return try {

@@ -33,6 +33,12 @@ class PatternEditorViewModel @Inject constructor(
         if (patternId != null) {
             loadPattern()
         }
+        // Автоматически обновляем spec при изменении элементов
+        viewModelScope.launch {
+            _uiState.map { it.elements }.distinctUntilChanged().collect {
+                updateSpec()
+            }
+        }
     }
 
     fun handleEvent(event: PatternEditorEvent) {
@@ -50,9 +56,14 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.SelectElement -> selectElement(event.index)
             is PatternEditorEvent.SavePattern -> savePattern()
             is PatternEditorEvent.PublishPattern -> publishPattern()
-            is PatternEditorEvent.PreviewPattern -> previewPattern()
+            is PatternEditorEvent.ConfirmPublish -> confirmPublish(event.data)
             is PatternEditorEvent.DiscardChanges -> discardChanges()
+            is PatternEditorEvent.ConfirmDiscard -> confirmDiscard()
             is PatternEditorEvent.DismissError -> dismissError()
+            is PatternEditorEvent.TogglePreviewPlayback -> togglePreviewPlayback()
+            is PatternEditorEvent.RestartPreview -> restartPreview()
+            is PatternEditorEvent.TogglePreviewExpanded -> togglePreviewExpanded()
+            is PatternEditorEvent.SendToDevice -> sendToDevice()
         }
     }
 
@@ -75,9 +86,11 @@ class PatternEditorViewModel @Inject constructor(
                                 loop = it.spec.loop,
                                 elements = it.spec.elements,
                                 isLoading = false,
-                                isEditing = true
+                                isEditing = true,
+                                spec = it.spec
                             )
                         }
+                        updateSpec()
                     } ?: run {
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -119,6 +132,7 @@ class PatternEditorViewModel @Inject constructor(
                 hasUnsavedChanges = true
             )
         }
+        updateSpec()
     }
 
     private fun showElementPicker() {
@@ -134,6 +148,7 @@ class PatternEditorViewModel @Inject constructor(
                 hasUnsavedChanges = true
             )
         }
+        updateSpec()
     }
 
     private fun updateElement(index: Int, element: PatternElement) {
@@ -147,6 +162,7 @@ class PatternEditorViewModel @Inject constructor(
                 hasUnsavedChanges = true
             )
         }
+        updateSpec()
     }
 
     private fun removeElement(index: Int) {
@@ -161,6 +177,7 @@ class PatternEditorViewModel @Inject constructor(
                 hasUnsavedChanges = true
             )
         }
+        updateSpec()
     }
 
     private fun moveElement(from: Int, to: Int) {
@@ -175,6 +192,7 @@ class PatternEditorViewModel @Inject constructor(
                 hasUnsavedChanges = true
             )
         }
+        updateSpec()
     }
 
     private fun selectElement(index: Int?) {
@@ -260,18 +278,91 @@ class PatternEditorViewModel @Inject constructor(
         }
     }
 
-    private fun previewPattern() {
+    private fun confirmPublish(data: com.example.amulet.feature.patterns.presentation.components.PublishPatternData) {
         val currentState = _uiState.value
-        val spec = PatternSpec(
-            type = "custom",
-            hardwareVersion = currentState.hardwareVersion,
-            durationMs = null,
-            loop = currentState.loop,
-            elements = currentState.elements
-        )
+        
+        if (currentState.pattern == null) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Сначала сохраните паттерн"))
+            }
+            return
+        }
 
         viewModelScope.launch {
-            _sideEffect.emit(PatternEditorSideEffect.NavigateToPreview(spec))
+            _uiState.update { it.copy(isSaving = true) }
+
+            val metadata = PublishMetadata(
+                title = data.publicTitle,
+                description = data.publicDescription,
+                tags = data.tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            )
+
+            publishPatternUseCase(
+                id = currentState.pattern.id,
+                metadata = metadata
+            ).onSuccess {
+                _uiState.update { it.copy(isSaving = false) }
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн опубликован"))
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        error = error
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateSpec() {
+        val currentState = _uiState.value
+        val spec = if (currentState.elements.isNotEmpty()) {
+            PatternSpec(
+                type = "custom",
+                hardwareVersion = currentState.hardwareVersion,
+                durationMs = null,
+                loop = currentState.loop,
+                elements = currentState.elements
+            )
+        } else {
+            null
+        }
+        _uiState.update { it.copy(spec = spec) }
+    }
+
+    private fun togglePreviewPlayback() {
+        _uiState.update { it.copy(isPreviewPlaying = !it.isPreviewPlaying) }
+    }
+
+    private fun restartPreview() {
+        _uiState.update { 
+            it.copy(
+                isPreviewPlaying = false
+            )
+        }
+        // Небольшая задержка для рестарта анимации
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(50)
+            _uiState.update { it.copy(isPreviewPlaying = true) }
+        }
+    }
+
+    private fun togglePreviewExpanded() {
+        _uiState.update { it.copy(isPreviewExpanded = !it.isPreviewExpanded) }
+    }
+
+    private fun sendToDevice() {
+        val currentState = _uiState.value
+        
+        if (currentState.spec == null) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Добавьте элементы паттерна"))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _sideEffect.emit(PatternEditorSideEffect.NavigateToPreview(currentState.spec))
         }
     }
 
@@ -284,6 +375,12 @@ class PatternEditorViewModel @Inject constructor(
             viewModelScope.launch {
                 _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
             }
+        }
+    }
+
+    private fun confirmDiscard() {
+        viewModelScope.launch {
+            _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
         }
     }
 

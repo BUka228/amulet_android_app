@@ -142,10 +142,7 @@ fun NavGraphBuilder.patternsGraph(
             }
         ) {
             PatternEditorRoute(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToPreview = {
-                    // Предпросмотр из редактора будет реализован позже
-                }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

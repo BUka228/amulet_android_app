@@ -29,7 +29,9 @@ fun AmuletTextField(
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    minLines: Int = 1,
+    prefix: (@Composable () -> Unit)? = null,
 ) {
     val isError = !errorText.isNullOrBlank()
 
@@ -69,6 +71,8 @@ fun AmuletTextField(
         keyboardActions = keyboardActions,
         visualTransformation = visualTransformation,
         isError = isError,
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        minLines = minLines,
+        prefix = prefix
     )
 }

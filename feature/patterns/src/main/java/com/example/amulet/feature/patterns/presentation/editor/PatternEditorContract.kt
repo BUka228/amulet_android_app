@@ -25,7 +25,11 @@ data class PatternEditorState(
     val isSaving: Boolean = false,
     val hasUnsavedChanges: Boolean = false,
     val error: AppError? = null,
-    val validationErrors: Map<String, String> = emptyMap()
+    val validationErrors: Map<String, String> = emptyMap(),
+    // Поля для живого превью
+    val spec: PatternSpec? = null,
+    val isPreviewPlaying: Boolean = false,
+    val isPreviewExpanded: Boolean = true
 )
 
 sealed interface PatternEditorEvent {
@@ -42,9 +46,15 @@ sealed interface PatternEditorEvent {
     data class SelectElement(val index: Int?) : PatternEditorEvent
     data object SavePattern : PatternEditorEvent
     data object PublishPattern : PatternEditorEvent
-    data object PreviewPattern : PatternEditorEvent
+    data class ConfirmPublish(val data: com.example.amulet.feature.patterns.presentation.components.PublishPatternData) : PatternEditorEvent
     data object DiscardChanges : PatternEditorEvent
+    data object ConfirmDiscard : PatternEditorEvent
     data object DismissError : PatternEditorEvent
+    // События для встроенного превью
+    data object TogglePreviewPlayback : PatternEditorEvent
+    data object RestartPreview : PatternEditorEvent
+    data object TogglePreviewExpanded : PatternEditorEvent
+    data object SendToDevice : PatternEditorEvent
 }
 
 sealed interface PatternEditorSideEffect {

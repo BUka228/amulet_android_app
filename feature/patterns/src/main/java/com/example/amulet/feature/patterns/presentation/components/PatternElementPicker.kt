@@ -1,7 +1,5 @@
 package com.example.amulet.feature.patterns.presentation.components
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -12,17 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
 
 /**
- * Диалог выбора типа элемента паттерна.
+ * ModalBottomSheet для выбора типа элемента паттерна.
  * Отображает grid с карточками типов элементов, сгруппированными по категориям.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,46 +27,51 @@ fun PatternElementPickerDialog(
     onElementTypeSelected: (PatternElementType) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Dialog(
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+    
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        Surface(
-            modifier = modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f),
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp
-        ) {
+        sheetState = sheetState,
+        modifier = modifier,
+        dragHandle = {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // TopAppBar
-                TopAppBar(
-                    title = { Text(stringResource(R.string.pattern_element_picker_title)) },
-                    navigationIcon = {
-                        IconButton(onClick = onDismiss) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = stringResource(R.string.cd_close_dialog)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
-
-                // Content
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
+                BottomSheetDefaults.DragHandle()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = stringResource(R.string.pattern_element_picker_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.cd_close_dialog),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                HorizontalDivider()
+            }
+        }
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
                     // Базовые элементы
                     item {
                         CategoryHeader(
@@ -85,6 +85,11 @@ fun PatternElementPickerDialog(
                             elementType = elementType,
                             onClick = { onElementTypeSelected(elementType) }
                         )
+                    }
+                    
+                    // Заполнитель если нечетное количество
+                    if (basicElements.size % 2 != 0) {
+                        item { Spacer(modifier = Modifier.height(0.dp)) }
                     }
 
                     // Движение
@@ -100,6 +105,11 @@ fun PatternElementPickerDialog(
                             elementType = elementType,
                             onClick = { onElementTypeSelected(elementType) }
                         )
+                    }
+                    
+                    // Заполнитель если нечетное количество
+                    if (motionElements.size % 2 != 0) {
+                        item { Spacer(modifier = Modifier.height(0.dp)) }
                     }
 
                     // Эффекты
@@ -117,8 +127,6 @@ fun PatternElementPickerDialog(
                         )
                     }
                 }
-            }
-        }
     }
 }
 
@@ -141,26 +149,39 @@ private fun ElementTypeCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ElevatedCard(
+    OutlinedCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
+            .height(140.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.Center
         ) {
-            // Анимированная иконка
-            AnimatedElementIcon(
-                icon = elementType.icon,
-                contentDescription = stringResource(elementType.nameRes)
-            )
+            // Иконка с фоном
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(56.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = elementType.icon,
+                        contentDescription = stringResource(elementType.nameRes),
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Название
             Text(
@@ -174,52 +195,11 @@ private fun ElementTypeCard(
                 text = stringResource(elementType.descriptionRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
+                maxLines = 2,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
     }
-}
-
-@Composable
-private fun AnimatedElementIcon(
-    icon: ImageVector,
-    contentDescription: String,
-    modifier: Modifier = Modifier
-) {
-    // Анимация пульсации для иконки
-    val infiniteTransition = rememberInfiniteTransition(label = "icon_pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "icon_scale"
-    )
-
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "icon_alpha"
-    )
-
-    Icon(
-        imageVector = icon,
-        contentDescription = contentDescription,
-        modifier = modifier
-            .size(48.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                this.alpha = alpha
-            },
-        tint = MaterialTheme.colorScheme.primary
-    )
 }
 
 /**

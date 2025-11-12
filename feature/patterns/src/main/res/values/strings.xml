@@ -36,6 +36,10 @@
     <string name="pattern_editor_save">Save</string>
     <string name="pattern_editor_preview">Preview</string>
     <string name="pattern_editor_close">Close</string>
+    <string name="pattern_editor_unsaved_indicator">Unsaved changes</string>
+    <string name="pattern_editor_elements_count">%d elements</string>
+    <string name="pattern_editor_live_preview">Live Preview</string>
+    <string name="pattern_editor_preview_empty">Add elements to see preview</string>
     
     <!-- Pattern Basic Info -->
     <string name="pattern_editor_title_label">Title</string>
@@ -97,6 +101,7 @@
     <string name="color_picker_custom">Custom Color</string>
     <string name="color_picker_hex_label">HEX Color</string>
     <string name="color_picker_hex_hint">#RRGGBB</string>
+    <string name="color_picker_hex_error">Must be 6 characters</string>
     <string name="color_picker_preview">Color preview</string>
     
     <!-- Pattern Preview Screen -->
@@ -125,6 +130,11 @@
     <string name="dialog_delete_pattern_message">This action cannot be undone</string>
     <string name="dialog_delete_pattern_confirm">Delete</string>
     <string name="dialog_delete_pattern_cancel">Cancel</string>
+    
+    <string name="dialog_delete_element_title">Delete element?</string>
+    <string name="dialog_delete_element_message">This element will be removed from the pattern</string>
+    <string name="dialog_delete_element_confirm">Delete</string>
+    <string name="dialog_delete_element_cancel">Cancel</string>
     
     <string name="dialog_discard_changes_title">Unsaved changes</string>
     <string name="dialog_discard_changes_message">Save changes before leaving?</string>
@@ -235,6 +245,8 @@
     <string name="cd_close_dialog">Close dialog</string>
     <string name="cd_select_color">Select color %s</string>
     <string name="cd_pattern_type_filter">Filter by pattern type</string>
+    <string name="cd_expand_preview">Expand preview</string>
+    <string name="cd_collapse_preview">Collapse preview</string>
     
     <!-- Time Formats -->
     <string name="time_format_ms">%d ms</string>

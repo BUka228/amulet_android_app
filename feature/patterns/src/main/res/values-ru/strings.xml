@@ -36,6 +36,10 @@
     <string name="pattern_editor_save">Сохранить</string>
     <string name="pattern_editor_preview">Предпросмотр</string>
     <string name="pattern_editor_close">Закрыть</string>
+    <string name="pattern_editor_unsaved_indicator">Несохранённые изменения</string>
+    <string name="pattern_editor_elements_count">%d элементов</string>
+    <string name="pattern_editor_live_preview">Живое превью</string>
+    <string name="pattern_editor_preview_empty">Добавьте элементы для просмотра</string>
     
     <!-- Pattern Basic Info -->
     <string name="pattern_editor_title_label">Название</string>
@@ -97,6 +101,7 @@
     <string name="color_picker_custom">Свой цвет</string>
     <string name="color_picker_hex_label">HEX цвет</string>
     <string name="color_picker_hex_hint">#RRGGBB</string>
+    <string name="color_picker_hex_error">Должно быть 6 символов</string>
     <string name="color_picker_preview">Предпросмотр цвета</string>
     
     <!-- Pattern Preview Screen -->
@@ -125,6 +130,11 @@
     <string name="dialog_delete_pattern_message">Это действие нельзя отменить</string>
     <string name="dialog_delete_pattern_confirm">Удалить</string>
     <string name="dialog_delete_pattern_cancel">Отмена</string>
+    
+    <string name="dialog_delete_element_title">Удалить элемент?</string>
+    <string name="dialog_delete_element_message">Этот элемент будет удалён из паттерна</string>
+    <string name="dialog_delete_element_confirm">Удалить</string>
+    <string name="dialog_delete_element_cancel">Отмена</string>
     
     <string name="dialog_discard_changes_title">Несохранённые изменения</string>
     <string name="dialog_discard_changes_message">Сохранить изменения перед выходом?</string>
@@ -235,6 +245,8 @@
     <string name="cd_close_dialog">Закрыть диалог</string>
     <string name="cd_select_color">Выбрать цвет %s</string>
     <string name="cd_pattern_type_filter">Фильтр по типу паттерна</string>
+    <string name="cd_expand_preview">Развернуть превью</string>
+    <string name="cd_collapse_preview">Свернуть превью</string>
     
     <!-- Time Formats -->
     <string name="time_format_ms">%d мс</string>

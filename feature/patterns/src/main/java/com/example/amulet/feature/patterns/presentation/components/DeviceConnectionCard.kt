@@ -2,8 +2,10 @@ package com.example.amulet.feature.patterns.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,9 +63,13 @@ fun DeviceConnectionCard(
                     modifier = Modifier.size(8.dp)
                 ) {}
             }
-            
-            Divider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
-            
+
+            HorizontalDivider(
+                Modifier,
+                DividerDefaults.Thickness,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+            )
+
             // Информация об устройстве
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -160,7 +166,7 @@ fun DeviceConnectionCard(
                     Text(stringResource(R.string.sending_to_device))
                 } else {
                     Icon(
-                        Icons.Default.Send,
+                        Icons.AutoMirrored.Filled.Send,
                         contentDescription = stringResource(R.string.cd_send_to_device),
                         modifier = Modifier.size(20.dp)
                     )

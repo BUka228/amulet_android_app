@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,9 +34,47 @@ fun PatternElementEditor(
     modifier: Modifier = Modifier
 ) {
     var showDetails by remember { mutableStateOf(isSelected) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(isSelected) {
         showDetails = isSelected
+    }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            icon = {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = {
+                Text(stringResource(R.string.dialog_delete_element_title))
+            },
+            text = {
+                Text(stringResource(R.string.dialog_delete_element_message))
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onRemove()
+                        showDeleteConfirmation = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.dialog_delete_element_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text(stringResource(R.string.dialog_delete_element_cancel))
+                }
+            }
+        )
     }
 
     ElevatedCard(
@@ -46,9 +85,9 @@ fun PatternElementEditor(
         }
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
-            // Заголовок элемента
+            // Компактный заголовок элемента
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -62,13 +101,13 @@ fun PatternElementEditor(
                     Icon(
                         getElementIcon(element),
                         contentDescription = stringResource(R.string.cd_element_icon),
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "${index + 1}. ${getElementName(element)}",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.bodyLarge
                         )
                         Text(
                             text = getElementDescription(element),
@@ -78,48 +117,57 @@ fun PatternElementEditor(
                     }
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    // Кнопки перемещения
-                    if (onMoveUp != null) {
-                        IconButton(
-                            onClick = onMoveUp,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.KeyboardArrowUp,
-                                contentDescription = stringResource(R.string.cd_move_element_up),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                    // Компактные кнопки перемещения
+                    IconButton(
+                        onClick = { onMoveUp?.invoke() },
+                        enabled = onMoveUp != null,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.KeyboardArrowUp,
+                            contentDescription = stringResource(R.string.cd_move_element_up),
+                            modifier = Modifier.size(18.dp),
+                            tint = if (onMoveUp != null) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            }
+                        )
                     }
-                    if (onMoveDown != null) {
-                        IconButton(
-                            onClick = onMoveDown,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.KeyboardArrowDown,
-                                contentDescription = stringResource(R.string.cd_move_element_down),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                    
+                    IconButton(
+                        onClick = { onMoveDown?.invoke() },
+                        enabled = onMoveDown != null,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = stringResource(R.string.cd_move_element_down),
+                            modifier = Modifier.size(18.dp),
+                            tint = if (onMoveDown != null) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            }
+                        )
                     }
 
                     IconButton(
-                        onClick = onRemove,
-                        modifier = Modifier.size(48.dp)
+                        onClick = { showDeleteConfirmation = true },
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = stringResource(R.string.cd_delete_element),
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
 
                     IconButton(
                         onClick = { showDetails = !showDetails },
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -128,7 +176,7 @@ fun PatternElementEditor(
                             } else {
                                 stringResource(R.string.cd_expand_element)
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -163,9 +211,9 @@ fun PatternElementEditor(
                 )
             ) {
                 Column {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     when (element) {
                         is PatternElementBreathing -> BreathingEditor(element, onUpdate)
@@ -187,16 +235,14 @@ private fun BreathingEditor(
     element: PatternElementBreathing,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        // Duration Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -204,11 +250,11 @@ private fun BreathingEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_duration_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = stringResource(R.string.time_format_ms, element.durationMs),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -216,11 +262,7 @@ private fun BreathingEditor(
                 value = element.durationMs.toFloat(),
                 onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
                 valueRange = 100f..10000f,
-                steps = 98,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 98
             )
         }
     }
@@ -231,16 +273,14 @@ private fun PulseEditor(
     element: PatternElementPulse,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        // Speed Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -248,11 +288,11 @@ private fun PulseEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_speed_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = stringResource(R.string.time_format_ms, element.speed),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -260,16 +300,11 @@ private fun PulseEditor(
                 value = element.speed.toFloat(),
                 onValueChange = { onUpdate(element.copy(speed = it.toInt())) },
                 valueRange = 100f..2000f,
-                steps = 18,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 18
             )
         }
 
-        // Repeats Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -277,11 +312,11 @@ private fun PulseEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_repeats_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = element.repeats.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -289,11 +324,7 @@ private fun PulseEditor(
                 value = element.repeats.toFloat(),
                 onValueChange = { onUpdate(element.copy(repeats = it.toInt())) },
                 valueRange = 1f..10f,
-                steps = 8,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 8
             )
         }
     }
@@ -304,19 +335,17 @@ private fun ChaseEditor(
     element: PatternElementChase,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
 
-        // Direction Selector
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = stringResource(R.string.pattern_element_direction_label),
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelMedium
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -327,7 +356,7 @@ private fun ChaseEditor(
                     onClick = { onUpdate(element.copy(direction = ChaseDirection.CLOCKWISE)) },
                     label = { Text(stringResource(R.string.pattern_element_direction_cw)) },
                     leadingIcon = if (element.direction == ChaseDirection.CLOCKWISE) {
-                        { Icon(Icons.Default.Check, contentDescription = stringResource(R.string.pattern_element_direction_cw), modifier = Modifier.size(18.dp)) }
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
@@ -336,15 +365,14 @@ private fun ChaseEditor(
                     onClick = { onUpdate(element.copy(direction = ChaseDirection.COUNTER_CLOCKWISE)) },
                     label = { Text(stringResource(R.string.pattern_element_direction_ccw)) },
                     leadingIcon = if (element.direction == ChaseDirection.COUNTER_CLOCKWISE) {
-                        { Icon(Icons.Default.Check, contentDescription = stringResource(R.string.pattern_element_direction_ccw), modifier = Modifier.size(18.dp)) }
+                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                     } else null,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
         
-        // Speed Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -352,11 +380,11 @@ private fun ChaseEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_speed_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = stringResource(R.string.time_format_ms, element.speedMs),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -364,11 +392,7 @@ private fun ChaseEditor(
                 value = element.speedMs.toFloat(),
                 onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
                 valueRange = 50f..1000f,
-                steps = 18,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 18
             )
         }
     }
@@ -379,16 +403,14 @@ private fun FillEditor(
     element: PatternElementFill,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        // Duration Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -396,11 +418,11 @@ private fun FillEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_duration_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = stringResource(R.string.time_format_ms, element.durationMs),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -408,11 +430,7 @@ private fun FillEditor(
                 value = element.durationMs.toFloat(),
                 onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
                 valueRange = 100f..5000f,
-                steps = 48,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 48
             )
         }
     }
@@ -423,8 +441,7 @@ private fun SpinnerEditor(
     element: PatternElementSpinner,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Primary Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.colors.getOrNull(0) ?: "#FFFFFF",
             onColorChange = { 
@@ -439,7 +456,6 @@ private fun SpinnerEditor(
             label = stringResource(R.string.pattern_element_color_primary)
         )
 
-        // Secondary Color Picker
         ColorPicker(
             color = element.colors.getOrNull(1) ?: "#000000",
             onColorChange = { 
@@ -456,8 +472,7 @@ private fun SpinnerEditor(
             label = stringResource(R.string.pattern_element_color_secondary)
         )
         
-        // Speed Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -465,11 +480,11 @@ private fun SpinnerEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_speed_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = stringResource(R.string.time_format_ms, element.speedMs),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -477,11 +492,7 @@ private fun SpinnerEditor(
                 value = element.speedMs.toFloat(),
                 onValueChange = { onUpdate(element.copy(speedMs = it.toInt())) },
                 valueRange = 50f..1000f,
-                steps = 18,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 18
             )
         }
     }
@@ -492,16 +503,14 @@ private fun ProgressEditor(
     element: PatternElementProgress,
     onUpdate: (PatternElement) -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Color Picker
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ColorPicker(
             color = element.color,
             onColorChange = { onUpdate(element.copy(color = it)) },
             label = stringResource(R.string.pattern_element_color_label)
         )
         
-        // Active LEDs Slider
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -509,11 +518,11 @@ private fun ProgressEditor(
             ) {
                 Text(
                     text = stringResource(R.string.pattern_element_active_leds_label),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelMedium
                 )
                 Text(
                     text = element.activeLeds.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -521,11 +530,7 @@ private fun ProgressEditor(
                 value = element.activeLeds.toFloat(),
                 onValueChange = { onUpdate(element.copy(activeLeds = it.toInt())) },
                 valueRange = 1f..8f,
-                steps = 6,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                steps = 6
             )
         }
     }
@@ -576,11 +581,11 @@ private fun SequenceEditor(
 private fun getElementIcon(element: PatternElement) = when (element) {
     is PatternElementBreathing -> Icons.Default.Air
     is PatternElementPulse -> Icons.Default.FiberManualRecord
-    is PatternElementChase -> Icons.Default.RotateRight
+    is PatternElementChase -> Icons.Default.Autorenew
     is PatternElementFill -> Icons.Default.FormatColorFill
-    is PatternElementSpinner -> Icons.Default.Autorenew
+    is PatternElementSpinner -> Icons.Default.Sync
     is PatternElementProgress -> Icons.Default.LinearScale
-    is PatternElementSequence -> Icons.Default.ViewList
+    is PatternElementSequence -> Icons.AutoMirrored.Filled.List
 }
 
 @Composable
