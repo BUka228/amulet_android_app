@@ -48,6 +48,9 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.UpdateDescription -> updateDescription(event.description)
             is PatternEditorEvent.UpdateKind -> updateKind(event.kind)
             is PatternEditorEvent.UpdateLoop -> updateLoop(event.loop)
+            is PatternEditorEvent.TogglePlayPause -> togglePlayPause()
+            is PatternEditorEvent.ToggleLoop -> toggleLoop()
+            is PatternEditorEvent.RestartPreview -> restartPreview()
             is PatternEditorEvent.ShowElementPicker -> showElementPicker()
             is PatternEditorEvent.AddElement -> addElement(event.element)
             is PatternEditorEvent.UpdateElement -> updateElement(event.index, event.element)
@@ -60,9 +63,6 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.DiscardChanges -> discardChanges()
             is PatternEditorEvent.ConfirmDiscard -> confirmDiscard()
             is PatternEditorEvent.DismissError -> dismissError()
-            is PatternEditorEvent.TogglePreviewPlayback -> togglePreviewPlayback()
-            is PatternEditorEvent.RestartPreview -> restartPreview()
-            is PatternEditorEvent.TogglePreviewExpanded -> togglePreviewExpanded()
             is PatternEditorEvent.SendToDevice -> sendToDevice()
         }
     }
@@ -133,6 +133,38 @@ class PatternEditorViewModel @Inject constructor(
             )
         }
         updateSpec()
+    }
+    
+    private fun togglePlayPause() {
+        _uiState.update {
+            it.copy(
+                isPlaying = !it.isPlaying
+            )
+        }
+    }
+
+    private fun toggleLoop() {
+        _uiState.update {
+            it.copy(
+                previewLoop = !it.previewLoop
+            )
+        }
+    }
+    
+    private fun restartPreview() {
+        // Перезапуск анимации путем переключения состояния
+        _uiState.update {
+            it.copy(
+                isPlaying = false
+            )
+        }
+        
+        // Немедленно включаем воспроизведение
+        _uiState.update {
+            it.copy(
+                isPlaying = true
+            )
+        }
     }
 
     private fun showElementPicker() {
@@ -328,27 +360,6 @@ class PatternEditorViewModel @Inject constructor(
             null
         }
         _uiState.update { it.copy(spec = spec) }
-    }
-
-    private fun togglePreviewPlayback() {
-        _uiState.update { it.copy(isPreviewPlaying = !it.isPreviewPlaying) }
-    }
-
-    private fun restartPreview() {
-        _uiState.update { 
-            it.copy(
-                isPreviewPlaying = false
-            )
-        }
-        // Небольшая задержка для рестарта анимации
-        viewModelScope.launch {
-            kotlinx.coroutines.delay(50)
-            _uiState.update { it.copy(isPreviewPlaying = true) }
-        }
-    }
-
-    private fun togglePreviewExpanded() {
-        _uiState.update { it.copy(isPreviewExpanded = !it.isPreviewExpanded) }
     }
 
     private fun sendToDevice() {

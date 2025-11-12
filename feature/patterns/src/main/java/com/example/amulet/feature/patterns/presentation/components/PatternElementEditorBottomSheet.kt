@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.feature.patterns.presentation.components.CompactLivePreview
 
 /**
  * BottomSheet для редактирования элемента паттерна.
@@ -22,6 +23,11 @@ import com.example.amulet.shared.domain.patterns.model.*
 @Composable
 fun PatternElementEditorBottomSheet(
     element: PatternElement,
+    spec: PatternSpec?,
+    isPlaying: Boolean,
+    loop: Boolean,
+    onPlayPause: () -> Unit,
+    onToggleLoop: () -> Unit,
     onDismiss: () -> Unit,
     onUpdate: (PatternElement) -> Unit,
     modifier: Modifier = Modifier
@@ -30,13 +36,18 @@ fun PatternElementEditorBottomSheet(
         skipPartiallyExpanded = true
     )
     
-    // Внутреннее состояние для временного хранения изменений
-    var tempElement by remember { mutableStateOf(element) }
+    // Состояние элемента, которое будет обновляться при изменении настроек
+    var currentElement by remember { mutableStateOf(element) }
+    
+    // При изменении исходного элемента, обновляем текущий элемент
+    LaunchedEffect(element) {
+        currentElement = element
+    }
     
     ModalBottomSheet(
         onDismissRequest = {
             // Применяем изменения при закрытии
-            onUpdate(tempElement)
+            onUpdate(currentElement)
             onDismiss()
         },
         sheetState = sheetState,
@@ -63,7 +74,7 @@ fun PatternElementEditorBottomSheet(
                 )
                 IconButton(onClick = {
                     // Применяем изменения при закрытии через кнопку
-                    onUpdate(tempElement)
+                    onUpdate(currentElement)
                     onDismiss()
                 }) {
                     Icon(
@@ -76,6 +87,23 @@ fun PatternElementEditorBottomSheet(
             
             HorizontalDivider()
             
+            // Компактное превью паттерна
+            // Создаем временный spec с текущим элементом для превью
+            val previewSpec = spec?.copy(elements = spec.elements.map { 
+                if (it == element) currentElement else it 
+            })
+            
+            CompactLivePreview(
+                spec = previewSpec,
+                isPlaying = isPlaying,
+                loop = loop,
+                onPlayPause = onPlayPause,
+                onToggleLoop = onToggleLoop,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
+            HorizontalDivider()
+            
             // Основные настройки элемента
             Column(
                 modifier = Modifier
@@ -83,27 +111,27 @@ fun PatternElementEditorBottomSheet(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                when (tempElement) {
-                    is PatternElementBreathing -> BreathingEditor(tempElement as PatternElementBreathing) { updated ->
-                        tempElement = updated
+                when (currentElement) {
+                    is PatternElementBreathing -> BreathingEditor(currentElement as PatternElementBreathing) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementPulse -> PulseEditor(tempElement as PatternElementPulse) { updated ->
-                        tempElement = updated
+                    is PatternElementPulse -> PulseEditor(currentElement as PatternElementPulse) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementChase -> ChaseEditor(tempElement as PatternElementChase) { updated ->
-                        tempElement = updated
+                    is PatternElementChase -> ChaseEditor(currentElement as PatternElementChase) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementFill -> FillEditor(tempElement as PatternElementFill) { updated ->
-                        tempElement = updated
+                    is PatternElementFill -> FillEditor(currentElement as PatternElementFill) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementSpinner -> SpinnerEditor(tempElement as PatternElementSpinner) { updated ->
-                        tempElement = updated
+                    is PatternElementSpinner -> SpinnerEditor(currentElement as PatternElementSpinner) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementProgress -> ProgressEditor(tempElement as PatternElementProgress) { updated ->
-                        tempElement = updated
+                    is PatternElementProgress -> ProgressEditor(currentElement as PatternElementProgress) { updated ->
+                        currentElement = updated
                     }
-                    is PatternElementSequence -> SequenceEditor(tempElement as PatternElementSequence) { updated ->
-                        tempElement = updated
+                    is PatternElementSequence -> SequenceEditor(currentElement as PatternElementSequence) { updated ->
+                        currentElement = updated
                     }
                 }
             }

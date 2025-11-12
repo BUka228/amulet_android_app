@@ -22,6 +22,11 @@ import com.example.amulet.shared.domain.patterns.model.*
 fun PatternElementEditor(
     element: PatternElement,
     index: Int,
+    spec: PatternSpec?,
+    isPlaying: Boolean,
+    loop: Boolean,
+    onPlayPause: () -> Unit,
+    onToggleLoop: () -> Unit,
     onUpdate: (PatternElement) -> Unit,
     onRemove: () -> Unit,
     onMoveUp: (() -> Unit)?,
@@ -38,6 +43,11 @@ fun PatternElementEditor(
     if (showElementEditor) {
         PatternElementEditorBottomSheet(
             element = element,
+            spec = spec,
+            isPlaying = isPlaying,
+            loop = loop,
+            onPlayPause = onPlayPause,
+            onToggleLoop = onToggleLoop,
             onDismiss = { showElementEditor = false },
             onUpdate = onUpdate
         )

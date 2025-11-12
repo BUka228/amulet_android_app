@@ -240,19 +240,6 @@ fun PatternEditorScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Живое превью вверху
-            item(key = "live_preview") {
-                LivePreviewCard(
-                    spec = state.spec,
-                    isPlaying = state.isPreviewPlaying,
-                    isExpanded = state.isPreviewExpanded,
-                    loop = state.loop,
-                    onPlayPause = { onEvent(PatternEditorEvent.TogglePreviewPlayback) },
-                    onRestart = { onEvent(PatternEditorEvent.RestartPreview) },
-                    onToggleExpanded = { onEvent(PatternEditorEvent.TogglePreviewExpanded) },
-                    onToggleLoop = { onEvent(PatternEditorEvent.UpdateLoop(!state.loop)) }
-                )
-            }
             // Основная информация
             item(key = "basic_info") {
                 ElevatedCard(
@@ -425,6 +412,11 @@ fun PatternEditorScreen(
                     PatternElementEditor(
                         element = element,
                         index = index,
+                        spec = state.spec,
+                        isPlaying = state.isPlaying,
+                        loop = state.previewLoop,
+                        onPlayPause = { onEvent(PatternEditorEvent.TogglePlayPause) },
+                        onToggleLoop = { onEvent(PatternEditorEvent.ToggleLoop) },
                         onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
                         onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
                         onMoveUp = if (index > 0) {
@@ -504,211 +496,6 @@ private fun EmptyElementsState(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.pattern_editor_add_element))
-            }
-        }
-    }
-}
-
-/**
- * Компонент живого превью паттерна - красивый дизайн с кольцом на surface
- */
-@Composable
-private fun LivePreviewCard(
-    spec: com.example.amulet.shared.domain.patterns.model.PatternSpec?,
-    isPlaying: Boolean,
-    isExpanded: Boolean,
-    loop: Boolean,
-    onPlayPause: () -> Unit,
-    onRestart: () -> Unit,
-    onToggleExpanded: () -> Unit,
-    onToggleLoop: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Заголовок превью
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.small)
-                .clickable {onToggleExpanded()}
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            Icons.Default.Visibility,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
-                Text(
-                    text = stringResource(R.string.pattern_editor_live_preview),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            
-            FilledTonalIconButton(
-                onClick = onToggleExpanded,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (isExpanded) {
-                        stringResource(R.string.cd_collapse_preview)
-                    } else {
-                        stringResource(R.string.cd_expand_preview)
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = expandVertically(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                expandFrom = Alignment.Top
-            ) + fadeIn(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
-            ),
-            exit = fadeOut(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
-            )
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (spec == null || spec.elements.isEmpty()) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Surface(
-                                shape = MaterialTheme.shapes.medium,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(64.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = stringResource(R.string.pattern_editor_preview_empty),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AmuletAvatar2D(
-                            spec = spec,
-                            isPlaying = isPlaying,
-                            size = 200.dp,
-                            ledRadius = 16.dp
-                        )
-                    }
-
-                // Стильные контролы под превью
-                ElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.large
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        FilledTonalIconButton(
-                            onClick = onRestart,
-                            modifier = Modifier.size(52.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.cd_restart_pattern),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        FilledIconButton(
-                            onClick = onPlayPause,
-                            modifier = Modifier.size(64.dp)
-                        ) {
-                            Icon(
-                                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) {
-                                    stringResource(R.string.cd_pause_pattern)
-                                } else {
-                                    stringResource(R.string.cd_play_pattern)
-                                },
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-
-                        // Loop toggle (интерактивная)
-                        Surface(
-                            onClick = onToggleLoop,
-                            shape = MaterialTheme.shapes.medium,
-                            color = if (loop) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            modifier = Modifier.size(52.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.Repeat,
-                                    contentDescription = stringResource(R.string.pattern_editor_loop_label),
-                                    tint = if (loop) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-                }
             }
         }
     }

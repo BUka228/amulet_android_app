@@ -28,8 +28,9 @@ data class PatternEditorState(
     val validationErrors: Map<String, String> = emptyMap(),
     // Поля для живого превью
     val spec: PatternSpec? = null,
-    val isPreviewPlaying: Boolean = false,
-    val isPreviewExpanded: Boolean = false
+    val isPlaying: Boolean = false,
+    val isLoop: Boolean = false,
+    val previewLoop: Boolean = false
 )
 
 sealed interface PatternEditorEvent {
@@ -38,6 +39,9 @@ sealed interface PatternEditorEvent {
     data class UpdateDescription(val description: String) : PatternEditorEvent
     data class UpdateKind(val kind: PatternKind) : PatternEditorEvent
     data class UpdateLoop(val loop: Boolean) : PatternEditorEvent
+    data object TogglePlayPause : PatternEditorEvent
+    data object ToggleLoop: PatternEditorEvent
+    data object RestartPreview : PatternEditorEvent
     data object ShowElementPicker : PatternEditorEvent
     data class AddElement(val element: PatternElement) : PatternEditorEvent
     data class UpdateElement(val index: Int, val element: PatternElement) : PatternEditorEvent
@@ -50,10 +54,6 @@ sealed interface PatternEditorEvent {
     data object DiscardChanges : PatternEditorEvent
     data object ConfirmDiscard : PatternEditorEvent
     data object DismissError : PatternEditorEvent
-    // События для встроенного превью
-    data object TogglePreviewPlayback : PatternEditorEvent
-    data object RestartPreview : PatternEditorEvent
-    data object TogglePreviewExpanded : PatternEditorEvent
     data object SendToDevice : PatternEditorEvent
 }
 
