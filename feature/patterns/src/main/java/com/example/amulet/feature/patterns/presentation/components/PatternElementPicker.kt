@@ -1,5 +1,6 @@
 package com.example.amulet.feature.patterns.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -12,7 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
 
@@ -30,6 +34,19 @@ fun PatternElementPickerDialog(
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
+    
+    var searchQuery by remember { mutableStateOf("") }
+    val allElements = PatternElementType.entries
+    val filteredElements = if (searchQuery.isBlank()) {
+        allElements
+    } else {
+        allElements.filter { elementType ->
+            val name = stringResource(elementType.nameRes)
+            val description = stringResource(elementType.descriptionRes)
+            name.contains(searchQuery, ignoreCase = true) ||
+            description.contains(searchQuery, ignoreCase = true)
+        }
+    }
     
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -61,87 +78,74 @@ fun PatternElementPickerDialog(
                         )
                     }
                 }
+                
+                // Поиск
+                AmuletTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = stringResource(R.string.search_patterns_placeholder),
+                    leadingIcon = Icons.Default.Search,
+                    trailingIcon = if (searchQuery.isNotEmpty()) Icons.Default.Clear else null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                
                 HorizontalDivider()
             }
         }
     ) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-                    // Базовые элементы
-                    item {
-                        CategoryHeader(
-                            title = stringResource(R.string.pattern_element_picker_category_basic)
-                        )
-                    }
-                    item { Spacer(modifier = Modifier.height(0.dp)) }
-
-                    items(basicElements) { elementType ->
-                        ElementTypeCard(
-                            elementType = elementType,
-                            onClick = { onElementTypeSelected(elementType) }
-                        )
-                    }
-                    
-                    // Заполнитель если нечетное количество
-                    if (basicElements.size % 2 != 0) {
-                        item { Spacer(modifier = Modifier.height(0.dp)) }
-                    }
-
-                    // Движение
-                    item {
-                        CategoryHeader(
-                            title = stringResource(R.string.pattern_element_picker_category_motion)
-                        )
-                    }
-                    item { Spacer(modifier = Modifier.height(0.dp)) }
-
-                    items(motionElements) { elementType ->
-                        ElementTypeCard(
-                            elementType = elementType,
-                            onClick = { onElementTypeSelected(elementType) }
-                        )
-                    }
-                    
-                    // Заполнитель если нечетное количество
-                    if (motionElements.size % 2 != 0) {
-                        item { Spacer(modifier = Modifier.height(0.dp)) }
-                    }
-
-                    // Эффекты
-                    item {
-                        CategoryHeader(
-                            title = stringResource(R.string.pattern_element_picker_category_effects)
-                        )
-                    }
-                    item { Spacer(modifier = Modifier.height(0.dp)) }
-
-                    items(effectElements) { elementType ->
-                        ElementTypeCard(
-                            elementType = elementType,
-                            onClick = { onElementTypeSelected(elementType) }
-                        )
-                    }
+        if (filteredElements.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.SearchOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.empty_search_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.empty_search_description, searchQuery),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp, top = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(filteredElements) { elementType ->
+                    ElementTypeCard(
+                        elementType = elementType,
+                        onClick = { 
+                            onElementTypeSelected(elementType)
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
-@Composable
-private fun CategoryHeader(
-    title: String,
-    modifier: Modifier = Modifier
-) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(top = 8.dp, bottom = 4.dp)
-    )
-}
 
 @Composable
 private fun ElementTypeCard(
@@ -153,41 +157,66 @@ private fun ElementTypeCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(140.dp),
+            .height(160.dp),
         colors = CardDefaults.outlinedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.outlinedCardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Иконка с фоном
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(56.dp)
+            // Верхняя часть - иконка и категория
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = elementType.icon,
-                        contentDescription = stringResource(elementType.nameRes),
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                // Иконка с фоном
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = elementType.icon,
+                            contentDescription = stringResource(elementType.nameRes),
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
+                
+                // Категория
+                Text(
+                    text = stringResource(
+                        when (elementType.category) {
+                            ElementCategory.BASIC -> R.string.pattern_element_picker_category_basic
+                            ElementCategory.MOTION -> R.string.pattern_element_picker_category_motion
+                            ElementCategory.EFFECTS -> R.string.pattern_element_picker_category_effects
+                        }
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                            shape = MaterialTheme.shapes.small
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             // Название
             Text(
                 text = stringResource(elementType.nameRes),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
 
             // Описание
@@ -196,7 +225,11 @@ private fun ElementTypeCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             )
         }
     }
@@ -301,12 +334,3 @@ enum class ElementCategory {
     EFFECTS
 }
 
-// Группировка элементов по категориям
-private val basicElements = PatternElementType.values()
-    .filter { it.category == ElementCategory.BASIC }
-
-private val motionElements = PatternElementType.values()
-    .filter { it.category == ElementCategory.MOTION }
-
-private val effectElements = PatternElementType.values()
-    .filter { it.category == ElementCategory.EFFECTS }

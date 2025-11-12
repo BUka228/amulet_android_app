@@ -435,6 +435,9 @@ fun PatternEditorScreen(
                         onMoveDown = if (index < state.elements.size - 1) {
                             { onEvent(PatternEditorEvent.MoveElement(index, index + 1)) }
                         } else null,
+                        onAddElement = { elementType ->
+                            onEvent(PatternEditorEvent.AddElement(elementType.createDefaultElement()))
+                        },
                         modifier = Modifier.animateItem(
                             fadeInSpec = tween(
                                 durationMillis = 300,

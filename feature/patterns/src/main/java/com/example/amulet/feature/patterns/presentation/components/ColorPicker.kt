@@ -3,6 +3,7 @@ package com.example.amulet.feature.patterns.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,6 +55,7 @@ fun ColorPicker(
 /**
  * Компактная сетка пресетов цветов
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PresetColorGrid(
     selectedColor: String,
@@ -67,36 +69,17 @@ private fun PresetColorGrid(
         )
     }
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+    FlowRow(
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        maxItemsInEachRow = 5,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            presetColors.take(5).forEach { presetColor ->
-                ColorChip(
-                    color = presetColor,
-                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorSelected(presetColor) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            presetColors.drop(5).forEach { presetColor ->
-                ColorChip(
-                    color = presetColor,
-                    isSelected = selectedColor.equals(presetColor, ignoreCase = true),
-                    onClick = { onColorSelected(presetColor) },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+        presetColors.forEach { presetColor ->
+            ColorChip(
+                color = presetColor,
+                isSelected = selectedColor.equals(presetColor, ignoreCase = true),
+                onClick = { onColorSelected(presetColor) },
+            )
         }
     }
 }
