@@ -29,7 +29,7 @@ data class PatternEditorState(
     // Поля для живого превью
     val spec: PatternSpec? = null,
     val isPreviewPlaying: Boolean = false,
-    val isPreviewExpanded: Boolean = true
+    val isPreviewExpanded: Boolean = false
 )
 
 sealed interface PatternEditorEvent {

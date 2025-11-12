@@ -425,8 +425,6 @@ fun PatternEditorScreen(
                     PatternElementEditor(
                         element = element,
                         index = index,
-                        isSelected = state.selectedElementIndex == index,
-                        onSelect = { onEvent(PatternEditorEvent.SelectElement(index)) },
                         onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
                         onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
                         onMoveUp = if (index > 0) {

@@ -22,8 +22,6 @@ import com.example.amulet.shared.domain.patterns.model.*
 fun PatternElementEditor(
     element: PatternElement,
     index: Int,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
     onUpdate: (PatternElement) -> Unit,
     onRemove: () -> Unit,
     onMoveUp: (() -> Unit)?,
@@ -31,14 +29,10 @@ fun PatternElementEditor(
     modifier: Modifier = Modifier,
     onAddElement: ((PatternElementType) -> Unit)? = null
 ) {
-    var showDetails by remember { mutableStateOf(isSelected) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showElementPicker by remember { mutableStateOf(false) }
     var showElementEditor by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isSelected) {
-        showDetails = isSelected
-    }
 
     // Element Editor BottomSheet
     if (showElementEditor) {
@@ -97,118 +91,122 @@ fun PatternElementEditor(
         )
     }
 
-    ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
-        onClick = {
-            onSelect()
-            showDetails = !showDetails
-        }
+    Row(
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            // Компактный заголовок элемента
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+        Column {
+            IconButton(
+                onClick = { onMoveUp?.invoke() },
+                enabled = onMoveUp != null,
+                modifier = Modifier.size(36.dp)
             ) {
+                Icon(
+                    Icons.Default.KeyboardArrowUp,
+                    contentDescription = stringResource(R.string.cd_move_element_up),
+                    modifier = Modifier.size(18.dp),
+                    tint = if (onMoveUp != null) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    }
+                )
+            }
+
+            IconButton(
+                onClick = { onMoveDown?.invoke() },
+                enabled = onMoveDown != null,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.cd_move_element_down),
+                    modifier = Modifier.size(18.dp),
+                    tint = if (onMoveDown != null) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    }
+                )
+            }
+        }
+        ElevatedCard(
+            modifier = modifier.fillMaxWidth(),
+            onClick = {
+                showElementEditor = true
+            }
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                // Компактный заголовок элемента
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        getElementIcon(element),
-                        contentDescription = stringResource(R.string.cd_element_icon),
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "${index + 1}. ${getElementName(element)}",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Text(
-                            text = getElementDescription(element),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                    // Компактные кнопки перемещения
-                    IconButton(
-                        onClick = { onMoveUp?.invoke() },
-                        enabled = onMoveUp != null,
-                        modifier = Modifier.size(36.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Icon(
-                            Icons.Default.KeyboardArrowUp,
-                            contentDescription = stringResource(R.string.cd_move_element_up),
-                            modifier = Modifier.size(18.dp),
-                            tint = if (onMoveUp != null) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            }
+                            getElementIcon(element),
+                            contentDescription = stringResource(R.string.cd_element_icon),
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                    }
-                    
-                    IconButton(
-                        onClick = { onMoveDown?.invoke() },
-                        enabled = onMoveDown != null,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.KeyboardArrowDown,
-                            contentDescription = stringResource(R.string.cd_move_element_down),
-                            modifier = Modifier.size(18.dp),
-                            tint = if (onMoveDown != null) {
-                                MaterialTheme.colorScheme.onSurface
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            }
-                        )
-                    }
-
-                    // Кнопка добавления нового элемента (если доступна)
-                    if (onAddElement != null) {
-                        IconButton(
-                            onClick = { showElementPicker = true },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = stringResource(R.string.pattern_editor_add_element),
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "${index + 1}. ${getElementName(element)}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = getElementDescription(element),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = { showDeleteConfirmation = true },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.cd_delete_element),
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
 
-                    IconButton(
-                        onClick = { showElementEditor = true },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.pattern_editor_element_expand),
-                            modifier = Modifier.size(18.dp)
-                        )
+                        // Кнопка добавления нового элемента (если доступна)
+                        if (onAddElement != null) {
+                            IconButton(
+                                onClick = { showElementPicker = true },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.pattern_editor_add_element),
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { showDeleteConfirmation = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.cd_delete_element),
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { showElementEditor = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = stringResource(R.string.pattern_editor_element_expand),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
