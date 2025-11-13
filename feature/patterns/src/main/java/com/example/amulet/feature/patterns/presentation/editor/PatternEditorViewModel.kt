@@ -18,6 +18,10 @@ class PatternEditorViewModel @Inject constructor(
     private val updatePatternUseCase: UpdatePatternUseCase,
     private val getPatternByIdUseCase: GetPatternByIdUseCase,
     private val publishPatternUseCase: PublishPatternUseCase,
+    private val getAllTagsUseCase: GetAllTagsUseCase,
+    private val createTagsUseCase: CreateTagsUseCase,
+    private val setPatternTagsUseCase: SetPatternTagsUseCase,
+    private val deleteTagsUseCase: DeleteTagsUseCase,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -32,6 +36,12 @@ class PatternEditorViewModel @Inject constructor(
     init {
         if (patternId != null) {
             loadPattern()
+        }
+        // Загрузим справочник тегов
+        viewModelScope.launch {
+            getAllTagsUseCase().onSuccess { tags ->
+                _uiState.update { it.copy(availableTags = tags.sorted()) }
+            }
         }
         // Автоматически обновляем spec при изменении элементов
         viewModelScope.launch {
@@ -64,6 +74,13 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.ConfirmDiscard -> confirmDiscard()
             is PatternEditorEvent.DismissError -> dismissError()
             is PatternEditorEvent.SendToDevice -> sendToDevice()
+            is PatternEditorEvent.ShowTagsSheet -> _uiState.update { it.copy(showTagsSheet = true) }
+            is PatternEditorEvent.HideTagsSheet -> _uiState.update { it.copy(showTagsSheet = false) }
+            is PatternEditorEvent.UpdateTagSearch -> _uiState.update { it.copy(tagSearchQuery = event.query) }
+            is PatternEditorEvent.ToggleTag -> toggleTag(event.tag)
+            is PatternEditorEvent.AddNewTag -> addNewTag(event.tag)
+            is PatternEditorEvent.DeleteSelectedTags -> deleteSelectedTags()
+            is PatternEditorEvent.SetPendingDeleteTags -> _uiState.update { it.copy(pendingDeleteTags = event.tags) }
         }
     }
 
@@ -87,13 +104,60 @@ class PatternEditorViewModel @Inject constructor(
                                 elements = it.spec.elements,
                                 isLoading = false,
                                 isEditing = true,
-                                spec = it.spec
+                                spec = it.spec,
+                                selectedTags = it.tags.toSet()
                             )
                         }
                         updateSpec()
                     } ?: run {
                         _uiState.update { it.copy(isLoading = false) }
                     }
+                }
+        }
+    }
+
+    private fun toggleTag(tag: String) {
+        val current = _uiState.value
+        val newSet = if (current.selectedTags.contains(tag)) {
+            current.selectedTags - tag
+        } else {
+            current.selectedTags + tag
+        }
+        // Меняем только локальное состояние, сохраняем связи при сохранении паттерна
+        _uiState.update {
+            it.copy(
+                selectedTags = newSet,
+                availableTags = (it.availableTags + tag).distinct().sorted(),
+                hasUnsavedChanges = true
+            )
+        }
+    }
+
+    private fun addNewTag(tag: String) {
+        val trimmed = tag.trim()
+        if (trimmed.isEmpty()) return
+        val current = _uiState.value
+        viewModelScope.launch {
+            // 1) Создаём тег в БД (если уже есть — игнорируется)
+            createTagsUseCase(listOf(trimmed))
+                .onSuccess {
+                    val updatedAvailable = (current.availableTags + trimmed).distinct().sorted()
+                    val newSet = current.selectedTags + trimmed
+                    _uiState.update { it.copy(selectedTags = newSet, availableTags = updatedAvailable, hasUnsavedChanges = true) }
+                }
+        }
+    }
+
+    private fun deleteSelectedTags() {
+        val tagsToDelete = _uiState.value.pendingDeleteTags
+        if (tagsToDelete.isEmpty()) return
+        viewModelScope.launch {
+            deleteTagsUseCase(tagsToDelete.toList())
+                .onSuccess {
+                    // обновить доступные и выбранные
+                    val newAvailable = _uiState.value.availableTags.filterNot { it in tagsToDelete }
+                    val newSelected = _uiState.value.selectedTags - tagsToDelete
+                    _uiState.update { it.copy(availableTags = newAvailable, selectedTags = newSelected, pendingDeleteTags = emptySet()) }
                 }
         }
     }
@@ -265,9 +329,13 @@ class PatternEditorViewModel @Inject constructor(
                     currentState.pattern.version,
                     update
                 ).onSuccess {
-                    _uiState.update { it.copy(isSaving = false, hasUnsavedChanges = false) }
-                    _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн сохранён"))
-                    _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
+                    // применяем связи тегов
+                    setPatternTagsUseCase(currentState.pattern.id, currentState.selectedTags.toList())
+                        .onSuccess {
+                            _uiState.update { it.copy(isSaving = false, hasUnsavedChanges = false) }
+                            _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн сохранён"))
+                            _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
+                        }
                 }.onFailure { error ->
                     _uiState.update {
                         it.copy(
@@ -287,10 +355,14 @@ class PatternEditorViewModel @Inject constructor(
                 )
 
                 createPatternUseCase(draft)
-                    .onSuccess {
-                        _uiState.update { it.copy(isSaving = false, hasUnsavedChanges = false) }
-                        _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн создан"))
-                        _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
+                    .onSuccess { created ->
+                        // применяем связи тегов для нового паттерна
+                        setPatternTagsUseCase(created.id, currentState.selectedTags.toList())
+                            .onSuccess {
+                                _uiState.update { it.copy(isSaving = false, hasUnsavedChanges = false) }
+                                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн создан"))
+                                _sideEffect.emit(PatternEditorSideEffect.NavigateBack)
+                            }
                     }
                     .onFailure { error ->
                         _uiState.update {

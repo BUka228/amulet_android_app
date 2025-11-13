@@ -38,6 +38,31 @@ interface LocalPatternDataSource {
     suspend fun getTagsForPattern(patternId: String): List<TagEntity>
     
     /**
+     * Получить все теги.
+     */
+    suspend fun getAllTags(): List<TagEntity>
+
+    /**
+     * Поиск тегов по подстроке.
+     */
+    suspend fun searchTags(query: String): List<TagEntity>
+    
+    /**
+     * Получить теги по именам.
+     */
+    suspend fun getTagsByNames(names: List<String>): List<TagEntity>
+
+    /**
+     * Удалить теги по именам (каскадно удалятся связи с паттернами).
+     */
+    suspend fun deleteTagsByNames(names: List<String>)
+    
+    /**
+     * Вставить (создать) теги. Конфликт по имени игнорируется (INSERT OR IGNORE).
+     */
+    suspend fun insertTags(tags: List<TagEntity>)
+    
+    /**
      * Получить список пользователей, с которыми расшарен паттерн.
      */
     suspend fun getSharesForPattern(patternId: String): List<PatternShareEntity>
@@ -82,3 +107,4 @@ interface LocalPatternDataSource {
      */
     suspend fun <R> withPatternTransaction(block: suspend () -> R): R
 }
+

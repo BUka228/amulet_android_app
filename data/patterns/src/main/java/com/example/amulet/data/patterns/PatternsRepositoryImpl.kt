@@ -490,4 +490,77 @@ class PatternsRepositoryImpl @Inject constructor(
             Err(AppError.DatabaseError)
         }
     }
+
+    override suspend fun getAllTags(): AppResult<List<String>> {
+        return try {
+            val tags = localDataSource.getAllTags().toTagNames()
+            Ok(tags)
+        } catch (e: Exception) {
+            Logger.e("Ошибка получения всех тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun searchTags(query: String): AppResult<List<String>> {
+        return try {
+            val tags = localDataSource.searchTags(query).toTagNames()
+            Ok(tags)
+        } catch (e: Exception) {
+            Logger.e("Ошибка поиска тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun createTags(names: List<String>): AppResult<Unit> {
+        Logger.d("Создание тегов в БД: ${names.size}", "PatternsRepositoryImpl")
+        return try {
+            if (names.isEmpty()) return Ok(Unit)
+            val entities = names.toTagEntities()
+            localDataSource.insertTags(entities)
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка создания тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun setPatternTags(patternId: PatternId, tags: List<String>): AppResult<Unit> {
+        Logger.d("Перезапись тегов для паттерна: ${patternId.value}, всего: ${tags.size}", "PatternsRepositoryImpl")
+        return try {
+            val entity = localDataSource.observeById(patternId.value).first()
+                ?: return Err(AppError.NotFound)
+
+            // Существующие и новые теги
+            val existing = localDataSource.getTagsByNames(tags)
+            val existingNames = existing.map { it.name }.toSet()
+            val newNames = tags.filter { it !in existingNames }
+            val newEntities = newNames.toTagEntities()
+            val combined = existing + newEntities
+            val tagIds = combined.map { it.id }
+
+            Logger.d("Обновление связей тегов для паттерна: ${patternId.value}", "PatternsRepositoryImpl")
+            localDataSource.upsertPatternWithRelations(
+                pattern = entity,
+                tags = combined, // insertTags(IGNORE) создаст новые, существующие проигнорируются
+                tagIds = tagIds, // использовать реальные IDs (для новых сгенерированы нами)
+                sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
+            )
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка перезаписи тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun deleteTags(names: List<String>): AppResult<Unit> {
+        Logger.d("Удаление тегов из БД: ${names.size}", "PatternsRepositoryImpl")
+        return try {
+            if (names.isEmpty()) return Ok(Unit)
+            localDataSource.deleteTagsByNames(names)
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка удаления тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
 }

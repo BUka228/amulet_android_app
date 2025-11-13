@@ -63,4 +63,21 @@ interface PatternsRepository {
         patternId: PatternId,
         tag: String
     ): AppResult<Unit>
+
+    // Справочник тегов
+    suspend fun getAllTags(): AppResult<List<String>>
+
+    suspend fun searchTags(query: String): AppResult<List<String>>
+
+    // Создание тегов (без привязки к паттерну)
+    suspend fun createTags(names: List<String>): AppResult<Unit>
+
+    // Массовые операции
+    suspend fun setPatternTags(
+        patternId: PatternId,
+        tags: List<String>
+    ): AppResult<Unit>
+
+    suspend fun deleteTags(names: List<String>): AppResult<Unit>
 }
+

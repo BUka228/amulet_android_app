@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,9 +46,9 @@ fun PatternInfoCard(
                     )
                 }
             }
-            
-            Divider()
-            
+
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
             // Метаданные
             Text(
                 text = stringResource(R.string.pattern_preview_metadata),
@@ -111,7 +112,7 @@ fun PatternInfoCard(
             // Автор (для публичных паттернов)
             val ownerId = pattern.ownerId
             if (pattern.public && ownerId != null) {
-                Divider()
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically

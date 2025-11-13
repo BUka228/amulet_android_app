@@ -184,5 +184,17 @@ object KoinBridgeModule {
     fun provideRemoveTagFromPatternUseCase(koin: Koin): RemoveTagFromPatternUseCase = koin.get()
     
     @Provides
+    fun provideGetAllTagsUseCase(koin: Koin): GetAllTagsUseCase = koin.get()
+
+    @Provides
+    fun provideSetPatternTagsUseCase(koin: Koin): SetPatternTagsUseCase = koin.get()
+
+    @Provides
+    fun provideDeleteTagsUseCase(koin: Koin): DeleteTagsUseCase = koin.get()
+
+    @Provides
+    fun provideCreateTagsUseCase(koin: Koin): CreateTagsUseCase = koin.get()
+
+    @Provides
     fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
 }

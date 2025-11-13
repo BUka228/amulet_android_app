@@ -30,7 +30,13 @@ data class PatternEditorState(
     val spec: PatternSpec? = null,
     val isPlaying: Boolean = false,
     val isLoop: Boolean = false,
-    val previewLoop: Boolean = false
+    val previewLoop: Boolean = false,
+    // Теги
+    val availableTags: List<String> = emptyList(),
+    val selectedTags: Set<String> = emptySet(),
+    val showTagsSheet: Boolean = false,
+    val tagSearchQuery: String = "",
+    val pendingDeleteTags: Set<String> = emptySet()
 )
 
 sealed interface PatternEditorEvent {
@@ -55,6 +61,14 @@ sealed interface PatternEditorEvent {
     data object ConfirmDiscard : PatternEditorEvent
     data object DismissError : PatternEditorEvent
     data object SendToDevice : PatternEditorEvent
+    // Теги
+    data object ShowTagsSheet : PatternEditorEvent
+    data object HideTagsSheet : PatternEditorEvent
+    data class ToggleTag(val tag: String) : PatternEditorEvent
+    data class AddNewTag(val tag: String) : PatternEditorEvent
+    data class SetPendingDeleteTags(val tags: Set<String>) : PatternEditorEvent
+    data object DeleteSelectedTags : PatternEditorEvent
+    data class UpdateTagSearch(val query: String) : PatternEditorEvent
 }
 
 sealed interface PatternEditorSideEffect {

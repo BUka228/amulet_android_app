@@ -67,6 +67,10 @@ private val sharedModule = module {
     factory { SharePatternUseCase(get()) }
     factory { AddTagToPatternUseCase(get()) }
     factory { RemoveTagFromPatternUseCase(get()) }
+    factory { GetAllTagsUseCase(get()) }
+    factory { CreateTagsUseCase(get()) }
+    factory { SetPatternTagsUseCase(get()) }
+    factory { DeleteTagsUseCase(get()) }
     factory { PreviewPatternOnDeviceUseCase(get(), get()) }
 }
 

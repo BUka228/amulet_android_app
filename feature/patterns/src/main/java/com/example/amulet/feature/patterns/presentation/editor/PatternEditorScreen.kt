@@ -6,7 +6,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,20 +22,17 @@ import com.example.amulet.feature.patterns.presentation.components.PatternElemen
 import com.example.amulet.feature.patterns.presentation.components.PatternElementPickerDialog
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternData
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternDialog
-import com.example.amulet.feature.patterns.presentation.components.AmuletAvatar2D
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.ui.draw.clip
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.text.input.TextFieldValue
 
 @Composable
 fun PatternEditorRoute(
@@ -107,6 +103,41 @@ fun PatternEditorScreen(
     onDismissPublishDialog: () -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
+
+    // Add Tag Dialog (inside screen scope)
+    var showAddTagDialog by remember { mutableStateOf(false) }
+    var newTagText by remember { mutableStateOf("") }
+    if (showAddTagDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddTagDialog = false },
+            title = { Text(text = stringResource(R.string.dialog_add_tag_title)) },
+            text = {
+                AmuletTextField(
+                    value = newTagText,
+                    onValueChange = { newTagText = it },
+                    label = stringResource(R.string.dialog_add_tag_label),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newTagText.isNotBlank()) {
+                        onEvent(PatternEditorEvent.AddNewTag(newTagText.trim()))
+                        newTagText = ""
+                        showAddTagDialog = false
+                    }
+                }) {
+                    Text(stringResource(R.string.dialog_add_tag_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddTagDialog = false }) {
+                    Text(stringResource(R.string.dialog_add_tag_cancel))
+                }
+            }
+        )
+    }
 
     // Element Picker Dialog
     if (showElementPicker) {
@@ -197,7 +228,7 @@ fun PatternEditorScreen(
                                 enabled = state.spec != null && !state.isSaving
                             ) {
                                 Icon(
-                                    Icons.Default.Send, 
+                                    Icons.AutoMirrored.Filled.Send,
                                     contentDescription = stringResource(R.string.cd_send_to_device)
                                 )
                             }
@@ -244,7 +275,7 @@ fun PatternEditorScreen(
         ) {
             // Основная информация
             item(key = "basic_info") {
-                ElevatedCard(
+                AmuletCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -316,7 +347,7 @@ fun PatternEditorScreen(
 
             // Настройки паттерна
             item(key = "settings") {
-                ElevatedCard(
+                AmuletCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -368,6 +399,79 @@ fun PatternEditorScreen(
                                 checked = state.loop,
                                 onCheckedChange = { onEvent(PatternEditorEvent.UpdateLoop(it)) }
                             )
+                        }
+                    }
+                }
+            }
+
+            // Теги
+            item(key = "tags") {
+                AmuletCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp,  vertical = 8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.pattern_editor_tags_label),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                IconButton(onClick = { onEvent(PatternEditorEvent.ShowTagsSheet) }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.List,
+                                        contentDescription = stringResource(R.string.bottom_sheet_tags_title)
+                                    )
+                                }
+                                IconButton(onClick = { showAddTagDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = stringResource(R.string.cd_add_tag)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        if (state.selectedTags.isNotEmpty()) {
+                                            onEvent(PatternEditorEvent.SetPendingDeleteTags(state.selectedTags))
+                                        }
+                                    },
+                                    enabled = state.selectedTags.isNotEmpty()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.cd_delete_selected_tags)
+                                    )
+                                }
+                            }
+                        }
+
+                        val visibleLimit = 8
+                        val sortedTags = remember(state.availableTags) { state.availableTags.sorted() }
+                        val visible = sortedTags.take(visibleLimit)
+                        val overflowCount = (sortedTags.size - visible.size).coerceAtLeast(0)
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            visible.forEach { tag ->
+                                FilterChip(
+                                    selected = state.selectedTags.contains(tag),
+                                    onClick = { onEvent(PatternEditorEvent.ToggleTag(tag)) },
+                                    label = { Text(tag) }
+                                )
+                            }
+                            if (overflowCount > 0) {
+                                FilterChip(
+                                    selected = false,
+                                    onClick = { onEvent(PatternEditorEvent.ShowTagsSheet) },
+                                    label = { Text("+${overflowCount}") }
+                                )
+                            }
                         }
                     }
                 }
@@ -454,13 +558,86 @@ fun PatternEditorScreen(
             }
         }
     }
+
+    // Delete selected tags confirmation
+    if (state.pendingDeleteTags.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { onEvent(PatternEditorEvent.SetPendingDeleteTags(emptySet())) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(stringResource(R.string.dialog_delete_tags_title)) },
+            text = {
+                Text(stringResource(R.string.dialog_delete_tags_message, state.pendingDeleteTags.size))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onEvent(PatternEditorEvent.DeleteSelectedTags)
+                }) { Text(stringResource(R.string.dialog_delete_tags_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { onEvent(PatternEditorEvent.SetPendingDeleteTags(emptySet())) }) {
+                    Text(stringResource(R.string.dialog_delete_tags_cancel))
+                }
+            }
+        )
+    }
+
+    // Bottom sheet with all tags
+    if (state.showTagsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { onEvent(PatternEditorEvent.HideTagsSheet) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.bottom_sheet_tags_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                AmuletTextField(
+                    value = state.tagSearchQuery,
+                    onValueChange = { onEvent(PatternEditorEvent.UpdateTagSearch(it)) },
+                    label = stringResource(R.string.bottom_sheet_tags_search_label),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                val filtered = remember(state.availableTags, state.tagSearchQuery) {
+                    val q = state.tagSearchQuery.trim().lowercase()
+                    if (q.isEmpty()) state.availableTags else state.availableTags.filter { it.lowercase().contains(q) }
+                }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    filtered.forEach { tag ->
+                        FilterChip(
+                            selected = state.selectedTags.contains(tag),
+                            onClick = { onEvent(PatternEditorEvent.ToggleTag(tag)) },
+                            label = { Text(tag) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { onEvent(PatternEditorEvent.HideTagsSheet) }) {
+                        Text(stringResource(R.string.bottom_sheet_tags_close))
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun EmptyElementsState(
     onAddElement: () -> Unit
 ) {
-    ElevatedCard(
+    AmuletCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(

@@ -269,7 +269,7 @@
     <string name="cd_play_pattern">Play pattern</string>
     <string name="cd_pause_pattern">Pause pattern</string>
     <string name="cd_restart_pattern">Restart pattern</string>
-    <string name="cd_send_to_device">Send pattern to device</string>
+    <string name="cd_send_to_device">Send pattern to Device</string>
     <string name="cd_edit_pattern">Edit pattern</string>
     <string name="cd_share_pattern">Share pattern</string>
     <string name="cd_navigate_back">Back</string>
@@ -308,4 +308,25 @@
         <item quantity="one">%d download</item>
         <item quantity="other">%d downloads</item>
     </plurals>
+    <!-- Tags -->
+    <string name="pattern_editor_tags_label">Теги</string>
+    <string name="cd_add_tag">Добавить тег</string>
+    <string name="cd_delete_selected_tags">Удалить выбранные теги</string>
+
+    <!-- Add Tag Dialog -->
+    <string name="dialog_add_tag_title">Новый тег</string>
+    <string name="dialog_add_tag_label">Название тега</string>
+    <string name="dialog_add_tag_confirm">Добавить</string>
+    <string name="dialog_add_tag_cancel">Отмена</string>
+
+    <!-- Delete Tags Dialog -->
+    <string name="dialog_delete_tags_title">Удалить выбранные теги?</string>
+    <string name="dialog_delete_tags_message">Будут удалены %1$d тег(ов) из базы данных. Действие необратимо.</string>
+    <string name="dialog_delete_tags_confirm">Удалить</string>
+    <string name="dialog_delete_tags_cancel">Отмена</string>
+
+    <!-- Bottom sheet: all tags -->
+    <string name="bottom_sheet_tags_title">Все теги</string>
+    <string name="bottom_sheet_tags_search_label">Поиск тегов</string>
+    <string name="bottom_sheet_tags_close">Закрыть</string>
 </resources>

@@ -40,6 +40,27 @@ class LocalPatternDataSourceImpl @Inject constructor(
         return patternDao.getTagsForPattern(patternId)
     }
     
+    override suspend fun getAllTags(): List<TagEntity> {
+        return patternDao.getAllTags()
+    }
+
+    override suspend fun searchTags(query: String): List<TagEntity> {
+        return patternDao.searchTags(query)
+    }
+    
+    override suspend fun getTagsByNames(names: List<String>): List<TagEntity> {
+        return patternDao.getTagsByNames(names)
+    }
+
+    override suspend fun deleteTagsByNames(names: List<String>) {
+        patternDao.deleteTagsByNames(names)
+    }
+    
+    override suspend fun insertTags(tags: List<TagEntity>) {
+        Logger.d("Вставка/создание тегов: ${tags.size}", "LocalPatternDataSourceImpl")
+        patternDao.insertTags(tags)
+    }
+    
     override suspend fun getSharesForPattern(patternId: String): List<PatternShareEntity> {
         return patternDao.getSharesForPattern(patternId)
     }
@@ -86,3 +107,4 @@ class LocalPatternDataSourceImpl @Inject constructor(
         return result
     }
 }
+

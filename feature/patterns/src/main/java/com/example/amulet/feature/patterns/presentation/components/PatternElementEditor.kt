@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.card.AmuletCard
 
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
@@ -139,7 +140,7 @@ fun PatternElementEditor(
                 )
             }
         }
-        ElevatedCard(
+        AmuletCard(
             modifier = modifier.fillMaxWidth(),
             onClick = {
                 showElementEditor = true

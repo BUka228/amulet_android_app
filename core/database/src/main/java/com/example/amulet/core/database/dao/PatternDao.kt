@@ -100,4 +100,17 @@ interface PatternDao {
             insertPatternShares(sharedUserIds.map { userId -> PatternShareEntity(pattern.id, userId) })
         }
     }
+
+    @Query("SELECT * FROM tags ORDER BY name ASC")
+    suspend fun getAllTags(): List<TagEntity>
+
+    @Query("SELECT * FROM tags WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    suspend fun searchTags(query: String): List<TagEntity>
+
+    @Query("SELECT * FROM tags WHERE name IN (:names)")
+    suspend fun getTagsByNames(names: List<String>): List<TagEntity>
+
+    @Query("DELETE FROM tags WHERE name IN (:names)")
+    suspend fun deleteTagsByNames(names: List<String>)
 }
+
