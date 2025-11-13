@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
+import com.example.amulet.shared.domain.patterns.PreviewCache
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase
@@ -24,6 +25,7 @@ class PatternPreviewViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val patternId: String? = savedStateHandle.get<String>("patternId")
+    private val previewKey: String? = savedStateHandle.get<String>("key")
 
     private val _uiState = MutableStateFlow(PatternPreviewState())
     val uiState: StateFlow<PatternPreviewState> = _uiState.asStateFlow()
@@ -32,7 +34,11 @@ class PatternPreviewViewModel @Inject constructor(
     val sideEffect: SharedFlow<PatternPreviewSideEffect> = _sideEffect.asSharedFlow()
 
     init {
-        loadPattern()
+        when {
+            patternId != null -> loadPatternById(patternId)
+            previewKey != null -> loadSpecFromCache(previewKey)
+            else -> _uiState.update { it.copy(isLoading = false, pattern = null) }
+        }
         loadDevices()
     }
 
@@ -48,16 +54,10 @@ class PatternPreviewViewModel @Inject constructor(
         }
     }
 
-    private fun loadPattern() {
-        if (patternId == null) {
-            _uiState.update { it.copy(isLoading = false, pattern = null) }
-            return
-        }
-
+    private fun loadPatternById(id: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-
-            getPatternByIdUseCase(PatternId(patternId))
+            getPatternByIdUseCase(PatternId(id))
                 .collect { pattern ->
                     _uiState.update {
                         it.copy(
@@ -67,6 +67,24 @@ class PatternPreviewViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    private fun loadSpecFromCache(key: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val spec = PreviewCache.take(key)
+            if (spec != null) {
+                _uiState.update {
+                    it.copy(
+                        pattern = null,
+                        spec = spec,
+                        isLoading = false
+                    )
+                }
+            } else {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 

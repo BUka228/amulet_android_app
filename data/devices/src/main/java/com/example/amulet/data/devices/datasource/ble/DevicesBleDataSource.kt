@@ -2,6 +2,8 @@ package com.example.amulet.data.devices.datasource.ble
 
 import com.example.amulet.core.ble.model.ConnectionState
 import com.example.amulet.core.ble.model.DeviceStatus
+import com.example.amulet.core.ble.model.AnimationPlan
+import com.example.amulet.core.ble.model.UploadProgress
 import com.example.amulet.core.ble.scanner.ScannedDevice
 import com.example.amulet.shared.core.AppResult
 import kotlinx.coroutines.flow.Flow
@@ -60,4 +62,9 @@ interface DevicesBleDataSource {
      * @return Версия протокола (например, "v1.0" или "v2.0")
      */
     suspend fun getProtocolVersion(): AppResult<String?>
+
+    /**
+     * Загрузить план анимации на устройство и наблюдать прогресс.
+     */
+    fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress>
 }

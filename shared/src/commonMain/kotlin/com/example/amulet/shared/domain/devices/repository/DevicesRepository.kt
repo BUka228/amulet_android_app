@@ -6,6 +6,7 @@ import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.ScannedAmulet
+import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -94,4 +95,12 @@ interface DevicesRepository {
      * Наблюдать за статусом подключенного устройства (батарея, прошивка и т.д.).
      */
     fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?>
+
+    /**
+     * Загрузить план команд на устройство и вернуть поток прогресса (в процентах 0..100).
+     */
+    fun uploadCommandPlan(
+        plan: AmuletCommandPlan,
+        hardwareVersion: Int
+    ): Flow<Int>
 }

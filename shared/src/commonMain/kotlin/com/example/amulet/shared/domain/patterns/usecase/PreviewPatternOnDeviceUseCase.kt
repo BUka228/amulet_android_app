@@ -9,6 +9,7 @@ import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
 
 /**
  * UseCase для предпросмотра паттерна на реальном устройстве.
@@ -23,32 +24,37 @@ class PreviewPatternOnDeviceUseCase(
     ): Flow<PreviewProgress> = flow {
         Logger.d("Начало предпросмотра паттерна на устройстве: ${spec.type}, deviceId: $deviceId", "PreviewPatternOnDeviceUseCase")
         emit(PreviewProgress.Compiling)
-        
-        // Получение информации об устройстве
-        devicesRepository.getDevice(deviceId)
-            .onSuccess { device ->
-                Logger.d("Устройство найдено: ${device.name}, hardware: ${device.hardwareVersion}", "PreviewPatternOnDeviceUseCase")
-                // Компиляция
-                val plan = compiler.compile(
-                    spec = spec,
-                    hardwareVersion = device.hardwareVersion,
-                    firmwareVersion = device.firmwareVersion ?: "1.0.0"
-                )
-                
-                emit(PreviewProgress.Uploading(0))
-                Logger.d("Компиляция завершена, команд: ${plan.commands.size}", "PreviewPatternOnDeviceUseCase")
-                
-                // TODO: Отправка на устройство через DevicesRepository
-                // Когда DevicesRepository будет иметь метод sendCommandPlan,
-                // здесь нужно будет вызвать его и обрабатывать прогресс
-                
-                // Пока просто эмитим успех
-                emit(PreviewProgress.Playing)
-                Logger.d("Предпросмотр начат", "PreviewPatternOnDeviceUseCase")
-            }
-            .onFailure { error ->
-                emit(PreviewProgress.Failed(Exception("Device not found: $error")))
-            }
+        try {
+            // Получение информации об устройстве
+            devicesRepository.getDevice(deviceId)
+                .onSuccess { device ->
+                    Logger.d("Устройство найдено: ${device.name}, hardware: ${device.hardwareVersion}", "PreviewPatternOnDeviceUseCase")
+                    // Компиляция
+                    val plan = compiler.compile(
+                        spec = spec,
+                        hardwareVersion = device.hardwareVersion,
+                        firmwareVersion = device.firmwareVersion
+                    )
+
+                    Logger.d("Компиляция завершена, команд: ${plan.commands.size}", "PreviewPatternOnDeviceUseCase")
+                    emit(PreviewProgress.Uploading(0))
+
+                    // Загрузка плана на устройство с прогрессом
+                    devicesRepository.uploadCommandPlan(plan, device.hardwareVersion)
+                        .collect { percent ->
+                            emit(PreviewProgress.Uploading(percent))
+                        }
+
+                    // После завершения загрузки — воспроизведение
+                    emit(PreviewProgress.Playing)
+                    Logger.d("Предпросмотр начат", "PreviewPatternOnDeviceUseCase")
+                }
+                .onFailure { error ->
+                    emit(PreviewProgress.Failed(Exception("Device not found: $error")))
+                }
+        } catch (e: Exception) {
+            emit(PreviewProgress.Failed(e))
+        }
     }
 }
 

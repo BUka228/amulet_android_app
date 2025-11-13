@@ -17,7 +17,9 @@ import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.DeviceSettings
 import com.example.amulet.shared.domain.devices.model.ScannedAmulet
+import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
+import com.example.amulet.core.ble.model.AnimationPlan
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -170,5 +172,18 @@ class DevicesRepositoryImpl @Inject constructor(
         return bleDataSource.observeDeviceStatus().map { status ->
             status?.let { bleMapper.mapDeviceStatus(it) }
         }
+    }
+
+    override fun uploadCommandPlan(
+        plan: AmuletCommandPlan,
+        hardwareVersion: Int
+    ): Flow<Int> {
+        val blePlan = AnimationPlan(
+            id = "preview-${System.currentTimeMillis()}",
+            commands = plan.commands,
+            estimatedDurationMs = plan.estimatedDurationMs,
+            hardwareVersion = hardwareVersion
+        )
+        return bleDataSource.uploadAnimation(blePlan).map { it.percent }
     }
 }

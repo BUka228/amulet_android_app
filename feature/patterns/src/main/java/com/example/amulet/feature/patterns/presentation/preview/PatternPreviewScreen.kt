@@ -116,7 +116,7 @@ fun PatternPreviewScreen(
         return
     }
 
-    if (state.pattern == null) {
+    if (state.pattern == null && state.spec == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -202,6 +202,8 @@ fun PatternPreviewScreen(
         }
 
         // PatternInfoCard - информация о паттерне
-        PatternInfoCard(pattern = state.pattern)
+        if (state.pattern != null) {
+            PatternInfoCard(pattern = state.pattern)
+        }
     }
 }

@@ -4,6 +4,8 @@ import com.example.amulet.core.ble.AmuletBleManager
 import com.example.amulet.core.ble.model.BleResult
 import com.example.amulet.core.ble.model.ConnectionState
 import com.example.amulet.core.ble.model.DeviceStatus
+import com.example.amulet.core.ble.model.AnimationPlan
+import com.example.amulet.core.ble.model.UploadProgress
 import com.example.amulet.core.ble.scanner.BleScanner
 import com.example.amulet.core.ble.scanner.ScannedDevice
 import com.example.amulet.shared.core.AppError
@@ -12,6 +14,7 @@ import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 /**
@@ -68,6 +71,10 @@ class DevicesBleDataSourceImpl @Inject constructor(
         } catch (e: Exception) {
             Err(mapBleException(e))
         }
+    }
+
+    override fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress> {
+        return bleManager.uploadAnimation(plan)
     }
     
     /**

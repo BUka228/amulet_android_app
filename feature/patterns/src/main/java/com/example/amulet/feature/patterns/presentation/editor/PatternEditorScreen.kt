@@ -41,7 +41,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun PatternEditorRoute(
     viewModel: PatternEditorViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToPreview: (com.example.amulet.shared.domain.patterns.model.PatternSpec) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -56,6 +57,7 @@ fun PatternEditorRoute(
                 is PatternEditorSideEffect.NavigateBack -> onNavigateBack()
                 is PatternEditorSideEffect.NavigateToPreview -> {
                     // Переход на полноэкранное превью (для отправки на устройство)
+                    onNavigateToPreview(effect.spec)
                 }
                 is PatternEditorSideEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(
