@@ -1,6 +1,7 @@
 package com.example.amulet.shared.domain.patterns.usecase
 
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.domain.patterns.model.PatternDraft
@@ -16,8 +17,10 @@ class CreatePatternUseCase(
     suspend operator fun invoke(
         draft: PatternDraft
     ): AppResult<Pattern> {
+        Logger.d("Создание паттерна: ${draft.title}, тип: ${draft.kind}", "CreatePatternUseCase")
         // Валидация
         return validator.validate(draft.spec).andThen {
+            Logger.d("Валидация пройдена, создание паттерна", "CreatePatternUseCase")
             // Создание
             repository.createPattern(draft)
         }

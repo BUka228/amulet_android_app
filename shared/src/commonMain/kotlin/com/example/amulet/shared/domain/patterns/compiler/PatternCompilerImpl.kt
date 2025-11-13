@@ -1,5 +1,6 @@
 package com.example.amulet.shared.domain.patterns.compiler
 
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
 import com.example.amulet.shared.domain.devices.model.ChaseDirection
@@ -30,10 +31,12 @@ class PatternCompilerImpl : PatternCompiler {
         hardwareVersion: Int,
         firmwareVersion: String
     ): AmuletCommandPlan {
+        Logger.d("Начало компиляции паттерна: ${spec.type}, элементов: ${spec.elements.size}", "PatternCompiler")
         val commands = mutableListOf<AmuletCommand>()
         var totalDuration = 0L
         
         for (element in spec.elements) {
+            Logger.d("Компиляция элемента: ${element::class.simpleName}", "PatternCompiler")
             when (element) {
                 is PatternElementBreathing -> {
                     // Команда BREATHING:color:durationMs
@@ -141,6 +144,7 @@ class PatternCompilerImpl : PatternCompiler {
             }
         }
         
+        Logger.d("Компиляция завершена, команд: ${commands.size}, общая длительность: ${totalDuration}ms", "PatternCompiler")
         return AmuletCommandPlan(
             commands = commands,
             estimatedDurationMs = totalDuration
@@ -148,6 +152,7 @@ class PatternCompilerImpl : PatternCompiler {
     }
 
     private fun compileTimeline(element: PatternElementTimeline): Pair<List<AmuletCommand>, Long> {
+        Logger.d("Компиляция таймлайна: длительность=${element.durationMs}ms, tick=${element.tickMs}ms, дорожек: ${element.tracks.size}", "PatternCompiler")
         val commands = mutableListOf<AmuletCommand>()
         val leds = 8
         val duration = element.durationMs
@@ -180,6 +185,7 @@ class PatternCompilerImpl : PatternCompiler {
             elapsed += step
         }
 
+        Logger.d("Компиляция таймлайна завершена, команд: ${commands.size}", "PatternCompiler")
         return commands to duration.toLong()
     }
 

@@ -7,6 +7,7 @@ import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -44,10 +45,12 @@ class LocalPatternDataSourceImpl @Inject constructor(
     }
     
     override suspend fun upsertPattern(pattern: PatternEntity) {
+        Logger.d("Сохранение паттерна в БД: ${pattern.id}", "LocalPatternDataSourceImpl")
         patternDao.upsertPattern(pattern)
     }
     
     override suspend fun upsertPatterns(patterns: List<PatternEntity>) {
+        Logger.d("Сохранение паттернов в БД: ${patterns.size}", "LocalPatternDataSourceImpl")
         patternDao.upsertPatterns(patterns)
     }
     
@@ -57,22 +60,29 @@ class LocalPatternDataSourceImpl @Inject constructor(
         tagIds: List<String>,
         sharedUserIds: List<String>
     ) {
+        Logger.d("Сохранение паттерна с_relations в БД: ${pattern.id}", "LocalPatternDataSourceImpl")
         patternDao.upsertPatternWithRelations(pattern, tags, tagIds, sharedUserIds)
     }
     
     override suspend fun deletePattern(patternId: String) {
+        Logger.d("Удаление паттерна из БД: $patternId", "LocalPatternDataSourceImpl")
         patternDao.deletePattern(patternId)
     }
     
     override suspend fun clearAll() {
+        Logger.d("Очистка всех паттернов из БД", "LocalPatternDataSourceImpl")
         patternDao.clear()
     }
     
     override suspend fun enqueueOutboxAction(action: OutboxActionEntity) {
+        Logger.d("Добавление действия в Outbox: ${action.type}, ID: ${action.id}", "LocalPatternDataSourceImpl")
         outboxDao.upsert(action)
     }
     
     override suspend fun <R> withPatternTransaction(block: suspend () -> R): R {
-        return transactionRunner.runInTransaction(block)
+        Logger.d("Начало транзакции", "LocalPatternDataSourceImpl")
+        val result = transactionRunner.runInTransaction(block)
+        Logger.d("Завершение транзакции", "LocalPatternDataSourceImpl")
+        return result
     }
 }

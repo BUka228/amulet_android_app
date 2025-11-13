@@ -1,5 +1,6 @@
 package com.example.amulet.shared.domain.patterns.usecase
 
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
@@ -20,11 +21,13 @@ class PreviewPatternOnDeviceUseCase(
         spec: PatternSpec,
         deviceId: DeviceId
     ): Flow<PreviewProgress> = flow {
+        Logger.d("Начало предпросмотра паттерна на устройстве: ${spec.type}, deviceId: $deviceId", "PreviewPatternOnDeviceUseCase")
         emit(PreviewProgress.Compiling)
         
         // Получение информации об устройстве
         devicesRepository.getDevice(deviceId)
             .onSuccess { device ->
+                Logger.d("Устройство найдено: ${device.name}, hardware: ${device.hardwareVersion}", "PreviewPatternOnDeviceUseCase")
                 // Компиляция
                 val plan = compiler.compile(
                     spec = spec,
@@ -33,6 +36,7 @@ class PreviewPatternOnDeviceUseCase(
                 )
                 
                 emit(PreviewProgress.Uploading(0))
+                Logger.d("Компиляция завершена, команд: ${plan.commands.size}", "PreviewPatternOnDeviceUseCase")
                 
                 // TODO: Отправка на устройство через DevicesRepository
                 // Когда DevicesRepository будет иметь метод sendCommandPlan,
@@ -40,6 +44,7 @@ class PreviewPatternOnDeviceUseCase(
                 
                 // Пока просто эмитим успех
                 emit(PreviewProgress.Playing)
+                Logger.d("Предпросмотр начат", "PreviewPatternOnDeviceUseCase")
             }
             .onFailure { error ->
                 emit(PreviewProgress.Failed(Exception("Device not found: $error")))

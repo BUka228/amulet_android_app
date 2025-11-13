@@ -1,6 +1,7 @@
 package com.example.amulet.shared.domain.patterns.usecase
 
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.model.SyncResult
 
@@ -11,6 +12,9 @@ class SyncPatternsUseCase(
     private val repository: PatternsRepository
 ) {
     suspend operator fun invoke(): AppResult<SyncResult> {
-        return repository.syncWithCloud()
+        Logger.d("Начало синхронизации паттернов с облаком", "SyncPatternsUseCase")
+        val result = repository.syncWithCloud()
+        Logger.d("Синхронизация завершена: $result", "SyncPatternsUseCase")
+        return result
     }
 }

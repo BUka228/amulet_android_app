@@ -2,6 +2,7 @@ package com.example.amulet.shared.domain.patterns.usecase
 
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.patterns.model.PatternElementBreathing
 import com.example.amulet.shared.domain.patterns.model.PatternElementChase
 import com.example.amulet.shared.domain.patterns.model.PatternElementFill
@@ -24,6 +25,10 @@ import com.github.michaelbull.result.Ok
 class PatternValidator {
     
     fun validate(spec: PatternSpec): AppResult<Unit> {
+        Logger.d("Начало валидации паттерна: ${spec.type}, элементов: ${spec.elements.size}", "PatternValidator")
+        spec.elements.forEachIndexed { index, element ->
+            Logger.d("Элемент $index: ${element::class.simpleName}", "PatternValidator")
+        }
         // Проверка количества элементов
         if (spec.elements.size > MAX_ELEMENTS) {
             return Err(AppError.Validation(

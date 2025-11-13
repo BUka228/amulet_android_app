@@ -15,6 +15,7 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.domain.patterns.model.PatternDraft
@@ -101,11 +102,15 @@ class PatternsRepositoryImpl @Inject constructor(
     }
     
     override suspend fun syncWithCloud(): AppResult<SyncResult> {
+        Logger.d("Начало синхронизации паттернов с облаком", "PatternsRepositoryImpl")
         return try {
             // Получаем все паттерны с сервера
             val remotePatterns = remoteDataSource.getOwnPatterns().getOrElse { error ->
+                Logger.e("Ошибка получения паттернов с сервера: $error", throwable = Exception(error.toString()), tag = "PatternsRepositoryImpl")
                 return Err(error)
             }
+            
+            Logger.d("Получено паттернов с сервера: ${remotePatterns.size}", "PatternsRepositoryImpl")
             
             // Сохраняем в локальную БД
             val entities = remotePatterns.map { it.toEntity() }
@@ -125,17 +130,21 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            Ok(SyncResult(
+            val result = SyncResult(
                 patternsAdded = remotePatterns.size,
                 patternsUpdated = 0,
                 patternsDeleted = 0
-            ))
-        } catch (_: Exception) {
+            )
+            Logger.d("Синхронизация завершена: $result", "PatternsRepositoryImpl")
+            Ok(result)
+        } catch (e: Exception) {
+            Logger.e("Ошибка синхронизации паттернов: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.Unknown)
         }
     }
     
     override suspend fun createPattern(draft: PatternDraft): AppResult<Pattern> {
+        Logger.d("Создание паттерна: ${draft.title}, тип: ${draft.kind}", "PatternsRepositoryImpl")
         return try {
             val patternId = UUID.randomUUID().toString()
             val nowMillis = System.currentTimeMillis()
@@ -161,6 +170,7 @@ class PatternsRepositoryImpl @Inject constructor(
             
             // Транзакционно: сохраняем в БД и добавляем в Outbox
             localDataSource.withPatternTransaction {
+                Logger.d("Сохранение паттерна в БД: $patternId", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(pattern.toEntity())
                 
                 val payload = json.encodeToString(
@@ -194,8 +204,10 @@ class PatternsRepositoryImpl @Inject constructor(
             // Планируем синхронизацию
             //outboxScheduler.scheduleSync()
             
+            Logger.d("Паттерн создан успешно: $patternId", "PatternsRepositoryImpl")
             Ok(pattern)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка создания паттерна: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
@@ -205,6 +217,7 @@ class PatternsRepositoryImpl @Inject constructor(
         version: Int,
         updates: PatternUpdate
     ): AppResult<Pattern> {
+        Logger.d("Обновление паттерна: ${id.value}, версия: $version", "PatternsRepositoryImpl")
         return try {
             val entity = localDataSource.observeById(id.value).first()
                 ?: return Err(AppError.NotFound)
@@ -227,6 +240,7 @@ class PatternsRepositoryImpl @Inject constructor(
             
             // Транзакционно: обновляем в БД и добавляем в Outbox
             localDataSource.withPatternTransaction {
+                Logger.d("Обновление паттерна в БД: ${id.value}", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(updatedPattern.toEntity())
                 
                 val payload = json.encodeToString(
@@ -259,18 +273,22 @@ class PatternsRepositoryImpl @Inject constructor(
             
             //outboxScheduler.scheduleSync()
             
+            Logger.d("Паттерн обновлен успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(updatedPattern)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка обновления паттерна: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
     
     override suspend fun deletePattern(id: PatternId): AppResult<Unit> {
+        Logger.d("Удаление паттерна: ${id.value}", "PatternsRepositoryImpl")
         return try {
             val nowMillis = System.currentTimeMillis()
             
             // Транзакционно: удаляем из БД и добавляем в Outbox
             localDataSource.withPatternTransaction {
+                Logger.d("Удаление паттерна из БД: ${id.value}", "PatternsRepositoryImpl")
                 localDataSource.deletePattern(id.value)
                 
                 localDataSource.enqueueOutboxAction(
@@ -293,8 +311,10 @@ class PatternsRepositoryImpl @Inject constructor(
             
             //outboxScheduler.scheduleSync()
             
+            Logger.d("Паттерн удален успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(Unit)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка удаления паттерна: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
@@ -303,6 +323,7 @@ class PatternsRepositoryImpl @Inject constructor(
         id: PatternId,
         metadata: PublishMetadata
     ): AppResult<Pattern> {
+        Logger.d("Публикация паттерна: ${id.value}, заголовок: ${metadata.title}", "PatternsRepositoryImpl")
         return try {
             val entity = localDataSource.observeById(id.value).first()
                 ?: return Err(AppError.NotFound)
@@ -322,6 +343,7 @@ class PatternsRepositoryImpl @Inject constructor(
             val nowMillis = System.currentTimeMillis()
             
             localDataSource.withPatternTransaction {
+                Logger.d("Публикация паттерна в БД: ${id.value}", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(updatedPattern.toEntity())
                 
                 val payload = json.encodeToString(
@@ -354,18 +376,22 @@ class PatternsRepositoryImpl @Inject constructor(
             
             //outboxScheduler.scheduleSync()
             
+            Logger.d("Паттерн опубликован успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(updatedPattern)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка публикации паттерна: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
     
     override suspend fun sharePattern(id: PatternId, userIds: List<UserId>): AppResult<Unit> {
+        Logger.d("Шаринг паттерна: ${id.value}, пользователям: ${userIds.size}", "PatternsRepositoryImpl")
         return try {
             val nowMillis = System.currentTimeMillis()
             
             userIds.forEach { userId ->
                 localDataSource.withPatternTransaction {
+                    Logger.d("Добавление шаринга паттерна: ${id.value} для пользователя: ${userId.value}", "PatternsRepositoryImpl")
                     val payload = json.encodeToString(
                         mapOf(
                             "patternId" to id.value,
@@ -394,25 +420,30 @@ class PatternsRepositoryImpl @Inject constructor(
             
             //outboxScheduler.scheduleSync()
             
+            Logger.d("Шаринг паттерна завершен: ${id.value}", "PatternsRepositoryImpl")
             Ok(Unit)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка шаринга паттерна: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
     
     override suspend fun addTag(patternId: PatternId, tag: String): AppResult<Unit> {
+        Logger.d("Добавление тега к паттерну: ${patternId.value}, тег: $tag", "PatternsRepositoryImpl")
         return try {
             val entity = localDataSource.observeById(patternId.value).first()
                 ?: return Err(AppError.NotFound)
             
             val currentTags = localDataSource.getTagsForPattern(patternId.value).toTagNames()
             if (tag in currentTags) {
+                Logger.d("Тег уже существует: $tag", "PatternsRepositoryImpl")
                 return Ok(Unit) // Тег уже есть
             }
             
             val updatedTags = currentTags + tag
             val tagEntities = updatedTags.toTagEntities()
             
+            Logger.d("Обновление тегов паттерна: ${patternId.value}", "PatternsRepositoryImpl")
             localDataSource.upsertPatternWithRelations(
                 pattern = entity,
                 tags = tagEntities,
@@ -420,13 +451,16 @@ class PatternsRepositoryImpl @Inject constructor(
                 sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
             )
             
+            Logger.d("Тег добавлен успешно: $tag", "PatternsRepositoryImpl")
             Ok(Unit)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка добавления тега: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
     
     override suspend fun removeTag(patternId: PatternId, tag: String): AppResult<Unit> {
+        Logger.d("Удаление тега из паттерна: ${patternId.value}, тег: $tag", "PatternsRepositoryImpl")
         return try {
             val entity = localDataSource.observeById(patternId.value).first()
                 ?: return Err(AppError.NotFound)
@@ -435,6 +469,7 @@ class PatternsRepositoryImpl @Inject constructor(
             val updatedTags = currentTags.filter { it != tag }
             val tagEntities = updatedTags.toTagEntities()
             
+            Logger.d("Обновление тегов паттерна: ${patternId.value}", "PatternsRepositoryImpl")
             localDataSource.upsertPatternWithRelations(
                 pattern = entity,
                 tags = tagEntities,
@@ -442,8 +477,10 @@ class PatternsRepositoryImpl @Inject constructor(
                 sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
             )
             
+            Logger.d("Тег удален успешно: $tag", "PatternsRepositoryImpl")
             Ok(Unit)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("Ошибка удаления тега: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.DatabaseError)
         }
     }
