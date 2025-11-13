@@ -178,7 +178,7 @@ fun PatternElementEditor(
                         }
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                    Column {
 
                         // Кнопка добавления нового элемента (если доступна)
                         if (onAddElement != null) {

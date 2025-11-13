@@ -165,6 +165,17 @@
     <string name="dialog_delete_element_title">Удалить элемент?</string>
     <string name="dialog_delete_element_message">Этот элемент будет удалён из паттерна</string>
     <string name="dialog_delete_element_confirm">Удалить</string>
+
+    <!-- Sequence Editor -->
+    <string name="sequence_steps_title">Шаги: %1$d</string>
+    <string name="sequence_step_led">Действие LED</string>
+    <string name="sequence_step_delay">Задержка</string>
+    <string name="sequence_led_index">Индекс LED</string>
+    <string name="sequence_color_hex">Цвет (HEX)</string>
+    <string name="sequence_duration_ms">Длительность, мс</string>
+    <string name="sequence_delay_ms">Пауза, мс</string>
+    <string name="sequence_add_led">LED‑действие</string>
+    <string name="sequence_add_delay">Пауза</string>
     <string name="dialog_delete_element_cancel">Отмена</string>
     
     <string name="dialog_discard_changes_title">Несохранённые изменения</string>

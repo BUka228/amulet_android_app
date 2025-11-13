@@ -113,6 +113,17 @@
     <!-- Pattern Element Editor -->
     <string name="pattern_element_color_label">Color</string>
     <string name="pattern_element_color_primary">Primary Color</string>
+
+    <!-- Sequence Editor -->
+    <string name="sequence_steps_title">Steps: %1$d</string>
+    <string name="sequence_step_led">LED action</string>
+    <string name="sequence_step_delay">Delay</string>
+    <string name="sequence_led_index">LED index</string>
+    <string name="sequence_color_hex">Color (HEX)</string>
+    <string name="sequence_duration_ms">Duration, ms</string>
+    <string name="sequence_delay_ms">Delay, ms</string>
+    <string name="sequence_add_led">Add LED action</string>
+    <string name="sequence_add_delay">Add delay</string>
     <string name="pattern_element_color_secondary">Secondary Color</string>
     <string name="pattern_element_duration_label">Duration</string>
     <string name="pattern_element_speed_label">Speed</string>
