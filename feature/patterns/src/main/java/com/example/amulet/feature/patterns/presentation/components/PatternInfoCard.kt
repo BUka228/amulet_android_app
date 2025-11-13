@@ -173,22 +173,23 @@ private fun MetadataRow(
  * Вычисляет общую длительность паттерна в миллисекундах
  */
 private fun calculateTotalDuration(pattern: Pattern): Long {
-    return pattern.spec.elements.sumOf { element ->
-        when (element) {
+    return pattern.spec.elements.fold(0L) { acc, element ->
+        acc + when (element) {
             is PatternElementBreathing -> element.durationMs.toLong()
             is PatternElementChase -> element.speedMs.toLong() * 8L
             is PatternElementFill -> element.durationMs.toLong()
             is PatternElementPulse -> element.speed.toLong() * element.repeats.toLong()
             is PatternElementProgress -> 1000L
             is PatternElementSequence -> {
-                element.steps.sumOf { step ->
-                    when (step) {
+                element.steps.fold(0L) { sAcc, step ->
+                    sAcc + when (step) {
                         is SequenceStep.LedAction -> step.durationMs.toLong()
                         is SequenceStep.DelayAction -> step.durationMs.toLong()
                     }
                 }
             }
             is PatternElementSpinner -> element.speedMs.toLong() * 8L
+            is PatternElementTimeline -> element.durationMs.toLong()
         }
     }
 }

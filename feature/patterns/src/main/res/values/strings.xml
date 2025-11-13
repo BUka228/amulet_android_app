@@ -74,6 +74,35 @@
     <string name="pattern_element_progress_desc">Static progress indicator</string>
     <string name="pattern_element_sequence">Sequence</string>
     <string name="pattern_element_sequence_desc">Custom LED sequence</string>
+    <string name="pattern_element_timeline">Timeline</string>
+    <string name="pattern_element_timeline_desc">Parallel tracks with clips</string>
+    <string name="pattern_element_tick_label">Tick</string>
+    <string name="timeline_add_track">Add track</string>
+    <string name="timeline_target">Target</string>
+    <string name="timeline_remove_track">Remove track</string>
+    <string name="timeline_target_led">LED</string>
+    <string name="timeline_target_group">Group</string>
+    <string name="timeline_target_ring">Ring</string>
+    <string name="timeline_priority">Priority</string>
+    <string name="timeline_mix_override">Override</string>
+    <string name="timeline_mix_additive">Additive</string>
+    <string name="timeline_clips">Clips</string>
+    <string name="timeline_add_clip">Add clip</string>
+    <string name="timeline_clip_start">Start</string>
+    <string name="timeline_clip_duration">Duration</string>
+    <string name="timeline_clip_fade_in">Fade in</string>
+    <string name="timeline_clip_fade_out">Fade out</string>
+    <string name="timeline_remove_clip">Remove clip</string>
+    <string name="timeline_duplicate_clip">Duplicate clip</string>
+    <string name="timeline_zoom">Zoom</string>
+    <string name="timeline_snap_to_grid">Snap to grid</string>
+    <string name="timeline_tick_ms">Tick, ms</string>
+    <string name="timeline_target_picker">Target picker</string>
+    <string name="timeline_mix_mode">Mix mode</string>
+    <string name="timeline_preset_all">All</string>
+    <string name="timeline_preset_none">None</string>
+    <string name="timeline_preset_even">Even</string>
+    <string name="timeline_preset_odd">Odd</string>
     
     <!-- Pattern Element Picker -->
     <string name="pattern_element_picker_title">Choose Element Type</string>

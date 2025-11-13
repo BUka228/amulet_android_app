@@ -235,6 +235,7 @@ private fun getElementIcon(element: PatternElement) = when (element) {
     is PatternElementSpinner -> Icons.Default.Sync
     is PatternElementProgress -> Icons.Default.LinearScale
     is PatternElementSequence -> Icons.AutoMirrored.Filled.List
+    is PatternElementTimeline -> Icons.Default.Timeline
 }
 
 @Composable
@@ -246,6 +247,7 @@ private fun getElementName(element: PatternElement) = when (element) {
     is PatternElementSpinner -> stringResource(R.string.pattern_element_spinner)
     is PatternElementProgress -> stringResource(R.string.pattern_element_progress)
     is PatternElementSequence -> stringResource(R.string.pattern_element_sequence)
+    is PatternElementTimeline -> stringResource(R.string.pattern_element_timeline)
 }
 
 private fun getElementDescription(element: PatternElement) = when (element) {
@@ -256,4 +258,5 @@ private fun getElementDescription(element: PatternElement) = when (element) {
     is PatternElementSpinner -> "${element.colors.size} цвета, ${element.speedMs}мс"
     is PatternElementProgress -> "${element.color}, ${element.activeLeds} диодов"
     is PatternElementSequence -> "${element.steps.size} шагов"
+    is PatternElementTimeline -> "${element.tracks.size} треков, ${element.durationMs}мс"
 }

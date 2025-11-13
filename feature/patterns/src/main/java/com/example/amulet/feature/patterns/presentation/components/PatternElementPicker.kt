@@ -285,6 +285,12 @@ enum class PatternElementType(
         nameRes = R.string.pattern_element_sequence,
         descriptionRes = R.string.pattern_element_sequence_desc,
         category = ElementCategory.EFFECTS
+    ),
+    TIMELINE(
+        icon = Icons.Default.Timeline,
+        nameRes = R.string.pattern_element_timeline,
+        descriptionRes = R.string.pattern_element_timeline_desc,
+        category = ElementCategory.EFFECTS
     );
 
     /**
@@ -320,6 +326,29 @@ enum class PatternElementType(
             )
             SEQUENCE -> PatternElementSequence(
                 steps = emptyList()
+            )
+            TIMELINE -> PatternElementTimeline(
+                durationMs = 3000,
+                tickMs = 100,
+                tracks = listOf(
+                    TimelineTrack(
+                        target = TargetLed(0),
+                        priority = 1,
+                        mixMode = MixMode.OVERRIDE,
+                        clips = listOf(
+                            TimelineClip(startMs = 0, durationMs = 300, color = "#FF0000"),
+                            TimelineClip(startMs = 600, durationMs = 300, color = "#FF0000")
+                        )
+                    ),
+                    TimelineTrack(
+                        target = TargetLed(4),
+                        priority = 0,
+                        mixMode = MixMode.ADDITIVE,
+                        clips = listOf(
+                            TimelineClip(startMs = 1200, durationMs = 600, color = "#00FF00")
+                        )
+                    )
+                )
             )
         }
     }

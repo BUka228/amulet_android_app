@@ -172,6 +172,7 @@ private fun getElementDuration(element: PatternElement): Long {
             }
         }
         is PatternElementSpinner -> element.speedMs.toLong() * 8L // Полный оборот
+        is PatternElementTimeline -> element.durationMs.toLong()
     }
 }
 
@@ -306,7 +307,62 @@ private fun calculateLedColors(
             // Fallback
             colors
         }
+        is PatternElementTimeline -> {
+            val t = (progress * element.durationMs).toInt().coerceIn(0, element.durationMs)
+            computeTimelineRing(element, t)
+        }
     }
+}
+
+private data class Contribution(val priority: Int, val mixMode: MixMode, val color: Color)
+
+private fun computeTimelineRing(element: PatternElementTimeline, t: Int): List<Color> {
+    val leds = 8
+    val contributions = Array(leds) { mutableListOf<Contribution>() }
+
+    element.tracks.forEach { track ->
+        val clip = track.clips.firstOrNull { c -> t >= c.startMs && t < c.startMs + c.durationMs }
+        if (clip != null) {
+            val base = parseColor(clip.color)
+            val rel = (t - clip.startMs).coerceAtLeast(0)
+            val fadeIn = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+            val relOut = (clip.startMs + clip.durationMs - t).coerceAtLeast(0)
+            val fadeOut = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+            val factor = minOf(fadeIn, fadeOut)
+            val col = base.copy(alpha = factor)
+            when (val target = track.target) {
+                is TargetLed -> if (target.index in 0 until leds) contributions[target.index].add(Contribution(track.priority, track.mixMode, col))
+                is TargetGroup -> target.indices.forEach { idx -> if (idx in 0 until leds) contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
+                is TargetRing -> (0 until leds).forEach { idx -> contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
+            }
+        }
+    }
+
+    return contributions.map { list ->
+        if (list.isEmpty()) Color.Gray.copy(alpha = 0.2f) else mixColors(list)
+    }
+}
+
+private fun mixColors(items: List<Contribution>): Color {
+    val sorted = items.sortedBy { it.priority }
+    var acc = Color(0f, 0f, 0f, 0f)
+    for (c in sorted) {
+        acc = when (c.mixMode) {
+            MixMode.OVERRIDE -> c.color
+            MixMode.ADDITIVE -> addColor(acc, c.color)
+        }
+    }
+    return acc.copy(alpha = acc.alpha.coerceIn(0f, 1f))
+}
+
+private fun addColor(a: Color, b: Color): Color {
+    val ar = (a.red * 255f).toInt(); val ag = (a.green * 255f).toInt(); val ab = (a.blue * 255f).toInt()
+    val br = (b.red * 255f).toInt(); val bg = (b.green * 255f).toInt(); val bb = (b.blue * 255f).toInt()
+    val rr = (ar + br).coerceAtMost(255)
+    val rg = (ag + bg).coerceAtMost(255)
+    val rb = (ab + bb).coerceAtMost(255)
+    val ra = (a.alpha + b.alpha).coerceIn(0f, 1f)
+    return Color(rr, rg, rb).copy(alpha = ra)
 }
 
 /**

@@ -74,6 +74,8 @@
     <string name="pattern_element_progress_desc">Статичный индикатор прогресса</string>
     <string name="pattern_element_sequence">Последовательность</string>
     <string name="pattern_element_sequence_desc">Пользовательская последовательность диодов</string>
+    <string name="pattern_element_timeline">Таймлайн</string>
+    <string name="pattern_element_timeline_desc">Параллельные дорожки с клипами</string>
     
     <!-- Pattern Element Picker -->
     <string name="pattern_element_picker_title">Выберите тип элемента</string>
@@ -86,6 +88,7 @@
     <string name="pattern_element_color_primary">Основной цвет</string>
     <string name="pattern_element_color_secondary">Дополнительный цвет</string>
     <string name="pattern_element_duration_label">Длительность</string>
+    <string name="pattern_element_tick_label">Тик</string>
     <string name="pattern_element_speed_label">Скорость</string>
     <string name="pattern_element_repeats_label">Повторы</string>
     <string name="pattern_element_direction_label">Направление</string>
@@ -124,6 +127,34 @@
     <string name="pattern_preview_metadata">Метаданные</string>
     <string name="pattern_preview_author">Автор: %s</string>
     <string name="pattern_preview_duration">Длительность: %s</string>
+
+    <!-- Timeline Editor -->
+    <string name="timeline_add_track">Добавить дорожку</string>
+    <string name="timeline_target">Цель</string>
+    <string name="timeline_remove_track">Удалить дорожку</string>
+    <string name="timeline_target_led">Светодиод</string>
+    <string name="timeline_target_group">Группа</string>
+    <string name="timeline_target_ring">Кольцо</string>
+    <string name="timeline_priority">Приоритет</string>
+    <string name="timeline_mix_override">Перекрытие</string>
+    <string name="timeline_mix_additive">Аддитивный</string>
+    <string name="timeline_clips">Клипы</string>
+    <string name="timeline_add_clip">Добавить клип</string>
+    <string name="timeline_clip_start">Начало</string>
+    <string name="timeline_clip_duration">Длительность</string>
+    <string name="timeline_clip_fade_in">Плавное появление</string>
+    <string name="timeline_clip_fade_out">Плавное затухание</string>
+    <string name="timeline_remove_clip">Удалить клип</string>
+    <string name="timeline_duplicate_clip">Дублировать клип</string>
+    <string name="timeline_zoom">Масштаб</string>
+    <string name="timeline_snap_to_grid">Привязка к сетке</string>
+    <string name="timeline_tick_ms">Тик, мс</string>
+    <string name="timeline_target_picker">Выбор цели</string>
+    <string name="timeline_mix_mode">Режим смешивания</string>
+    <string name="timeline_preset_all">Все</string>
+    <string name="timeline_preset_none">Нет</string>
+    <string name="timeline_preset_even">Чётные</string>
+    <string name="timeline_preset_odd">Нечётные</string>
     
     <!-- Dialogs -->
     <string name="dialog_delete_pattern_title">Удалить паттерн?</string>

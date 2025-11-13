@@ -9,8 +9,11 @@ import com.example.amulet.shared.domain.patterns.model.PatternElementProgress
 import com.example.amulet.shared.domain.patterns.model.PatternElementPulse
 import com.example.amulet.shared.domain.patterns.model.PatternElementSequence
 import com.example.amulet.shared.domain.patterns.model.PatternElementSpinner
+import com.example.amulet.shared.domain.patterns.model.PatternElementTimeline
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.model.SequenceStep
+import com.example.amulet.shared.domain.patterns.model.TargetGroup
+import com.example.amulet.shared.domain.patterns.model.TargetLed
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 
@@ -74,6 +77,9 @@ class PatternValidator {
                 is PatternElementSequence -> {
                     validateSequence(element, index)?.let { return it }
                 }
+                is PatternElementTimeline -> {
+                    validateTimeline(element, index)?.let { return it }
+                }
             }
         }
         
@@ -85,6 +91,86 @@ class PatternValidator {
             return Err(AppError.Validation(
                 mapOf("elements[$index].color" to "Некорректный формат цвета (ожидается #RRGGBB)")
             ))
+        }
+        return null
+    }
+
+    private fun validateTimeline(element: PatternElementTimeline, index: Int): AppResult<Unit>? {
+        if (element.durationMs !in MIN_DURATION..MAX_DURATION) {
+            return Err(AppError.Validation(
+                mapOf("elements[$index].durationMs" to "Длительность должна быть от ${MIN_DURATION}ms до ${MAX_DURATION}ms")
+            ))
+        }
+        if (element.tickMs !in 1..element.durationMs) {
+            return Err(AppError.Validation(
+                mapOf("elements[$index].tickMs" to "Шаг должен быть в диапазоне 1..durationMs")
+            ))
+        }
+        element.tracks.forEachIndexed { tIdx, track ->
+            when (val target = track.target) {
+                is TargetLed -> if (target.index !in 0..7) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].target" to "Индекс диода должен быть от 0 до 7")
+                    ))
+                }
+                is TargetGroup -> {
+                    if (target.indices.isEmpty()) {
+                        return Err(AppError.Validation(
+                            mapOf("elements[$index].tracks[$tIdx].target" to "Группа не может быть пустой")
+                        ))
+                    }
+                    if (target.indices.any { it !in 0..7 }) {
+                        return Err(AppError.Validation(
+                            mapOf("elements[$index].tracks[$tIdx].target" to "Все индексы группы должны быть 0..7")
+                        ))
+                    }
+                    if (target.indices.size != target.indices.toSet().size) {
+                        return Err(AppError.Validation(
+                            mapOf("elements[$index].tracks[$tIdx].target" to "Индексы в группе не должны повторяться")
+                        ))
+                    }
+                }
+                else -> { }
+            }
+
+            val clips = track.clips
+            clips.forEachIndexed { cIdx, c ->
+                if (c.startMs !in 0..element.durationMs) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips[$cIdx].startMs" to "startMs вне диапазона 0..durationMs")
+                    ))
+                }
+                if (c.durationMs !in MIN_DURATION..element.durationMs) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips[$cIdx].durationMs" to "durationMs должен быть от ${MIN_DURATION}ms")
+                    ))
+                }
+                if (c.startMs + c.durationMs > element.durationMs) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips[$cIdx]" to "Клип выходит за пределы таймлайна")
+                    ))
+                }
+                if (c.fadeInMs < 0 || c.fadeOutMs < 0 || c.fadeInMs > c.durationMs || c.fadeOutMs > c.durationMs) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips[$cIdx]" to "fadeIn/fadeOut должны быть в пределах длительности клипа")
+                    ))
+                }
+                if (!c.color.matches(Regex("^#[0-9A-Fa-f]{6}$"))) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips[$cIdx].color" to "Некорректный формат цвета (ожидается #RRGGBB)")
+                    ))
+                }
+            }
+            val sorted = clips.sortedBy { it.startMs }
+            for (i in 1 until sorted.size) {
+                val prev = sorted[i - 1]
+                val cur = sorted[i]
+                if (cur.startMs < prev.startMs + prev.durationMs) {
+                    return Err(AppError.Validation(
+                        mapOf("elements[$index].tracks[$tIdx].clips" to "Клипы в одной дорожке не должны пересекаться")
+                    ))
+                }
+            }
         }
         return null
     }
