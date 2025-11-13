@@ -91,10 +91,8 @@ fun PatternElementEditorBottomSheet(
             HorizontalDivider()
             
             // Компактное превью паттерна
-            // Создаем временный spec с текущим элементом для превью
-            val previewSpec = spec?.copy(elements = spec.elements.map { 
-                if (it == element) currentElement else it 
-            })
+            // Создаем временный spec ТОЛЬКО с текущим элементом для превью
+            val previewSpec = spec?.copy(elements = listOf(currentElement))
             
             CompactLivePreview(
                 spec = previewSpec,
@@ -546,13 +544,13 @@ private fun SequenceEditor(
                                         Text(dur.toString())
                                     }
                                     Slider(value = dur.toFloat(), onValueChange = {
-                                        val nd = it.toInt().coerceIn(100, 60000)
+                                        val nd = it.toInt().coerceIn(100, 6000)
                                         val list = element.steps.toMutableList()
                                         dur = nd
                                         durText = nd.toString()
                                         list[idx] = step.copy(ledIndex = led, color = color, durationMs = dur)
                                         onUpdate(PatternElementSequence(list))
-                                    }, valueRange = 100f..60000f, steps = 50)
+                                    }, valueRange = 100f..6000f, steps = 50)
 
                                     AmuletTextField(
                                         value = durText,
@@ -561,7 +559,7 @@ private fun SequenceEditor(
                                             durText = filtered
                                             val parsed = filtered.toIntOrNull()
                                             if (parsed != null) {
-                                                val nd = parsed.coerceIn(100, 60000)
+                                                val nd = parsed.coerceIn(100, 6000)
                                                 if (nd != dur) {
                                                     dur = nd
                                                     val list = element.steps.toMutableList()
@@ -583,13 +581,13 @@ private fun SequenceEditor(
                                         Text(dur.toString())
                                     }
                                     Slider(value = dur.toFloat(), onValueChange = {
-                                        val nd = it.toInt().coerceIn(100, 60000)
+                                        val nd = it.toInt().coerceIn(100, 6000)
                                         dur = nd
                                         durText = nd.toString()
                                         val list = element.steps.toMutableList()
                                         list[idx] = SequenceStep.DelayAction(dur)
                                         onUpdate(PatternElementSequence(list))
-                                    }, valueRange = 100f..60000f, steps = 50)
+                                    }, valueRange = 100f..6000f, steps = 50)
 
                                     AmuletTextField(
                                         value = durText,
@@ -598,7 +596,7 @@ private fun SequenceEditor(
                                             durText = filtered
                                             val parsed = filtered.toIntOrNull()
                                             if (parsed != null) {
-                                                val nd = parsed.coerceIn(100, 60000)
+                                                val nd = parsed.coerceIn(100, 6000)
                                                 if (nd != dur) {
                                                     dur = nd
                                                     val list = element.steps.toMutableList()
@@ -657,7 +655,7 @@ private fun TimelineEditor(
             Slider(
                 value = element.durationMs.toFloat(),
                 onValueChange = { onUpdate(element.copy(durationMs = it.toInt())) },
-                valueRange = 500f..60000f,
+                valueRange = 500f..6000f,
                 steps = 110
             )
         }
