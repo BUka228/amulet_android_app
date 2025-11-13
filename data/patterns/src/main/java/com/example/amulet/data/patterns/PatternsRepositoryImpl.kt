@@ -26,6 +26,7 @@ import com.example.amulet.shared.domain.patterns.model.PatternUpdate
 import com.example.amulet.shared.domain.patterns.model.PublishMetadata
 import com.example.amulet.shared.domain.patterns.model.SyncResult
 import com.example.amulet.shared.domain.user.model.UserId
+import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.getOrElse
@@ -33,6 +34,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -101,7 +107,7 @@ class PatternsRepositoryImpl @Inject constructor(
         }
     }
     
-    override suspend fun syncWithCloud(): AppResult<SyncResult> {
+    override suspend fun syncWithCloud(): Result<SyncResult, AppError> {
         Logger.d("Начало синхронизации паттернов с облаком", "PatternsRepositoryImpl")
         return try {
             // Получаем все паттерны с сервера
@@ -173,15 +179,14 @@ class PatternsRepositoryImpl @Inject constructor(
                 Logger.d("Сохранение паттерна в БД: $patternId", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(pattern.toEntity())
                 
-                val payload = json.encodeToString(
-                    mapOf(
-                        "kind" to draft.kind.name.lowercase(),
-                        "spec" to json.encodeToString(PatternSpec.serializer(), draft.spec),
-                        "title" to draft.title,
-                        "description" to draft.description,
-                        "hardwareVersion" to draft.hardwareVersion
-                    )
-                )
+                val payloadObject = buildJsonObject {
+                    put("kind", draft.kind.name.lowercase())
+                    put("spec", json.encodeToString(PatternSpec.serializer(), draft.spec))
+                    put("title", draft.title)
+                    draft.description?.let { put("description", it) } ?: put("description", JsonNull)
+                    put("hardwareVersion", draft.hardwareVersion)
+                }
+                val payload = json.encodeToString(payloadObject)
                 
                 localDataSource.enqueueOutboxAction(
                     OutboxActionEntity(
@@ -243,15 +248,17 @@ class PatternsRepositoryImpl @Inject constructor(
                 Logger.d("Обновление паттерна в БД: ${id.value}", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(updatedPattern.toEntity())
                 
-                val payload = json.encodeToString(
-                    mapOf(
-                        "version" to version,
-                        "title" to updates.title,
-                        "description" to updates.description,
-                        "spec" to updates.spec?.let { json.encodeToString(PatternSpec.serializer(), it) },
-                        "tags" to updates.tags
-                    )
-                )
+                val payloadObject = buildJsonObject {
+                    put("version", version)
+                    updates.title?.let { put("title", it) } ?: put("title", JsonNull)
+                    updates.description?.let { put("description", it) } ?: put("description", JsonNull)
+                    val specJson = updates.spec?.let { json.encodeToString(PatternSpec.serializer(), it) }
+                    specJson?.let { put("spec", it) } ?: put("spec", JsonNull)
+                    updates.tags?.let { tagsList ->
+                        put("tags", buildJsonArray { tagsList.forEach { add(JsonPrimitive(it)) } })
+                    } ?: put("tags", JsonNull)
+                }
+                val payload = json.encodeToString(payloadObject)
                 
                 localDataSource.enqueueOutboxAction(
                     OutboxActionEntity(
@@ -346,15 +353,14 @@ class PatternsRepositoryImpl @Inject constructor(
                 Logger.d("Публикация паттерна в БД: ${id.value}", "PatternsRepositoryImpl")
                 localDataSource.upsertPattern(updatedPattern.toEntity())
                 
-                val payload = json.encodeToString(
-                    mapOf(
-                        "version" to currentPattern.version,
-                        "public" to true,
-                        "title" to metadata.title,
-                        "description" to metadata.description,
-                        "tags" to metadata.tags
-                    )
-                )
+                val payloadObject = buildJsonObject {
+                    put("version", currentPattern.version)
+                    put("public", true)
+                    put("title", metadata.title)
+                    metadata.description?.let { put("description", it) } ?: put("description", JsonNull)
+                    put("tags", buildJsonArray { metadata.tags.forEach { add(JsonPrimitive(it)) } })
+                }
+                val payload = json.encodeToString(payloadObject)
                 
                 localDataSource.enqueueOutboxAction(
                     OutboxActionEntity(
