@@ -40,7 +40,6 @@ class PatternsListViewModel @Inject constructor(
             is PatternsListEvent.PatternClicked -> navigateToEditor(event.patternId)
             is PatternsListEvent.CreatePatternClicked -> navigateToEditor(null)
             is PatternsListEvent.DeletePattern -> deletePattern(event.patternId)
-            is PatternsListEvent.DuplicatePattern -> duplicatePattern(event.patternId)
             is PatternsListEvent.PreviewPattern -> navigateToPreview(event.patternId)
             is PatternsListEvent.ToggleSearch -> toggleSearch()
             is PatternsListEvent.DismissError -> dismissError()
@@ -128,29 +127,6 @@ class PatternsListViewModel @Inject constructor(
         }
     }
 
-    private fun duplicatePattern(patternId: String) {
-        viewModelScope.launch {
-            // Найти паттерн в текущем списке
-            val pattern = _uiState.value.patterns.find { it.id.value == patternId }
-                ?: return@launch
-            
-            val draft = PatternDraft(
-                kind = pattern.kind,
-                spec = pattern.spec,
-                hardwareVersion = pattern.hardwareVersion,
-                title = "${pattern.title} (копия)",
-                description = pattern.description
-            )
-            
-            createPatternUseCase(draft)
-                .onSuccess {
-                    _sideEffect.emit(PatternsListSideEffect.ShowSnackbar("Паттерн скопирован"))
-                }
-                .onFailure { error ->
-                    _uiState.update { it.copy(error = error) }
-                }
-        }
-    }
 
     private fun toggleSearch() {
         _uiState.update { 

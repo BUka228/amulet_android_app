@@ -27,13 +27,11 @@ fun AmuletCard(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     border: BorderStroke? = null,
-    onClick: () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = modifier,
         shape = shape,
-        onClick =  onClick,
         border = border,
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor,

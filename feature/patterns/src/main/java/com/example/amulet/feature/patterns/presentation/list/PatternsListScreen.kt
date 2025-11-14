@@ -10,8 +10,45 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,9 +63,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.PatternCard
+import com.example.amulet.feature.patterns.presentation.components.PatternDetailsBottomSheet
+import com.example.amulet.shared.domain.patterns.model.Pattern
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 @Composable
 fun PatternsListRoute(
@@ -72,6 +113,7 @@ fun PatternsListScreen(
     val scaffoldState = LocalScaffoldState.current
     var searchText by remember { mutableStateOf(state.searchQuery) }
     val keyboardController = LocalSoftwareKeyboardController.current
+    var selectedPatternForDetails by remember { mutableStateOf<Pattern?>(null) }
 
     // Настройка TopBar и FAB
     SideEffect {
@@ -126,6 +168,14 @@ fun PatternsListScreen(
             .collect { query ->
                 onEvent(PatternsListEvent.UpdateSearchQuery(query))
             }
+    }
+
+    // Bottom sheet с деталями паттерна
+    selectedPatternForDetails?.let { pattern ->
+        PatternDetailsBottomSheet(
+            pattern = pattern,
+            onDismiss = { selectedPatternForDetails = null }
+        )
     }
 
     Column(
@@ -196,11 +246,10 @@ fun PatternsListScreen(
                         ) { pattern ->
                             PatternCard(
                                 pattern = pattern,
-                                onClick = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                                 onPreview = { onEvent(PatternsListEvent.PreviewPattern(pattern.id.value)) },
                                 onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                                 onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
-                                onDuplicate = { onEvent(PatternsListEvent.DuplicatePattern(pattern.id.value)) }
+                                onShowDetails = { selectedPatternForDetails = pattern }
                             )
                         }
                     }

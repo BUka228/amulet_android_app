@@ -126,7 +126,7 @@
     <string name="pattern_preview_signal_poor">Слабо</string>
     <string name="pattern_preview_metadata">Метаданные</string>
     <string name="pattern_preview_author">Автор: %s</string>
-    <string name="pattern_preview_duration">Длительность: %s</string>
+    <string name="pattern_preview_duration">Длительность</string>
 
     <!-- Timeline Editor -->
     <string name="timeline_add_track">Добавить дорожку</string>
@@ -149,6 +149,7 @@
     <string name="timeline_zoom">Масштаб</string>
     <string name="timeline_snap_to_grid">Привязка к сетке</string>
     <string name="timeline_tick_ms">Тик, мс</string>
+    <string name="timeline_tracks">Дорожки</string>
     <string name="timeline_target_picker">Выбор цели</string>
     <string name="timeline_mix_mode">Режим смешивания</string>
     <string name="timeline_preset_all">Все</string>
@@ -313,4 +314,21 @@
         <item quantity="few">%d скачивания</item>
         <item quantity="many">%d скачиваний</item>
     </plurals>
+    
+    <!-- Pattern Details -->
+    <string name="pattern_card_details">Подробнее</string>
+    <string name="pattern_details_spec_type_label">Тип спецификации</string>
+    <string name="pattern_details_visibility_label">Видимость</string>
+    <string name="pattern_details_public">Публичный</string>
+    <string name="pattern_details_private">Приватный</string>
+    <string name="pattern_details_hardware_version_label">Версия железа</string>
+    <string name="pattern_details_review_status_label">Статус модерации</string>
+    <string name="pattern_details_review_status_unknown">Не проверен</string>
+    <string name="pattern_details_usage_count_label">Количество использований</string>
+    <string name="pattern_details_created_at_label">Создан</string>
+    <string name="pattern_details_updated_at_label">Обновлён</string>
+    <string name="pattern_details_shared_with_label">Поделился с</string>
+    <string name="pattern_details_shared_with_none">Не поделился</string>
+    <string name="pattern_details_tags_title">Теги</string>
+    <string name="pattern_details_elements_title">Элементы</string>
 </resources>

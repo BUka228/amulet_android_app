@@ -10,14 +10,14 @@ import androidx.compose.ui.graphics.Color
  */
 object AmuletPalette {
     // Primary
-    val Primary = Color(0xFF6B73FF)
-    val PrimaryVariant = Color(0xFF5A63E8)
-    val PrimaryLight = Color(0xFF8B94FF)
+    val Primary = Color(0xFFA78BFA)
+    val PrimaryVariant = Color(0xFF7C3AED)
+    val PrimaryLight = Color(0xFFD6BCFA)
 
     // Secondary
-    val Secondary = Color(0xFFFF6B9D)
-    val SecondaryVariant = Color(0xFFE85A8B)
-    val SecondaryLight = Color(0xFFFF8BB4)
+    val Secondary = Color(0xFF34D399)
+    val SecondaryVariant = Color(0xFF059669)
+    val SecondaryLight = Color(0xFFA7F3D0)
 
     // Accent
     val Accent = Color(0xFFFFD93D)
@@ -71,6 +71,16 @@ object AmuletPalette {
     val EmotionSadness = Color(0xFF2196F3)
     val EmotionEnergy = Color(0xFFFF9800)
     val EmotionSupport = Color(0xFF5A63E8)
+    val CategoryBreath = Secondary
+    val CategoryMeditation = Primary
+    val CategorySoundscape = InfoLight
+    val DeviceConnected = Success
+    val DeviceDisconnected = Error
+    val DevicePairing = Color(0xFF0EA5E9)
+    val DeviceCharging = Accent
+    val DeviceUpdating = PrimaryVariant
+    val EmotionHugWarm = Color(0xFFF6C453)
+    val EmotionMissYou = Color(0xFF93C5FD)
 }
 
 @Immutable
@@ -119,6 +129,76 @@ val DarkSemanticColors = SemanticColors(
     infoDark = AmuletPalette.InfoDark
 )
 
+@Immutable
+data class DeviceStateColors(
+    val connected: Color,
+    val disconnected: Color,
+    val pairing: Color,
+    val charging: Color,
+    val updating: Color
+)
+
+val LightDeviceStateColors = DeviceStateColors(
+    connected = AmuletPalette.DeviceConnected,
+    disconnected = AmuletPalette.DeviceDisconnected,
+    pairing = AmuletPalette.DevicePairing,
+    charging = AmuletPalette.DeviceCharging,
+    updating = AmuletPalette.DeviceUpdating
+)
+
+val DarkDeviceStateColors = DeviceStateColors(
+    connected = AmuletPalette.SuccessLight,
+    disconnected = AmuletPalette.ErrorLight,
+    pairing = AmuletPalette.InfoLight,
+    charging = AmuletPalette.Accent,
+    updating = AmuletPalette.PrimaryLight
+)
+
+@Immutable
+data class ContentCategoryColors(
+    val breath: Color,
+    val meditation: Color,
+    val soundscape: Color
+)
+
+val LightContentCategoryColors = ContentCategoryColors(
+    breath = AmuletPalette.CategoryBreath,
+    meditation = AmuletPalette.CategoryMeditation,
+    soundscape = AmuletPalette.CategorySoundscape
+)
+
+val DarkContentCategoryColors = ContentCategoryColors(
+    breath = AmuletPalette.SecondaryLight,
+    meditation = AmuletPalette.PrimaryLight,
+    soundscape = AmuletPalette.InfoLight
+)
+
+@Immutable
+data class GradientColors(
+    val start: Color,
+    val end: Color
+)
+
+val BrandGradientLight = GradientColors(
+    start = AmuletPalette.Primary,
+    end = AmuletPalette.Secondary
+)
+
+val BrandGradientDark = GradientColors(
+    start = AmuletPalette.PrimaryLight,
+    end = AmuletPalette.SecondaryLight
+)
+
+val CalmGradientLight = GradientColors(
+    start = Color(0xFF60A5FA),
+    end = AmuletPalette.SecondaryLight
+)
+
+val EnergyGradientLight = GradientColors(
+    start = AmuletPalette.Warning,
+    end = AmuletPalette.Accent
+)
+
 val AmuletLightColorScheme = lightColorScheme(
     primary = AmuletPalette.Primary,
     onPrimary = AmuletPalette.White,
@@ -140,11 +220,22 @@ val AmuletLightColorScheme = lightColorScheme(
     onSurfaceVariant = AmuletPalette.Gray700,
     inverseSurface = AmuletPalette.Gray900,
     inverseOnSurface = AmuletPalette.Gray100,
+    inversePrimary = AmuletPalette.PrimaryVariant,
     outline = AmuletPalette.Gray300,
+    outlineVariant = AmuletPalette.Gray400,
+    surfaceTint = AmuletPalette.Primary,
     error = AmuletPalette.Error,
     onError = AmuletPalette.White,
     errorContainer = AmuletPalette.ErrorLight,
-    onErrorContainer = AmuletPalette.Gray900
+    onErrorContainer = AmuletPalette.Gray900,
+    scrim = AmuletPalette.BlackAlpha,
+    surfaceBright = AmuletPalette.Gray50,
+    surfaceDim = AmuletPalette.Gray100,
+    surfaceContainerLowest = AmuletPalette.White,
+    surfaceContainerLow = AmuletPalette.Gray50,
+    surfaceContainer = AmuletPalette.Gray100,
+    surfaceContainerHigh = AmuletPalette.Gray200,
+    surfaceContainerHighest = AmuletPalette.Gray300
 )
 
 val AmuletDarkColorScheme = darkColorScheme(
@@ -168,9 +259,21 @@ val AmuletDarkColorScheme = darkColorScheme(
     onSurfaceVariant = AmuletPalette.Gray200,
     inverseSurface = AmuletPalette.Gray50,
     inverseOnSurface = AmuletPalette.Gray900,
+    inversePrimary = AmuletPalette.Primary,
     outline = AmuletPalette.Gray500,
+    outlineVariant = AmuletPalette.Gray600,
+    surfaceTint = AmuletPalette.PrimaryLight,
     error = AmuletPalette.ErrorLight,
     onError = AmuletPalette.Gray900,
     errorContainer = AmuletPalette.Error,
-    onErrorContainer = AmuletPalette.White
+    onErrorContainer = AmuletPalette.White,
+    scrim = AmuletPalette.BlackAlpha,
+    surfaceBright = AmuletPalette.Gray700,
+    surfaceDim = AmuletPalette.Gray900,
+    surfaceContainerLowest = AmuletPalette.Gray900,
+    surfaceContainerLow = AmuletPalette.Gray800,
+    surfaceContainer = AmuletPalette.Gray700,
+    surfaceContainerHigh = AmuletPalette.Gray600,
+    surfaceContainerHighest = AmuletPalette.Gray500
 )
+

@@ -34,7 +34,6 @@ sealed interface PatternsListEvent {
     data class PatternClicked(val patternId: String) : PatternsListEvent
     data object CreatePatternClicked : PatternsListEvent
     data class DeletePattern(val patternId: String) : PatternsListEvent
-    data class DuplicatePattern(val patternId: String) : PatternsListEvent
     data class PreviewPattern(val patternId: String) : PatternsListEvent
     data object ToggleSearch : PatternsListEvent
     data object DismissError : PatternsListEvent

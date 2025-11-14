@@ -4,6 +4,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
@@ -102,122 +103,114 @@ fun PatternElementEditor(
         )
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            IconButton(
-                onClick = { onMoveUp?.invoke() },
-                enabled = onMoveUp != null,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.KeyboardArrowUp,
-                    contentDescription = stringResource(R.string.cd_move_element_up),
-                    modifier = Modifier.size(18.dp),
-                    tint = if (onMoveUp != null) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                    }
-                )
-            }
-
-            IconButton(
-                onClick = { onMoveDown?.invoke() },
-                enabled = onMoveDown != null,
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    Icons.Default.KeyboardArrowDown,
-                    contentDescription = stringResource(R.string.cd_move_element_down),
-                    modifier = Modifier.size(18.dp),
-                    tint = if (onMoveDown != null) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                    }
-                )
-            }
-        }
-        AmuletCard(
-            modifier = modifier.fillMaxWidth(),
-            onClick = {
-                showElementEditor = true
-            }
+    AmuletCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(12.dp),
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
+            // Компактный заголовок элемента
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Компактный заголовок элемента
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.weight(1f)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        IconButton(
+                            onClick = { onMoveUp?.invoke() },
+                            enabled = onMoveUp != null,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowUp,
+                                contentDescription = stringResource(R.string.cd_move_element_up),
+                                modifier = Modifier.size(18.dp),
+                                tint = if (onMoveUp != null) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                }
+                            )
+                        }
                         Icon(
                             getElementIcon(element),
                             contentDescription = stringResource(R.string.cd_element_icon),
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "${index + 1}. ${getElementName(element)}",
-                                style = MaterialTheme.typography.bodyLarge
+                        IconButton(
+                            onClick = { onMoveDown?.invoke() },
+                            enabled = onMoveDown != null,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = stringResource(R.string.cd_move_element_down),
+                                modifier = Modifier.size(18.dp),
+                                tint = if (onMoveDown != null) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                }
                             )
-                            Text(
-                                text = getElementDescription(element),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${index + 1}. ${getElementName(element)}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = getElementDescription(element),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Column {
+
+                    // Кнопка добавления нового элемента (если доступна)
+                    if (onAddElement != null) {
+                        IconButton(
+                            onClick = { showElementPicker = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(R.string.pattern_editor_add_element),
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
 
-                    Column {
+                    IconButton(
+                        onClick = { showDeleteConfirmation = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.cd_delete_element),
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
 
-                        // Кнопка добавления нового элемента (если доступна)
-                        if (onAddElement != null) {
-                            IconButton(
-                                onClick = { showElementPicker = true },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = stringResource(R.string.pattern_editor_add_element),
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = { showDeleteConfirmation = true },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.cd_delete_element),
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { showElementEditor = true },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = stringResource(R.string.pattern_editor_element_expand),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                    IconButton(
+                        onClick = { showElementEditor = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.pattern_editor_element_expand),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }

@@ -22,6 +22,7 @@
     <string name="pattern_card_duplicate">Duplicate</string>
     <string name="pattern_card_delete">Delete</string>
     <string name="pattern_card_share">Share</string>
+    <string name="pattern_card_details">Details</string>
     <string name="pattern_card_downloads">%d downloads</string>
     <string name="pattern_card_rating">Rating: %.1f</string>
     
@@ -97,6 +98,7 @@
     <string name="timeline_zoom">Zoom</string>
     <string name="timeline_snap_to_grid">Snap to grid</string>
     <string name="timeline_tick_ms">Tick, ms</string>
+    <string name="timeline_tracks">Tracks</string>
     <string name="timeline_target_picker">Target picker</string>
     <string name="timeline_mix_mode">Mix mode</string>
     <string name="timeline_preset_all">All</string>
@@ -163,7 +165,21 @@
     <string name="pattern_preview_signal_poor">Poor</string>
     <string name="pattern_preview_metadata">Metadata</string>
     <string name="pattern_preview_author">Author: %s</string>
-    <string name="pattern_preview_duration">Duration: %s</string>
+    <string name="pattern_preview_duration">Duration</string>
+    <string name="pattern_details_spec_type_label">Spec type</string>
+    <string name="pattern_details_visibility_label">Visibility</string>
+    <string name="pattern_details_public">Public</string>
+    <string name="pattern_details_private">Private</string>
+    <string name="pattern_details_hardware_version_label">Hardware version</string>
+    <string name="pattern_details_review_status_label">Review status</string>
+    <string name="pattern_details_review_status_unknown">Not reviewed</string>
+    <string name="pattern_details_usage_count_label">Usage count</string>
+    <string name="pattern_details_created_at_label">Created</string>
+    <string name="pattern_details_updated_at_label">Updated</string>
+    <string name="pattern_details_shared_with_label">Shared with</string>
+    <string name="pattern_details_shared_with_none">Not shared</string>
+    <string name="pattern_details_tags_title">Tags</string>
+    <string name="pattern_details_elements_title">Elements</string>
     
     <!-- Dialogs -->
     <string name="dialog_delete_pattern_title">Delete pattern?</string>
