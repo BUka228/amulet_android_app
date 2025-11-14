@@ -635,7 +635,7 @@ private fun TimelineEditor(
     element: PatternElementTimeline,
     onUpdate: (PatternElement) -> Unit
 ) {
-
+    TimelineEditorContent(element = element, onUpdate = onUpdate)
 }
 
 // Вспомогательные функции
