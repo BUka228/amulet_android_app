@@ -1,0 +1,17 @@
+package com.example.amulet.data.courses.datasource
+
+import com.example.amulet.core.database.entity.CourseEntity
+import com.example.amulet.core.database.entity.CourseItemEntity
+import com.example.amulet.core.database.entity.CourseProgressEntity
+import kotlinx.coroutines.flow.Flow
+
+interface LocalCoursesDataSource {
+    fun observeCourses(): Flow<List<CourseEntity>>
+    fun observeCourseById(courseId: String): Flow<CourseEntity?>
+    fun observeCourseItems(courseId: String): Flow<List<CourseItemEntity>>
+    fun observeCourseProgress(userId: String, courseId: String): Flow<CourseProgressEntity?>
+    suspend fun upsertCourses(items: List<CourseEntity>)
+    suspend fun upsertCourseItems(items: List<CourseItemEntity>)
+    suspend fun upsertProgress(entity: CourseProgressEntity)
+    suspend fun resetProgress(userId: String, courseId: String)
+}

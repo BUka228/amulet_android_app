@@ -2,8 +2,6 @@ package com.example.amulet.core.database
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.amulet.core.database.dao.DeviceDao
 import com.example.amulet.core.database.dao.FirmwareInfoDao
 import com.example.amulet.core.database.dao.HugDao
@@ -11,7 +9,9 @@ import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.database.dao.PairDao
 import com.example.amulet.core.database.dao.PatternDao
 import com.example.amulet.core.database.dao.PracticeDao
+import com.example.amulet.core.database.dao.PracticeExtrasDao
 import com.example.amulet.core.database.dao.PrivacyJobDao
+import com.example.amulet.core.database.dao.CourseDao
 import com.example.amulet.core.database.dao.RemoteKeyDao
 import com.example.amulet.core.database.dao.RuleDao
 import com.example.amulet.core.database.dao.TelemetryDao
@@ -31,52 +31,13 @@ object DatabaseModule {
 
     private const val DATABASE_NAME = "amulet_app.db"
 
-    private val MIGRATION_1_2 = object : Migration(1, 2) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Удаляем колонку serialNumber из таблицы devices
-            // SQLite не поддерживает DROP COLUMN, поэтому пересоздаем таблицу
-            db.execSQL("""
-                CREATE TABLE devices_new (
-                    id TEXT PRIMARY KEY NOT NULL,
-                    name TEXT NOT NULL,
-                    bleAddress TEXT NOT NULL,
-                    hardwareVersion INTEGER NOT NULL,
-                    isConnected INTEGER NOT NULL DEFAULT 0,
-                    lastSyncedAt INTEGER,
-                    createdAt INTEGER NOT NULL,
-                    updatedAt INTEGER NOT NULL
-                )
-            """.trimIndent())
-            
-            db.execSQL("""
-                INSERT INTO devices_new (id, name, bleAddress, hardwareVersion, isConnected, lastSyncedAt, createdAt, updatedAt)
-                SELECT id, name, bleAddress, hardwareVersion, isConnected, lastSyncedAt, createdAt, updatedAt
-                FROM devices
-            """.trimIndent())
-            
-            db.execSQL("DROP TABLE devices")
-            db.execSQL("ALTER TABLE devices_new RENAME TO devices")
-            
-            // Пересоздаем индекс
-            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_devices_bleAddress ON devices(bleAddress)")
-        }
-    }
-
-    private val MIGRATION_2_3 = object : Migration(2, 3) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Добавляем поле version в таблицу patterns для оптимистической блокировки
-            db.execSQL("ALTER TABLE patterns ADD COLUMN version INTEGER NOT NULL DEFAULT 1")
-        }
-    }
-
     @Provides
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context
     ): AmuletDatabase =
         Room.databaseBuilder(context, AmuletDatabase::class.java, DATABASE_NAME)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-            .fallbackToDestructiveMigrationOnDowngrade()
+            .fallbackToDestructiveMigration()
             .build()
 
     @Provides
@@ -96,6 +57,12 @@ object DatabaseModule {
 
     @Provides
     fun providePracticeDao(database: AmuletDatabase): PracticeDao = database.practiceDao()
+
+    @Provides
+    fun providePracticeExtrasDao(database: AmuletDatabase): PracticeExtrasDao = database.practiceExtrasDao()
+
+    @Provides
+    fun provideCourseDao(database: AmuletDatabase): CourseDao = database.courseDao()
 
     @Provides
     fun provideRuleDao(database: AmuletDatabase): RuleDao = database.ruleDao()

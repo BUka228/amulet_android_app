@@ -47,6 +47,7 @@ include(
     ":data:hugs",
     ":data:patterns",
     ":data:practices",
+    ":data:courses",
     ":data:rules",
     ":data:privacy",
     ":data:auth",
@@ -58,6 +59,7 @@ include(
     ":feature:library",
     ":feature:hugs",
     ":feature:patterns",
+    ":feature:practices",
     ":feature:sessions",
     ":feature:devices",
     ":feature:settings",
@@ -90,6 +92,7 @@ project(":data:devices").projectDir = file("data/devices")
 project(":data:hugs").projectDir = file("data/hugs")
 project(":data:patterns").projectDir = file("data/patterns")
 project(":data:practices").projectDir = file("data/practices")
+project(":data:courses").projectDir = file("data/courses")
 project(":data:rules").projectDir = file("data/rules")
 project(":data:privacy").projectDir = file("data/privacy")
 project(":data:auth").projectDir = file("data/auth")
@@ -99,6 +102,7 @@ project(":feature:dashboard").projectDir = file("feature/dashboard")
 project(":feature:library").projectDir = file("feature/library")
 project(":feature:hugs").projectDir = file("feature/hugs")
 project(":feature:patterns").projectDir = file("feature/patterns")
+project(":feature:practices").projectDir = file("feature/practices")
 project(":feature:sessions").projectDir = file("feature/sessions")
 project(":feature:devices").projectDir = file("feature/devices")
 project(":feature:settings").projectDir = file("feature/settings")

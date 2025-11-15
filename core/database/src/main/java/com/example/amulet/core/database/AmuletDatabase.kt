@@ -10,7 +10,9 @@ import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.database.dao.PairDao
 import com.example.amulet.core.database.dao.PatternDao
 import com.example.amulet.core.database.dao.PracticeDao
+import com.example.amulet.core.database.dao.PracticeExtrasDao
 import com.example.amulet.core.database.dao.PrivacyJobDao
+import com.example.amulet.core.database.dao.CourseDao
 import com.example.amulet.core.database.dao.RemoteKeyDao
 import com.example.amulet.core.database.dao.RuleDao
 import com.example.amulet.core.database.dao.TelemetryDao
@@ -26,12 +28,18 @@ import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.PatternTagCrossRef
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
+import com.example.amulet.core.database.entity.PracticeCategoryEntity
+import com.example.amulet.core.database.entity.PracticeFavoriteEntity
+import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.core.database.entity.PrivacyJobEntity
 import com.example.amulet.core.database.entity.RemoteKeyEntity
 import com.example.amulet.core.database.entity.RuleEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.core.database.entity.TelemetryEventEntity
 import com.example.amulet.core.database.entity.UserEntity
+import com.example.amulet.core.database.entity.CourseEntity
+import com.example.amulet.core.database.entity.CourseItemEntity
+import com.example.amulet.core.database.entity.CourseProgressEntity
 
 @Database(
     entities = [
@@ -46,6 +54,12 @@ import com.example.amulet.core.database.entity.UserEntity
         PairMemberEntity::class,
         PracticeEntity::class,
         PracticeSessionEntity::class,
+        PracticeCategoryEntity::class,
+        PracticeFavoriteEntity::class,
+        UserPreferencesEntity::class,
+        CourseEntity::class,
+        CourseItemEntity::class,
+        CourseProgressEntity::class,
         RuleEntity::class,
         TelemetryEventEntity::class,
         PrivacyJobEntity::class,
@@ -53,7 +67,7 @@ import com.example.amulet.core.database.entity.UserEntity
         OutboxActionEntity::class,
         RemoteKeyEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(DatabaseTypeConverters::class)
@@ -65,6 +79,8 @@ abstract class AmuletDatabase : RoomDatabase() {
     abstract fun patternDao(): PatternDao
     abstract fun pairDao(): PairDao
     abstract fun practiceDao(): PracticeDao
+    abstract fun practiceExtrasDao(): PracticeExtrasDao
+    abstract fun courseDao(): CourseDao
     abstract fun ruleDao(): RuleDao
     abstract fun telemetryDao(): TelemetryDao
     abstract fun privacyJobDao(): PrivacyJobDao
@@ -72,3 +88,4 @@ abstract class AmuletDatabase : RoomDatabase() {
     abstract fun outboxActionDao(): OutboxActionDao
     abstract fun remoteKeyDao(): RemoteKeyDao
 }
+

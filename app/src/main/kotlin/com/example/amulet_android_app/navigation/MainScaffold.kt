@@ -84,7 +84,7 @@ fun MainScaffold(
 
 /**
  * Bottom Navigation Bar приложения.
- * Показывается на главных экранах (dashboard, library, hugs, patterns, settings).
+ * Показывается на главных экранах (dashboard, practices, hugs, patterns, settings).
  */
 @Composable
 private fun AppBottomNavigationBar(
@@ -115,7 +115,7 @@ private fun AppBottomNavigationBar(
 private fun shouldShowBottomBar(route: String): Boolean {
     // Bottom bar показывается только на основных экранах
     return route.startsWith("dashboard") ||
-           route.startsWith("library") ||
+           route.startsWith("practices") ||
            route.startsWith("hugs") ||
            route.startsWith("patterns") ||
            route.startsWith("settings")
@@ -132,7 +132,7 @@ private fun getBottomNavItems() = listOf(
         label = stringResource(R.string.bottom_nav_home)
     ),
     BottomNavItem(
-        route = "library/main",
+        route = "practices/home",
         icon = Icons.AutoMirrored.Filled.List,
         label = stringResource(R.string.bottom_nav_library)
     ),

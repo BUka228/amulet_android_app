@@ -20,6 +20,12 @@ interface PracticeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertPractices(practices: List<PracticeEntity>)
 
+    @Query("SELECT * FROM practices")
+    fun observePractices(): Flow<List<PracticeEntity>>
+
+    @Query("SELECT * FROM practices WHERE id = :id")
+    fun observePracticeById(id: String): Flow<PracticeEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSession(session: PracticeSessionEntity)
 
@@ -29,6 +35,9 @@ interface PracticeDao {
     @Transaction
     @Query("SELECT * FROM practice_sessions WHERE id = :sessionId")
     fun observeSession(sessionId: String): Flow<PracticeSessionWithDetails?>
+
+    @Query("SELECT * FROM practice_sessions WHERE id = :sessionId")
+    suspend fun getSessionById(sessionId: String): PracticeSessionEntity?
 
     @Transaction
     @Query("SELECT * FROM practice_sessions WHERE userId = :userId ORDER BY startedAt DESC")
@@ -51,3 +60,4 @@ interface PracticeDao {
     @Query("DELETE FROM practice_sessions WHERE status = 'COMPLETED' AND completedAt IS NOT NULL AND completedAt < :cutoff")
     suspend fun cleanupCompletedSessions(cutoff: Long): Int
 }
+

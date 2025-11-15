@@ -11,6 +11,8 @@ import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
 import com.example.amulet.shared.domain.patterns.usecase.*
+import com.example.amulet.shared.domain.practices.usecase.*
+import com.example.amulet.shared.domain.courses.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -72,6 +74,35 @@ private val sharedModule = module {
     factory { SetPatternTagsUseCase(get()) }
     factory { DeleteTagsUseCase(get()) }
     factory { PreviewPatternOnDeviceUseCase(get(), get()) }
+
+    // Practices UseCases
+    factory { GetPracticesStreamUseCase(get()) }
+    factory { GetPracticeByIdUseCase(get()) }
+    factory { GetCategoriesStreamUseCase(get()) }
+    factory { GetFavoritesStreamUseCase(get()) }
+    factory { SearchPracticesUseCase(get()) }
+    factory { RefreshPracticesUseCase(get()) }
+    factory { SetFavoritePracticeUseCase(get()) }
+    factory { GetActiveSessionStreamUseCase(get()) }
+    factory { GetSessionsHistoryStreamUseCase(get()) }
+    factory { StartPracticeUseCase(get()) }
+    factory { PauseSessionUseCase(get()) }
+    factory { ResumeSessionUseCase(get()) }
+    factory { StopSessionUseCase(get()) }
+    factory { GetUserPreferencesStreamUseCase(get()) }
+    factory { UpdateUserPreferencesUseCase(get()) }
+    factory { GetRecommendationsStreamUseCase(get()) }
+
+    // Courses UseCases
+    factory { GetCoursesStreamUseCase(get()) }
+    factory { GetCourseByIdUseCase(get()) }
+    factory { GetCourseItemsStreamUseCase(get()) }
+    factory { GetCourseProgressStreamUseCase(get()) }
+    factory { RefreshCoursesUseCase(get()) }
+    factory { StartCourseUseCase(get()) }
+    factory { ContinueCourseUseCase(get()) }
+    factory { CompleteCourseItemUseCase(get()) }
+    factory { ResetCourseProgressUseCase(get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

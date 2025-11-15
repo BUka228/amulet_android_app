@@ -39,6 +39,7 @@
             <option value="$PROJECT_DIR$/core/turnstile" />
             <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/data/auth" />
+            <option value="$PROJECT_DIR$/data/courses" />
             <option value="$PROJECT_DIR$/data/devices" />
             <option value="$PROJECT_DIR$/data/hugs" />
             <option value="$PROJECT_DIR$/data/patterns" />
@@ -58,6 +59,7 @@
             <option value="$PROJECT_DIR$/feature/onboarding" />
             <option value="$PROJECT_DIR$/feature/pairing" />
             <option value="$PROJECT_DIR$/feature/patterns" />
+            <option value="$PROJECT_DIR$/feature/practices" />
             <option value="$PROJECT_DIR$/feature/profile" />
             <option value="$PROJECT_DIR$/feature/sessions" />
             <option value="$PROJECT_DIR$/feature/settings" />

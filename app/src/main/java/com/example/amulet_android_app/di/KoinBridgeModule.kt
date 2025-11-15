@@ -19,10 +19,36 @@ import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticesRepository
+import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetCategoriesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetFavoritesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetPracticesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetUserPreferencesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.RefreshPracticesUseCase
+import com.example.amulet.shared.domain.practices.usecase.ResumeSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.SearchPracticesUseCase
+import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
+import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
+import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.courses.CoursesRepository
+import com.example.amulet.shared.domain.courses.usecase.CompleteCourseItemUseCase
+import com.example.amulet.shared.domain.courses.usecase.ContinueCourseUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCourseByIdUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCourseItemsStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesUseCase
+import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
+import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
 import dagger.Provides
@@ -54,6 +80,7 @@ object KoinBridgeModule {
         hugsRepository: HugsRepository,
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
+        coursesRepository: CoursesRepository,
         privacyRepository: PrivacyRepository,
         rulesRepository: RulesRepository
     ): Koin =
@@ -70,6 +97,7 @@ object KoinBridgeModule {
                 single<HugsRepository> { hugsRepository }
                 single<PatternsRepository> { patternsRepository }
                 single<PracticesRepository> { practicesRepository }
+                single<CoursesRepository> { coursesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
             }
@@ -197,4 +225,33 @@ object KoinBridgeModule {
 
     @Provides
     fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
+
+    // Practices UseCases
+    @Provides fun provideGetPracticesStreamUseCase(koin: Koin): GetPracticesStreamUseCase = koin.get()
+    @Provides fun provideGetPracticeByIdUseCase(koin: Koin): GetPracticeByIdUseCase = koin.get()
+    @Provides fun provideGetCategoriesStreamUseCase(koin: Koin): GetCategoriesStreamUseCase = koin.get()
+    @Provides fun provideGetFavoritesStreamUseCase(koin: Koin): GetFavoritesStreamUseCase = koin.get()
+    @Provides fun provideSearchPracticesUseCase(koin: Koin): SearchPracticesUseCase = koin.get()
+    @Provides fun provideRefreshPracticesUseCase(koin: Koin): RefreshPracticesUseCase = koin.get()
+    @Provides fun provideSetFavoritePracticeUseCase(koin: Koin): SetFavoritePracticeUseCase = koin.get()
+    @Provides fun provideGetActiveSessionStreamUseCase(koin: Koin): GetActiveSessionStreamUseCase = koin.get()
+    @Provides fun provideGetSessionsHistoryStreamUseCase(koin: Koin): GetSessionsHistoryStreamUseCase = koin.get()
+    @Provides fun provideStartPracticeUseCase(koin: Koin): StartPracticeUseCase = koin.get()
+    @Provides fun providePauseSessionUseCase(koin: Koin): PauseSessionUseCase = koin.get()
+    @Provides fun provideResumeSessionUseCase(koin: Koin): ResumeSessionUseCase = koin.get()
+    @Provides fun provideStopSessionUseCase(koin: Koin): StopSessionUseCase = koin.get()
+    @Provides fun provideGetUserPreferencesStreamUseCase(koin: Koin): GetUserPreferencesStreamUseCase = koin.get()
+    @Provides fun provideUpdateUserPreferencesUseCase(koin: Koin): UpdateUserPreferencesUseCase = koin.get()
+    @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()
+
+    // Courses UseCases
+    @Provides fun provideGetCoursesStreamUseCase(koin: Koin): GetCoursesStreamUseCase = koin.get()
+    @Provides fun provideGetCourseByIdUseCase(koin: Koin): GetCourseByIdUseCase = koin.get()
+    @Provides fun provideGetCourseItemsStreamUseCase(koin: Koin): GetCourseItemsStreamUseCase = koin.get()
+    @Provides fun provideGetCourseProgressStreamUseCase(koin: Koin): GetCourseProgressStreamUseCase = koin.get()
+    @Provides fun provideRefreshCoursesUseCase(koin: Koin): RefreshCoursesUseCase = koin.get()
+    @Provides fun provideStartCourseUseCase(koin: Koin): StartCourseUseCase = koin.get()
+    @Provides fun provideContinueCourseUseCase(koin: Koin): ContinueCourseUseCase = koin.get()
+    @Provides fun provideCompleteCourseItemUseCase(koin: Koin): CompleteCourseItemUseCase = koin.get()
+    @Provides fun provideResetCourseProgressUseCase(koin: Koin): ResetCourseProgressUseCase = koin.get()
 }
