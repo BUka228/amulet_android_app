@@ -127,6 +127,11 @@
     <string name="pattern_preview_metadata">Метаданные</string>
     <string name="pattern_preview_author">Автор: %s</string>
     <string name="pattern_preview_duration">Длительность</string>
+    <string name="pattern_preview_hardware_version">Версия железа</string>
+    <string name="pattern_preview_version">Версия</string>
+    <string name="pattern_preview_usage">Количество использований</string>
+    <string name="pattern_preview_created_at">Создан</string>
+    <string name="pattern_preview_updated_at">Обновлён</string>
 
     <!-- Timeline Editor -->
     <string name="timeline_add_track">Добавить дорожку</string>

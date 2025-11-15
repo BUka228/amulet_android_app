@@ -166,6 +166,11 @@
     <string name="pattern_preview_metadata">Metadata</string>
     <string name="pattern_preview_author">Author: %s</string>
     <string name="pattern_preview_duration">Duration</string>
+    <string name="pattern_preview_hardware_version">Hardware version</string>
+    <string name="pattern_preview_version">Version</string>
+    <string name="pattern_preview_usage">Usage count</string>
+    <string name="pattern_preview_created_at">Created</string>
+    <string name="pattern_preview_updated_at">Updated</string>
     <string name="pattern_details_spec_type_label">Spec type</string>
     <string name="pattern_details_visibility_label">Visibility</string>
     <string name="pattern_details_public">Public</string>

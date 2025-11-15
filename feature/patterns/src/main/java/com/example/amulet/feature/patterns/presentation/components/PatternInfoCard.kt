@@ -1,6 +1,8 @@
 package com.example.amulet.feature.patterns.presentation.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -11,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
 
@@ -22,7 +25,7 @@ fun PatternInfoCard(
     pattern: Pattern,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    AmuletCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -106,6 +109,82 @@ fun PatternInfoCard(
                         label = stringResource(R.string.pattern_preview_duration),
                         value = formatDuration(totalDuration)
                     )
+                }
+
+                // Версия и железо
+                MetadataRow(
+                    icon = Icons.Default.Build,
+                    label = stringResource(R.string.pattern_preview_hardware_version),
+                    value = pattern.hardwareVersion.toString()
+                )
+                MetadataRow(
+                    icon = Icons.Default.Info,
+                    label = stringResource(R.string.pattern_preview_version),
+                    value = pattern.version.toString()
+                )
+
+                // Использования (если есть)
+                pattern.usageCount?.let { usage ->
+                    MetadataRow(
+                        icon = Icons.Default.TrendingUp,
+                        label = stringResource(R.string.pattern_preview_usage),
+                        value = usage.toString()
+                    )
+                }
+            }
+            
+            // Теги
+            if (pattern.tags.isNotEmpty()) {
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val maxVisible = 6
+                    val visible = pattern.tags.take(maxVisible)
+                    visible.forEach { tag ->
+                        AssistChip(
+                            onClick = {},
+                            label = { Text(tag) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Tag,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
+                    val extra = pattern.tags.size - visible.size
+                    if (extra > 0) {
+                        AssistChip(
+                            onClick = {},
+                            label = { Text("+${'$'}extra") }
+                        )
+                    }
+                }
+            }
+
+            // Даты создания/обновления
+            if (pattern.createdAt != null || pattern.updatedAt != null) {
+                HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pattern.createdAt?.let { ts ->
+                        MetadataRow(
+                            icon = Icons.Default.Schedule,
+                            label = stringResource(R.string.pattern_preview_created_at),
+                            value = formatDateTime(ts) ?: "—"
+                        )
+                    }
+                    pattern.updatedAt?.let { ts ->
+                        MetadataRow(
+                            icon = Icons.Default.Update,
+                            label = stringResource(R.string.pattern_preview_updated_at),
+                            value = formatDateTime(ts) ?: "—"
+                        )
+                    }
                 }
             }
             
@@ -207,5 +286,14 @@ private fun formatDuration(durationMs: Long): String {
             val minutes = (durationMs / 60000).toInt()
             stringResource(R.string.time_format_minutes, minutes)
         }
+    }
+}
+
+private fun formatDateTime(ts: Long): String? {
+    return try {
+        val sdf = java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale.getDefault())
+        sdf.format(java.util.Date(ts))
+    } catch (_: Throwable) {
+        null
     }
 }

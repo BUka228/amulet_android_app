@@ -1,9 +1,12 @@
 package com.example.amulet.feature.patterns.presentation.preview
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -130,39 +133,44 @@ fun PatternPreviewScreen(
         return
     }
 
+    // Определяем поведение зацикливания: если в паттерне/спеке loop=true, отображаем как включённое и блокируем переключатель
+    val patternLoop = remember(state.pattern, state.spec) {
+        state.pattern?.spec?.loop ?: state.spec?.loop ?: false
+    }
+    val visualIsLooping = patternLoop || state.isLooping
+    val loopToggleEnabled = !patternLoop
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // AmuletAvatar2D - анимированный 2D аватар амулета
-        Card(
+        // AmuletAvatar2D - анимированный 2D аватар амулета (без карточки)
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f)
+                .aspectRatio(1f),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                AmuletAvatar2D(
-                    spec = state.spec,
-                    isPlaying = state.isPlaying,
-                    modifier = Modifier.padding(16.dp),
-                    size = 200.dp
-                )
-            }
+            AmuletAvatar2D(
+                spec = state.spec,
+                isPlaying = state.isPlaying,
+                modifier = Modifier.padding(16.dp),
+                size = 200.dp
+            )
         }
 
         // PlaybackControls - элементы управления воспроизведением
         PlaybackControls(
             isPlaying = state.isPlaying,
-            isLooping = state.isLooping,
+            isLooping = visualIsLooping,
             onPlayPause = { onEvent(PatternPreviewEvent.PlayPause) },
             onRestart = { onEvent(PatternPreviewEvent.Restart) },
-            onLoopToggle = { onEvent(PatternPreviewEvent.UpdateLoop(it)) }
+            onLoopToggle = { onEvent(PatternPreviewEvent.UpdateLoop(it)) },
+            loopEnabled = loopToggleEnabled
         )
 
         // DeviceConnectionCard - карточка подключенного устройства
@@ -193,8 +201,11 @@ fun PatternPreviewScreen(
                     
                     if (progress is PreviewProgress.Uploading) {
                         LinearProgressIndicator(
-                            progress = progress.percent / 100f,
-                            modifier = Modifier.fillMaxWidth()
+                            progress = { progress.percent / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = ProgressIndicatorDefaults.linearColor,
+                            trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                            strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                         )
                     }
                 }

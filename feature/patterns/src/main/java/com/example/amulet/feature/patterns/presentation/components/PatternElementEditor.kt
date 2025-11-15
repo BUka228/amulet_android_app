@@ -141,6 +141,7 @@ fun PatternElementEditor(
                             text = "${index + 1}. ${getElementName(element)}",
                             style = MaterialTheme.typography.titleMedium
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = getElementDescription(element),
                             style = MaterialTheme.typography.bodyMedium,

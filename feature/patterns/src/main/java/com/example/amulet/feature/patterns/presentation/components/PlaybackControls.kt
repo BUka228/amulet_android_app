@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.feature.patterns.R
 
 /**
@@ -22,14 +23,10 @@ fun PlaybackControls(
     onPlayPause: () -> Unit,
     onRestart: () -> Unit,
     onLoopToggle: (Boolean) -> Unit,
+    loopEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
+    AmuletCard(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -98,7 +95,8 @@ fun PlaybackControls(
                 
                 Switch(
                     checked = isLooping,
-                    onCheckedChange = onLoopToggle
+                    onCheckedChange = onLoopToggle,
+                    enabled = loopEnabled
                 )
             }
         }
