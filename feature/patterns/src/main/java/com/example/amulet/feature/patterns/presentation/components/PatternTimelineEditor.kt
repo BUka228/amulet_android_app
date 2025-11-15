@@ -13,6 +13,9 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import kotlinx.coroutines.delay
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -535,6 +538,18 @@ private fun TimelineGrid(
     val scrollState = rememberScrollState()
     val cellSize = 24.dp
     val gap = 4.dp
+    var containerWidthPx by remember { mutableIntStateOf(0) }
+    var autoDir by remember { mutableIntStateOf(0) } // -1 left, 1 right, 0 none
+    var autoSpeed by remember { mutableStateOf(0f) } // px per frame
+    var draggingState by remember { mutableStateOf(false) }
+    LaunchedEffect(draggingState, autoDir, autoSpeed) {
+        while (draggingState && autoDir != 0 && autoSpeed > 0f) {
+            val step = (autoSpeed * autoDir)
+            val target = (scrollState.value + step).toInt().coerceIn(0, scrollState.maxValue)
+            scrollState.scrollTo(target)
+            delay(16)
+        }
+    }
     val baseModifier = Modifier
     val dragModifier = if (dragEnabled) {
         Modifier.pointerInput(ticks, ledCount) {
@@ -553,6 +568,7 @@ private fun TimelineGrid(
                     val led = (y / (cellSizePx + gapPx)).toInt().coerceIn(0, ledCount - 1)
                     if (!dragging && change.pressed && !change.previousPressed) {
                         dragging = true
+                        draggingState = true
                         lastLed = led
                         lastTick = tick
                         onDragStart(led, tick)
@@ -562,8 +578,23 @@ private fun TimelineGrid(
                             lastTick = tick
                             lastLed = led
                         }
+                        val localX = change.position.x
+                        val threshold = 48f
+                        val maxSpeed = 48f // px/frame
+                        val minSpeed = 8f
+                        val rightEdge = containerWidthPx - threshold
+                        val (dir, dist) = when {
+                            containerWidthPx > 0 && localX > rightEdge -> 1 to (localX - rightEdge)
+                            localX < threshold -> -1 to (threshold - localX)
+                            else -> 0 to 0f
+                        }
+                        autoDir = dir
+                        autoSpeed = if (dir == 0) 0f else (minSpeed + dist * 0.5f).coerceAtMost(maxSpeed)
                     } else if (dragging && !change.pressed) {
                         dragging = false
+                        draggingState = false
+                        autoDir = 0
+                        autoSpeed = 0f
                         onDragEnd()
                     }
                 }
@@ -572,7 +603,9 @@ private fun TimelineGrid(
     } else Modifier
     Column(
         verticalArrangement = Arrangement.spacedBy(gap),
-        modifier = baseModifier.then(dragModifier)
+        modifier = baseModifier
+            .onSizeChanged { containerWidthPx = it.width }
+            .then(dragModifier)
     ) {
         repeat(ledCount) { led ->
             Row(
@@ -595,6 +628,7 @@ private fun TimelineGrid(
                     Box(
                         modifier = Modifier
                             .size(cellSize)
+                            .clip(CircleShape)
                             .background(bg, shape = CircleShape)
                             .border(width = 1.dp, color = border, shape = CircleShape)
                             .clickable { onToggle(led, t) }
