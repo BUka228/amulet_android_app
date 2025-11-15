@@ -48,6 +48,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -73,7 +74,7 @@ fun TimelineEditor(
 ) {
     val vm: TimelineEditorViewModel = hiltViewModel()
     LaunchedEffect(element) { vm.initialize(element, onUpdate) }
-    val sNullable by vm.state.collectAsState()
+    val sNullable by vm.state.collectAsStateWithLifecycle()
     val s = sNullable ?: return
     val ledsCount = s.ledsCount
     val ticksCount = s.ticksCount

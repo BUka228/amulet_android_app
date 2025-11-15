@@ -414,36 +414,48 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
         if (nd == s.tickMs) return
         val newTicks = (s.durationMs / nd).coerceAtLeast(1)
         val newGrid = Array(s.ledsCount) { arrayOfNulls<String>(newTicks) }
+        val newFadeIn = Array(s.ledsCount) { arrayOfNulls<Int>(newTicks) }
+        val newFadeOut = Array(s.ledsCount) { arrayOfNulls<Int>(newTicks) }
+        val newEasing = Array(s.ledsCount) { arrayOfNulls<Easing>(newTicks) }
         for (led in 0 until s.ledsCount) {
-            val intervals = mutableListOf<Triple<Int, Int, String>>()
-            var t0 = -1
-            var curColor: String? = null
-            for (t in 0 until s.gridColors[led].size) {
+            var runStart = -1
+            var runColor: String? = null
+            val lastIndex = s.gridColors[led].lastIndex
+            for (t in 0..lastIndex) {
                 val color = s.gridColors[led][t]
-                if (color != null && t0 == -1) {
-                    t0 = t; curColor = color
+                if (color != null && runStart == -1) {
+                    runStart = t
+                    runColor = color
                 }
-                val atEnd = t == s.gridColors[led].lastIndex
-                if ((color == null || color != curColor || atEnd) && t0 != -1) {
-                    val end = if (atEnd && color != null && color == curColor) t else t - 1
-                    val startMs = t0 * s.tickMs
-                    val endMs = (end + 1) * s.tickMs
-                    intervals.add(Triple(startMs, endMs, curColor!!))
-                    t0 = -1
+                val isEnd = t == lastIndex
+                val boundary = (color == null || color != runColor || isEnd)
+                if (runStart != -1 && boundary) {
+                    val endTickOld = if (isEnd && color != null && color == runColor) t else t - 1
+                    val startMs = runStart * s.tickMs
+                    val endMs = (endTickOld + 1) * s.tickMs
+                    val sTick = (startMs / nd).coerceAtLeast(0)
+                    val eTick = ((endMs - 1) / nd).coerceAtLeast(sTick)
+                    val sTickClamped = sTick.coerceAtMost(newTicks - 1)
+                    val eTickClamped = eTick.coerceAtMost(newTicks - 1)
+                    for (tt in sTickClamped..eTickClamped) newGrid[led][tt] = runColor
+                    // перенос параметров клипа с позиции его старта
+                    val fi = s.fadeInGrid.getOrNull(led)?.getOrNull(runStart)
+                    val fo = s.fadeOutGrid.getOrNull(led)?.getOrNull(runStart)
+                    val ez = s.easingGrid.getOrNull(led)?.getOrNull(runStart)
+                    if (fi != null) newFadeIn[led][sTickClamped] = fi
+                    if (fo != null) newFadeOut[led][sTickClamped] = fo
+                    if (ez != null) newEasing[led][sTickClamped] = ez
+                    runStart = -1
+                    runColor = null
                 }
-            }
-            intervals.forEach { (startMs, endMs, col) ->
-                val sTick = (startMs / nd).coerceAtLeast(0)
-                val eTick = ((endMs - 1) / nd).coerceAtLeast(sTick)
-                for (tt in sTick..eTick.coerceAtMost(newTicks - 1)) newGrid[led][tt] = col
             }
         }
         _state.update { it!!.copy(
             tickMs = nd,
             gridColors = newGrid,
-            fadeInGrid = Array(it.ledsCount) { arrayOfNulls<Int>(newTicks) },
-            fadeOutGrid = Array(it.ledsCount) { arrayOfNulls<Int>(newTicks) },
-            easingGrid = Array(it.ledsCount) { arrayOfNulls<Easing>(newTicks) },
+            fadeInGrid = newFadeIn,
+            fadeOutGrid = newFadeOut,
+            easingGrid = newEasing,
             selectedTick = it.selectedTick.coerceIn(0, newTicks - 1)
         ) }
         applyAndUpdate()
