@@ -351,6 +351,7 @@
     <string name="timeline_tool_brush">Brush</string>
     <string name="timeline_tool_eraser">Eraser</string>
     <string name="timeline_tool_fill">Fill</string>
+    <string name="timeline_tool_eyedropper">Eyedropper</string>
     <string name="timeline_drag_on">Drag: On</string>
     <string name="timeline_drag_off">Drag: Off</string>
     <string name="timeline_cell_size">Cell size</string>

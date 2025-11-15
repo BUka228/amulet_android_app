@@ -46,16 +46,23 @@ object AmuletPalette {
     val Gray200 = Color(0xFFEEEEEE)
     val Gray300 = Color(0xFFE0E0E0)
     val Gray400 = Color(0xFFBDBDBD)
-    val Gray500 = Color(0xFF9E9E9E)
-    val Gray600 = Color(0xFF757575)
-    val Gray700 = Color(0xFF616161)
-    val Gray800 = Color(0xFF424242)
-    val Gray900 = Color(0xFF212121)
+    val Gray500 = Color(0xFF6B7280)
+    val Gray600 = Color(0xFF4B5563)
+    val Gray700 = Color(0xFF374151)
+    val Gray800 = Color(0xFF1F2937)
+    val Gray900 = Color(0xFF0B1020)
 
     val Black = Color(0xFF000000)
     val White = Color(0xFFFFFFFF)
     val BlackAlpha = Color(0x80000000)
     val WhiteAlpha = Color(0x80FFFFFF)
+
+    // Overlays & FX
+    val OverlaySoft = Color(0x660B1020)
+    val OverlayStrong = Color(0x990B1020)
+    val Glow = Color(0x33A78BFA)
+    val FocusRing = Color(0xFF93C5FD)
+    val Divider = Gray700
 
     // Amulet states
     val AmuletBreathing = Color(0xFF4CAF50)
@@ -185,8 +192,8 @@ val BrandGradientLight = GradientColors(
 )
 
 val BrandGradientDark = GradientColors(
-    start = AmuletPalette.PrimaryLight,
-    end = AmuletPalette.SecondaryLight
+    start = AmuletPalette.PrimaryVariant,
+    end = AmuletPalette.SecondaryVariant
 )
 
 val CalmGradientLight = GradientColors(

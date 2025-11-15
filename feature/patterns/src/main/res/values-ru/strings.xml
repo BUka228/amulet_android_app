@@ -337,6 +337,7 @@
     <string name="timeline_tool_brush">Кисть</string>
     <string name="timeline_tool_eraser">Ластик</string>
     <string name="timeline_tool_fill">Заливка</string>
+    <string name="timeline_tool_eyedropper">Пипетка</string>
     <string name="timeline_drag_on">Drag: Вкл</string>
     <string name="timeline_drag_off">Drag: Выкл</string>
     <string name="timeline_cell_size">Размер ячейки</string>
