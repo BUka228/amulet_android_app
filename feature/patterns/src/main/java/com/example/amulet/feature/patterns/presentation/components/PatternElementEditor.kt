@@ -1,8 +1,5 @@
 package com.example.amulet.feature.patterns.presentation.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
@@ -19,42 +16,21 @@ import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.patterns.model.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatternElementEditor(
     element: PatternElement,
     index: Int,
-    spec: PatternSpec?,
-    isPlaying: Boolean,
-    loop: Boolean,
-    onPlayPause: () -> Unit,
-    onToggleLoop: () -> Unit,
     onUpdate: (PatternElement) -> Unit,
     onRemove: () -> Unit,
     onMoveUp: (() -> Unit)?,
     onMoveDown: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    onAddElement: ((PatternElementType) -> Unit)? = null
+    onAddElement: ((PatternElementType) -> Unit)? = null,
+    onOpenEditor: () -> Unit
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showElementPicker by remember { mutableStateOf(false) }
-    var showElementEditor by remember { mutableStateOf(false) }
 
-
-    // Element Editor BottomSheet
-    if (showElementEditor) {
-        PatternElementEditorBottomSheet(
-            element = element,
-            spec = spec,
-            isPlaying = isPlaying,
-            loop = loop,
-            onPlayPause = onPlayPause,
-            onToggleLoop = onToggleLoop,
-            onDismiss = { showElementEditor = false },
-            onUpdate = onUpdate
-        )
-    }
-    
     // Element Picker BottomSheet
     if (showElementPicker && onAddElement != null) {
         PatternElementPickerDialog(
@@ -203,7 +179,7 @@ fun PatternElementEditor(
                     }
 
                     IconButton(
-                        onClick = { showElementEditor = true },
+                        onClick = onOpenEditor,
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(

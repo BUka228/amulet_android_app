@@ -331,4 +331,30 @@
     <string name="pattern_details_shared_with_none">Не поделился</string>
     <string name="pattern_details_tags_title">Теги</string>
     <string name="pattern_details_elements_title">Элементы</string>
+    
+    <!-- Timeline Editor (additional) -->
+    <string name="timeline_palette">Палитра</string>
+    <string name="timeline_tool_brush">Кисть</string>
+    <string name="timeline_tool_eraser">Ластик</string>
+    <string name="timeline_tool_fill">Заливка</string>
+    <string name="timeline_drag_on">Drag: Вкл</string>
+    <string name="timeline_drag_off">Drag: Выкл</string>
+    <string name="timeline_cell_size">Размер ячейки</string>
+    <string name="timeline_gap">Интервал</string>
+    <string name="timeline_autoscroll">Автоскролл</string>
+    <string name="timeline_autoscroll_threshold">Порог</string>
+    <string name="timeline_autoscroll_min_speed">Мин. скорость</string>
+    <string name="timeline_autoscroll_max_speed">Макс. скорость</string>
+    <string name="timeline_autoscroll_acceleration">Коэф. ускорения</string>
+    <string name="duration_unit_ms">мс</string>
+    <string name="duration_unit_s">с</string>
+    <string name="timeline_settings">Настройки</string>
+    <string name="timeline_settings_show">Показать настройки</string>
+    <string name="timeline_settings_hide">Скрыть настройки</string>
+    <string name="advanced_color_picker_title">Продвинутый выбор цвета</string>
+    <string name="color_picker_hue">Оттенок</string>
+    <string name="color_picker_saturation">Насыщенность</string>
+    <string name="color_picker_value">Яркость</string>
+    <string name="color_picker_advanced">Расширенная политра</string>
+
 </resources>

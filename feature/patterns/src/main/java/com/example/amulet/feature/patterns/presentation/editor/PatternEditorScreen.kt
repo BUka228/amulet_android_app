@@ -38,7 +38,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 fun PatternEditorRoute(
     viewModel: PatternEditorViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onNavigateToPreview: (com.example.amulet.shared.domain.patterns.model.PatternSpec) -> Unit
+    onNavigateToPreview: (com.example.amulet.shared.domain.patterns.model.PatternSpec) -> Unit,
+    onNavigateToElementEditor: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -83,7 +84,8 @@ fun PatternEditorRoute(
         showDiscardDialog = showDiscardDialog,
         onDismissDiscardDialog = { showDiscardDialog = false },
         showPublishDialog = showPublishDialog,
-        onDismissPublishDialog = { showPublishDialog = false }
+        onDismissPublishDialog = { showPublishDialog = false },
+        onNavigateToElementEditor = onNavigateToElementEditor
     )
 }
 
@@ -100,7 +102,8 @@ fun PatternEditorScreen(
     showDiscardDialog: Boolean,
     onDismissDiscardDialog: () -> Unit,
     showPublishDialog: Boolean,
-    onDismissPublishDialog: () -> Unit
+    onDismissPublishDialog: () -> Unit,
+    onNavigateToElementEditor: (Int) -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
 
@@ -518,11 +521,6 @@ fun PatternEditorScreen(
                     PatternElementEditor(
                         element = element,
                         index = index,
-                        spec = state.spec,
-                        isPlaying = state.isPlaying,
-                        loop = state.previewLoop,
-                        onPlayPause = { onEvent(PatternEditorEvent.TogglePlayPause) },
-                        onToggleLoop = { onEvent(PatternEditorEvent.ToggleLoop) },
                         onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
                         onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
                         onMoveUp = if (index > 0) {
@@ -534,6 +532,7 @@ fun PatternEditorScreen(
                         onAddElement = { elementType ->
                             onEvent(PatternEditorEvent.AddElement(elementType.createDefaultElement()))
                         },
+                        onOpenEditor = { onNavigateToElementEditor(index) },
                         modifier = Modifier.animateItem(
                             fadeInSpec = tween(
                                 durationMillis = 300,

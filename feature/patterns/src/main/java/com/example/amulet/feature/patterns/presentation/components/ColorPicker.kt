@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ fun ColorPicker(
     modifier: Modifier = Modifier,
     label: String? = null
 ) {
+    var showAdvanced by remember { mutableStateOf(false) }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -47,9 +50,17 @@ fun ColorPicker(
 
         HexColorInput(
             color = color,
-            onColorChange = onColorChange
+            onColorChange = onColorChange,
+            onClickPalette = { showAdvanced = true }
         )
     }
+
+    AdvancedColorPickerSheet(
+        open = showAdvanced,
+        initialColor = color,
+        onDismiss = { showAdvanced = false },
+        onPick = { picked -> onColorChange(picked) }
+    )
 }
 
 /**
@@ -124,7 +135,8 @@ private fun ColorChip(
 @Composable
 private fun HexColorInput(
     color: String,
-    onColorChange: (String) -> Unit
+    onColorChange: (String) -> Unit,
+    onClickPalette: () -> Unit = {},
 ) {
     var hexValue by remember(color) { mutableStateOf(color.removePrefix("#")) }
     var isError by remember { mutableStateOf(false) }
@@ -134,17 +146,13 @@ private fun HexColorInput(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(parseHexColor(color))
-                .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = CircleShape
-                )
-        )
+        IconButton(onClick = onClickPalette) {
+            Icon(
+                imageVector = Icons.Filled.Palette,
+                contentDescription = stringResource(R.string.color_picker_advanced),
+                tint = parseHexColor(color)
+            )
+        }
 
         AmuletTextField(
             value = hexValue,

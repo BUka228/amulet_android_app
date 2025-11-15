@@ -2,6 +2,11 @@ package com.example.amulet.feature.patterns.presentation.components
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -26,8 +31,10 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Redo
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -213,6 +220,15 @@ fun TimelineEditorContent(
         gridColors = g
     }
 
+    // Zoom and autoscroll settings
+    var cellSizeDp by remember { mutableStateOf(24.dp) }
+    var gapDp by remember { mutableStateOf(4.dp) }
+    var autoThresholdPx by remember { mutableStateOf(48f) }
+    var autoMinSpeedPx by remember { mutableStateOf(8f) }
+    var autoMaxSpeedPx by remember { mutableStateOf(48f) }
+    var autoAccel by remember { mutableStateOf(0.5f) }
+    var showAdvanced by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Toolbar: tools, palette, undo/redo
         Row(
@@ -223,71 +239,93 @@ fun TimelineEditorContent(
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 AssistChip(
                     onClick = { tool = Tool.BRUSH },
-                    label = { Text("Кисть") },
+                    label = { Text(stringResource(R.string.timeline_tool_brush)) },
                     leadingIcon = if (tool == Tool.BRUSH) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                 )
                 AssistChip(
                     onClick = { tool = Tool.ERASER },
-                    label = { Text("Ластик") },
+                    label = { Text(stringResource(R.string.timeline_tool_eraser)) },
                     leadingIcon = if (tool == Tool.ERASER) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                 )
                 AssistChip(
                     onClick = { tool = Tool.FILL },
-                    label = { Text("Заливка") },
+                    label = { Text(stringResource(R.string.timeline_tool_fill)) },
                     leadingIcon = if (tool == Tool.FILL) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                 )
                 AssistChip(
                     onClick = { dragEnabled = !dragEnabled },
-                    label = { Text(if (dragEnabled) "Drag: Вкл" else "Drag: Выкл") },
+                    label = { Text(if (dragEnabled) stringResource(R.string.timeline_drag_on) else stringResource(R.string.timeline_drag_off)) },
                     leadingIcon = if (dragEnabled) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                 )
                 IconButton(onClick = { undo() }, enabled = undoStack.isNotEmpty()) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                    Icon(imageVector = Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.timeline_undo))
                 }
                 IconButton(onClick = { redo() }, enabled = redoStack.isNotEmpty()) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.Redo, contentDescription = "Redo")
+                    Icon(imageVector = Icons.AutoMirrored.Filled.Redo, contentDescription = stringResource(R.string.timeline_redo))
                 }
             }
 
         }
 
-        // Palette: Presets
-        Text(text = "Палитра", style = MaterialTheme.typography.labelLarge)
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            presetColors.forEach { col ->
-                val bg = try { val c = android.graphics.Color.parseColor(col); androidx.compose.ui.graphics.Color(c) } catch (_: Throwable) { MaterialTheme.colorScheme.primary }
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .background(bg, shape = CircleShape)
-                        .border(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant, shape = CircleShape)
-                        .clickable {
-                            currentColor = col
-                            // также сразу красим выбранную ячейку кистью, если она активна
-                            if (selectedLed in 0 until ledsCount && selectedTick in 0 until gridColors[selectedLed].size) {
-                                applyBrush(selectedLed, selectedTick)
-                            }
-                        }
+        // Palette: Presets + Recent (combined)
+        var showAdvancedPicker by remember { mutableStateOf(false) }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = stringResource(R.string.timeline_palette), style = MaterialTheme.typography.labelLarge)
+            val paletteTint = try {
+                androidx.compose.ui.graphics.Color(currentColor.toColorInt())
+            } catch (_: Throwable) {
+                MaterialTheme.colorScheme.primary
+            }
+            IconButton(onClick = { showAdvancedPicker = true }) {
+                Icon(
+                    imageVector = Icons.Filled.Palette,
+                    contentDescription = stringResource(R.string.color_picker_advanced),
+                    tint = paletteTint
                 )
             }
         }
-
-        // Palette: Recents
-        if (recentColors.isNotEmpty()) {
-            Text(text = "Недавние", style = MaterialTheme.typography.labelLarge)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                recentColors.forEach { col ->
-                    val bg = try { val c = android.graphics.Color.parseColor(col); androidx.compose.ui.graphics.Color(c) } catch (_: Throwable) { MaterialTheme.colorScheme.primary }
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(bg.copy(alpha = 0.9f), shape = CircleShape)
-                            .border(width = 1.dp, color = MaterialTheme.colorScheme.outline, shape = CircleShape)
-                            .clickable { currentColor = col },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // small dot indicates "recent"
-                        Box(modifier = Modifier.size(6.dp).background(MaterialTheme.colorScheme.surface, shape = CircleShape))
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            maxLines = 3
+        ) {
+            val combined = buildList {
+                presetColors.forEach { add(it to false) }
+                recentColors.forEach { add(it to true) }
+            }
+            combined.forEach { (col, isRecent) ->
+                val bg = try {
+                    val c = col.toColorInt()
+                    androidx.compose.ui.graphics.Color(c)
+                } catch (_: Throwable) { MaterialTheme.colorScheme.primary }
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(if (isRecent) bg.copy(alpha = 0.9f) else bg, shape = CircleShape)
+                        .border(
+                            width = 1.dp,
+                            color = if (isRecent) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.outlineVariant,
+                            shape = CircleShape
+                        )
+                        .clickable {
+                            currentColor = col
+                            if (selectedLed in 0 until ledsCount && selectedTick in 0 until gridColors[selectedLed].size) {
+                                applyBrush(selectedLed, selectedTick)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isRecent) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(MaterialTheme.colorScheme.surface, shape = CircleShape)
+                        )
                     }
                 }
             }
@@ -300,6 +338,12 @@ fun TimelineEditorContent(
             colors = ledColors,
             selected = selectedLed to selectedTick,
             dragEnabled = dragEnabled,
+            cellSize = cellSizeDp,
+            gap = gapDp,
+            autoThresholdPx = autoThresholdPx,
+            autoMinSpeedPx = autoMinSpeedPx,
+            autoMaxSpeedPx = autoMaxSpeedPx,
+            autoAccel = autoAccel,
             onToggle = { led, t ->
                 // single tap paint
                 beginStroke()
@@ -340,10 +384,106 @@ fun TimelineEditorContent(
             }
         )
 
-        ColorPicker(
-            color = gridColors.getOrNull(selectedLed)?.getOrNull(selectedTick) ?: currentColor,
-            onColorChange = { c ->
-                // обновляем цвет выбранной ячейки и запоминаем последний цвет диода
+        // Переключатель расширенных настроек
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f))
+            Spacer(Modifier.width(8.dp))
+            AssistChip(
+                onClick = { showAdvanced = !showAdvanced },
+                label = {
+                    Text(if (showAdvanced) stringResource(R.string.timeline_settings_hide) else stringResource(R.string.timeline_settings_show))
+                }
+            )
+            Spacer(Modifier.width(8.dp))
+            HorizontalDivider(modifier = Modifier.weight(1f))
+        }
+
+        AnimatedVisibility(
+            visible = showAdvanced,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Масштаб сетки
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = stringResource(R.string.timeline_zoom), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = stringResource(R.string.timeline_cell_size) + ": " + String.format("%d dp", cellSizeDp.value.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = cellSizeDp.value,
+                        onValueChange = { cellSizeDp = it.dp },
+                        valueRange = 16f..40f,
+                        steps = 24
+                    )
+                    Text(
+                        text = stringResource(R.string.timeline_gap) + ": " + String.format("%d dp", gapDp.value.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = gapDp.value,
+                        onValueChange = { gapDp = it.dp },
+                        valueRange = 0f..8f,
+                        steps = 8
+                    )
+                }
+
+                // Расширенные параметры автоскролла
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(text = stringResource(R.string.timeline_autoscroll), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = stringResource(R.string.timeline_autoscroll_threshold) + ": " + String.format("%d px", autoThresholdPx.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = autoThresholdPx,
+                        onValueChange = { autoThresholdPx = it },
+                        valueRange = 16f..96f,
+                        steps = 10
+                    )
+                    Text(
+                        text = stringResource(R.string.timeline_autoscroll_min_speed) + ": " + String.format("%d px/шаг", autoMinSpeedPx.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = autoMinSpeedPx,
+                        onValueChange = { autoMinSpeedPx = it.coerceAtMost(autoMaxSpeedPx) },
+                        valueRange = 0f..64f,
+                        steps = 16
+                    )
+                    Text(
+                        text = stringResource(R.string.timeline_autoscroll_max_speed) + ": " + String.format("%d px/шаг", autoMaxSpeedPx.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = autoMaxSpeedPx,
+                        onValueChange = { autoMaxSpeedPx = it.coerceAtLeast(autoMinSpeedPx) },
+                        valueRange = 8f..96f,
+                        steps = 22
+                    )
+                    Text(
+                        text = stringResource(R.string.timeline_autoscroll_acceleration) + ": " + String.format("%.2f", autoAccel),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Slider(
+                        value = autoAccel,
+                        onValueChange = { autoAccel = it },
+                        valueRange = 0.1f..1.0f,
+                        steps = 9
+                    )
+                }
+            }
+        }
+
+        AdvancedColorPickerSheet(
+            open = showAdvancedPicker,
+            initialColor = gridColors.getOrNull(selectedLed)?.getOrNull(selectedTick) ?: currentColor,
+            onDismiss = { showAdvancedPicker = false },
+            onPick = { c ->
                 currentColor = c
                 recentColors.remove(c)
                 recentColors.add(0, c)
@@ -353,8 +493,8 @@ fun TimelineEditorContent(
                     paintCell(selectedLed, selectedTick, c)
                     endStroke()
                 }
-            },
-            label = stringResource(R.string.pattern_element_color_label)
+                showAdvancedPicker = false
+            }
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -367,17 +507,21 @@ fun TimelineEditorContent(
                     Text(text = stringResource(R.string.pattern_element_duration_label), style = MaterialTheme.typography.labelLarge)
                     AssistChip(
                         onClick = { unit = DurationUnit.MS },
-                        label = { Text("мс") },
+                        label = { Text(stringResource(R.string.duration_unit_ms)) },
                         leadingIcon = if (unit == DurationUnit.MS) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                     )
                     AssistChip(
                         onClick = { unit = DurationUnit.S },
-                        label = { Text("с") },
+                        label = { Text(stringResource(R.string.duration_unit_s)) },
                         leadingIcon = if (unit == DurationUnit.S) { { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) } } else null
                     )
                 }
                 Text(
-                    text = if (unit == DurationUnit.MS) "$duration мс" else String.format("%.2f с", duration / 1000f),
+                    text = if (unit == DurationUnit.MS) {
+                        String.format("%d %s", duration, stringResource(R.string.duration_unit_ms))
+                    } else {
+                        String.format("%.2f %s", duration / 1000f, stringResource(R.string.duration_unit_s))
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable { editingDuration = true }
@@ -394,7 +538,7 @@ fun TimelineEditorContent(
                                 val filtered = txt.replace(',', '.').filter { it.isDigit() || it == '.' }
                                 durationText = filtered
                             },
-                            label = if (unit == DurationUnit.MS) "мс" else "с"
+                            label = if (unit == DurationUnit.MS) stringResource(R.string.duration_unit_ms) else stringResource(R.string.duration_unit_s)
                         )
                     },
                     confirmButton = {
@@ -529,6 +673,12 @@ private fun TimelineGrid(
     colors: List<String>,
     selected: Pair<Int, Int>,
     dragEnabled: Boolean,
+    cellSize: androidx.compose.ui.unit.Dp,
+    gap: androidx.compose.ui.unit.Dp,
+    autoThresholdPx: Float,
+    autoMinSpeedPx: Float,
+    autoMaxSpeedPx: Float,
+    autoAccel: Float,
     onToggle: (led: Int, tick: Int) -> Unit,
     onSelect: (led: Int, tick: Int) -> Unit,
     onDragStart: (led: Int, tick: Int) -> Unit,
@@ -536,8 +686,6 @@ private fun TimelineGrid(
     onDragEnd: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val cellSize = 24.dp
-    val gap = 4.dp
     var containerWidthPx by remember { mutableIntStateOf(0) }
     var autoDir by remember { mutableIntStateOf(0) } // -1 left, 1 right, 0 none
     var autoSpeed by remember { mutableStateOf(0f) } // px per frame
@@ -572,6 +720,8 @@ private fun TimelineGrid(
                         lastLed = led
                         lastTick = tick
                         onDragStart(led, tick)
+                        // consume to avoid Row.horizontalScroll taking over
+                        change.consume()
                     } else if (dragging && change.pressed) {
                         if (tick != lastTick || led != lastLed) {
                             onDragOver(led, tick)
@@ -579,9 +729,9 @@ private fun TimelineGrid(
                             lastLed = led
                         }
                         val localX = change.position.x
-                        val threshold = 48f
-                        val maxSpeed = 48f // px/frame
-                        val minSpeed = 8f
+                        val threshold = autoThresholdPx
+                        val maxSpeed = autoMaxSpeedPx // px/frame
+                        val minSpeed = autoMinSpeedPx
                         val rightEdge = containerWidthPx - threshold
                         val (dir, dist) = when {
                             containerWidthPx > 0 && localX > rightEdge -> 1 to (localX - rightEdge)
@@ -589,7 +739,9 @@ private fun TimelineGrid(
                             else -> 0 to 0f
                         }
                         autoDir = dir
-                        autoSpeed = if (dir == 0) 0f else (minSpeed + dist * 0.5f).coerceAtMost(maxSpeed)
+                        autoSpeed = if (dir == 0) 0f else (minSpeed + dist * autoAccel).coerceAtMost(maxSpeed)
+                        // consume movement during active drag so scroll does not hijack it
+                        change.consume()
                     } else if (dragging && !change.pressed) {
                         dragging = false
                         draggingState = false
@@ -604,7 +756,6 @@ private fun TimelineGrid(
     Column(
         verticalArrangement = Arrangement.spacedBy(gap),
         modifier = baseModifier
-            .onSizeChanged { containerWidthPx = it.width }
             .then(dragModifier)
     ) {
         repeat(ledCount) { led ->
@@ -612,6 +763,8 @@ private fun TimelineGrid(
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 modifier = Modifier
                     .fillMaxWidth()
+                    // measure viewport width on the scrollable row itself for accurate right-edge detection
+                    .onSizeChanged { containerWidthPx = it.width }
                     .horizontalScroll(scrollState)
             ) {
                 repeat(ticks) { t ->
