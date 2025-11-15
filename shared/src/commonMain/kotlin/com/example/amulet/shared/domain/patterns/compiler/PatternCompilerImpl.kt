@@ -16,6 +16,7 @@ import com.example.amulet.shared.domain.patterns.model.PatternElementTimeline
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.model.SequenceStep
 import com.example.amulet.shared.domain.patterns.model.MixMode
+import com.example.amulet.shared.domain.patterns.model.Easing
 import com.example.amulet.shared.domain.patterns.model.TargetGroup
 import com.example.amulet.shared.domain.patterns.model.TargetLed
 import com.example.amulet.shared.domain.patterns.model.TargetRing
@@ -220,13 +221,20 @@ class PatternCompilerImpl : PatternCompiler {
         if (clip != null) {
             val base = Rgb.fromHex(clip.color)
             val rel = (t - clip.startMs).coerceAtLeast(0)
-            val fadeIn = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+            val fadeInLin = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+            val fadeIn = applyEasing(clip.easing, fadeInLin)
             val relOut = (clip.startMs + clip.durationMs - t).coerceAtLeast(0)
-            val fadeOut = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+            val fadeOutLin = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+            val fadeOut = applyEasing(clip.easing, fadeOutLin)
             val factor = minOf(fadeIn, fadeOut)
             return scaleRgb(base, factor)
         }
         return null
+    }
+
+    private fun applyEasing(e: Easing, x: Float): Float = when (e) {
+        // LINEAR now; extend here for future curves
+        Easing.LINEAR -> x
     }
 
     private data class TrackContribution(val priority: Int, val mixMode: MixMode, val color: Rgb)

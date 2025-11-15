@@ -352,6 +352,10 @@
     <string name="timeline_settings">Настройки</string>
     <string name="timeline_settings_show">Показать настройки</string>
     <string name="timeline_settings_hide">Скрыть настройки</string>
+    <string name="timeline_clip_params">Параметры клипа</string>
+    <string name="timeline_fade_in">Плавное появление</string>
+    <string name="timeline_fade_out">Плавное затухание</string>
+    <string name="timeline_easing">Сглаживание</string>
     <string name="advanced_color_picker_title">Продвинутый выбор цвета</string>
     <string name="color_picker_hue">Оттенок</string>
     <string name="color_picker_saturation">Насыщенность</string>

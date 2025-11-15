@@ -325,9 +325,11 @@ private fun computeTimelineRing(element: PatternElementTimeline, t: Int): List<C
         if (clip != null) {
             val base = parseColor(clip.color)
             val rel = (t - clip.startMs).coerceAtLeast(0)
-            val fadeIn = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+            val fadeInLin = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+            val fadeIn = applyEasing(clip.easing, fadeInLin)
             val relOut = (clip.startMs + clip.durationMs - t).coerceAtLeast(0)
-            val fadeOut = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+            val fadeOutLin = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+            val fadeOut = applyEasing(clip.easing, fadeOutLin)
             val factor = minOf(fadeIn, fadeOut)
             val col = base.copy(alpha = factor)
             when (val target = track.target) {
@@ -380,4 +382,12 @@ private fun parseColor(hex: String): Color {
     } catch (e: Exception) {
         Color.White
     }
+}
+
+// Easing helper for timeline preview (uses model's Easing, not Compose's)
+private fun applyEasing(
+    e: com.example.amulet.shared.domain.patterns.model.Easing,
+    x: Float
+): Float = when (e) {
+    com.example.amulet.shared.domain.patterns.model.Easing.LINEAR -> x
 }

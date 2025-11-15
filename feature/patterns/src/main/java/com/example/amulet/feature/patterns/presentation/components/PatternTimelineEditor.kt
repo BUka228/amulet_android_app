@@ -43,6 +43,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -95,6 +97,34 @@ fun TimelineEditorContent(
 
     var gridColors by remember { mutableStateOf(initialGridColors) }
 
+    // Clip metadata (fade/easing) per run start tick
+    val initialFadeIn = remember(element, ticksCount) { Array(ledsCount) { arrayOfNulls<Int>(ticksCount) } }
+    val initialFadeOut = remember(element, ticksCount) { Array(ledsCount) { arrayOfNulls<Int>(ticksCount) } }
+    val initialEasing = remember(element, ticksCount) { Array(ledsCount) { arrayOfNulls<Easing>(ticksCount) } }
+    // Fill from element.tracks
+    LaunchedEffect(element, ticksCount) {
+        element.tracks.forEach { track ->
+            val indices: List<Int> = when (val t = track.target) {
+                is TargetLed -> listOf(t.index)
+                is TargetGroup -> t.indices
+                is TargetRing -> (0 until ledsCount).toList()
+            }.filter { it in 0 until ledsCount }
+            track.clips.forEach { clip ->
+                val startTick = (clip.startMs / tick).coerceAtLeast(0)
+                indices.forEach { led ->
+                    if (startTick in 0 until ticksCount) {
+                        initialFadeIn[led][startTick] = clip.fadeInMs
+                        initialFadeOut[led][startTick] = clip.fadeOutMs
+                        initialEasing[led][startTick] = clip.easing
+                    }
+                }
+            }
+        }
+    }
+    var fadeInGrid by remember { mutableStateOf(initialFadeIn) }
+    var fadeOutGrid by remember { mutableStateOf(initialFadeOut) }
+    var easingGrid by remember { mutableStateOf(initialEasing) }
+
     val initialColors = remember(element) {
         MutableList(ledsCount) { idx ->
             val color = element.tracks
@@ -131,11 +161,17 @@ fun TimelineEditorContent(
                     while (end + 1 < maxTicks && row[end + 1] == color) end++
                     val startMs = start * tick
                     val durationMs = (end - start + 1) * tick
+                    val fi = fadeInGrid.getOrNull(led)?.getOrNull(start) ?: 0
+                    val fo = fadeOutGrid.getOrNull(led)?.getOrNull(start) ?: 0
+                    val ez = easingGrid.getOrNull(led)?.getOrNull(start) ?: Easing.LINEAR
                     clips.add(
                         TimelineClip(
                             startMs = startMs,
                             durationMs = durationMs,
-                            color = color
+                            color = color,
+                            fadeInMs = fi,
+                            fadeOutMs = fo,
+                            easing = ez
                         )
                     )
                     c = end + 1
@@ -422,6 +458,94 @@ fun TimelineEditorContent(
                 if (tool != Tool.EYEDROPPER) endStroke()
             }
         )
+        // Clip parameters editor (always visible; controls disabled if no colored cell selected)
+        val selectedRow = gridColors.getOrNull(selectedLed)
+        val colorAtSel = selectedRow?.getOrNull(selectedTick)
+        var startTickIdx = -1
+        var clipDurationMs = 0
+        if (colorAtSel != null && selectedRow != null) {
+            var l = selectedTick
+            var r = selectedTick
+            while (l - 1 >= 0 && selectedRow[l - 1] == colorAtSel) l--
+            while (r + 1 < selectedRow.size && selectedRow[r + 1] == colorAtSel) r++
+            startTickIdx = l
+            clipDurationMs = (r - l + 1) * tick
+        }
+        val curFadeIn = if (startTickIdx >= 0) (fadeInGrid[selectedLed][startTickIdx] ?: 0).coerceIn(0, clipDurationMs) else 0
+        val curFadeOut = if (startTickIdx >= 0) (fadeOutGrid[selectedLed][startTickIdx] ?: 0).coerceIn(0, clipDurationMs) else 0
+        val curEasing = if (startTickIdx >= 0) (easingGrid[selectedLed][startTickIdx] ?: Easing.LINEAR) else Easing.LINEAR
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(text = stringResource(R.string.timeline_clip_params), style = MaterialTheme.typography.labelLarge)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = stringResource(R.string.timeline_fade_in))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        if (startTickIdx >= 0) {
+                            val v = (curFadeIn - tick).coerceAtLeast(0)
+                            val copy = fadeInGrid.copyOf()
+                            copy[selectedLed] = copy[selectedLed].clone().also { it[startTickIdx] = v }
+                            fadeInGrid = copy
+                            applyAndUpdate()
+                        }
+                    }, enabled = startTickIdx >= 0) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+                    Text(text = String.format("%d ms", curFadeIn))
+                    IconButton(onClick = {
+                        if (startTickIdx >= 0) {
+                            val v = (curFadeIn + tick).coerceAtMost(clipDurationMs)
+                            val copy = fadeInGrid.copyOf()
+                            copy[selectedLed] = copy[selectedLed].clone().also { it[startTickIdx] = v }
+                            fadeInGrid = copy
+                            applyAndUpdate()
+                        }
+                    }, enabled = startTickIdx >= 0) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) }
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = stringResource(R.string.timeline_fade_out))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        if (startTickIdx >= 0) {
+                            val v = (curFadeOut - tick).coerceAtLeast(0)
+                            val copy = fadeOutGrid.copyOf()
+                            copy[selectedLed] = copy[selectedLed].clone().also { it[startTickIdx] = v }
+                            fadeOutGrid = copy
+                            applyAndUpdate()
+                        }
+                    }, enabled = startTickIdx >= 0) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+                    Text(text = String.format("%d ms", curFadeOut))
+                    IconButton(onClick = {
+                        if (startTickIdx >= 0) {
+                            val v = (curFadeOut + tick).coerceAtMost(clipDurationMs)
+                            val copy = fadeOutGrid.copyOf()
+                            copy[selectedLed] = copy[selectedLed].clone().also { it[startTickIdx] = v }
+                            fadeOutGrid = copy
+                            applyAndUpdate()
+                        }
+                    }, enabled = startTickIdx >= 0) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) }
+                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = stringResource(R.string.timeline_easing))
+                var expanded by remember { mutableStateOf(false) }
+                Box {
+                    AssistChip(onClick = { expanded = true }, label = { Text(curEasing.name) }, enabled = startTickIdx >= 0)
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        Easing.values().forEach { opt ->
+                            DropdownMenuItem(text = { Text(opt.name) }, onClick = {
+                                if (startTickIdx >= 0) {
+                                    val copy = easingGrid.copyOf()
+                                    copy[selectedLed] = copy[selectedLed].clone().also { it[startTickIdx] = opt }
+                                    easingGrid = copy
+                                    applyAndUpdate()
+                                }
+                                expanded = false
+                            })
+                        }
+                    }
+                }
+            }
+        }
 
         // Переключатель расширенных настроек
         Row(
