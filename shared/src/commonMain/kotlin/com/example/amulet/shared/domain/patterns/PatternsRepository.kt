@@ -27,6 +27,9 @@ interface PatternsRepository {
     
     // Синхронизация (ручная, по запросу пользователя)
     suspend fun syncWithCloud(): AppResult<SyncResult>
+
+    // Локальное сидирование данных
+    suspend fun seedLocalData(): AppResult<Unit>
     
     // Команды
     suspend fun createPattern(

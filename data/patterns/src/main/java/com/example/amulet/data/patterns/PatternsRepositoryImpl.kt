@@ -6,6 +6,7 @@ import com.example.amulet.core.database.entity.OutboxActionType
 import com.example.amulet.core.sync.scheduler.OutboxScheduler
 import com.example.amulet.data.patterns.datasource.LocalPatternDataSource
 import com.example.amulet.data.patterns.datasource.RemotePatternDataSource
+import com.example.amulet.data.patterns.seed.PatternSeedProvider
 import com.example.amulet.data.patterns.mapper.toDomain
 import com.example.amulet.data.patterns.mapper.toEntity
 import com.example.amulet.data.patterns.mapper.toTagEntities
@@ -68,6 +69,7 @@ class PatternsRepositoryImpl @Inject constructor(
     
     override fun getPatternsStream(filter: PatternFilter): Flow<List<Pattern>> {
         val baseFlow = when {
+            filter.presetsOnly -> localDataSource.observePresets()
             filter.publicOnly -> localDataSource.observePublic()
             else -> localDataSource.observeByOwner(currentUserId)
         }
@@ -113,27 +115,33 @@ class PatternsRepositoryImpl @Inject constructor(
             // Получаем все паттерны с сервера
             val remotePatterns = remoteDataSource.getOwnPatterns().getOrElse { error ->
                 Logger.e("Ошибка получения паттернов с сервера: $error", throwable = Exception(error.toString()), tag = "PatternsRepositoryImpl")
-                return Err(error)
+                val result = SyncResult(
+                    patternsAdded = 0,
+                    patternsUpdated = 0,
+                    patternsDeleted = 0
+                )
+                Logger.d("Синхронизация завершена с ошибкой: $result", "PatternsRepositoryImpl")
+                return Ok(result)
             }
-            
+
             Logger.d("Получено паттернов с сервера: ${remotePatterns.size}", "PatternsRepositoryImpl")
             
-            // Сохраняем в локальную БД
-            val entities = remotePatterns.map { it.toEntity() }
-            localDataSource.upsertPatterns(entities)
-            
-            // Обрабатываем теги и шеринг для каждого паттерна
+            // Сохраняем только пользовательские паттерны с сервера
             remotePatterns.forEach { dto ->
                 val tags = dto.tags?.toTagEntities() ?: emptyList()
                 val tagIds = tags.map { it.id }
                 val sharedWith = dto.sharedWith ?: emptyList()
                 
-                localDataSource.upsertPatternWithRelations(
-                    pattern = dto.toEntity(),
-                    tags = tags,
-                    tagIds = tagIds,
-                    sharedUserIds = sharedWith
-                )
+                val entity = dto.toEntity()
+                // Сохраняем только если есть ownerId (пользовательский паттерн)
+                if (entity.ownerId != null) {
+                    localDataSource.upsertPatternWithRelations(
+                        pattern = entity,
+                        tags = tags,
+                        tagIds = tagIds,
+                        sharedUserIds = sharedWith
+                    )
+                }
             }
             
             val result = SyncResult(
@@ -145,6 +153,20 @@ class PatternsRepositoryImpl @Inject constructor(
             Ok(result)
         } catch (e: Exception) {
             Logger.e("Ошибка синхронизации паттернов: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
+    
+    override suspend fun seedLocalData(): AppResult<Unit> {
+        Logger.d("Начало локального сидирования паттернов-пресетов", "PatternsRepositoryImpl")
+        return try {
+            val seedProvider = PatternSeedProvider(hardwareVersion = 100)
+            val presets = seedProvider.provideAll()
+            localDataSource.seedPresets(presets)
+            Logger.d("Локальное сидирование паттернов-пресетов завершено: ${presets.size} паттернов", "PatternsRepositoryImpl")
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка локального сидирования паттернов-пресетов: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.Unknown)
         }
     }

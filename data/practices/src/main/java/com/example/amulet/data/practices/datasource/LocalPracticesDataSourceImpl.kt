@@ -8,6 +8,9 @@ import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeFavoriteEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
+import com.example.amulet.data.practices.mapper.toEntity
+import com.example.amulet.data.practices.seed.PracticeSeed
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -55,5 +58,30 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override suspend fun upsertPreferences(entity: UserPreferencesEntity) {
         extrasDao.upsertPreferences(entity)
+    }
+
+    override suspend fun seedPresets(presets: List<PracticeSeed>) {
+        if (presets.isEmpty()) return
+        Logger.d("Сидирование предустановленных практик: ${presets.size}", "LocalPracticesDataSourceImpl")
+        tx.runInTransaction {
+            // 1) Подготовим уникальные категории
+            val categories = presets.mapNotNull { it.category }.distinct()
+            if (categories.isNotEmpty()) {
+                val categoryEntities = categories.mapIndexed { index, category ->
+                    PracticeCategoryEntity(
+                        id = category.lowercase().replace(" ", "_"),
+                        title = category,
+                        order = index
+                    )
+                }
+                Logger.d("Создание категорий: ${categoryEntities.size}", "LocalPracticesDataSourceImpl")
+                extrasDao.upsertCategories(categoryEntities)
+            }
+
+            // 2) Вставим практики
+            val practiceEntities = presets.map { it.toEntity() }
+            Logger.d("Создание практик: ${practiceEntities.size}", "LocalPracticesDataSourceImpl")
+            practiceDao.upsertPractices(practiceEntities)
+        }
     }
 }

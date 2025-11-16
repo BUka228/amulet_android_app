@@ -5,14 +5,15 @@ import com.example.amulet.shared.domain.auth.usecase.SignInUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignInWithGoogleUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignOutUseCase
 import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
+import com.example.amulet.shared.domain.courses.usecase.*
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.usecase.*
-import com.example.amulet.shared.domain.courses.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -28,6 +29,9 @@ private val sharedModule = module {
     factory { SignOutUseCase(get()) }
     factory { SignUpUseCase(get(), get()) }
     factory { EnableGuestModeUseCase(get()) }
+    
+    // Initialization UseCases
+    factory { SeedLocalDataUseCase(get(), get(), get()) }
     
     // User UseCases
     factory { ObserveCurrentUserUseCase(get(), get()) }
@@ -62,6 +66,7 @@ private val sharedModule = module {
     factory { UpdatePatternUseCase(get(), get()) }
     factory { DeletePatternUseCase(get()) }
     factory { GetPatternsStreamUseCase(get()) }
+    factory { GetPresetsUseCase(get()) }
     factory { GetPatternByIdUseCase(get()) }
     factory { ObserveMyPatternsUseCase(get()) }
     factory { SyncPatternsUseCase(get()) }

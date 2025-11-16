@@ -19,6 +19,8 @@ interface CoursesRepository {
 
     suspend fun refreshCatalog(): AppResult<Unit>
 
+    suspend fun seedLocalData(): AppResult<Unit>
+
     suspend fun startCourse(courseId: CourseId): AppResult<CourseProgress>
 
     suspend fun continueCourse(courseId: CourseId): AppResult<CourseItemId?>

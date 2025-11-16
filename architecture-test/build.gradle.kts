@@ -33,7 +33,6 @@ dependencies {
     testImplementation(project(":data:auth"))
 
     testImplementation(project(":feature:dashboard"))
-    testImplementation(project(":feature:library"))
     testImplementation(project(":feature:hugs"))
     testImplementation(project(":feature:patterns"))
     testImplementation(project(":feature:sessions"))

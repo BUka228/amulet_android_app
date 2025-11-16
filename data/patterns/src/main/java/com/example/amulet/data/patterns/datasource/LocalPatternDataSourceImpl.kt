@@ -7,6 +7,7 @@ import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
+import com.example.amulet.data.patterns.seed.PatternSeed
 import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -30,6 +31,10 @@ class LocalPatternDataSourceImpl @Inject constructor(
     
     override fun observePublic(): Flow<List<PatternEntity>> {
         return patternDao.observePublic()
+    }
+    
+    override fun observePresets(): Flow<List<PatternEntity>> {
+        return patternDao.observePresets()
     }
     
     override fun observeSharedWith(userId: String): Flow<List<PatternEntity>> {
@@ -106,5 +111,43 @@ class LocalPatternDataSourceImpl @Inject constructor(
         Logger.d("Завершение транзакции", "LocalPatternDataSourceImpl")
         return result
     }
-}
 
+    override suspend fun seedPresets(presets: List<PatternSeed>) {
+        if (presets.isEmpty()) return
+        Logger.d("Сидирование предустановленных паттернов: ${presets.size}", "LocalPatternDataSourceImpl")
+        transactionRunner.runInTransaction {
+            // 1) Подготовим все теги
+            val allTagNames = presets.flatMap { it.tags }.distinct()
+            if (allTagNames.isNotEmpty()) {
+                val tagEntities = allTagNames.map { name -> TagEntity(id = "tag_${name.lowercase()}", name = name) }
+                patternDao.insertTags(tagEntities)
+            }
+
+            // 2) Вставим/обновим паттерны с привязками
+            presets.forEach { seed ->
+                val tagIds = seed.tags.map { name -> "tag_${name.lowercase()}" }
+                val pattern = PatternEntity(
+                    id = seed.id,
+                    ownerId = seed.ownerId,
+                    kind = seed.kind,
+                    hardwareVersion = seed.spec.hardwareVersion,
+                    title = seed.title,
+                    description = seed.description,
+                    specJson = seed.specJson,
+                    public = seed.public,
+                    reviewStatus = null,
+                    usageCount = null,
+                    version = seed.version,
+                    createdAt = seed.createdAt,
+                    updatedAt = seed.updatedAt
+                )
+                patternDao.upsertPatternWithRelations(
+                    pattern = pattern,
+                    tags = seed.tags.map { name -> TagEntity(id = "tag_${name.lowercase()}", name = name) },
+                    tagIds = tagIds,
+                    sharedUserIds = seed.sharedWith
+                )
+            }
+        }
+    }
+}

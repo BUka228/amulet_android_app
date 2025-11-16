@@ -5,6 +5,7 @@ import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeFavoriteEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
+import com.example.amulet.data.practices.seed.PracticeSeed
 import kotlinx.coroutines.flow.Flow
 
 interface LocalPracticesDataSource {
@@ -20,4 +21,5 @@ interface LocalPracticesDataSource {
     suspend fun setFavorite(userId: String, practiceId: String, favorite: Boolean)
     suspend fun upsertSession(entity: PracticeSessionEntity)
     suspend fun upsertPreferences(entity: UserPreferencesEntity)
+    suspend fun seedPresets(presets: List<PracticeSeed>)
 }

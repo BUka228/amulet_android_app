@@ -3,10 +3,12 @@ package com.example.amulet.data.practices
 import com.example.amulet.data.practices.datasource.LocalPracticesDataSource
 import com.example.amulet.data.practices.datasource.RemotePracticesDataSource
 import com.example.amulet.data.practices.mapper.toDomain
+import com.example.amulet.data.practices.seed.PracticeSeedProvider
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
@@ -18,6 +20,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.UserPreferences
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -96,7 +99,44 @@ class PracticesRepositoryImpl @Inject constructor(
         return Ok(list.filter { it.title.contains(query, true) || (it.description?.contains(query, true) == true) })
     }
 
-    override suspend fun refreshCatalog(): AppResult<Unit> = remote.refreshCatalog()
+    override suspend fun refreshCatalog(): AppResult<Unit> {
+        Logger.d("Начало обновления каталога практик", "PracticesRepositoryImpl")
+        return try {
+            // Пытаемся получить практики с сервера
+            val remoteResult = remote.refreshCatalog()
+            remoteResult.onFailure { error ->
+                Logger.e("Ошибка получения практик с сервера: $error", throwable = Exception(error.toString()), tag = "PracticesRepositoryImpl")
+                Logger.d("Переходим к сидированию предустановленных практик (офлайн)", "PracticesRepositoryImpl")
+                val seedProvider = PracticeSeedProvider()
+                val presets = seedProvider.provideAll()
+                local.seedPresets(presets)
+                Logger.d("Сидирование практик завершено: ${presets.size} практик", "PracticesRepositoryImpl")
+                return Ok(Unit)
+            }
+
+            // Если сервер вернул данные, используем их
+            Logger.d("Практики получены с сервера", "PracticesRepositoryImpl")
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка обновления каталога практик: $e", throwable = e, tag = "PracticesRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
+
+    override suspend fun seedLocalData(): AppResult<Unit> {
+        Logger.d("Начало локального сидирования практик", "PracticesRepositoryImpl")
+        return try {
+            val seedProvider = PracticeSeedProvider()
+            val presets = seedProvider.provideAll()
+            Logger.d("Практики для сидирования: ${presets.size}, первые patternId: ${presets.take(3).map { it.patternId }}", "PracticesRepositoryImpl")
+            local.seedPresets(presets)
+            Logger.d("Локальное сидирование практик завершено: ${presets.size} практик", "PracticesRepositoryImpl")
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка локального сидирования практик: $e", throwable = e, tag = "PracticesRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
 
     override suspend fun setFavorite(practiceId: PracticeId, favorite: Boolean): AppResult<Unit> {
         local.setFavorite(currentUserId, practiceId, favorite)

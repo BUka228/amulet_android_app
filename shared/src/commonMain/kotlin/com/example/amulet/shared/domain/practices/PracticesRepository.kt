@@ -30,6 +30,8 @@ interface PracticesRepository {
 
     suspend fun refreshCatalog(): AppResult<Unit>
 
+    suspend fun seedLocalData(): AppResult<Unit>
+
     suspend fun setFavorite(
         practiceId: PracticeId,
         favorite: Boolean

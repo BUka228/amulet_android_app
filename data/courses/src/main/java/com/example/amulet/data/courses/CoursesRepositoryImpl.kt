@@ -4,10 +4,12 @@ import com.example.amulet.data.courses.datasource.LocalCoursesDataSource
 import com.example.amulet.data.courses.datasource.RemoteCoursesDataSource
 import com.example.amulet.data.courses.mapper.toDomain
 import com.example.amulet.data.courses.mapper.toJsonArrayString
+import com.example.amulet.data.courses.seed.CourseSeedProvider
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
 import com.example.amulet.shared.core.auth.UserSessionProvider
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.courses.CoursesRepository
 import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseId
@@ -16,6 +18,7 @@ import com.example.amulet.shared.domain.courses.model.CourseItemId
 import com.example.amulet.shared.domain.courses.model.CourseProgress
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -49,7 +52,42 @@ class CoursesRepositoryImpl @Inject constructor(
     override fun getCourseProgressStream(courseId: CourseId): Flow<CourseProgress?> =
         local.observeCourseProgress(currentUserId, courseId).map { it?.toDomain(json) }
 
-    override suspend fun refreshCatalog(): AppResult<Unit> = remote.refreshCatalog()
+    override suspend fun refreshCatalog(): AppResult<Unit> {
+        Logger.d("Начало обновления каталога курсов", "CoursesRepositoryImpl")
+        return try {
+            // Пытаемся получить курсы с сервера
+            val remoteResult = remote.refreshCatalog()
+            remoteResult.onFailure { error ->
+                Logger.e("Ошибка получения курсов с сервера: $error", throwable = Exception(error.toString()), tag = "CoursesRepositoryImpl")
+                Logger.d("Переходим к сидированию предустановленных курсов (офлайн)", "CoursesRepositoryImpl")
+                val seedProvider = CourseSeedProvider()
+                val presets = seedProvider.provideAll()
+                local.seedPresets(presets)
+                Logger.d("Сидирование курсов завершено: ${presets.size} курсов", "CoursesRepositoryImpl")
+                return Ok(Unit)
+            }
+            // Если сервер вернул данные, используем их
+            Logger.d("Курсы получены с сервера", "CoursesRepositoryImpl")
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка обновления каталога курсов: $e", throwable = e, tag = "CoursesRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
+
+    override suspend fun seedLocalData(): AppResult<Unit> {
+        Logger.d("Начало локального сидирования курсов", "CoursesRepositoryImpl")
+        return try {
+            val seedProvider = CourseSeedProvider()
+            val presets = seedProvider.provideAll()
+            local.seedPresets(presets)
+            Logger.d("Локальное сидирование курсов завершено: ${presets.size} курсов", "CoursesRepositoryImpl")
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка локального сидирования курсов: $e", throwable = e, tag = "CoursesRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
 
     override suspend fun startCourse(courseId: CourseId): AppResult<CourseProgress> {
         val items = local.observeCourseItems(courseId).first()

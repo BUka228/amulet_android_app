@@ -4,6 +4,9 @@ import com.example.amulet.core.database.dao.CourseDao
 import com.example.amulet.core.database.entity.CourseEntity
 import com.example.amulet.core.database.entity.CourseItemEntity
 import com.example.amulet.core.database.entity.CourseProgressEntity
+import com.example.amulet.data.courses.mapper.toEntity
+import com.example.amulet.data.courses.seed.CourseSeed
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,4 +23,23 @@ class LocalCoursesDataSourceImpl @Inject constructor(
     override suspend fun upsertCourseItems(items: List<CourseItemEntity>) { dao.upsertCourseItems(items) }
     override suspend fun upsertProgress(entity: CourseProgressEntity) { dao.upsertProgress(entity) }
     override suspend fun resetProgress(userId: String, courseId: String) { dao.resetProgress(userId, courseId) }
+
+    override suspend fun seedPresets(presets: List<CourseSeed>) {
+        if (presets.isEmpty()) return
+        Logger.d("Сидирование предустановленных курсов: ${presets.size}", "LocalCoursesDataSourceImpl")
+        
+        // 1) Вставим курсы
+        val courseEntities = presets.map { it.toEntity() }
+        Logger.d("Создание курсов: ${courseEntities.size}", "LocalCoursesDataSourceImpl")
+        dao.upsertCourses(courseEntities)
+        
+        // 2) Вставим элементы курсов
+        val itemEntities = presets.flatMap { course -> 
+            course.items.map { item -> item.toEntity() }
+        }
+        if (itemEntities.isNotEmpty()) {
+            Logger.d("Создание элементов курсов: ${itemEntities.size}", "LocalCoursesDataSourceImpl")
+            dao.upsertCourseItems(itemEntities)
+        }
+    }
 }

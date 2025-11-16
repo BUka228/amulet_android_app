@@ -8,5 +8,6 @@ data class PatternFilter(
     val hardwareVersion: Int? = null,
     val tags: List<String> = emptyList(),
     val query: String? = null,
-    val publicOnly: Boolean = false
+    val publicOnly: Boolean = false,
+    val presetsOnly: Boolean = false
 )

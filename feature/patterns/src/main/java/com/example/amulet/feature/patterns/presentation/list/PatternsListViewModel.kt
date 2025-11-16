@@ -2,10 +2,10 @@ package com.example.amulet.feature.patterns.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.domain.patterns.builder.PresetPatterns
-import com.example.amulet.shared.domain.patterns.model.PatternDraft
 import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.model.PatternKind
 import com.example.amulet.shared.domain.patterns.usecase.*
+import com.example.amulet.shared.domain.patterns.usecase.GetPresetsUseCase
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,8 +18,8 @@ class PatternsListViewModel @Inject constructor(
     private val getPatternsStreamUseCase: GetPatternsStreamUseCase,
     private val observeMyPatternsUseCase: ObserveMyPatternsUseCase,
     private val deletePatternUseCase: DeletePatternUseCase,
-    private val createPatternUseCase: CreatePatternUseCase,
-    private val syncPatternsUseCase: SyncPatternsUseCase
+    private val syncPatternsUseCase: SyncPatternsUseCase,
+    private val getPresetsUseCase: GetPresetsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatternsListState())
@@ -42,6 +42,11 @@ class PatternsListViewModel @Inject constructor(
             is PatternsListEvent.DeletePattern -> deletePattern(event.patternId)
             is PatternsListEvent.PreviewPattern -> navigateToPreview(event.patternId)
             is PatternsListEvent.ToggleSearch -> toggleSearch()
+            is PatternsListEvent.ToggleFilterSheet -> toggleFilterSheet()
+            is PatternsListEvent.HideFilterSheet -> hideFilterSheet()
+            is PatternsListEvent.ToggleKindFilter -> toggleKindFilter(event.kind)
+            is PatternsListEvent.ToggleTagFilter -> toggleTagFilter(event.tag)
+            is PatternsListEvent.ClearFilters -> clearFilters()
             is PatternsListEvent.DismissError -> dismissError()
         }
     }
@@ -49,19 +54,25 @@ class PatternsListViewModel @Inject constructor(
     private fun observePatterns() {
         combine(
             observeMyPatternsUseCase(),
-            getPatternsStreamUseCase(com.example.amulet.shared.domain.patterns.model.PatternFilter(publicOnly = true))
-        ) { myPatterns, publicPatterns ->
+            getPatternsStreamUseCase(com.example.amulet.shared.domain.patterns.model.PatternFilter(publicOnly = true)),
+            getPresetsUseCase()
+        ) { myPatterns, publicPatterns, presets ->
+            val allPatterns = myPatterns + publicPatterns + presets
+            val availableTags = allPatterns.flatMap { it.tags }.toSet()
+            
             _uiState.update {
                 it.copy(
                     myPatterns = myPatterns,
                     publicPatterns = publicPatterns,
+                    presets = presets,
+                    availableTags = availableTags,
                     patterns = when (it.selectedTab) {
                         PatternTab.MY_PATTERNS -> myPatterns
                         PatternTab.PUBLIC -> publicPatterns
-                        PatternTab.PRESETS -> emptyList() // Пресеты генерируются динамически
+                        PatternTab.PRESETS -> presets
                     },
                     isLoading = false,
-                    isEmpty = myPatterns.isEmpty() && publicPatterns.isEmpty()
+                    isEmpty = myPatterns.isEmpty() && publicPatterns.isEmpty() && presets.isEmpty()
                 )
             }
         }.launchIn(viewModelScope)
@@ -93,7 +104,7 @@ class PatternsListViewModel @Inject constructor(
                 patterns = when (tab) {
                     PatternTab.MY_PATTERNS -> it.myPatterns
                     PatternTab.PUBLIC -> it.publicPatterns
-                    PatternTab.PRESETS -> emptyList()
+                    PatternTab.PRESETS -> it.presets
                 }
             )
         }
@@ -133,6 +144,51 @@ class PatternsListViewModel @Inject constructor(
             it.copy(
                 isSearchActive = !it.isSearchActive,
                 searchQuery = if (!it.isSearchActive) it.searchQuery else ""
+            )
+        }
+    }
+
+    private fun toggleFilterSheet() {
+        _uiState.update { 
+            it.copy(isFilterSheetVisible = !it.isFilterSheetVisible)
+        }
+    }
+
+    private fun hideFilterSheet() {
+        _uiState.update { 
+            it.copy(isFilterSheetVisible = false)
+        }
+    }
+
+    private fun toggleKindFilter(kind: PatternKind) {
+        _uiState.update { 
+            val currentKinds = it.selectedKinds
+            val newKinds = if (kind in currentKinds) {
+                currentKinds - kind
+            } else {
+                currentKinds + kind
+            }
+            it.copy(selectedKinds = newKinds)
+        }
+    }
+
+    private fun toggleTagFilter(tag: String) {
+        _uiState.update { 
+            val currentTags = it.selectedTags
+            val newTags = if (tag in currentTags) {
+                currentTags - tag
+            } else {
+                currentTags + tag
+            }
+            it.copy(selectedTags = newTags)
+        }
+    }
+
+    private fun clearFilters() {
+        _uiState.update { 
+            it.copy(
+                selectedKinds = emptySet(),
+                selectedTags = emptySet()
             )
         }
     }

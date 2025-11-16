@@ -3,6 +3,7 @@ package com.example.amulet.data.courses.datasource
 import com.example.amulet.core.database.entity.CourseEntity
 import com.example.amulet.core.database.entity.CourseItemEntity
 import com.example.amulet.core.database.entity.CourseProgressEntity
+import com.example.amulet.data.courses.seed.CourseSeed
 import kotlinx.coroutines.flow.Flow
 
 interface LocalCoursesDataSource {
@@ -14,4 +15,5 @@ interface LocalCoursesDataSource {
     suspend fun upsertCourseItems(items: List<CourseItemEntity>)
     suspend fun upsertProgress(entity: CourseProgressEntity)
     suspend fun resetProgress(userId: String, courseId: String)
+    suspend fun seedPresets(presets: List<CourseSeed>)
 }

@@ -12,12 +12,17 @@ data class PatternsListState(
     val patterns: List<Pattern> = emptyList(),
     val myPatterns: List<Pattern> = emptyList(),
     val publicPatterns: List<Pattern> = emptyList(),
+    val presets: List<Pattern> = emptyList(),
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isEmpty: Boolean = false,
     val selectedTab: PatternTab = PatternTab.MY_PATTERNS,
     val searchQuery: String = "",
     val isSearchActive: Boolean = false,
+    val isFilterSheetVisible: Boolean = false,
+    val selectedKinds: Set<PatternKind> = emptySet(),
+    val selectedTags: Set<String> = emptySet(),
+    val availableTags: Set<String> = emptySet(),
     val error: AppError? = null
 )
 
@@ -36,6 +41,11 @@ sealed interface PatternsListEvent {
     data class DeletePattern(val patternId: String) : PatternsListEvent
     data class PreviewPattern(val patternId: String) : PatternsListEvent
     data object ToggleSearch : PatternsListEvent
+    data object ToggleFilterSheet : PatternsListEvent
+    data object HideFilterSheet : PatternsListEvent
+    data class ToggleKindFilter(val kind: PatternKind) : PatternsListEvent
+    data class ToggleTagFilter(val tag: String) : PatternsListEvent
+    data object ClearFilters : PatternsListEvent
     data object DismissError : PatternsListEvent
 }
 

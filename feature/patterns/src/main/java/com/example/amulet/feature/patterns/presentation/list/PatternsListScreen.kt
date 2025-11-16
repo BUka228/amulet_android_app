@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -62,8 +61,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
+import com.example.amulet.feature.patterns.presentation.components.FilterBottomSheet
 import com.example.amulet.feature.patterns.presentation.components.PatternCard
 import com.example.amulet.feature.patterns.presentation.components.PatternDetailsBottomSheet
+import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
@@ -135,6 +136,14 @@ fun PatternsListScreen(
                         TopAppBar(
                             title = { Text(stringResource(R.string.screen_patterns_list)) },
                             actions = {
+                                IconButton(
+                                    onClick = { onEvent(PatternsListEvent.ToggleFilterSheet) }
+                                ) {
+                                    Icon(
+                                        Icons.Default.FilterList,
+                                        contentDescription = "Фильтры"
+                                    )
+                                }
                                 IconButton(
                                     onClick = { onEvent(PatternsListEvent.ToggleSearch) }
                                 ) {
@@ -226,10 +235,13 @@ fun PatternsListScreen(
 
             else -> {
                 val filteredPatterns = state.patterns.filter { pattern ->
-                    state.searchQuery.isEmpty() || pattern.title.contains(state.searchQuery, ignoreCase = true)
+                    val matchesSearch = state.searchQuery.isEmpty() || pattern.title.contains(state.searchQuery, ignoreCase = true)
+                    val matchesKind = state.selectedKinds.isEmpty() || pattern.kind in state.selectedKinds
+                    val matchesTags = state.selectedTags.isEmpty() || pattern.tags.any { it in state.selectedTags }
+                    matchesSearch && matchesKind && matchesTags
                 }
 
-                if (filteredPatterns.isEmpty() && state.searchQuery.isNotEmpty()) {
+                if (filteredPatterns.isEmpty() && (state.searchQuery.isNotEmpty() || state.selectedKinds.isNotEmpty() || state.selectedTags.isNotEmpty())) {
                     EmptySearchState(
                         searchQuery = state.searchQuery,
                         modifier = Modifier.fillMaxSize()
@@ -255,6 +267,19 @@ fun PatternsListScreen(
                     }
                 }
             }
+        }
+        
+        // Bottom Sheet для фильтрации
+        if (state.isFilterSheetVisible) {
+            FilterBottomSheet(
+                selectedKinds = state.selectedKinds,
+                selectedTags = state.selectedTags,
+                availableTags = state.availableTags,
+                onKindToggle = { kind -> onEvent(PatternsListEvent.ToggleKindFilter(kind)) },
+                onTagToggle = { tag -> onEvent(PatternsListEvent.ToggleTagFilter(tag)) },
+                onClearFilters = { onEvent(PatternsListEvent.ClearFilters) },
+                onDismiss = { onEvent(PatternsListEvent.HideFilterSheet) }
+            )
         }
     }
 }

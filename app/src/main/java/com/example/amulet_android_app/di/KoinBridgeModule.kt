@@ -49,6 +49,7 @@ import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
 import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesUseCase
 import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
 import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
+import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
 import dagger.Provides
@@ -100,6 +101,15 @@ object KoinBridgeModule {
                 single<CoursesRepository> { coursesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
+                
+                // Initialization UseCase
+                single<SeedLocalDataUseCase> {
+                    SeedLocalDataUseCase(
+                        practicesRepository = practicesRepository,
+                        patternsRepository = patternsRepository,
+                        coursesRepository = coursesRepository
+                    )
+                }
             }
             modules(sharedKoinModules() + bridgeModule)
         }.koin
@@ -191,6 +201,9 @@ object KoinBridgeModule {
     fun provideGetPatternsStreamUseCase(koin: Koin): GetPatternsStreamUseCase = koin.get()
     
     @Provides
+    fun provideGetPresetsUseCase(koin: Koin): GetPresetsUseCase = koin.get()
+    
+    @Provides
     fun provideGetPatternByIdUseCase(koin: Koin): GetPatternByIdUseCase = koin.get()
     
     @Provides
@@ -254,4 +267,7 @@ object KoinBridgeModule {
     @Provides fun provideContinueCourseUseCase(koin: Koin): ContinueCourseUseCase = koin.get()
     @Provides fun provideCompleteCourseItemUseCase(koin: Koin): CompleteCourseItemUseCase = koin.get()
     @Provides fun provideResetCourseProgressUseCase(koin: Koin): ResetCourseProgressUseCase = koin.get()
+    
+    // Initialization UseCase
+    @Provides fun provideSeedLocalDataUseCase(koin: Koin): SeedLocalDataUseCase = koin.get()
 }

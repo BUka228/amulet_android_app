@@ -29,8 +29,11 @@ interface PatternDao {
     fun observeByOwner(ownerId: String): Flow<List<PatternEntity>>
 
     @Transaction
-    @Query("SELECT * FROM patterns WHERE public = 1 ORDER BY createdAt DESC")
+    @Query("SELECT * FROM patterns WHERE public = 1")
     fun observePublic(): Flow<List<PatternEntity>>
+    
+    @Query("SELECT * FROM patterns WHERE ownerId IS NULL")
+    fun observePresets(): Flow<List<PatternEntity>>
     
     @Transaction
     @Query("SELECT * FROM patterns WHERE public = 1 ORDER BY createdAt DESC")

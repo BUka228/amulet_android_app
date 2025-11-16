@@ -4,6 +4,7 @@ import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
+import com.example.amulet.data.patterns.seed.PatternSeed
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -26,6 +27,11 @@ interface LocalPatternDataSource {
      * Наблюдать за публичными паттернами.
      */
     fun observePublic(): Flow<List<PatternEntity>>
+    
+    /**
+     * Наблюдать за пресетами (ownerId = null).
+     */
+    fun observePresets(): Flow<List<PatternEntity>>
     
     /**
      * Наблюдать за паттернами, расшаренными с пользователем.
@@ -106,5 +112,9 @@ interface LocalPatternDataSource {
      * Выполнить транзакцию с паттерном и Outbox действием.
      */
     suspend fun <R> withPatternTransaction(block: suspend () -> R): R
-}
 
+    /**
+     * Сидирование набора предустановленных паттернов с тегами и шарингом.
+     */
+    suspend fun seedPresets(presets: List<PatternSeed>)
+}

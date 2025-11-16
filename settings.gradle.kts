@@ -56,7 +56,6 @@ include(
 
 include(
     ":feature:dashboard",
-    ":feature:library",
     ":feature:hugs",
     ":feature:patterns",
     ":feature:practices",
@@ -99,7 +98,6 @@ project(":data:auth").projectDir = file("data/auth")
 project(":data:telemetry").projectDir = file("data/telemetry")
 
 project(":feature:dashboard").projectDir = file("feature/dashboard")
-project(":feature:library").projectDir = file("feature/library")
 project(":feature:hugs").projectDir = file("feature/hugs")
 project(":feature:patterns").projectDir = file("feature/patterns")
 project(":feature:practices").projectDir = file("feature/practices")

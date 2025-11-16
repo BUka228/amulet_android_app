@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun PracticesHomeRoute(
@@ -30,23 +31,12 @@ fun PracticesHomeRoute(
     onOpenCourse: (String) -> Unit,
     viewModel: PracticesHomeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-
-    LaunchedEffect(Unit) {
-        // no-op; streams start in init
-    }
-
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     Column(modifier = Modifier.fillMaxSize()) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = state.searchQuery,
-            onValueChange = { viewModel.handleEvent(PracticesHomeEvent.UpdateSearchQuery(it)) },
-            label = { Text("Поиск практик") }
-        )
 
         Spacer(Modifier.height(8.dp))
 
-        val tabs = PracticesTab.values()
+        val tabs = PracticesTab.entries.toTypedArray()
         TabRow(selectedTabIndex = state.selectedTab.ordinal) {
             tabs.forEach { tab ->
                 Tab(
