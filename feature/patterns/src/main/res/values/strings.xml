@@ -262,6 +262,14 @@
     <string name="sending_to_device">Sending to device…</string>
     
     <!-- Filters -->
+    <string name="filter_sheet_title">Filters</string>
+    <string name="filter_clear_button">Clear</string>
+    <string name="filter_pattern_type_title">Pattern Type</string>
+    <string name="filter_tags_title">Tags</string>
+    <string name="filter_search_tags_hint">Search tags…</string>
+    <string name="filter_kind_light">Light</string>
+    <string name="filter_kind_haptic">Haptic</string>
+    <string name="filter_kind_combo">Combo</string>
     <string name="filter_all">All</string>
     <string name="pattern_kind_breathing">Breathing</string>
     <string name="pattern_kind_meditation">Meditation</string>

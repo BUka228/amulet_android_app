@@ -35,7 +35,8 @@ fun PatternCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onShare: (() -> Unit)? = null,
-    onShowDetails: () -> Unit = {}
+    onShowDetails: () -> Unit = {},
+    onTagClick: (String) -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -250,10 +251,10 @@ fun PatternCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         maxLines = 1
                     ) {
-                        pattern.tags.forEach {
+                        pattern.tags.forEach { tag ->
                             AssistChip(
-                                onClick = {},
-                                label = { Text(it) },
+                                onClick = { onTagClick(tag) },
+                                label = { Text(tag) },
                             )
                         }
                     }

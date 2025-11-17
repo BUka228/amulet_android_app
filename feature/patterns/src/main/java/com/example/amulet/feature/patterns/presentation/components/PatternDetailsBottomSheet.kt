@@ -26,7 +26,8 @@ import java.util.*
 fun PatternDetailsBottomSheet(
     pattern: Pattern,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTagClick: (String) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
@@ -222,7 +223,7 @@ fun PatternDetailsBottomSheet(
                     ) {
                         pattern.tags.forEach { tag ->
                             AssistChip(
-                                onClick = { },
+                                onClick = { onTagClick(tag) },
                                 label = { Text(tag) }
                             )
                         }

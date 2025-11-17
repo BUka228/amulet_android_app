@@ -23,6 +23,7 @@ data class PatternsListState(
     val selectedKinds: Set<PatternKind> = emptySet(),
     val selectedTags: Set<String> = emptySet(),
     val availableTags: Set<String> = emptySet(),
+    val showSelectedTagsRow: Boolean = false,
     val error: AppError? = null
 )
 
@@ -45,6 +46,9 @@ sealed interface PatternsListEvent {
     data object HideFilterSheet : PatternsListEvent
     data class ToggleKindFilter(val kind: PatternKind) : PatternsListEvent
     data class ToggleTagFilter(val tag: String) : PatternsListEvent
+    data class AddTagFilter(val tag: String) : PatternsListEvent
+    data class RemoveTagFilter(val tag: String) : PatternsListEvent
+    data object ClearTagFilters : PatternsListEvent
     data object ClearFilters : PatternsListEvent
     data object DismissError : PatternsListEvent
 }

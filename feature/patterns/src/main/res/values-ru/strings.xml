@@ -249,6 +249,14 @@
     <string name="sending_to_device">Отправка на устройство…</string>
     
     <!-- Filters -->
+    <string name="filter_sheet_title">Фильтры</string>
+    <string name="filter_clear_button">Очистить</string>
+    <string name="filter_pattern_type_title">Тип паттерна</string>
+    <string name="filter_tags_title">Теги</string>
+    <string name="filter_search_tags_hint">Поиск тегов…</string>
+    <string name="filter_kind_light">Свет</string>
+    <string name="filter_kind_haptic">Вибрация</string>
+    <string name="filter_kind_combo">Комбо</string>
     <string name="filter_all">Все</string>
     <string name="pattern_kind_breathing">Дыхание</string>
     <string name="pattern_kind_meditation">Медитация</string>

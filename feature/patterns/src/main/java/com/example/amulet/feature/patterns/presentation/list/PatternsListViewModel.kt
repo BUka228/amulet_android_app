@@ -46,6 +46,9 @@ class PatternsListViewModel @Inject constructor(
             is PatternsListEvent.HideFilterSheet -> hideFilterSheet()
             is PatternsListEvent.ToggleKindFilter -> toggleKindFilter(event.kind)
             is PatternsListEvent.ToggleTagFilter -> toggleTagFilter(event.tag)
+            is PatternsListEvent.AddTagFilter -> addTagFilter(event.tag)
+            is PatternsListEvent.RemoveTagFilter -> removeTagFilter(event.tag)
+            is PatternsListEvent.ClearTagFilters -> clearTagFilters()
             is PatternsListEvent.ClearFilters -> clearFilters()
             is PatternsListEvent.DismissError -> dismissError()
         }
@@ -184,11 +187,41 @@ class PatternsListViewModel @Inject constructor(
         }
     }
 
+    private fun addTagFilter(tag: String) {
+        _uiState.update { 
+            val newTags = it.selectedTags + tag
+            it.copy(
+                selectedTags = newTags,
+                showSelectedTagsRow = true
+            )
+        }
+    }
+
+    private fun removeTagFilter(tag: String) {
+        _uiState.update { 
+            val newTags = it.selectedTags - tag
+            it.copy(
+                selectedTags = newTags,
+                showSelectedTagsRow = newTags.isNotEmpty()
+            )
+        }
+    }
+
+    private fun clearTagFilters() {
+        _uiState.update { 
+            it.copy(
+                selectedTags = emptySet(),
+                showSelectedTagsRow = false
+            )
+        }
+    }
+
     private fun clearFilters() {
         _uiState.update { 
             it.copy(
                 selectedKinds = emptySet(),
-                selectedTags = emptySet()
+                selectedTags = emptySet(),
+                showSelectedTagsRow = false
             )
         }
     }

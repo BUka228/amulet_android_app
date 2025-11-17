@@ -64,6 +64,7 @@ import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.FilterBottomSheet
 import com.example.amulet.feature.patterns.presentation.components.PatternCard
 import com.example.amulet.feature.patterns.presentation.components.PatternDetailsBottomSheet
+import com.example.amulet.feature.patterns.presentation.components.SelectedTagsRow
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import kotlinx.coroutines.FlowPreview
@@ -183,7 +184,8 @@ fun PatternsListScreen(
     selectedPatternForDetails?.let { pattern ->
         PatternDetailsBottomSheet(
             pattern = pattern,
-            onDismiss = { selectedPatternForDetails = null }
+            onDismiss = { selectedPatternForDetails = null },
+            onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) }
         )
     }
 
@@ -216,6 +218,13 @@ fun PatternsListScreen(
             }
         }
 
+        // Строка с выбранными тегами фильтрации
+        SelectedTagsRow(
+            selectedTags = state.selectedTags,
+            onTagClick = { tag -> onEvent(PatternsListEvent.RemoveTagFilter(tag)) },
+            onClearAll = { onEvent(PatternsListEvent.ClearTagFilters) }
+        )
+
         when {
             state.isLoading -> {
                 Box(
@@ -226,7 +235,7 @@ fun PatternsListScreen(
                 }
             }
 
-            state.isEmpty && state.selectedTab == PatternTab.MY_PATTERNS -> {
+            state.myPatterns.isEmpty() && state.selectedTab == PatternTab.MY_PATTERNS -> {
                 EmptyPatternsState(
                     onCreatePattern = { onEvent(PatternsListEvent.CreatePatternClicked) },
                     modifier = Modifier.fillMaxSize()
@@ -261,7 +270,8 @@ fun PatternsListScreen(
                                 onPreview = { onEvent(PatternsListEvent.PreviewPattern(pattern.id.value)) },
                                 onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                                 onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
-                                onShowDetails = { selectedPatternForDetails = pattern }
+                                onShowDetails = { selectedPatternForDetails = pattern },
+                                onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) }
                             )
                         }
                     }
@@ -276,7 +286,7 @@ fun PatternsListScreen(
                 selectedTags = state.selectedTags,
                 availableTags = state.availableTags,
                 onKindToggle = { kind -> onEvent(PatternsListEvent.ToggleKindFilter(kind)) },
-                onTagToggle = { tag -> onEvent(PatternsListEvent.ToggleTagFilter(tag)) },
+                onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) },
                 onClearFilters = { onEvent(PatternsListEvent.ClearFilters) },
                 onDismiss = { onEvent(PatternsListEvent.HideFilterSheet) }
             )
