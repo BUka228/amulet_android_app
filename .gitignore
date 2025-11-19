@@ -169,3 +169,4 @@ generate_code_doc.py
 export_uncommitted_files.py
 uncommitted_files.md
 docs/openapi_v1.txt
+gradle.properties
