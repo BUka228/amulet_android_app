@@ -7,13 +7,22 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "courses",
-    indices = [Index(value = ["title"])])
+    indices = [
+        Index(value = ["title"]),
+        Index(value = ["goal"]),
+        Index(value = ["level"])
+    ])
 data class CourseEntity(
     @PrimaryKey val id: String,
     val title: String,
     val description: String?,
+    val goal: String?, // Same as PracticeGoal
+    val level: String?, // Same as PracticeLevel
+    val rhythm: String, // DAILY, THREE_TIMES_WEEK, FLEXIBLE
     val tagsJson: String,
     val totalDurationSec: Int?,
+    val modulesCount: Int,
+    val recommendedDays: Int?,
     val difficulty: String?,
     val coverUrl: String?,
     val createdAt: Long?,

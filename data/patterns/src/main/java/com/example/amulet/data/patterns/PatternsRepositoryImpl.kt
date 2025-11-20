@@ -6,12 +6,13 @@ import com.example.amulet.core.database.entity.OutboxActionType
 import com.example.amulet.core.sync.scheduler.OutboxScheduler
 import com.example.amulet.data.patterns.datasource.LocalPatternDataSource
 import com.example.amulet.data.patterns.datasource.RemotePatternDataSource
-import com.example.amulet.data.patterns.seed.PatternSeedProvider
 import com.example.amulet.data.patterns.mapper.toDomain
 import com.example.amulet.data.patterns.mapper.toEntity
 import com.example.amulet.data.patterns.mapper.toTagEntities
 import com.example.amulet.data.patterns.mapper.toTagNames
 import com.example.amulet.data.patterns.mapper.toUserIds
+import com.example.amulet.data.patterns.seed.PresetPatternSeeds
+import com.example.amulet.data.patterns.seed.PracticePatternSeeds
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
@@ -160,10 +161,12 @@ class PatternsRepositoryImpl @Inject constructor(
     override suspend fun seedLocalData(): AppResult<Unit> {
         Logger.d("Начало локального сидирования паттернов-пресетов", "PatternsRepositoryImpl")
         return try {
-            val seedProvider = PatternSeedProvider(hardwareVersion = 100)
-            val presets = seedProvider.provideAll()
-            localDataSource.seedPresets(presets)
-            Logger.d("Локальное сидирование паттернов-пресетов завершено: ${presets.size} паттернов", "PatternsRepositoryImpl")
+            val presetPatterns = PresetPatternSeeds.getPresetPatterns()
+            val practicePatterns = PracticePatternSeeds.getPatterns()
+
+            val allPatterns: List<Pattern> = presetPatterns + practicePatterns
+            localDataSource.seedPresets(allPatterns)
+            Logger.d("Локальное сидирование паттернов-пресетов завершено: ${allPatterns.size} паттернов", "PatternsRepositoryImpl")
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка локального сидирования паттернов-пресетов: $e", throwable = e, tag = "PatternsRepositoryImpl")

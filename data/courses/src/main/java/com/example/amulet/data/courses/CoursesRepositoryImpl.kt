@@ -4,7 +4,8 @@ import com.example.amulet.data.courses.datasource.LocalCoursesDataSource
 import com.example.amulet.data.courses.datasource.RemoteCoursesDataSource
 import com.example.amulet.data.courses.mapper.toDomain
 import com.example.amulet.data.courses.mapper.toJsonArrayString
-import com.example.amulet.data.courses.seed.CourseSeedProvider
+import com.example.amulet.data.courses.seed.CourseSeed
+import com.example.amulet.data.courses.seed.CourseSeedData
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
@@ -60,10 +61,13 @@ class CoursesRepositoryImpl @Inject constructor(
             remoteResult.onFailure { error ->
                 Logger.e("Ошибка получения курсов с сервера: $error", throwable = Exception(error.toString()), tag = "CoursesRepositoryImpl")
                 Logger.d("Переходим к сидированию предустановленных курсов (офлайн)", "CoursesRepositoryImpl")
-                val seedProvider = CourseSeedProvider()
-                val presets = seedProvider.provideAll()
-                local.seedPresets(presets)
-                Logger.d("Сидирование курсов завершено: ${presets.size} курсов", "CoursesRepositoryImpl")
+                val courses: List<CourseSeed> = CourseSeedData.getCourses()
+                val courseItems = CourseSeedData.getCourseItems()
+                val seeds = courses.map { seed ->
+                    seed.copy(items = courseItems[seed.id] ?: emptyList())
+                }
+                local.seedPresets(seeds)
+                Logger.d("Сидирование курсов завершено: ${seeds.size} курсов", "CoursesRepositoryImpl")
                 return Ok(Unit)
             }
             // Если сервер вернул данные, используем их
@@ -78,10 +82,13 @@ class CoursesRepositoryImpl @Inject constructor(
     override suspend fun seedLocalData(): AppResult<Unit> {
         Logger.d("Начало локального сидирования курсов", "CoursesRepositoryImpl")
         return try {
-            val seedProvider = CourseSeedProvider()
-            val presets = seedProvider.provideAll()
-            local.seedPresets(presets)
-            Logger.d("Локальное сидирование курсов завершено: ${presets.size} курсов", "CoursesRepositoryImpl")
+            val courses: List<CourseSeed> = CourseSeedData.getCourses()
+            val courseItems = CourseSeedData.getCourseItems()
+            val seeds = courses.map { seed ->
+                seed.copy(items = courseItems[seed.id] ?: emptyList())
+            }
+            local.seedPresets(seeds)
+            Logger.d("Локальное сидирование курсов завершено: ${seeds.size} курсов", "CoursesRepositoryImpl")
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка локального сидирования курсов: $e", throwable = e, tag = "CoursesRepositoryImpl")

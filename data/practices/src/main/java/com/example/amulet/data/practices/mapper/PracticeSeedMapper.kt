@@ -3,7 +3,9 @@ package com.example.amulet.data.practices.mapper
 import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.data.practices.seed.PracticeSeed
-import com.example.amulet.shared.domain.practices.model.PracticeType
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Мапперы для преобразования PracticeSeed в Entity.
@@ -15,8 +17,13 @@ fun PracticeSeed.toEntity(): PracticeEntity = PracticeEntity(
     title = title,
     description = description,
     durationSec = durationSec,
-    patternId = patternId?.toString(),
+    level = level?.name,
+    goal = goal?.name,
+    tagsJson = tags.toJsonArrayString(),
+    contraindicationsJson = contraindications.toJsonArrayString(),
+    patternId = patternId,
     audioUrl = audioUrl,
+    usageCount = usageCount,
     localesJson = "[]", // Пустой JSON массив для локалей
     createdAt = createdAt,
     updatedAt = updatedAt
@@ -27,3 +34,6 @@ fun PracticeSeed.toCategoryEntity(): PracticeCategoryEntity = PracticeCategoryEn
     title = category ?: "Другое",
     order = 0
 )
+
+private fun List<String>.toJsonArrayString(): String =
+    Json.encodeToString(JsonArray(this.map { JsonPrimitive(it) }))

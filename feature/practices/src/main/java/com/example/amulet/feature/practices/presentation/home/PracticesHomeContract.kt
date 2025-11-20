@@ -7,52 +7,90 @@ import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeType
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
 
 data class PracticesHomeState(
-    val isLoadingOverview: Boolean = true,
-    val isLoadingCourses: Boolean = true,
+    val isLoading: Boolean = true,
     val error: AppError? = null,
-    val selectedTab: PracticesTab = PracticesTab.Overview,
-    val filters: PracticeFilter = PracticeFilter(),
-    val categories: List<PracticeCategory> = emptyList(),
-    val practices: List<Practice> = emptyList(),
-    val recommendations: List<Practice> = emptyList(),
-    val recent: List<Practice> = emptyList(),
-    val favorites: List<Practice> = emptyList(),
-    val activeSession: PracticeSession? = null,
+
+    val greeting: String = "",
+    val selectedMood: MoodChip = MoodChip.Neutral,
+    val availableMoods: List<MoodChip> = MoodChip.defaultList(),
+
+    val recommendedPractices: List<Practice> = emptyList(),
+    val recommendedCourse: Course? = null,
+
+    val myCourses: List<Course> = emptyList(),
+    val quickRituals: List<Practice> = emptyList(),
+    val recentSessions: List<PracticeSession> = emptyList(),
+
+    val hasPlan: Boolean = false,
+    val isNewUser: Boolean = false,
+
+    val isRefreshing: Boolean = false,
+    val isRecommendationsLoading: Boolean = false,
+    val isCoursesLoading: Boolean = false,
+    val isQuickRitualsLoading: Boolean = false,
+    val isRecentLoading: Boolean = false,
+
+    val recommendationsError: AppError? = null,
+    val coursesError: AppError? = null,
+    val quickRitualsError: AppError? = null,
+    val recentError: AppError? = null,
+
+    // Search
+    val isSearchMode: Boolean = false,
     val searchQuery: String = "",
-    val courses: List<Course> = emptyList(),
-    val continueCourses: List<Course> = emptyList()
+    val searchResults: List<Practice> = emptyList(),
+    val isSearchLoading: Boolean = false,
+    val searchError: AppError? = null,
 )
 
-enum class PracticesTab { Overview, Courses, Favorites }
+sealed class PracticesHomeIntent {
+    data class SelectMood(val mood: MoodChip) : PracticesHomeIntent()
 
-sealed interface PracticesHomeEvent {
-    data object Refresh : PracticesHomeEvent
-    data class SelectTab(val tab: PracticesTab) : PracticesHomeEvent
-    data class UpdateSearchQuery(val query: String) : PracticesHomeEvent
-    data class ApplyFilters(
-        val type: PracticeType? = null,
-        val categoryId: String? = null,
-        val onlyFavorites: Boolean = false,
-        val durationFromSec: Int? = null,
-        val durationToSec: Int? = null
-    ) : PracticesHomeEvent
-    data object ClearFilters : PracticesHomeEvent
-    data class SelectCategory(val categoryId: String?) : PracticesHomeEvent
-    data class ToggleFavorite(val practiceId: String, val favorite: Boolean) : PracticesHomeEvent
-    data class StartPractice(val practiceId: String) : PracticesHomeEvent
-    data class PauseSession(val sessionId: String) : PracticesHomeEvent
-    data class ResumeSession(val sessionId: String) : PracticesHomeEvent
-    data class StopSession(val sessionId: String, val completed: Boolean) : PracticesHomeEvent
-    data class OpenPractice(val practiceId: String) : PracticesHomeEvent
-    data class OpenCourse(val courseId: String) : PracticesHomeEvent
-    data object DismissError : PracticesHomeEvent
+    object Refresh : PracticesHomeIntent()
+
+    data class OpenPractice(val practiceId: String) : PracticesHomeIntent()
+    data class OpenCourse(val courseId: String) : PracticesHomeIntent()
+
+    data class ToggleFavorite(val practiceId: String, val favorite: Boolean) : PracticesHomeIntent()
+
+    object OpenSchedule : PracticesHomeIntent()
+    object OpenStats : PracticesHomeIntent()
+    object OpenSearch : PracticesHomeIntent()
+    object CreateDayRitual : PracticesHomeIntent()
+
+    // Inline search
+    object EnterSearch : PracticesHomeIntent()
+    object ExitSearch : PracticesHomeIntent()
+    data class ChangeSearchQuery(val query: String) : PracticesHomeIntent()
 }
 
-sealed interface PracticesHomeSideEffect {
-    data class NavigateToPracticeDetails(val practiceId: String) : PracticesHomeSideEffect
-    data class NavigateToCourseDetails(val courseId: String) : PracticesHomeSideEffect
-    data class ShowSnackbar(val message: String) : PracticesHomeSideEffect
+sealed class PracticesHomeEffect {
+    data class NavigateToPractice(val practiceId: String) : PracticesHomeEffect()
+    data class NavigateToCourse(val courseId: String) : PracticesHomeEffect()
+
+    object NavigateToSchedule : PracticesHomeEffect()
+    object NavigateToStats : PracticesHomeEffect()
+    object NavigateToSearch : PracticesHomeEffect()
+
+    data class ShowError(val error: AppError) : PracticesHomeEffect()
 }
 
+sealed class MoodChip(
+    open val id: String,
+    open val title: String,
+    open val practiceGoal: PracticeGoal?,
+    open val tags: List<String> = emptyList()
+) {
+    object Nervous : MoodChip("nervous", "Нервничаю", PracticeGoal.STRESS)
+    object Sleep : MoodChip("sleep", "Хочу уснуть", PracticeGoal.SLEEP)
+    object Focus : MoodChip("focus", "Нужна концентрация", PracticeGoal.FOCUS)
+    object Relax : MoodChip("relax", "Просто расслабиться", PracticeGoal.RELAXATION)
+    object Neutral : MoodChip("neutral", "По умолчанию", null)
+
+    companion object {
+        fun defaultList(): List<MoodChip> = listOf(Nervous, Sleep, Focus, Relax)
+    }
+}

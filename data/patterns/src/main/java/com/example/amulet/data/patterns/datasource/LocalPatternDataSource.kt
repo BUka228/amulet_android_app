@@ -4,7 +4,7 @@ import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
-import com.example.amulet.data.patterns.seed.PatternSeed
+import com.example.amulet.shared.domain.patterns.model.Pattern
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -116,5 +116,5 @@ interface LocalPatternDataSource {
     /**
      * Сидирование набора предустановленных паттернов с тегами и шарингом.
      */
-    suspend fun seedPresets(presets: List<PatternSeed>)
+    suspend fun seedPresets(presets: List<Pattern>)
 }

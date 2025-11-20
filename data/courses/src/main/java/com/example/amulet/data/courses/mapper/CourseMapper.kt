@@ -7,6 +7,9 @@ import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemType
 import com.example.amulet.shared.domain.courses.model.CourseProgress
+import com.example.amulet.shared.domain.courses.model.CourseRhythm
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
+import com.example.amulet.shared.domain.practices.model.PracticeLevel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
@@ -17,8 +20,13 @@ fun CourseEntity.toDomain(): Course = Course(
     id = id,
     title = title,
     description = description,
+    goal = goal?.let { PracticeGoal.valueOf(it) },
+    level = level?.let { PracticeLevel.valueOf(it) },
+    rhythm = rhythm?.let { CourseRhythm.valueOf(it) } ?: CourseRhythm.DAILY,
     tags = emptyList(),
     totalDurationSec = totalDurationSec,
+    modulesCount = modulesCount,
+    recommendedDays = recommendedDays,
     difficulty = difficulty,
     coverUrl = coverUrl,
     createdAt = createdAt,
@@ -29,8 +37,13 @@ fun CourseEntity.toDomain(json: Json): Course = Course(
     id = id,
     title = title,
     description = description,
+    goal = goal?.let { PracticeGoal.valueOf(it) },
+    level = level?.let { PracticeLevel.valueOf(it) },
+    rhythm = rhythm?.let { CourseRhythm.valueOf(it) } ?: CourseRhythm.DAILY,
     tags = tagsJson.safeParseStringList(json),
     totalDurationSec = totalDurationSec,
+    modulesCount = modulesCount,
+    recommendedDays = recommendedDays,
     difficulty = difficulty,
     coverUrl = coverUrl,
     createdAt = createdAt,

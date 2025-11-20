@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="practices_home_mood_title">How are you now?</string>
+    <string name="practices_home_mood_nervous_description">Чувствую тревогу или напряжение</string>
+    <string name="practices_home_mood_sleep_description">Хочу расслабиться и легко уснуть</string>
+    <string name="practices_home_mood_focus_description">Нужна концентрация и ясность</string>
+    <string name="practices_home_mood_relax_description">Хочу просто расслабиться и выдохнуть</string>
+    <string name="practices_home_mood_neutral_description">Выберите, как вы чувствуете себя сейчас</string>
+    <string name="practices_home_recommended_title">Recommended for now</string>
+    <string name="practices_home_my_courses_title">Your courses</string>
+    <string name="practices_home_today_plan_heading">Today plan</string>
+    <string name="practices_home_today_plan_empty">No practices planned yet.</string>
+    <string name="practices_home_today_plan_cta">Create your daily ritual</string>
+    <string name="practices_home_today_plan_exists">You already have a plan for today.</string>
+    <string name="practices_home_quick_rituals_title">Quick rituals</string>
+    <string name="practices_home_recent_title">Recently used</string>
+    <string name="practices_home_action_start">Start</string>
+    <string name="practices_home_action_continue">Continue</string>
+    <string name="practices_home_action_open">Open</string>
+    <string name="practices_home_session_title">Session %1$s</string>
+    <string name="practices_home_duration_minutes">%1$d min</string>
+    <string name="practices_home_topbar_schedule">Schedule</string>
+    <string name="practices_home_topbar_stats">Statistics</string>
+    <string name="practices_home_topbar_search">Search</string>
+    <string name="practice_goal_sleep">Sleep</string>
+    <string name="practice_goal_stress">Stress relief</string>
+    <string name="practice_goal_energy">Energy</string>
+    <string name="practice_goal_focus">Focus</string>
+    <string name="practice_goal_relaxation">Relaxation</string>
+    <string name="practice_goal_anxiety">Anxiety relief</string>
+    <string name="practice_goal_mood">Mood support</string>
+</resources>

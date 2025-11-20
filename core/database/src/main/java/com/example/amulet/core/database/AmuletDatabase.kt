@@ -30,6 +30,7 @@ import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeFavoriteEntity
+import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.core.database.entity.PrivacyJobEntity
 import com.example.amulet.core.database.entity.RemoteKeyEntity
@@ -56,6 +57,7 @@ import com.example.amulet.core.database.entity.CourseProgressEntity
         PracticeSessionEntity::class,
         PracticeCategoryEntity::class,
         PracticeFavoriteEntity::class,
+        PracticeScheduleEntity::class,
         UserPreferencesEntity::class,
         CourseEntity::class,
         CourseItemEntity::class,

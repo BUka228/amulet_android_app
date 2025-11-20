@@ -3,6 +3,7 @@ package com.example.amulet.feature.devices.presentation.ota
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CheckCircle
@@ -73,7 +74,7 @@ fun OtaUpdateScreen(
                                 onClick = { onEvent(OtaUpdateEvent.NavigateBack) },
                                 enabled = !state.isUpdating
                             ) {
-                                Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                             }
                         }
                     )

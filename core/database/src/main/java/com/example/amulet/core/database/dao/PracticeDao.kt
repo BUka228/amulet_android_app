@@ -59,5 +59,25 @@ interface PracticeDao {
 
     @Query("DELETE FROM practice_sessions WHERE status = 'COMPLETED' AND completedAt IS NOT NULL AND completedAt < :cutoff")
     suspend fun cleanupCompletedSessions(cutoff: Long): Int
+    
+    // Filtering by level
+    @Query("SELECT * FROM practices WHERE level = :level")
+    fun observePracticesByLevel(level: String): Flow<List<PracticeEntity>>
+    
+    // Filtering by goal
+    @Query("SELECT * FROM practices WHERE goal = :goal")
+    fun observePracticesByGoal(goal: String): Flow<List<PracticeEntity>>
+    
+    // Filtering by type and goal
+    @Query("SELECT * FROM practices WHERE type = :type AND goal = :goal")
+    fun observePracticesByTypeAndGoal(type: String, goal: String): Flow<List<PracticeEntity>>
+    
+    // Search by title
+    @Query("SELECT * FROM practices WHERE title LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'")
+    fun searchPractices(query: String): Flow<List<PracticeEntity>>
+    
+    // Get practice with usage count
+    @Query("UPDATE practices SET usageCount = usageCount + 1 WHERE id = :practiceId")
+    suspend fun incrementUsageCount(practiceId: String)
 }
 

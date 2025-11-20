@@ -7,7 +7,7 @@ import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
-import com.example.amulet.data.patterns.seed.PatternSeed
+import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -112,7 +112,7 @@ class LocalPatternDataSourceImpl @Inject constructor(
         return result
     }
 
-    override suspend fun seedPresets(presets: List<PatternSeed>) {
+    override suspend fun seedPresets(presets: List<Pattern>) {
         if (presets.isEmpty()) return
         Logger.d("Сидирование предустановленных паттернов: ${presets.size}", "LocalPatternDataSourceImpl")
         transactionRunner.runInTransaction {
@@ -124,28 +124,28 @@ class LocalPatternDataSourceImpl @Inject constructor(
             }
 
             // 2) Вставим/обновим паттерны с привязками
-            presets.forEach { seed ->
-                val tagIds = seed.tags.map { name -> "tag_${name.lowercase()}" }
+            presets.forEach { patternDomain ->
+                val tagIds = patternDomain.tags.map { name -> "tag_${name.lowercase()}" }
                 val pattern = PatternEntity(
-                    id = seed.id,
-                    ownerId = seed.ownerId,
-                    kind = seed.kind,
-                    hardwareVersion = seed.spec.hardwareVersion,
-                    title = seed.title,
-                    description = seed.description,
-                    specJson = seed.specJson,
-                    public = seed.public,
-                    reviewStatus = null,
-                    usageCount = null,
-                    version = seed.version,
-                    createdAt = seed.createdAt,
-                    updatedAt = seed.updatedAt
+                    id = patternDomain.id.value,
+                    ownerId = patternDomain.ownerId?.value,
+                    kind = patternDomain.kind.name.lowercase(),
+                    hardwareVersion = patternDomain.hardwareVersion,
+                    title = patternDomain.title,
+                    description = patternDomain.description,
+                    specJson = com.example.amulet.shared.domain.patterns.builder.PatternJson.encode(patternDomain.spec),
+                    public = patternDomain.public,
+                    reviewStatus = patternDomain.reviewStatus?.name?.lowercase(),
+                    usageCount = patternDomain.usageCount,
+                    version = patternDomain.version,
+                    createdAt = patternDomain.createdAt,
+                    updatedAt = patternDomain.updatedAt
                 )
                 patternDao.upsertPatternWithRelations(
                     pattern = pattern,
-                    tags = seed.tags.map { name -> TagEntity(id = "tag_${name.lowercase()}", name = name) },
+                    tags = patternDomain.tags.map { name -> TagEntity(id = "tag_${name.lowercase()}", name = name) },
                     tagIds = tagIds,
-                    sharedUserIds = seed.sharedWith
+                    sharedUserIds = patternDomain.sharedWith.map { it.value }
                 )
             }
         }

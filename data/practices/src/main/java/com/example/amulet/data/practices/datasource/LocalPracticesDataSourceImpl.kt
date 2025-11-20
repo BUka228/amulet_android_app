@@ -48,7 +48,13 @@ class LocalPracticesDataSourceImpl @Inject constructor(
     }
 
     override suspend fun setFavorite(userId: String, practiceId: String, favorite: Boolean) {
-        if (favorite) extrasDao.upsertFavorite(PracticeFavoriteEntity(userId, practiceId))
+        if (favorite) extrasDao.upsertFavorite(
+            PracticeFavoriteEntity(
+                userId = userId,
+                practiceId = practiceId,
+                createdAt = System.currentTimeMillis()
+            )
+        )
         else extrasDao.removeFavorite(userId, practiceId)
     }
 

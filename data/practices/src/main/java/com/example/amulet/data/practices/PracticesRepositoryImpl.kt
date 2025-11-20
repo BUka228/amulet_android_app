@@ -3,7 +3,8 @@ package com.example.amulet.data.practices
 import com.example.amulet.data.practices.datasource.LocalPracticesDataSource
 import com.example.amulet.data.practices.datasource.RemotePracticesDataSource
 import com.example.amulet.data.practices.mapper.toDomain
-import com.example.amulet.data.practices.seed.PracticeSeedProvider
+import com.example.amulet.data.practices.seed.PracticeSeedData
+import com.example.amulet.data.practices.seed.toSeed
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.auth.UserSessionContext
@@ -107,10 +108,10 @@ class PracticesRepositoryImpl @Inject constructor(
             remoteResult.onFailure { error ->
                 Logger.e("Ошибка получения практик с сервера: $error", throwable = Exception(error.toString()), tag = "PracticesRepositoryImpl")
                 Logger.d("Переходим к сидированию предустановленных практик (офлайн)", "PracticesRepositoryImpl")
-                val seedProvider = PracticeSeedProvider()
-                val presets = seedProvider.provideAll()
-                local.seedPresets(presets)
-                Logger.d("Сидирование практик завершено: ${presets.size} практик", "PracticesRepositoryImpl")
+                val practices = PracticeSeedData.getPractices()
+                val seeds = practices.map { it.toSeed() }
+                local.seedPresets(seeds)
+                Logger.d("Сидирование практик завершено: ${seeds.size} практик", "PracticesRepositoryImpl")
                 return Ok(Unit)
             }
 
@@ -126,11 +127,11 @@ class PracticesRepositoryImpl @Inject constructor(
     override suspend fun seedLocalData(): AppResult<Unit> {
         Logger.d("Начало локального сидирования практик", "PracticesRepositoryImpl")
         return try {
-            val seedProvider = PracticeSeedProvider()
-            val presets = seedProvider.provideAll()
-            Logger.d("Практики для сидирования: ${presets.size}, первые patternId: ${presets.take(3).map { it.patternId }}", "PracticesRepositoryImpl")
-            local.seedPresets(presets)
-            Logger.d("Локальное сидирование практик завершено: ${presets.size} практик", "PracticesRepositoryImpl")
+            val practices = PracticeSeedData.getPractices()
+            val seeds = practices.map { it.toSeed() }
+            Logger.d("Практики для сидирования: ${seeds.size}, первые patternId: ${seeds.take(3).map { it.patternId }}", "PracticesRepositoryImpl")
+            local.seedPresets(seeds)
+            Logger.d("Локальное сидирование практик завершено: ${seeds.size} практик", "PracticesRepositoryImpl")
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка локального сидирования практик: $e", throwable = e, tag = "PracticesRepositoryImpl")

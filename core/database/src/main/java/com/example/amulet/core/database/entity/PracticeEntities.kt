@@ -19,7 +19,9 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["type"]),
         Index(value = ["durationSec"]),
-        Index(value = ["patternId"])
+        Index(value = ["patternId"]),
+        Index(value = ["level"]),
+        Index(value = ["goal"])
     ]
 )
 data class PracticeEntity(
@@ -28,8 +30,13 @@ data class PracticeEntity(
     val title: String,
     val description: String?,
     val durationSec: Int?,
+    val level: String?, // BEGINNER, INTERMEDIATE, ADVANCED
+    val goal: String?, // SLEEP, STRESS, ENERGY, FOCUS, RELAXATION, ANXIETY, MOOD
+    val tagsJson: String, // JSON array of tags
+    val contraindicationsJson: String, // JSON array of contraindications
     val patternId: String?,
     val audioUrl: String?,
+    val usageCount: Int,
     val localesJson: String,
     val createdAt: Long?,
     val updatedAt: Long?

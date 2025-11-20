@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="practices_home_mood_title">Как вы сейчас?</string>
+    <string name="practices_home_recommended_title">Рекомендовано сейчас</string>
+    <string name="practices_home_my_courses_title">Ваши курсы</string>
+    <string name="practices_home_today_plan_heading">Сегодня по плану</string>
+    <string name="practices_home_today_plan_empty">Пока нет запланированных практик.</string>
+    <string name="practices_home_today_plan_cta">Создать свой ритуал дня</string>
+    <string name="practices_home_today_plan_exists">У вас уже есть план на сегодня.</string>
+    <string name="practices_home_quick_rituals_title">Быстрые ритуалы</string>
+    <string name="practices_home_recent_title">Недавно использовали</string>
+    <string name="practices_home_action_start">Начать</string>
+    <string name="practices_home_action_continue">Продолжить</string>
+    <string name="practices_home_action_open">Открыть</string>
+    <string name="practices_home_session_title">Сессия %1$s</string>
+    <string name="practices_home_duration_minutes">%1$d мин</string>
+    <string name="practices_home_topbar_schedule">Расписание</string>
+    <string name="practices_home_topbar_stats">Статистика</string>
+    <string name="practices_home_topbar_search">Поиск</string>
+    <string name="practice_goal_sleep">Сон</string>
+    <string name="practice_goal_stress">Снятие стресса</string>
+    <string name="practice_goal_energy">Энергия</string>
+    <string name="practice_goal_focus">Концентрация</string>
+    <string name="practice_goal_relaxation">Расслабление</string>
+    <string name="practice_goal_anxiety">Снижение тревоги</string>
+    <string name="practice_goal_mood">Поддержка настроения</string>
+</resources>
