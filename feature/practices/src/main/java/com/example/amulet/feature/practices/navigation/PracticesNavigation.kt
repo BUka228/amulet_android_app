@@ -7,6 +7,7 @@ import androidx.navigation.navigation
 import com.example.amulet.feature.practices.presentation.home.PracticesHomeRoute
 import com.example.amulet.feature.practices.presentation.details.PracticeDetailsRoute
 import com.example.amulet.feature.practices.presentation.course.CourseDetailsRoute
+import com.example.amulet.feature.practices.presentation.search.PracticesSearchRoute
 
 object PracticesGraph {
     const val route: String = "practices_graph"
@@ -16,6 +17,7 @@ object PracticesDestination {
     const val home: String = "practices/home"
     const val practiceDetails: String = "practices/practice/{practiceId}"
     const val courseDetails: String = "practices/course/{courseId}"
+    const val search: String = "practices/search"
 }
 
 fun NavController.navigateToPracticesHome(popUpToInclusive: Boolean = false) {
@@ -35,6 +37,10 @@ fun NavController.navigateToCourseDetails(courseId: String) {
     navigate("practices/course/$courseId") { launchSingleTop = true }
 }
 
+fun NavController.navigateToPracticesSearch() {
+    navigate(PracticesDestination.search) { launchSingleTop = true }
+}
+
 fun NavGraphBuilder.practicesGraph(
     navController: NavController,
 ) {
@@ -42,7 +48,8 @@ fun NavGraphBuilder.practicesGraph(
         composable(route = PracticesDestination.home) {
             PracticesHomeRoute(
                 onOpenPractice = { id -> navController.navigateToPracticeDetails(id) },
-                onOpenCourse = { id -> navController.navigateToCourseDetails(id) }
+                onOpenCourse = { id -> navController.navigateToCourseDetails(id) },
+                onOpenSearch = { navController.navigateToPracticesSearch() }
             )
         }
         composable(route = PracticesDestination.practiceDetails) { backStackEntry ->
@@ -56,6 +63,12 @@ fun NavGraphBuilder.practicesGraph(
             val id = backStackEntry.arguments?.getString("courseId") ?: return@composable
             CourseDetailsRoute(
                 courseId = id,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(route = PracticesDestination.search) {
+            PracticesSearchRoute(
+                onOpenPractice = { id -> navController.navigateToPracticeDetails(id) },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

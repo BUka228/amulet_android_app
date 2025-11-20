@@ -84,6 +84,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeGoal
 fun PracticesHomeRoute(
     onOpenPractice: (String) -> Unit,
     onOpenCourse: (String) -> Unit,
+    onOpenSearch: () -> Unit,
     viewModel: PracticesHomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -95,7 +96,7 @@ fun PracticesHomeRoute(
                 is PracticesHomeEffect.NavigateToCourse -> onOpenCourse(effect.courseId)
                 PracticesHomeEffect.NavigateToSchedule -> Unit
                 PracticesHomeEffect.NavigateToStats -> Unit
-                PracticesHomeEffect.NavigateToSearch -> Unit
+                PracticesHomeEffect.NavigateToSearch -> onOpenSearch()
                 is PracticesHomeEffect.ShowError -> Unit
             }
         }
@@ -114,132 +115,51 @@ private fun PracticesHomeScreen(
     onIntent: (PracticesHomeIntent) -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
-    var localSearchQuery by remember(state.isSearchMode) { mutableStateOf(state.searchQuery) }
-
     SideEffect {
         scaffoldState.updateConfig {
             copy(
                 topBar = {
-                    if (state.isSearchMode) {
-                        TopAppBar(
-                            title = {
-                                TextField(
-                                    value = localSearchQuery,
-                                    onValueChange = {
-                                        localSearchQuery = it
-                                        onIntent(PracticesHomeIntent.ChangeSearchQuery(it))
-                                    },
-                                    placeholder = {
-                                        Text(
-                                            text = stringResource(id = R.string.practices_home_topbar_search),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = TextFieldDefaults.colors(
-                                        focusedContainerColor = Color.Transparent,
-                                        unfocusedContainerColor = Color.Transparent,
-                                        disabledContainerColor = Color.Transparent,
-                                        errorContainerColor = Color.Transparent,
-                                        focusedIndicatorColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent,
-                                        disabledIndicatorColor = Color.Transparent,
-                                        errorIndicatorColor = Color.Transparent,
-                                    )
+                    TopAppBar(
+                        title = { Text(state.greeting, style = MaterialTheme.typography.titleLarge) },
+                        actions = {
+                            IconButton(onClick = { onIntent(PracticesHomeIntent.OpenSchedule) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.CalendarToday,
+                                    contentDescription = stringResource(id = R.string.practices_home_topbar_schedule)
                                 )
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { onIntent(PracticesHomeIntent.ExitSearch) }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            actions = {}
-                        )
-                    } else {
-                        TopAppBar(
-                            title = { Text(state.greeting, style = MaterialTheme.typography.titleLarge) },
-                            actions = {
-                                IconButton(onClick = { onIntent(PracticesHomeIntent.OpenSchedule) }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.CalendarToday,
-                                        contentDescription = stringResource(id = R.string.practices_home_topbar_schedule)
-                                    )
-                                }
-                                IconButton(onClick = { onIntent(PracticesHomeIntent.OpenStats) }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.BarChart,
-                                        contentDescription = stringResource(id = R.string.practices_home_topbar_stats)
-                                    )
-                                }
-                                IconButton(onClick = { onIntent(PracticesHomeIntent.EnterSearch) }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Search,
-                                        contentDescription = stringResource(id = R.string.practices_home_topbar_search)
-                                    )
-                                }
                             }
-                        )
-                    }
+                            IconButton(onClick = { onIntent(PracticesHomeIntent.OpenStats) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.BarChart,
+                                    contentDescription = stringResource(id = R.string.practices_home_topbar_stats)
+                                )
+                            }
+                            IconButton(onClick = { onIntent(PracticesHomeIntent.OpenSearch) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = stringResource(id = R.string.practices_home_topbar_search)
+                                )
+                            }
+                        }
+                    )
                 },
                 floatingActionButton = {}
             )
         }
     }
 
-    if (state.isSearchMode) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            itemsIndexed(state.searchResults) { index, practice ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable{ onIntent(PracticesHomeIntent.OpenPractice(practice.id))},
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = practice.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = { onIntent(PracticesHomeIntent.OpenPractice(practice.id)) }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null
-                        )
-                    }
-                }
-                if (index != state.searchResults.lastIndex) {
-                    HorizontalDivider()
-                }
-            }
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item { MoodSection(state = state, onIntent = onIntent) }
-            item { RecommendedSection(state = state, onIntent = onIntent) }
-            item { TodayPlanSection(state = state, onIntent = onIntent) }
-            item { QuickRitualsSection(state = state, onIntent = onIntent) }
-            item { RecentSection(state = state, onIntent = onIntent) }
-            item { MyCoursesSection(state = state, onIntent = onIntent) }
-        }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item { MoodSection(state = state, onIntent = onIntent) }
+        item { RecommendedSection(state = state, onIntent = onIntent) }
+        item { TodayPlanSection(state = state, onIntent = onIntent) }
+        item { QuickRitualsSection(state = state, onIntent = onIntent) }
+        item { RecentSection(state = state, onIntent = onIntent) }
+        item { MyCoursesSection(state = state, onIntent = onIntent) }
     }
 }
 

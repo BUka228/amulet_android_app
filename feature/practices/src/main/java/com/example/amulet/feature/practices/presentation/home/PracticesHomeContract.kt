@@ -37,13 +37,6 @@ data class PracticesHomeState(
     val coursesError: AppError? = null,
     val quickRitualsError: AppError? = null,
     val recentError: AppError? = null,
-
-    // Search
-    val isSearchMode: Boolean = false,
-    val searchQuery: String = "",
-    val searchResults: List<Practice> = emptyList(),
-    val isSearchLoading: Boolean = false,
-    val searchError: AppError? = null,
 )
 
 sealed class PracticesHomeIntent {
@@ -60,11 +53,6 @@ sealed class PracticesHomeIntent {
     object OpenStats : PracticesHomeIntent()
     object OpenSearch : PracticesHomeIntent()
     object CreateDayRitual : PracticesHomeIntent()
-
-    // Inline search
-    object EnterSearch : PracticesHomeIntent()
-    object ExitSearch : PracticesHomeIntent()
-    data class ChangeSearchQuery(val query: String) : PracticesHomeIntent()
 }
 
 sealed class PracticesHomeEffect {
