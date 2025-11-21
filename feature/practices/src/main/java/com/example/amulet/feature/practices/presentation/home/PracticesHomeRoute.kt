@@ -20,6 +20,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Bedtime
@@ -104,10 +109,14 @@ fun PracticesHomeRoute(
             }
         }
     }
+    
+    // Error Handling
+    val errorState = state.recommendationsError ?: state.coursesError ?: state.quickRitualsError ?: state.recentError
 
     PracticesHomeScreen(
         state = state,
-        onIntent = viewModel::onIntent
+        onIntent = viewModel::onIntent,
+        errorState = errorState
     )
 }
 
@@ -115,7 +124,8 @@ fun PracticesHomeRoute(
 @Composable
 private fun PracticesHomeScreen(
     state: PracticesHomeState,
-    onIntent: (PracticesHomeIntent) -> Unit
+    onIntent: (PracticesHomeIntent) -> Unit,
+    errorState: com.example.amulet.shared.core.AppError?
 ) {
     val scaffoldState = LocalScaffoldState.current
     SideEffect {
@@ -166,6 +176,9 @@ private fun PracticesHomeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { MoodSection(state = state, onIntent = onIntent) }
+            if (errorState != null) {
+                item { ErrorBanner(error = errorState) }
+            }
             item { RecommendedSection(state = state, onIntent = onIntent) }
             item { TodayPlanSection(state = state, onIntent = onIntent) }
             item { QuickRitualsSection(state = state, onIntent = onIntent) }
@@ -234,11 +247,12 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
             }
 
             // Horizontal scroll for mood chips
-            Row(
+            LazyRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                state.availableMoods.forEach { mood ->
+                items(state.availableMoods) { mood ->
                     val isSelected = state.selectedMood.id == mood.id
                     val icon = moodIcon(mood)
                     val color = moodColor(mood)
@@ -258,7 +272,6 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
                         )
                     }
                 }
-
             }
         }
     }
@@ -316,7 +329,7 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
                         title = practice.title,
                         goal = practice.goal?.let(::practiceGoalTitleRes),
                         durationMinutes = practice.durationSec?.div(60),
-                        badge = if (practice.usageCount > 100) "Популярная" else null,
+                        badge = if (practice.usageCount > 100) stringResource(R.string.practice_badge_popular) else null,
                         onClick = { onIntent(PracticesHomeIntent.OpenPractice(practice.id)) },
                         modifier = Modifier
                             .weight(1f)
@@ -329,7 +342,7 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
                         title = course.title,
                         goal = course.goal?.let(::practiceGoalTitleRes),
                         durationMinutes = course.totalDurationSec?.div(60),
-                        badge = if (course.tags.contains("popular")) "Популярная" else null,
+                        badge = if (course.tags.contains("popular")) stringResource(R.string.practice_badge_popular) else null,
                         onClick = { onIntent(PracticesHomeIntent.OpenCourse(course.id)) },
                         modifier = Modifier
                             .weight(1f)
@@ -495,7 +508,7 @@ private fun MyCoursesSection(state: PracticesHomeState, onIntent: (PracticesHome
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
-                            text = "${state.coursesProgress[course.id]?.completedItemIds?.size ?: 0} из ${course.modulesCount} занятий",
+                            text = stringResource(R.string.course_progress_format, state.coursesProgress[course.id]?.completedItemIds?.size ?: 0, course.modulesCount),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -533,7 +546,7 @@ private fun TodayPlanSection(state: PracticesHomeState, onIntent: (PracticesHome
                     )
                     if (state.hasPlan) {
                         Text(
-                            text = "Сегодня запланировано ${state.scheduledSessions.size} сессии",
+                            text = stringResource(R.string.practices_home_today_plan_count_format, state.scheduledSessions.size),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -550,33 +563,10 @@ private fun TodayPlanSection(state: PracticesHomeState, onIntent: (PracticesHome
             if (state.hasPlan) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     state.scheduledSessions.take(3).forEach { session ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // Отображение времени
-                            val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(session.scheduledTime))
-                            Text(
-                                text = time,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = session.practiceTitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                        ScheduledSessionItem(
+                            session = session,
+                            onIntent = onIntent
+                        )
                     }
                 }
             } else {
@@ -664,5 +654,103 @@ private fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeInt
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ScheduledSessionItem(
+    session: com.example.amulet.shared.domain.practices.model.ScheduledSession,
+    onIntent: (PracticesHomeIntent) -> Unit
+) {
+    var showMenu by remember { mutableStateOf(false) }
+    val timeFormatter = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()) }
+
+    Box {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .combinedClickable(
+                    onClick = { /* No action on simple click for now, or maybe open details */ },
+                    onLongClick = { showMenu = true }
+                )
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Отображение времени
+            val time = timeFormatter.format(java.util.Date(session.scheduledTime))
+            Text(
+                text = time,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = session.practiceTitle,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.practices_home_menu_reschedule)) },
+                onClick = {
+                    showMenu = false
+                    onIntent(PracticesHomeIntent.RescheduleSession(session.id))
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.practices_home_menu_cancel_reminder)) },
+                onClick = {
+                    showMenu = false
+                    onIntent(PracticesHomeIntent.CancelSession(session.id))
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.practices_home_menu_details)) },
+                onClick = {
+                    showMenu = false
+                    onIntent(PracticesHomeIntent.ShowPracticeDetails(session.practiceId))
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ErrorBanner(error: com.example.amulet.shared.core.AppError) {
+    val errorMessage = when (error) {
+        is com.example.amulet.shared.core.AppError.Server -> error.message ?: "Ошибка сервера"
+        is com.example.amulet.shared.core.AppError.Network -> "Ошибка сети"
+        is com.example.amulet.shared.core.AppError.Timeout -> "Время ожидания истекло"
+        is com.example.amulet.shared.core.AppError.Unauthorized -> "Не авторизован"
+        is com.example.amulet.shared.core.AppError.Forbidden -> "Доступ запрещен"
+        is com.example.amulet.shared.core.AppError.NotFound -> "Не найдено"
+        is com.example.amulet.shared.core.AppError.Validation -> "Ошибка валидации"
+        else -> "Произошла ошибка"
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .padding(8.dp)
+    ) {
+        Text(
+            text = errorMessage,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }

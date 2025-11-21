@@ -114,6 +114,11 @@ class PracticesHomeViewModel @Inject constructor(
                 val scheduled = args[4] as List<com.example.amulet.shared.domain.practices.model.ScheduledSession>
                 val coursesProgress = args[5] as List<com.example.amulet.shared.domain.courses.model.CourseProgress>
                 val allPractices = args[6] as List<com.example.amulet.shared.domain.practices.model.Practice>
+                val currentMood = _state.value.selectedMood
+
+                val recommendedCourse = courses.find { it.goal == currentMood.practiceGoal } 
+                    ?: courses.firstOrNull { it.tags.contains("popular") }
+                    ?: courses.firstOrNull()
 
                 val progressMap = coursesProgress.associateBy { it.courseId }
                 val practicesMap = allPractices.associateBy { it.id }
@@ -127,7 +132,7 @@ class PracticesHomeViewModel @Inject constructor(
                     )
                 }
                 
-                PracticesHomeData(recommendations, quickRituals, courses, recentUi, scheduled, progressMap)
+                PracticesHomeData(recommendations, quickRituals, courses, recommendedCourse, recentUi, scheduled, progressMap)
             }
                 .stateIn(
                     scope = viewModelScope,
@@ -139,7 +144,7 @@ class PracticesHomeViewModel @Inject constructor(
                         it.copy(
                             isLoading = false,
                             recommendedPractices = data.recommendations,
-                            recommendedCourse = data.courses.firstOrNull(), // Simple logic for now
+                            recommendedCourse = data.recommendedCourse,
                             myCourses = data.courses,
                             coursesProgress = data.coursesProgress,
                             quickRituals = data.quickRituals,
@@ -157,6 +162,7 @@ class PracticesHomeViewModel @Inject constructor(
         val recommendations: List<com.example.amulet.shared.domain.practices.model.Practice> = emptyList(),
         val quickRituals: List<com.example.amulet.shared.domain.practices.model.Practice> = emptyList(),
         val courses: List<Course> = emptyList(),
+        val recommendedCourse: Course? = null,
         val recent: List<RecentSessionUi> = emptyList(),
         val scheduled: List<com.example.amulet.shared.domain.practices.model.ScheduledSession> = emptyList(),
         val coursesProgress: Map<String, com.example.amulet.shared.domain.courses.model.CourseProgress> = emptyMap()
@@ -173,6 +179,9 @@ class PracticesHomeViewModel @Inject constructor(
             PracticesHomeIntent.OpenStats -> emitEffect(PracticesHomeEffect.NavigateToStats)
             PracticesHomeIntent.OpenSearch -> emitEffect(PracticesHomeEffect.NavigateToSearch)
             PracticesHomeIntent.CreateDayRitual -> emitEffect(PracticesHomeEffect.NavigateToSchedule)
+            is PracticesHomeIntent.RescheduleSession -> emitEffect(PracticesHomeEffect.NavigateToSchedule) // Placeholder
+            is PracticesHomeIntent.CancelSession -> { /* TODO: Implement cancel session logic */ }
+            is PracticesHomeIntent.ShowPracticeDetails -> emitEffect(PracticesHomeEffect.NavigateToPractice(intent.practiceId))
         }
     }
 

@@ -6,5 +6,8 @@ data class PracticeFilter(
     val onlyFavorites: Boolean = false,
     val durationFromSec: Int? = null,
     val durationToSec: Int? = null,
-    val goal: PracticeGoal? = null
+    val goal: PracticeGoal? = null,
+    val level: PracticeLevel? = null,
+    val hasAudio: Boolean? = null,
+    val amuletRequired: Boolean? = null
 )

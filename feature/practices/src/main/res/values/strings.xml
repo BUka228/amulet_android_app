@@ -12,6 +12,7 @@
     <string name="practices_home_today_plan_empty">No practices planned yet.</string>
     <string name="practices_home_today_plan_cta">Create your daily ritual</string>
     <string name="practices_home_today_plan_exists">You already have a plan for today.</string>
+    <string name="practices_home_today_plan_count_format">Сегодня запланировано %d сессии</string>
     <string name="practices_home_quick_rituals_title">Quick rituals</string>
     <string name="practices_home_recent_title">Recently used</string>
     <string name="practices_home_action_start">Start</string>
@@ -29,4 +30,9 @@
     <string name="practice_goal_relaxation">Relaxation</string>
     <string name="practice_goal_anxiety">Anxiety relief</string>
     <string name="practice_goal_mood">Mood support</string>
+    <string name="practice_badge_popular">Популярная</string>
+    <string name="course_progress_format" formatted="false">%d из %d занятий</string>
+    <string name="practices_home_menu_reschedule">Перенести</string>
+    <string name="practices_home_menu_cancel_reminder">Отменить напоминание</string>
+    <string name="practices_home_menu_details">Подробнее о практике</string>
 </resources>

@@ -60,6 +60,10 @@ sealed class PracticesHomeIntent {
     object OpenStats : PracticesHomeIntent()
     object OpenSearch : PracticesHomeIntent()
     object CreateDayRitual : PracticesHomeIntent()
+
+    data class RescheduleSession(val sessionId: String) : PracticesHomeIntent()
+    data class CancelSession(val sessionId: String) : PracticesHomeIntent()
+    data class ShowPracticeDetails(val practiceId: String) : PracticesHomeIntent()
 }
 
 sealed class PracticesHomeEffect {
