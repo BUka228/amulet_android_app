@@ -52,7 +52,7 @@
     <string name="practices_search_filter_additional">Additional</string>
     <string name="practices_search_filter_audio">With audio guide</string>
     <string name="practices_search_filter_amulet">Requires amulet</string>
-    <string name="practices_search_duration_format">%d–%d min</string>
+    <string name="practices_search_duration_format">%1$d–%2$d min</string>
     <string name="practices_search_apply">Apply</string>
     <string name="practices_search_reset">Clear</string>
     
@@ -65,4 +65,13 @@
     <string name="practice_level_beginner">Beginner</string>
     <string name="practice_level_intermediate">Intermediate</string>
     <string name="practice_level_advanced">Advanced</string>
+
+    <!-- Practice details -->
+    <string name="practice_details_about">About the practice</string>
+    <string name="practice_details_amulet">Amulet</string>
+    <string name="practice_details_safety">Safety</string>
+    <string name="practice_details_pattern_auto">Pattern will be selected automatically</string>
+    <string name="practice_details_add_to_plan">Add to plan</string>
+    <string name="practice_details_start">Start practice</string>
+    <string name="practice_details_open_pattern">Open pattern</string>
 </resources>

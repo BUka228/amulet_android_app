@@ -27,15 +27,18 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.SentimentNeutral
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -71,6 +74,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -313,10 +317,21 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.practices_home_recommended_title),
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.StarOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = stringResource(id = R.string.practices_home_recommended_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -373,7 +388,8 @@ private fun RecommendedItemCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth(),
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             if (badge != null) {
@@ -464,11 +480,23 @@ private fun MyCoursesSection(state: PracticesHomeState, onIntent: (PracticesHome
     if (state.myCourses.isEmpty()) return
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = stringResource(id = R.string.practices_home_my_courses_title),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Book,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = stringResource(id = R.string.practices_home_my_courses_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -623,36 +651,64 @@ private fun QuickRitualsSection(state: PracticesHomeState, onIntent: (PracticesH
 @Composable
 private fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> Unit) {
     if (state.recentSessions.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(id = R.string.practices_home_recent_title), style = MaterialTheme.typography.titleMedium)
-        state.recentSessions.forEach { session ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(1.dp)
+        AmuletCard {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = session.practiceTitle,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        session.durationSec?.let {
-                            Text(
-                                stringResource(id = R.string.practices_home_duration_minutes, it / 60),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                    Icon(
+                        imageVector = Icons.Filled.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(stringResource(id = R.string.practices_home_recent_title), style = MaterialTheme.typography.titleMedium)
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ){
+                    items(state.recentSessions) { session ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            onClick = { onIntent(PracticesHomeIntent.ShowPracticeDetails(session.practiceId)) }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = session.practiceTitle,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    session.durationSec?.let {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Schedule,
+                                                contentDescription = null,
+                                            )
+                                            Text(
+                                                stringResource(id = R.string.practices_home_duration_minutes, it / 60),
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                    Button(onClick = { onIntent(PracticesHomeIntent.OpenPractice(session.practiceId)) }) {
-                        Text(stringResource(id = R.string.practices_home_action_open))
-                    }
                 }
-            }
         }
     }
 }

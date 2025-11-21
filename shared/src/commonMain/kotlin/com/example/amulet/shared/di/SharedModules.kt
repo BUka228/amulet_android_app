@@ -99,6 +99,7 @@ private val sharedModule = module {
     factory { GetUserPreferencesStreamUseCase(get()) }
     factory { UpdateUserPreferencesUseCase(get()) }
     factory { GetRecommendationsStreamUseCase(get()) }
+    factory { UpsertPracticeScheduleUseCase(get()) }
 
     // Courses UseCases
     factory { GetCoursesStreamUseCase(get()) }

@@ -8,6 +8,7 @@ import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeFavoriteEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
+import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.data.practices.mapper.toEntity
 import com.example.amulet.data.practices.seed.PracticeSeed
 import com.example.amulet.shared.core.logging.Logger
@@ -40,7 +41,7 @@ class LocalPracticesDataSourceImpl @Inject constructor(
     override fun observePreferences(userId: String): Flow<UserPreferencesEntity?> =
         extrasDao.observePreferences(userId)
 
-    override fun observeSchedules(userId: String): Flow<List<com.example.amulet.core.database.entity.PracticeScheduleEntity>> =
+    override fun observeSchedules(userId: String): Flow<List<PracticeScheduleEntity>> =
         extrasDao.observeSchedules(userId)
 
     override suspend fun upsertPractices(items: List<PracticeEntity>) {
@@ -68,6 +69,10 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override suspend fun upsertPreferences(entity: UserPreferencesEntity) {
         extrasDao.upsertPreferences(entity)
+    }
+
+    override suspend fun upsertSchedule(entity: PracticeScheduleEntity) {
+        extrasDao.upsertSchedule(entity)
     }
 
     override suspend fun seedPresets(presets: List<PracticeSeed>) {

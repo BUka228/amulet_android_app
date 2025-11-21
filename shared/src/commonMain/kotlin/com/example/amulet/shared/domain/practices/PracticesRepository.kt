@@ -66,6 +66,10 @@ interface PracticesRepository {
     
     fun getSchedulesStream(): Flow<List<PracticeSchedule>>
 
+    suspend fun upsertSchedule(
+        schedule: PracticeSchedule
+    ): AppResult<Unit>
+
     suspend fun updateUserPreferences(
         preferences: UserPreferences
     ): AppResult<Unit>

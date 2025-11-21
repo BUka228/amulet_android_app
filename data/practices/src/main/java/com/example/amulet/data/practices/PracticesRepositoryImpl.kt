@@ -243,6 +243,23 @@ class PracticesRepositoryImpl @Inject constructor(
             }
         }
 
+    override suspend fun upsertSchedule(
+        schedule: com.example.amulet.shared.domain.practices.model.PracticeSchedule
+    ): AppResult<Unit> {
+        val entity = com.example.amulet.core.database.entity.PracticeScheduleEntity(
+            id = schedule.id,
+            userId = currentUserId,
+            practiceId = schedule.practiceId,
+            daysOfWeekJson = json.encodeToString(json.encodeToJsonElement(schedule.daysOfWeek)),
+            timeOfDay = schedule.timeOfDay,
+            reminderEnabled = schedule.reminderEnabled,
+            createdAt = schedule.createdAt,
+            updatedAt = System.currentTimeMillis()
+        )
+        local.upsertSchedule(entity)
+        return Ok(Unit)
+    }
+
     override suspend fun updateUserPreferences(preferences: UserPreferences): AppResult<Unit> {
         val goalsJson = json.encodeToString(json.encodeToJsonElement(preferences.goals))
         val interestsJson = json.encodeToString(json.encodeToJsonElement(preferences.interests))
