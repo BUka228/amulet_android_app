@@ -34,5 +34,35 @@
     <string name="course_progress_format" formatted="false">%d из %d занятий</string>
     <string name="practices_home_menu_reschedule">Перенести</string>
     <string name="practices_home_menu_cancel_reminder">Отменить напоминание</string>
-    <string name="practices_home_menu_details">Подробнее о практике</string>
+    <string name="practices_home_menu_details">Practice details</string>
+    
+    <!-- Search screen -->
+    <string name="practices_search_title">Search</string>
+    <string name="practices_search_hint">Search practices...</string>
+    <string name="practices_search_results_title">Search results</string>
+    <string name="practices_search_recommendations_title">We recommend trying</string>
+    <string name="practices_search_empty_title">Nothing found</string>
+    <string name="practices_search_empty_message">Try changing your search filters or keywords</string>
+    <string name="practices_search_clear_filters">Clear filters</string>
+    <string name="practices_search_advanced_filters">Filters</string>
+    <string name="practices_search_filter_type">Type</string>
+    <string name="practices_search_filter_goal">Goal</string>
+    <string name="practices_search_filter_level">Level</string>
+    <string name="practices_search_filter_duration">Duration</string>
+    <string name="practices_search_filter_additional">Additional</string>
+    <string name="practices_search_filter_audio">With audio guide</string>
+    <string name="practices_search_filter_amulet">Requires amulet</string>
+    <string name="practices_search_duration_format">%d–%d min</string>
+    <string name="practices_search_apply">Apply</string>
+    <string name="practices_search_reset">Clear</string>
+    
+    <!-- Practice types -->
+    <string name="practice_type_breath">Breathing</string>
+    <string name="practice_type_meditation">Meditation</string>
+    <string name="practice_type_sound">Sound</string>
+    
+    <!-- Practice levels -->
+    <string name="practice_level_beginner">Beginner</string>
+    <string name="practice_level_intermediate">Intermediate</string>
+    <string name="practice_level_advanced">Advanced</string>
 </resources>

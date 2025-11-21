@@ -24,4 +24,34 @@
     <string name="practice_goal_relaxation">Расслабление</string>
     <string name="practice_goal_anxiety">Снижение тревоги</string>
     <string name="practice_goal_mood">Поддержка настроения</string>
+    
+    <!-- Search screen -->
+    <string name="practices_search_title">Поиск</string>
+    <string name="practices_search_hint">Поиск практик...</string>
+    <string name="practices_search_results_title">Результаты поиска</string>
+    <string name="practices_search_recommendations_title">Рекомендуем попробовать</string>
+    <string name="practices_search_empty_title">Ничего не найдено</string>
+    <string name="practices_search_empty_message">Попробуйте изменить фильтры или ключевые слова поиска</string>
+    <string name="practices_search_clear_filters">Сбросить фильтры</string>
+    <string name="practices_search_advanced_filters">Фильтры</string>
+    <string name="practices_search_filter_type">Тип</string>
+    <string name="practices_search_filter_goal">Цель</string>
+    <string name="practices_search_filter_level">Уровень</string>
+    <string name="practices_search_filter_duration">Длительность</string>
+    <string name="practices_search_filter_additional">Дополнительно</string>
+    <string name="practices_search_filter_audio">С аудиогидом</string>
+    <string name="practices_search_filter_amulet">Требуется амулет</string>
+    <string name="practices_search_duration_format">%d–%d мин</string>
+    <string name="practices_search_apply">Применить</string>
+    <string name="practices_search_reset">Сбросить</string>
+    
+    <!-- Practice types -->
+    <string name="practice_type_breath">Дыхание</string>
+    <string name="practice_type_meditation">Медитация</string>
+    <string name="practice_type_sound">Звук</string>
+    
+    <!-- Practice levels -->
+    <string name="practice_level_beginner">Начинающий</string>
+    <string name="practice_level_intermediate">Средний</string>
+    <string name="practice_level_advanced">Продвинутый</string>
 </resources>
