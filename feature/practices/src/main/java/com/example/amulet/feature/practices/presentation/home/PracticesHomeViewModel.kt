@@ -9,6 +9,7 @@ import com.example.amulet.shared.domain.practices.usecase.GetFavoritesStreamUseC
 import com.example.amulet.shared.domain.practices.usecase.GetPracticesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.ResumeSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
@@ -25,6 +26,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -37,12 +41,16 @@ class PracticesHomeViewModel @Inject constructor(
     private val getRecommendationsStreamUseCase: GetRecommendationsStreamUseCase,
     private val getActiveSessionStreamUseCase: GetActiveSessionStreamUseCase,
     private val getSessionsHistoryStreamUseCase: GetSessionsHistoryStreamUseCase,
+    private val getScheduledSessionsStreamUseCase: com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsStreamUseCase,
     private val setFavoritePracticeUseCase: SetFavoritePracticeUseCase,
     private val startPracticeUseCase: StartPracticeUseCase,
     private val pauseSessionUseCase: PauseSessionUseCase,
     private val resumeSessionUseCase: ResumeSessionUseCase,
     private val stopSessionUseCase: StopSessionUseCase,
-    private val getCoursesStreamUseCase: GetCoursesStreamUseCase
+    private val getCoursesStreamUseCase: GetCoursesStreamUseCase,
+    private val getAllCoursesProgressStreamUseCase: com.example.amulet.shared.domain.courses.usecase.GetAllCoursesProgressStreamUseCase,
+    private val refreshPracticesCatalogUseCase: com.example.amulet.shared.domain.practices.usecase.RefreshPracticesCatalogUseCase,
+    private val refreshCoursesCatalogUseCase: com.example.amulet.shared.domain.courses.usecase.RefreshCoursesCatalogUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PracticesHomeState())
@@ -71,44 +79,88 @@ class PracticesHomeViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
 
-            val recommendationsFlow = getRecommendationsStreamUseCase(limit = 2)
+            val moodFlow = state.map { it.selectedMood }.distinctUntilChanged()
+
+            val recommendationsFlow = moodFlow.flatMapLatest { mood ->
+                getRecommendationsStreamUseCase(limit = 5, goal = mood.practiceGoal)
+            }
+            
             val quickRitualsFlow = getPracticesStreamUseCase(
                 PracticeFilter(
-                    durationToSec = 5 * 60
+                    durationToSec = 300 // 5 minutes
                 )
             )
             val coursesFlow = getCoursesStreamUseCase()
             val recentFlow = getSessionsHistoryStreamUseCase(limit = 5)
+            val scheduledFlow = getScheduledSessionsStreamUseCase()
+            val coursesProgressFlow = getAllCoursesProgressStreamUseCase()
+            val allPracticesFlow = getPracticesStreamUseCase(PracticeFilter())
 
             combine(
-                recommendationsFlow,
-                quickRitualsFlow,
-                coursesFlow,
-                recentFlow
-            ) { recommendations, quickRituals, courses, recent ->
-                Triple(recommendations, quickRituals, Pair(courses, recent))
+                listOf(
+                    recommendationsFlow,
+                    quickRitualsFlow,
+                    coursesFlow,
+                    recentFlow,
+                    scheduledFlow,
+                    coursesProgressFlow,
+                    allPracticesFlow
+                )
+            ) { args ->
+                val recommendations = args[0] as List<com.example.amulet.shared.domain.practices.model.Practice>
+                val quickRituals = args[1] as List<com.example.amulet.shared.domain.practices.model.Practice>
+                val courses = args[2] as List<Course>
+                val recent = args[3] as List<com.example.amulet.shared.domain.practices.model.PracticeSession>
+                val scheduled = args[4] as List<com.example.amulet.shared.domain.practices.model.ScheduledSession>
+                val coursesProgress = args[5] as List<com.example.amulet.shared.domain.courses.model.CourseProgress>
+                val allPractices = args[6] as List<com.example.amulet.shared.domain.practices.model.Practice>
+
+                val progressMap = coursesProgress.associateBy { it.courseId }
+                val practicesMap = allPractices.associateBy { it.id }
+                
+                val recentUi = recent.map { session ->
+                    RecentSessionUi(
+                        id = session.id,
+                        practiceId = session.practiceId,
+                        practiceTitle = practicesMap[session.practiceId]?.title ?: "Практика",
+                        durationSec = session.durationSec
+                    )
+                }
+                
+                PracticesHomeData(recommendations, quickRituals, courses, recentUi, scheduled, progressMap)
             }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5000),
-                    initialValue = Triple(emptyList(), emptyList(), Pair(emptyList(), emptyList()))
+                    initialValue = PracticesHomeData()
                 )
-                .collect { (recommendations, quickRituals, coursesAndRecent) ->
-                    val (courses, recent) = coursesAndRecent
-                    _state.update { current ->
-                        current.copy(
+                .collect { data ->
+                    _state.update {
+                        it.copy(
                             isLoading = false,
-                            recommendedPractices = recommendations,
-                            recommendedCourse = courses.firstOrNull(),
-                            myCourses = courses,
-                            quickRituals = quickRituals,
-                            recentSessions = recent,
-                            isNewUser = recent.isEmpty(),
+                            recommendedPractices = data.recommendations,
+                            recommendedCourse = data.courses.firstOrNull(), // Simple logic for now
+                            myCourses = data.courses,
+                            coursesProgress = data.coursesProgress,
+                            quickRituals = data.quickRituals,
+                            recentSessions = data.recent,
+                            scheduledSessions = data.scheduled,
+                            isNewUser = data.recent.isEmpty(),
+                            hasPlan = data.scheduled.isNotEmpty()
                         )
                     }
                 }
         }
     }
+
+    private data class PracticesHomeData(
+        val recommendations: List<com.example.amulet.shared.domain.practices.model.Practice> = emptyList(),
+        val quickRituals: List<com.example.amulet.shared.domain.practices.model.Practice> = emptyList(),
+        val courses: List<Course> = emptyList(),
+        val recent: List<RecentSessionUi> = emptyList(),
+        val scheduled: List<com.example.amulet.shared.domain.practices.model.ScheduledSession> = emptyList(),
+        val coursesProgress: Map<String, com.example.amulet.shared.domain.courses.model.CourseProgress> = emptyMap()
+    )
 
     fun onIntent(intent: PracticesHomeIntent) {
         when (intent) {
@@ -132,7 +184,9 @@ class PracticesHomeViewModel @Inject constructor(
     private fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            // Сейчас используем существующие стримы, отдельного refresh каталога не дергаем
+            // Обновляем данные через UseCases
+            refreshPracticesCatalogUseCase()
+            refreshCoursesCatalogUseCase()
             _state.update { it.copy(isRefreshing = false) }
         }
     }

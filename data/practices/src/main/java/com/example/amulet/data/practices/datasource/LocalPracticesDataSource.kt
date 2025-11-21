@@ -16,6 +16,7 @@ interface LocalPracticesDataSource {
     fun observeSessionsForUser(userId: String): Flow<List<PracticeSessionEntity>>
     suspend fun getSessionById(sessionId: String): PracticeSessionEntity?
     fun observePreferences(userId: String): Flow<UserPreferencesEntity?>
+    fun observeSchedules(userId: String): Flow<List<com.example.amulet.core.database.entity.PracticeScheduleEntity>>
     suspend fun upsertPractices(items: List<PracticeEntity>)
     suspend fun upsertCategories(items: List<PracticeCategoryEntity>)
     suspend fun setFavorite(userId: String, practiceId: String, favorite: Boolean)

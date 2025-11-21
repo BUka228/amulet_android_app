@@ -11,6 +11,7 @@ interface LocalCoursesDataSource {
     fun observeCourseById(courseId: String): Flow<CourseEntity?>
     fun observeCourseItems(courseId: String): Flow<List<CourseItemEntity>>
     fun observeCourseProgress(userId: String, courseId: String): Flow<CourseProgressEntity?>
+    fun observeAllProgress(userId: String): Flow<List<CourseProgressEntity>>
     suspend fun upsertCourses(items: List<CourseEntity>)
     suspend fun upsertCourseItems(items: List<CourseItemEntity>)
     suspend fun upsertProgress(entity: CourseProgressEntity)

@@ -53,6 +53,12 @@ class CoursesRepositoryImpl @Inject constructor(
     override fun getCourseProgressStream(courseId: CourseId): Flow<CourseProgress?> =
         local.observeCourseProgress(currentUserId, courseId).map { it?.toDomain(json) }
 
+    override fun getAllCoursesProgressStream(): Flow<List<CourseProgress>> =
+        // Эта реализация предполагает, что `local` может предоставить весь прогресс для пользователя.
+        // Мы используем observeAllProgress для получения списка всех прогрессов.
+        local.observeAllProgress(currentUserId).map { list -> list.map { it.toDomain(json) } }
+    
+
     override suspend fun refreshCatalog(): AppResult<Unit> {
         Logger.d("Начало обновления каталога курсов", "CoursesRepositoryImpl")
         return try {

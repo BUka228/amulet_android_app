@@ -7,5 +7,6 @@ import kotlinx.coroutines.flow.Flow
 class GetRecommendationsStreamUseCase(
     private val repository: PracticesRepository
 ) {
-    operator fun invoke(limit: Int? = null): Flow<List<Practice>> = repository.getRecommendationsStream(limit)
+    operator fun invoke(limit: Int? = null, goal: com.example.amulet.shared.domain.practices.model.PracticeGoal? = null): Flow<List<Practice>> = 
+        repository.getRecommendationsStream(limit, goal)
 }

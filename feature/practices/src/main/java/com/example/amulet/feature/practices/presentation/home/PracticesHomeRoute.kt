@@ -2,7 +2,6 @@ package com.example.amulet.feature.practices.presentation.home
 
 import android.graphics.drawable.shapes.Shape
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.filled.BarChart
@@ -35,6 +35,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -148,18 +151,27 @@ private fun PracticesHomeScreen(
         }
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    val pullRefreshState = rememberPullToRefreshState()
+
+    PullToRefreshBox(
+        isRefreshing = state.isLoading,
+        onRefresh = { onIntent(PracticesHomeIntent.Refresh) },
+        state = pullRefreshState,
+        modifier = Modifier.fillMaxSize()
     ) {
-        item { MoodSection(state = state, onIntent = onIntent) }
-        item { RecommendedSection(state = state, onIntent = onIntent) }
-        item { TodayPlanSection(state = state, onIntent = onIntent) }
-        item { QuickRitualsSection(state = state, onIntent = onIntent) }
-        item { RecentSection(state = state, onIntent = onIntent) }
-        item { MyCoursesSection(state = state, onIntent = onIntent) }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item { MoodSection(state = state, onIntent = onIntent) }
+            item { RecommendedSection(state = state, onIntent = onIntent) }
+            item { TodayPlanSection(state = state, onIntent = onIntent) }
+            item { QuickRitualsSection(state = state, onIntent = onIntent) }
+            item { RecentSection(state = state, onIntent = onIntent) }
+            item { MyCoursesSection(state = state, onIntent = onIntent) }
+        }
     }
 }
 
@@ -173,11 +185,14 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
 
     AmuletCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header with selected mood info
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 IconButton(
@@ -218,9 +233,10 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
                 }
             }
 
+            // Horizontal scroll for mood chips
             Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             ) {
                 state.availableMoods.forEach { mood ->
                     val isSelected = state.selectedMood.id == mood.id
@@ -229,7 +245,7 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
 
                     IconButton(
                         onClick = { onIntent(PracticesHomeIntent.SelectMood(mood)) },
-                        modifier = Modifier.size(40.dp),
+                        modifier = Modifier.size(48.dp),
                         colors = IconButtonDefaults.iconButtonColors(
                             containerColor = if (isSelected) color.copy(alpha = 0.24f) else color.copy(alpha = 0.08f),
                             contentColor = color
@@ -242,6 +258,7 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
                         )
                     }
                 }
+
             }
         }
     }
@@ -299,6 +316,7 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
                         title = practice.title,
                         goal = practice.goal?.let(::practiceGoalTitleRes),
                         durationMinutes = practice.durationSec?.div(60),
+                        badge = if (practice.usageCount > 100) "Популярная" else null,
                         onClick = { onIntent(PracticesHomeIntent.OpenPractice(practice.id)) },
                         modifier = Modifier
                             .weight(1f)
@@ -311,6 +329,7 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
                         title = course.title,
                         goal = course.goal?.let(::practiceGoalTitleRes),
                         durationMinutes = course.totalDurationSec?.div(60),
+                        badge = if (course.tags.contains("popular")) "Популярная" else null,
                         onClick = { onIntent(PracticesHomeIntent.OpenCourse(course.id)) },
                         modifier = Modifier
                             .weight(1f)
@@ -327,24 +346,36 @@ private fun RecommendedItemCard(
     title: String,
     goal: Int?,
     durationMinutes: Int?,
+    badge: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.TopEnd
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 10.dp)
-                .fillMaxWidth(),
+                .padding(horizontal = 12.dp, vertical = 10.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            if (badge != null) {
+                Box(
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = badge,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
@@ -353,43 +384,53 @@ private fun RecommendedItemCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.weight(1f))
-            goal?.let { resId ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    goal?.let { resId ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.Spa,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(id = resId),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    durationMinutes?.let { minutes ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = stringResource(id = R.string.practices_home_duration_minutes, minutes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick) {
                     Icon(
-                        imageVector = Icons.Filled.Spa,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = stringResource(id = resId),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            durationMinutes?.let { minutes ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(
-                        imageVector = Icons.Filled.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Text(
-                        text = stringResource(id = R.string.practices_home_duration_minutes, minutes),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-        IconButton(onClick) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -409,45 +450,55 @@ private fun practiceGoalTitleRes(goal: PracticeGoal): Int? = when (goal) {
 private fun MyCoursesSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> Unit) {
     if (state.myCourses.isEmpty()) return
 
-    AmuletCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.practices_home_my_courses_title),
-                style = MaterialTheme.typography.titleMedium
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringResource(id = R.string.practices_home_my_courses_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
 
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                state.myCourses.forEachIndexed { index, course ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)
+        ) {
+            items(state.myCourses) { course ->
+                AmuletCard(
+                    modifier = Modifier
+                        .width(280.dp)
+                        .clickable { onIntent(PracticesHomeIntent.OpenCourse(course.id)) }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(course.title, style = MaterialTheme.typography.bodyLarge)
-                            course.goal?.let { goal ->
-                                practiceGoalTitleRes(goal)?.let { resId ->
-                                    Text(stringResource(id = resId), style = MaterialTheme.typography.bodySmall)
-                                }
+                        Text(
+                            text = course.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        
+                        course.goal?.let { goal ->
+                            practiceGoalTitleRes(goal)?.let { resId ->
+                                Text(
+                                    text = stringResource(id = resId),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
-                        IconButton(onClick = { onIntent(PracticesHomeIntent.OpenCourse(course.id)) }) {
-                            Icon(
-                                imageVector = Icons.Filled.KeyboardArrowRight,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                    if (index != state.myCourses.lastIndex) {
-                        Divider()
+
+                        // Прогресс бар
+                        val progress = state.coursesProgress[course.id]?.percent?.toFloat()?.div(100) ?: 0f
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            text = "${state.coursesProgress[course.id]?.completedItemIds?.size ?: 0} из ${course.modulesCount} занятий",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -482,7 +533,7 @@ private fun TodayPlanSection(state: PracticesHomeState, onIntent: (PracticesHome
                     )
                     if (state.hasPlan) {
                         Text(
-                            text = stringResource(id = R.string.practices_home_today_plan_exists),
+                            text = "Сегодня запланировано ${state.scheduledSessions.size} сессии",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -496,7 +547,39 @@ private fun TodayPlanSection(state: PracticesHomeState, onIntent: (PracticesHome
                 }
             }
 
-            if (!state.hasPlan) {
+            if (state.hasPlan) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.scheduledSessions.take(3).forEach { session ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Отображение времени
+                            val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(session.scheduledTime))
+                            Text(
+                                text = time,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = session.practiceTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
                 Button(
                     onClick = { onIntent(PracticesHomeIntent.CreateDayRitual) },
                     modifier = Modifier.fillMaxWidth()
@@ -565,7 +648,7 @@ private fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeInt
                 ) {
                     Column {
                         Text(
-                            stringResource(id = R.string.practices_home_session_title, session.practiceId),
+                            text = session.practiceTitle,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         session.durationSec?.let {

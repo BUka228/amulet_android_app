@@ -14,6 +14,7 @@ import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
@@ -56,7 +57,8 @@ class PracticesRepositoryImpl @Inject constructor(
                 (filter.type == null || p.type == filter.type) &&
                 (filter.categoryId == null || true) &&
                 (from == null || (p.durationSec ?: Int.MAX_VALUE) >= from) &&
-                (to == null || (p.durationSec ?: 0) <= to)
+                (to == null || (p.durationSec ?: 0) <= to) &&
+                (filter.goal == null || p.goal == filter.goal)
             }
         }
         return if (filter.onlyFavorites) {
@@ -77,7 +79,7 @@ class PracticesRepositoryImpl @Inject constructor(
             entities.filter { it.id in favIds }.map { it.toDomain() }
         }
 
-    override fun getRecommendationsStream(limit: Int?): Flow<List<Practice>> {
+    override fun getRecommendationsStream(limit: Int?, contextGoal: PracticeGoal?): Flow<List<Practice>> {
         val prefs = getUserPreferencesStream()
         val recent = local.observeSessionsForUser(currentUserId)
         val all = local.observePractices()
@@ -87,8 +89,13 @@ class PracticesRepositoryImpl @Inject constructor(
             val scored = practices.map { e ->
                 val p = e.toDomain()
                 val d = p.durationSec
-                val score = (if (d != null && prefDur.any { kotlin.math.abs(it - d) <= 120 }) 2 else 0) +
+                var score = (if (d != null && prefDur.any { kotlin.math.abs(it - d) <= 120 }) 2 else 0) +
                     (if (p.id !in completedIds) 1 else 0)
+                
+                if (contextGoal != null && p.goal == contextGoal) {
+                    score += 5 // Boost score if matches context goal
+                }
+                
                 p to score
             }
             scored.sortedByDescending { it.second }.map { it.first }.let { if (limit != null) it.take(limit) else it }
@@ -219,6 +226,21 @@ class PracticesRepositoryImpl @Inject constructor(
                 interests = interests,
                 preferredDurationsSec = durations
             )
+        }
+
+    override fun getSchedulesStream(): Flow<List<com.example.amulet.shared.domain.practices.model.PracticeSchedule>> =
+        local.observeSchedules(currentUserId).map { list ->
+            list.map { e ->
+                com.example.amulet.shared.domain.practices.model.PracticeSchedule(
+                    id = e.id,
+                    userId = e.userId,
+                    practiceId = e.practiceId,
+                    daysOfWeek = json.decodeFromString(e.daysOfWeekJson),
+                    timeOfDay = e.timeOfDay,
+                    reminderEnabled = e.reminderEnabled,
+                    createdAt = e.createdAt
+                )
+            }
         }
 
     override suspend fun updateUserPreferences(preferences: UserPreferences): AppResult<Unit> {

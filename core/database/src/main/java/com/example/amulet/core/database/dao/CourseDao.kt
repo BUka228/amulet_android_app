@@ -33,6 +33,9 @@ interface CourseDao {
     @Query("SELECT * FROM course_progress WHERE userId = :userId AND courseId = :courseId")
     fun observeCourseProgress(userId: String, courseId: String): Flow<CourseProgressEntity?>
 
+    @Query("SELECT * FROM course_progress WHERE userId = :userId")
+    fun observeAllProgress(userId: String): Flow<List<CourseProgressEntity>>
+
     @Query("DELETE FROM course_progress WHERE userId = :userId AND courseId = :courseId")
     suspend fun resetProgress(userId: String, courseId: String)
 }

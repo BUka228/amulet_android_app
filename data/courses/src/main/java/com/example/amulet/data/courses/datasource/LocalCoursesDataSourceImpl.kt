@@ -19,6 +19,7 @@ class LocalCoursesDataSourceImpl @Inject constructor(
     override fun observeCourseById(courseId: String): Flow<CourseEntity?> = dao.observeCourseById(courseId)
     override fun observeCourseItems(courseId: String): Flow<List<CourseItemEntity>> = dao.observeCourseItems(courseId)
     override fun observeCourseProgress(userId: String, courseId: String): Flow<CourseProgressEntity?> = dao.observeCourseProgress(userId, courseId)
+    override fun observeAllProgress(userId: String): Flow<List<CourseProgressEntity>> = dao.observeAllProgress(userId)
     override suspend fun upsertCourses(items: List<CourseEntity>) { dao.upsertCourses(items) }
     override suspend fun upsertCourseItems(items: List<CourseItemEntity>) { dao.upsertCourseItems(items) }
     override suspend fun upsertProgress(entity: CourseProgressEntity) { dao.upsertProgress(entity) }

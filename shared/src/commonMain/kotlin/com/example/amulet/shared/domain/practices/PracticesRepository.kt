@@ -4,10 +4,12 @@ import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import kotlinx.coroutines.flow.Flow
 
 interface PracticesRepository {
@@ -21,7 +23,7 @@ interface PracticesRepository {
 
     fun getFavoritesStream(): Flow<List<Practice>>
 
-    fun getRecommendationsStream(limit: Int? = null): Flow<List<Practice>>
+    fun getRecommendationsStream(limit: Int? = null, contextGoal: PracticeGoal? = null): Flow<List<Practice>>
 
     suspend fun search(
         query: String,
@@ -61,6 +63,8 @@ interface PracticesRepository {
     ): AppResult<PracticeSession>
 
     fun getUserPreferencesStream(): Flow<UserPreferences>
+    
+    fun getSchedulesStream(): Flow<List<PracticeSchedule>>
 
     suspend fun updateUserPreferences(
         preferences: UserPreferences

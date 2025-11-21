@@ -17,6 +17,8 @@ interface CoursesRepository {
 
     fun getCourseProgressStream(courseId: CourseId): Flow<CourseProgress?>
 
+    fun getAllCoursesProgressStream(): Flow<List<CourseProgress>>
+
     suspend fun refreshCatalog(): AppResult<Unit>
 
     suspend fun seedLocalData(): AppResult<Unit>

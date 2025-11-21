@@ -37,7 +37,11 @@ class LocalPracticesDataSourceImpl @Inject constructor(
     override suspend fun getSessionById(sessionId: String): PracticeSessionEntity? =
         practiceDao.getSessionById(sessionId)
 
-    override fun observePreferences(userId: String): Flow<UserPreferencesEntity?> = extrasDao.observePreferences(userId)
+    override fun observePreferences(userId: String): Flow<UserPreferencesEntity?> =
+        extrasDao.observePreferences(userId)
+
+    override fun observeSchedules(userId: String): Flow<List<com.example.amulet.core.database.entity.PracticeScheduleEntity>> =
+        extrasDao.observeSchedules(userId)
 
     override suspend fun upsertPractices(items: List<PracticeEntity>) {
         practiceDao.upsertPractices(items)

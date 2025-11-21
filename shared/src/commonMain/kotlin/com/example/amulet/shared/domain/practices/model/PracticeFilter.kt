@@ -5,5 +5,6 @@ data class PracticeFilter(
     val tags: List<String> = emptyList(),
     val onlyFavorites: Boolean = false,
     val durationFromSec: Int? = null,
-    val durationToSec: Int? = null
+    val durationToSec: Int? = null,
+    val goal: PracticeGoal? = null
 )

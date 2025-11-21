@@ -4,7 +4,9 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
 import com.example.amulet.shared.domain.practices.model.PracticeSession
+import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.courses.model.Course
+import com.example.amulet.shared.domain.courses.model.CourseProgress
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeType
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
@@ -21,11 +23,16 @@ data class PracticesHomeState(
     val recommendedCourse: Course? = null,
 
     val myCourses: List<Course> = emptyList(),
+    val coursesProgress: Map<String, CourseProgress> = emptyMap(),
     val quickRituals: List<Practice> = emptyList(),
-    val recentSessions: List<PracticeSession> = emptyList(),
+    val recentSessions: List<RecentSessionUi> = emptyList(),
+    val scheduledSessions: List<ScheduledSession> = emptyList(),
 
     val hasPlan: Boolean = false,
     val isNewUser: Boolean = false,
+    val isSearchMode: Boolean = false,
+    val searchQuery: String = "",
+    val searchResults: List<Practice> = emptyList(),
 
     val isRefreshing: Boolean = false,
     val isRecommendationsLoading: Boolean = false,

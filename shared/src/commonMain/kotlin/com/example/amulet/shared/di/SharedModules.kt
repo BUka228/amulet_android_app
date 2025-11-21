@@ -90,6 +90,8 @@ private val sharedModule = module {
     factory { SetFavoritePracticeUseCase(get()) }
     factory { GetActiveSessionStreamUseCase(get()) }
     factory { GetSessionsHistoryStreamUseCase(get()) }
+    factory { GetScheduledSessionsStreamUseCase(get()) }
+    factory { RefreshPracticesCatalogUseCase(get()) }
     factory { StartPracticeUseCase(get()) }
     factory { PauseSessionUseCase(get()) }
     factory { ResumeSessionUseCase(get()) }
@@ -103,7 +105,9 @@ private val sharedModule = module {
     factory { GetCourseByIdUseCase(get()) }
     factory { GetCourseItemsStreamUseCase(get()) }
     factory { GetCourseProgressStreamUseCase(get()) }
+    factory { GetAllCoursesProgressStreamUseCase(get()) }
     factory { RefreshCoursesUseCase(get()) }
+    factory { RefreshCoursesCatalogUseCase(get()) }
     factory { StartCourseUseCase(get()) }
     factory { ContinueCourseUseCase(get()) }
     factory { CompleteCourseItemUseCase(get()) }

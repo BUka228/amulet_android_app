@@ -81,7 +81,6 @@ dependencies {
     implementation(project(":feature:practices"))
     implementation(project(":feature:onboarding"))
     implementation(libs.koin.android)
-    implementation(libs.kotlinx.datetime)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
