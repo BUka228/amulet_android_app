@@ -46,6 +46,9 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override fun observeSchedules(userId: String): Flow<List<PracticeScheduleEntity>> =
         extrasDao.observeSchedules(userId)
+    
+    override fun observeScheduleByPracticeId(userId: String, practiceId: String): Flow<PracticeScheduleEntity?> =
+        extrasDao.observeScheduleByPracticeId(userId, practiceId)
 
     override suspend fun upsertPractices(items: List<PracticeEntity>) {
         practiceDao.upsertPractices(items)
@@ -76,6 +79,10 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override suspend fun upsertSchedule(entity: PracticeScheduleEntity) {
         extrasDao.upsertSchedule(entity)
+    }
+
+    override suspend fun deleteSchedule(scheduleId: String) {
+        extrasDao.deleteSchedule(scheduleId)
     }
 
     override suspend fun seedPresets(presets: List<PracticeSeed>) {

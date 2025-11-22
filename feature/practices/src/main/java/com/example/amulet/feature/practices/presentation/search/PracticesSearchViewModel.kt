@@ -9,6 +9,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeType
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.SearchPracticesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -115,6 +116,7 @@ class PracticesSearchViewModel @Inject constructor(
         queryFlow.value = ""
     }
 
+    @OptIn(FlowPreview::class)
     private fun observeQuery() {
         viewModelScope.launch {
             queryFlow

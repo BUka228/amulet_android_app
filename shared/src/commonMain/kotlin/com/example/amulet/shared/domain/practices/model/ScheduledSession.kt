@@ -8,7 +8,8 @@ data class ScheduledSession(
     val practiceTitle: String,
     val courseId: String? = null,
     val scheduledTime: Long,
-    val status: ScheduledSessionStatus = ScheduledSessionStatus.PLANNED
+    val status: ScheduledSessionStatus = ScheduledSessionStatus.PLANNED,
+    val durationSec: Int? = null
 )
 
 enum class ScheduledSessionStatus {

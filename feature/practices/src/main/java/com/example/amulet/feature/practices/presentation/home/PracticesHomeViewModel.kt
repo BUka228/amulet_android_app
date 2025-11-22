@@ -18,6 +18,7 @@ import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,6 +76,7 @@ class PracticesHomeViewModel @Inject constructor(
         _state.update { it.copy(greeting = greeting) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeData() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }

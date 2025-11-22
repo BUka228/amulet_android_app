@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.BluetoothSearching
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,8 +30,6 @@ import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.components.card.CardElevation
 import com.example.amulet.core.design.foundation.color.AmuletPalette
 import com.example.amulet.core.design.foundation.theme.AmuletTheme
-import com.example.amulet.feature.dashboard.presentation.DailyStats
-import kotlin.math.sin
 
 // ===== Секция Устройств =====
 @Composable

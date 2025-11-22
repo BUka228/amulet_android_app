@@ -51,6 +51,7 @@ data class PracticeScheduleEntity(
     @PrimaryKey val id: String,
     val userId: String,
     val practiceId: String,
+    val courseId: String? = null,
     val daysOfWeekJson: String, // JSON array [1,2,3,4,5] for Mon-Fri
     val timeOfDay: String, // HH:mm format
     val reminderEnabled: Boolean,

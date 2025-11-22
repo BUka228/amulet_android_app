@@ -23,7 +23,6 @@ import com.example.amulet.feature.patterns.presentation.components.PatternElemen
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternData
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternDialog
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.ui.draw.clip
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
@@ -32,7 +31,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.text.input.TextFieldValue
 
 @Composable
 fun PatternEditorRoute(

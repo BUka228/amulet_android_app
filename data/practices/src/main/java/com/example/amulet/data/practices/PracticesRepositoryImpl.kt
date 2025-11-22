@@ -19,6 +19,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
+import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.UserPreferences
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -232,14 +233,31 @@ class PracticesRepositoryImpl @Inject constructor(
             )
         }
 
-    override fun getSchedulesStream(): Flow<List<com.example.amulet.shared.domain.practices.model.PracticeSchedule>> =
+    override fun getSchedulesStream(): Flow<List<PracticeSchedule>> =
         local.observeSchedules(currentUserId).map { list ->
             list.map { e ->
-                com.example.amulet.shared.domain.practices.model.PracticeSchedule(
+                PracticeSchedule(
                     id = e.id,
                     userId = e.userId,
                     practiceId = e.practiceId,
-                    daysOfWeek = json.decodeFromString(e.daysOfWeekJson),
+                    courseId = e.courseId,
+                    daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
+                    timeOfDay = e.timeOfDay,
+                    reminderEnabled = e.reminderEnabled,
+                    createdAt = e.createdAt
+                )
+            }
+        }
+    
+    override fun getScheduleByPracticeId(practiceId: PracticeId): Flow<PracticeSchedule?> =
+        local.observeScheduleByPracticeId(currentUserId, practiceId).map { entity ->
+            entity?.let { e ->
+                PracticeSchedule(
+                    id = e.id,
+                    userId = e.userId,
+                    practiceId = e.practiceId,
+                    courseId = e.courseId,
+                    daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
                     timeOfDay = e.timeOfDay,
                     reminderEnabled = e.reminderEnabled,
                     createdAt = e.createdAt
@@ -254,6 +272,7 @@ class PracticesRepositoryImpl @Inject constructor(
             id = schedule.id,
             userId = currentUserId,
             practiceId = schedule.practiceId,
+            courseId = schedule.courseId,
             daysOfWeekJson = json.encodeToString(json.encodeToJsonElement(schedule.daysOfWeek)),
             timeOfDay = schedule.timeOfDay,
             reminderEnabled = schedule.reminderEnabled,
@@ -261,6 +280,13 @@ class PracticesRepositoryImpl @Inject constructor(
             updatedAt = System.currentTimeMillis()
         )
         local.upsertSchedule(entity)
+        return Ok(Unit)
+    }
+
+    override suspend fun deleteSchedule(
+        scheduleId: String
+    ): AppResult<Unit> {
+        local.deleteSchedule(scheduleId)
         return Ok(Unit)
     }
 

@@ -20,11 +20,13 @@ interface LocalPracticesDataSource {
     suspend fun getSessionById(sessionId: String): PracticeSessionEntity?
     fun observePreferences(userId: String): Flow<UserPreferencesEntity?>
     fun observeSchedules(userId: String): Flow<List<PracticeScheduleEntity>>
+    fun observeScheduleByPracticeId(userId: String, practiceId: String): Flow<PracticeScheduleEntity?>
     suspend fun upsertPractices(items: List<PracticeEntity>)
     suspend fun upsertCategories(items: List<PracticeCategoryEntity>)
     suspend fun setFavorite(userId: String, practiceId: String, favorite: Boolean)
     suspend fun upsertSession(entity: PracticeSessionEntity)
     suspend fun upsertPreferences(entity: UserPreferencesEntity)
     suspend fun upsertSchedule(entity: PracticeScheduleEntity)
+    suspend fun deleteSchedule(scheduleId: String)
     suspend fun seedPresets(presets: List<PracticeSeed>)
 }

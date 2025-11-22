@@ -3,12 +3,13 @@ package com.example.amulet.feature.practices.navigation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.example.amulet.feature.practices.presentation.home.PracticesHomeRoute
 import com.example.amulet.feature.practices.presentation.course.CourseDetailsRoute
 import com.example.amulet.feature.practices.presentation.details.PracticeDetailsRoute
 import com.example.amulet.feature.practices.presentation.search.PracticesSearchRoute
-import com.example.amulet.feature.practices.presentation.schedule.PracticeScheduleRoute
+import com.example.amulet.feature.practices.presentation.calendar.CalendarRoute
 
 object PracticesGraph {
     const val route: String = "practices_graph"
@@ -19,7 +20,7 @@ object PracticesDestination {
     const val practiceDetails: String = "practices/practice/{practiceId}"
     const val courseDetails: String = "practices/course/{courseId}"
     const val search: String = "practices/search"
-    const val schedule: String = "practices/schedule/{practiceId}"
+    const val calendar: String = "practices/calendar"
 }
 
 fun NavController.navigateToPracticesHome(popUpToInclusive: Boolean = false) {
@@ -40,11 +41,19 @@ fun NavController.navigateToCourseDetails(courseId: String) {
 }
 
 fun NavController.navigateToPracticeSchedule(practiceId: String) {
-    navigate("practices/schedule/$practiceId") { launchSingleTop = true }
+    navigateToCalendarWithPractice(practiceId)
 }
 
 fun NavController.navigateToPracticesSearch() {
     navigate(PracticesDestination.search) { launchSingleTop = true }
+}
+
+fun NavController.navigateToCalendar() {
+    navigate(PracticesDestination.calendar) { launchSingleTop = true }
+}
+
+fun NavController.navigateToCalendarWithPractice(practiceId: String) {
+    navigate("${PracticesDestination.calendar}?practiceId=$practiceId") { launchSingleTop = true }
 }
 
 fun NavGraphBuilder.practicesGraph(
@@ -56,6 +65,7 @@ fun NavGraphBuilder.practicesGraph(
             PracticesHomeRoute(
                 onOpenPractice = { id -> navController.navigateToPracticeDetails(id) },
                 onOpenCourse = { id -> navController.navigateToCourseDetails(id) },
+                onOpenSchedule = { navController.navigateToCalendar() },
                 onOpenSearch = { navController.navigateToPracticesSearch() }
             )
         }
@@ -83,11 +93,22 @@ fun NavGraphBuilder.practicesGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        composable(route = PracticesDestination.schedule) { backStackEntry ->
-            val practiceId = backStackEntry.arguments?.getString("practiceId") ?: return@composable
-            PracticeScheduleRoute(
-                practiceId = practiceId,
-                onNavigateBack = { navController.popBackStack() }
+        composable(
+            route = "${PracticesDestination.calendar}?practiceId={practiceId}",
+            arguments = listOf(
+                navArgument("practiceId") {
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val practiceId = backStackEntry.arguments?.getString("practiceId")
+            CalendarRoute(
+                initialPracticeId = practiceId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPractice = { id ->
+                    navController.navigateToPracticeDetails(id)
+                }
             )
         }
     }

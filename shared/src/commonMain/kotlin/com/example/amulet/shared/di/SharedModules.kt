@@ -91,6 +91,7 @@ private val sharedModule = module {
     factory { GetActiveSessionStreamUseCase(get()) }
     factory { GetSessionsHistoryStreamUseCase(get()) }
     factory { GetScheduledSessionsStreamUseCase(get()) }
+    factory { GetScheduledSessionsForDateRangeUseCase(get()) }
     factory { RefreshPracticesCatalogUseCase(get()) }
     factory { StartPracticeUseCase(get()) }
     factory { PauseSessionUseCase(get()) }
@@ -100,6 +101,8 @@ private val sharedModule = module {
     factory { UpdateUserPreferencesUseCase(get()) }
     factory { GetRecommendationsStreamUseCase(get()) }
     factory { UpsertPracticeScheduleUseCase(get()) }
+    factory { GetScheduleByPracticeIdUseCase(get()) }
+    factory { DeletePracticeScheduleUseCase(get()) }
 
     // Courses UseCases
     factory { GetCoursesStreamUseCase(get()) }

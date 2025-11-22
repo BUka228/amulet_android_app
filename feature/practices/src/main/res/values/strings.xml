@@ -90,4 +90,52 @@
     <string name="practices_error_not_found">Not found</string>
     <string name="practices_error_validation">Validation error</string>
     <string name="practices_error_generic">Something went wrong</string>
+
+    <!-- Calendar screen -->
+    <string name="calendar_title">Schedule</string>
+    <string name="calendar_back">Back</string>
+    <string name="calendar_plans_for_date">Plans for %1$s %2$s</string>
+    <string name="schedule_view_calendar">Calendar</string>
+    <string name="schedule_view_list">List</string>
+    <string name="schedule_upcoming_sessions">Upcoming sessions</string>
+    <string name="schedule_today">Today</string>
+    <string name="schedule_tomorrow">Tomorrow</string>
+    <string name="schedule_this_week">This week</string>
+    <string name="schedule_no_upcoming">No scheduled sessions for the next 7 days</string>
+    <string name="schedule_add_plan_global">Add plan</string>
+    <string name="schedule_select_practice_title">Choose a practice for planning</string>
+    <string name="schedule_no_practices_for_planning">No practices available for planning yet</string>
+    <string name="session_action_start">Start</string>
+    <string name="session_action_reschedule">Reschedule</string>
+    <string name="session_action_cancel">Cancel</string>
+    <string name="session_cancel_title">Cancel session?</string>
+    <string name="session_cancel_message">Are you sure you want to cancel this session?</string>
+    <string name="session_cancel_confirm">Cancel session</string>
+    <string name="common_back">Back</string>
+    <string name="schedule_empty_title">Schedule is empty</string>
+    <string name="schedule_empty_message">Create your first practice plan to start practicing regularly</string>
+    <string name="schedule_empty_subtitle">Create your first practice plan to start practicing regularly</string>
+    <string name="schedule_create_first_plan">Create first plan</string>
+
+    <!-- Planning screen -->
+    <string name="planning_title">Add to plan</string>
+    <string name="planning_back">Back</string>
+    <string name="planning_setup_for_practice">Schedule setup for:\n%1$s</string>
+    <string name="planning_weekdays">Week days</string>
+    <string name="planning_time">Time</string>
+    <string name="planning_time_select">Select time</string>
+    <string name="planning_time_confirm">OK</string>
+    <string name="planning_time_cancel">Cancel</string>
+    <string name="planning_reminders">Reminders</string>
+    <string name="planning_cancel">Cancel</string>
+    <string name="planning_save">Save</string>
+
+    <!-- Week days -->
+    <string name="weekday_mon">Mon</string>
+    <string name="weekday_tue">Tue</string>
+    <string name="weekday_wed">Wed</string>
+    <string name="weekday_thu">Thu</string>
+    <string name="weekday_fri">Fri</string>
+    <string name="weekday_sat">Sat</string>
+    <string name="weekday_sun">Sun</string>
 </resources>

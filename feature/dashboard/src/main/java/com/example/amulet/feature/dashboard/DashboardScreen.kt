@@ -1,7 +1,5 @@
 package com.example.amulet.feature.dashboard
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,8 +11,6 @@ import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -34,7 +30,6 @@ import com.example.amulet.feature.dashboard.presentation.DashboardSideEffect
 import com.example.amulet.feature.dashboard.presentation.DashboardUiEvent
 import com.example.amulet.feature.dashboard.presentation.DashboardUiState
 import com.example.amulet.feature.dashboard.presentation.DashboardViewModel
-import kotlin.math.sin
 
 @Composable
 fun DashboardRoute(

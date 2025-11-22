@@ -27,6 +27,8 @@ import com.example.amulet.shared.domain.practices.usecase.GetPracticesStreamUseC
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsForDateRangeUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetScheduleByPracticeIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetUserPreferencesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.RefreshPracticesUseCase
@@ -38,6 +40,7 @@ import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeScheduleUseCase
+import com.example.amulet.shared.domain.practices.usecase.DeletePracticeScheduleUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
@@ -256,6 +259,7 @@ object KoinBridgeModule {
     @Provides fun provideGetActiveSessionStreamUseCase(koin: Koin): GetActiveSessionStreamUseCase = koin.get()
     @Provides fun provideGetSessionsHistoryStreamUseCase(koin: Koin): GetSessionsHistoryStreamUseCase = koin.get()
     @Provides fun provideGetScheduledSessionsStreamUseCase(koin: Koin): GetScheduledSessionsStreamUseCase = koin.get()
+    @Provides fun provideGetScheduledSessionsForDateRangeUseCase(koin: Koin): GetScheduledSessionsForDateRangeUseCase = koin.get()
     @Provides fun provideStartPracticeUseCase(koin: Koin): StartPracticeUseCase = koin.get()
     @Provides fun providePauseSessionUseCase(koin: Koin): PauseSessionUseCase = koin.get()
     @Provides fun provideResumeSessionUseCase(koin: Koin): ResumeSessionUseCase = koin.get()
@@ -265,6 +269,8 @@ object KoinBridgeModule {
     @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()
     @Provides fun provideRefreshPracticesCatalogUseCase(koin: Koin): RefreshPracticesCatalogUseCase = koin.get()
     @Provides fun provideUpsertPracticeScheduleUseCase(koin: Koin): UpsertPracticeScheduleUseCase = koin.get()
+    @Provides fun provideGetScheduleByPracticeIdUseCase(koin: Koin): GetScheduleByPracticeIdUseCase = koin.get()
+    @Provides fun provideDeletePracticeScheduleUseCase(koin: Koin): DeletePracticeScheduleUseCase = koin.get()
 
     // Courses UseCases
     @Provides fun provideGetCoursesStreamUseCase(koin: Koin): GetCoursesStreamUseCase = koin.get()

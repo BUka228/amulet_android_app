@@ -40,6 +40,9 @@ interface PracticeExtrasDao {
     @Query("SELECT * FROM practice_schedules WHERE userId = :userId")
     fun observeSchedules(userId: String): Flow<List<PracticeScheduleEntity>>
     
+    @Query("SELECT * FROM practice_schedules WHERE userId = :userId AND practiceId = :practiceId LIMIT 1")
+    fun observeScheduleByPracticeId(userId: String, practiceId: String): Flow<PracticeScheduleEntity?>
+    
     @Query("DELETE FROM practice_schedules WHERE id = :scheduleId")
     suspend fun deleteSchedule(scheduleId: String)
     
