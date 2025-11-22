@@ -8,6 +8,7 @@ import com.example.amulet.shared.domain.practices.usecase.GetScheduleByPracticeI
 import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeletePracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUseCase
 import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
@@ -38,6 +39,7 @@ class CalendarViewModel @Inject constructor(
     private val upsertPracticeScheduleUseCase: UpsertPracticeScheduleUseCase,
     private val deletePracticeScheduleUseCase: DeletePracticeScheduleUseCase,
     private val getPracticesStreamUseCase: GetPracticesStreamUseCase,
+    private val skipScheduledSessionUseCase: SkipScheduledSessionUseCase,
 ) : ViewModel() {
 
     private val timeZone = TimeZone.currentSystemDefault()
@@ -254,15 +256,12 @@ class CalendarViewModel @Inject constructor(
 
     private fun cancelSession(sessionId: String) {
         viewModelScope.launch {
-            // Ищем связанную сессию, затем по её id восстанавливаем id расписания.
             val session = _state.value.sessions.find { it.id == sessionId } ?: return@launch
-            // GetScheduledSessionsForDateRangeUseCase формирует id как "<scheduleId>_<date>"
-            val scheduleId = session.id.substringBefore("_")
 
-            val result = deletePracticeScheduleUseCase(scheduleId)
+            val result = skipScheduledSessionUseCase(session)
             val error = result.component2()
             if (error == null) {
-                // Перечитываем сессии, чтобы практика исчезла из расписания
+                // Перечитываем сессии, чтобы отражать пропуск
                 loadSessions()
             }
         }

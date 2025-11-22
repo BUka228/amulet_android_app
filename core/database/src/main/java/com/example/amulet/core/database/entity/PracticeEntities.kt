@@ -85,5 +85,9 @@ data class PracticeSessionEntity(
     val durationSec: Int?,
     @ColumnInfo(defaultValue = "0") val completed: Boolean,
     val intensity: Double?,
-    val brightness: Double?
+    val brightness: Double?,
+    val moodBefore: Int?,
+    val moodAfter: Int?,
+    val feedbackNote: String?,
+    val source: String?
 )

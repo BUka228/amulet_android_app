@@ -117,6 +117,11 @@
     <string name="schedule_empty_subtitle">Create your first practice plan to start practicing regularly</string>
     <string name="schedule_create_first_plan">Create first plan</string>
 
+    <!-- Overdue sessions -->
+    <string name="schedule_overdue_sessions">Overdue sessions</string>
+    <string name="schedule_overdue_action_do_now">Do now</string>
+    <string name="schedule_overdue_action_skip">Skip</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Add to plan</string>
     <string name="planning_back">Back</string>

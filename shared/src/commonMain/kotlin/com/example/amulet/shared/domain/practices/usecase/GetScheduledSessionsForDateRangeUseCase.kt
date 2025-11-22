@@ -2,8 +2,11 @@ package com.example.amulet.shared.domain.practices.usecase
 
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
+import com.example.amulet.shared.domain.practices.model.PracticeSession
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.practices.model.ScheduledSessionStatus
+import com.example.amulet.shared.domain.practices.model.parsePracticeSessionSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.LocalDate
@@ -23,9 +26,16 @@ class GetScheduledSessionsForDateRangeUseCase(
     operator fun invoke(startDate: LocalDate, endDate: LocalDate): Flow<List<ScheduledSession>> {
         return combine(
             repository.getSchedulesStream(),
-            repository.getPracticesStream(PracticeFilter())
-        ) { schedules, practices ->
+            repository.getPracticesStream(PracticeFilter()),
+            repository.getSessionsHistoryStream(null)
+        ) { schedules, practices, sessionsHistory ->
             val practicesMap = practices.associateBy { it.id }
+            val skippedIds: Set<String> = sessionsHistory.mapNotNull { session: PracticeSession ->
+                when (val source = parsePracticeSessionSource(session.source)) {
+                    is PracticeSessionSource.ScheduleSkip -> source.scheduledId
+                    else -> null
+                }
+            }.toSet()
             val timeZone = TimeZone.currentSystemDefault()
             val sessions = mutableListOf<ScheduledSession>()
 
@@ -43,9 +53,15 @@ class GetScheduledSessionsForDateRangeUseCase(
                     val scheduledDateTime = LocalDateTime(currentDate, LocalTime(hour, minute))
                     val scheduledInstant = scheduledDateTime.toInstant(timeZone)
 
+                    val scheduledId = "${schedule.id}_${currentDate}"
+                    if (scheduledId in skippedIds) {
+                        currentDate = currentDate.plus(DatePeriod(days = 1))
+                        continue
+                    }
+
                     sessions.add(
                         ScheduledSession(
-                            id = "${schedule.id}_${currentDate}",
+                            id = scheduledId,
                             practiceId = schedule.practiceId,
                             practiceTitle = practicesMap[schedule.practiceId]?.title ?: "Практика",
                             courseId = schedule.courseId,

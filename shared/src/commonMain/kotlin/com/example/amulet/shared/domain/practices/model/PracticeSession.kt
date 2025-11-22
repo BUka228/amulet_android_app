@@ -13,5 +13,9 @@ data class PracticeSession(
     val durationSec: Int?,
     val intensity: Double?,
     val brightness: Double?,
-    val completed: Boolean
+    val completed: Boolean,
+    val moodBefore: Int? = null,
+    val moodAfter: Int? = null,
+    val feedbackNote: String? = null,
+    val source: String? = null
 )

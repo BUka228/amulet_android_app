@@ -16,6 +16,7 @@ import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseId
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemId
+import com.example.amulet.shared.domain.courses.model.CourseModule
 import com.example.amulet.shared.domain.courses.model.CourseProgress
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.github.michaelbull.result.Err
@@ -50,6 +51,9 @@ class CoursesRepositoryImpl @Inject constructor(
 
     override fun getCourseItemsStream(courseId: CourseId): Flow<List<CourseItem>> =
         local.observeCourseItems(courseId).map { it.map { i -> i.toDomain() } }
+
+    override fun getCourseModulesStream(courseId: CourseId): Flow<List<CourseModule>> =
+        local.observeCourseModules(courseId).map { list -> list.map { it.toDomain() } }
 
     override fun getCourseProgressStream(courseId: CourseId): Flow<CourseProgress?> =
         local.observeCourseProgress(currentUserId, courseId).map { it?.toDomain(json) }

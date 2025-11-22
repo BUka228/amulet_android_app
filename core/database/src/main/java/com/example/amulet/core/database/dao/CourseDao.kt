@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import com.example.amulet.core.database.entity.CourseEntity
 import com.example.amulet.core.database.entity.CourseItemEntity
+import com.example.amulet.core.database.entity.CourseModuleEntity
 import com.example.amulet.core.database.entity.CourseProgressEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +20,9 @@ interface CourseDao {
     suspend fun upsertCourseItems(items: List<CourseItemEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCourseModules(modules: List<CourseModuleEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertProgress(progress: CourseProgressEntity)
 
     @Query("SELECT * FROM courses ORDER BY title ASC")
@@ -29,6 +33,9 @@ interface CourseDao {
 
     @Query("SELECT * FROM course_items WHERE courseId = :courseId ORDER BY `order` ASC")
     fun observeCourseItems(courseId: String): Flow<List<CourseItemEntity>>
+
+    @Query("SELECT * FROM course_modules WHERE courseId = :courseId ORDER BY `order` ASC")
+    fun observeCourseModules(courseId: String): Flow<List<CourseModuleEntity>>
 
     @Query("SELECT * FROM course_progress WHERE userId = :userId AND courseId = :courseId")
     fun observeCourseProgress(userId: String, courseId: String): Flow<CourseProgressEntity?>

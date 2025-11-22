@@ -983,7 +983,25 @@ private fun ScheduleListView(
     val today = kotlin.time.Clock.System.now().toLocalDateTime(timeZone).date
     val endDate = today.plus(7, DateTimeUnit.DAY)
 
-    // Filter sessions for the next 7 days
+    val threeDaysAgo = today.minus(3, DateTimeUnit.DAY)
+    val nowMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
+
+    // Просроченные сессии за последние несколько дней
+    // Показываем только ещё не обработанные (PLANNED) сессии, срок которых уже прошёл.
+    val overdueSessions = remember(state.sessions, today) {
+        state.sessions.filter { session ->
+            val sessionDate = kotlinx.datetime.Instant.fromEpochMilliseconds(session.scheduledTime)
+                .toLocalDateTime(timeZone).date
+            val isBeforeToday = sessionDate < today
+            val isWithinWindow = sessionDate >= threeDaysAgo
+            val isPlanned = session.status == ScheduledSessionStatus.PLANNED
+            val isTimePassed = session.scheduledTime < nowMillis
+
+            isBeforeToday && isWithinWindow && isPlanned && isTimePassed
+        }.sortedByDescending { it.scheduledTime }
+    }
+
+    // Сессии на ближайшие 7 дней
     val upcomingSessions = remember(state.sessions, today) {
         state.sessions.filter {
             val sessionDate = kotlinx.datetime.Instant.fromEpochMilliseconds(it.scheduledTime)
@@ -992,7 +1010,7 @@ private fun ScheduleListView(
         }.sortedBy { it.scheduledTime }
     }
 
-    // Group by date
+    // Группировка ближайших сессий по датам
     val sessionsByDate = remember(upcomingSessions) {
         upcomingSessions.groupBy {
             kotlinx.datetime.Instant.fromEpochMilliseconds(it.scheduledTime)
@@ -1000,7 +1018,7 @@ private fun ScheduleListView(
         }
     }
 
-    if (sessionsByDate.isEmpty()) {
+    if (sessionsByDate.isEmpty() && overdueSessions.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -1013,6 +1031,34 @@ private fun ScheduleListView(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (overdueSessions.isNotEmpty()) {
+            item {
+                AmuletCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.schedule_overdue_sessions),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        overdueSessions.forEach { session ->
+                            OverdueSessionItem(
+                                session = session,
+                                onIntent = onIntent
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         sessionsByDate.forEach { (date, sessions) ->
             item {
                 AmuletCard(
@@ -1037,6 +1083,97 @@ private fun ScheduleListView(
                 }
             }
         }
+    }
+}
+
+
+
+@OptIn(kotlin.time.ExperimentalTime::class)
+@Composable
+private fun OverdueSessionItem(
+    session: ScheduledSession,
+    onIntent: (CalendarIntent) -> Unit
+) {
+    val timeZone = TimeZone.currentSystemDefault()
+    val sessionTime = remember(session.scheduledTime) {
+        kotlinx.datetime.Instant.fromEpochMilliseconds(session.scheduledTime)
+            .toLocalDateTime(timeZone)
+    }
+    val time = remember(sessionTime) {
+        val localTime = java.time.LocalTime.of(sessionTime.hour, sessionTime.minute)
+        localTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+    }
+
+    var showSkipDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.AccessTime,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = session.practiceTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = { onIntent(CalendarIntent.StartSession(session.id)) },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.schedule_overdue_action_do_now))
+            }
+            OutlinedButton(
+                onClick = { showSkipDialog = true },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.schedule_overdue_action_skip))
+            }
+        }
+    }
+
+    if (showSkipDialog) {
+        AlertDialog(
+            onDismissRequest = { showSkipDialog = false },
+            title = { Text(stringResource(R.string.session_cancel_title)) },
+            text = { Text(stringResource(R.string.session_cancel_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSkipDialog = false
+                        onIntent(CalendarIntent.CancelSession(session.id))
+                    }
+                ) {
+                    Text(stringResource(R.string.schedule_overdue_action_skip))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSkipDialog = false }) {
+                    Text(stringResource(R.string.common_back))
+                }
+            }
+        )
     }
 }
 

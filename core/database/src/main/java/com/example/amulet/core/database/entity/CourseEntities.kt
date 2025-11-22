@@ -30,7 +30,7 @@ data class CourseEntity(
 )
 
 @Entity(
-    tableName = "course_items",
+    tableName = "course_modules",
     foreignKeys = [
         ForeignKey(
             entity = CourseEntity::class,
@@ -39,7 +39,38 @@ data class CourseEntity(
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["courseId"])])
+    indices = [Index(value = ["courseId", "order"])]
+)
+data class CourseModuleEntity(
+    @PrimaryKey val id: String,
+    val courseId: String,
+    val order: Int,
+    val title: String?,
+    val description: String?,
+    val recommendedDayOffset: Int?
+)
+
+@Entity(
+    tableName = "course_items",
+    foreignKeys = [
+        ForeignKey(
+            entity = CourseEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["courseId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = CourseModuleEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["moduleId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [
+        Index(value = ["courseId"]),
+        Index(value = ["moduleId"])
+    ]
+)
 data class CourseItemEntity(
     @PrimaryKey val id: String,
     val courseId: String,
@@ -49,7 +80,9 @@ data class CourseItemEntity(
     val title: String?,
     val description: String?,
     val mandatory: Boolean,
-    val minDurationSec: Int?
+    val minDurationSec: Int?,
+    val moduleId: String?,
+    val unlockConditionJson: String?
 )
 
 @Entity(

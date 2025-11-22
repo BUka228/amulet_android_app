@@ -2,14 +2,20 @@ package com.example.amulet.shared.domain.practices
 
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.domain.practices.model.Practice
+import com.example.amulet.shared.domain.practices.model.PracticeBadge
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
+import com.example.amulet.shared.domain.practices.model.PracticeCollection
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeId
+import com.example.amulet.shared.domain.practices.model.ScheduledSession
+import com.example.amulet.shared.domain.practices.model.PracticePlan
+import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
+import com.example.amulet.shared.domain.practices.model.PracticeStatistics
+import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.UserPreferences
-import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import kotlinx.coroutines.flow.Flow
 
 interface PracticesRepository {
@@ -79,4 +85,23 @@ interface PracticesRepository {
     suspend fun updateUserPreferences(
         preferences: UserPreferences
     ): AppResult<Unit>
+
+    suspend fun skipScheduledSession(
+        session: ScheduledSession
+    ): AppResult<Unit>
+
+    // Plans
+    fun getPlansStream(): Flow<List<PracticePlan>>
+    fun getPlanById(id: String): Flow<PracticePlan?>
+    fun getSchedulesByPlanStream(planId: String): Flow<List<PracticeSchedule>>
+    suspend fun upsertPlan(plan: PracticePlan): AppResult<Unit>
+    suspend fun deletePlan(planId: String): AppResult<Unit>
+
+    // Statistics & badges
+    fun getStatisticsStream(): Flow<PracticeStatistics?>
+    fun getBadgesStream(): Flow<List<PracticeBadge>>
+
+    // Tags & collections (для дома практик / каталога)
+    fun getPracticeTagsStream(): Flow<List<PracticeTag>>
+    fun getCollectionsStream(): Flow<List<PracticeCollection>>
 }

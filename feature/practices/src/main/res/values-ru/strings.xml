@@ -117,6 +117,11 @@
     <string name="schedule_empty_subtitle">Создайте свой первый план практики, чтобы начать заниматься регулярно</string>
     <string name="schedule_create_first_plan">Создать первый план</string>
 
+    <!-- Overdue sessions -->
+    <string name="schedule_overdue_sessions">Просроченные сессии</string>
+    <string name="schedule_overdue_action_do_now">Выполнить</string>
+    <string name="schedule_overdue_action_skip">Пропустить</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Добавить в план</string>
     <string name="planning_back">Назад</string>

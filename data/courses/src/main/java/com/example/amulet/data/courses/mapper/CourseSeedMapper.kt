@@ -38,7 +38,9 @@ fun CourseItemSeed.toEntity(): CourseItemEntity = CourseItemEntity(
     title = title,
     description = description,
     mandatory = mandatory,
-    minDurationSec = minDurationSec
+    minDurationSec = minDurationSec,
+    moduleId = null,
+    unlockConditionJson = null
 )
 
 fun List<String>.toJsonArrayString(): String =

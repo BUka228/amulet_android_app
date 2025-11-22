@@ -72,7 +72,11 @@ fun PracticeSessionEntity.toDomain(): PracticeSession = PracticeSession(
     durationSec = durationSec,
     intensity = intensity,
     brightness = brightness,
-    completed = completed
+    completed = completed,
+    moodBefore = moodBefore,
+    moodAfter = moodAfter,
+    feedbackNote = feedbackNote,
+    source = source
 )
 
 fun PracticeCategoryEntity.toDomain(): PracticeCategory = PracticeCategory(

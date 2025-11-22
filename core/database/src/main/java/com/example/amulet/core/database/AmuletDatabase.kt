@@ -38,9 +38,17 @@ import com.example.amulet.core.database.entity.RuleEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.core.database.entity.TelemetryEventEntity
 import com.example.amulet.core.database.entity.UserEntity
+import com.example.amulet.core.database.entity.CollectionEntity
+import com.example.amulet.core.database.entity.CollectionItemEntity
 import com.example.amulet.core.database.entity.CourseEntity
 import com.example.amulet.core.database.entity.CourseItemEntity
+import com.example.amulet.core.database.entity.CourseModuleEntity
 import com.example.amulet.core.database.entity.CourseProgressEntity
+import com.example.amulet.core.database.entity.PlanEntity
+import com.example.amulet.core.database.entity.PracticeTagCrossRef
+import com.example.amulet.core.database.entity.PracticeTagEntity
+import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 
 @Database(
     entities = [
@@ -59,8 +67,16 @@ import com.example.amulet.core.database.entity.CourseProgressEntity
         PracticeFavoriteEntity::class,
         PracticeScheduleEntity::class,
         UserPreferencesEntity::class,
+        PlanEntity::class,
+        UserPracticeStatsEntity::class,
+        UserBadgeEntity::class,
+        PracticeTagEntity::class,
+        PracticeTagCrossRef::class,
+        CollectionEntity::class,
+        CollectionItemEntity::class,
         CourseEntity::class,
         CourseItemEntity::class,
+        CourseModuleEntity::class,
         CourseProgressEntity::class,
         RuleEntity::class,
         TelemetryEventEntity::class,

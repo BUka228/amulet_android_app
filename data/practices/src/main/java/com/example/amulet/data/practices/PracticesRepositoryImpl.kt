@@ -3,6 +3,7 @@ package com.example.amulet.data.practices
 import com.example.amulet.data.practices.datasource.LocalPracticesDataSource
 import com.example.amulet.data.practices.datasource.RemotePracticesDataSource
 import com.example.amulet.data.practices.mapper.toDomain
+import com.example.amulet.data.practices.mapper.toDomain as toExtrasDomain
 import com.example.amulet.data.practices.seed.PracticeSeedData
 import com.example.amulet.data.practices.seed.toSeed
 import com.example.amulet.shared.core.AppError
@@ -12,14 +13,22 @@ import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.model.Practice
+import com.example.amulet.shared.domain.practices.model.PracticeBadge
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
+import com.example.amulet.shared.domain.practices.model.PracticeCollection
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeId
+import com.example.amulet.shared.domain.practices.model.PracticePlan
+import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
-import com.example.amulet.shared.domain.practices.model.PracticeSchedule
+import com.example.amulet.shared.domain.practices.model.PracticeStatistics
+import com.example.amulet.shared.domain.practices.model.PracticeTag
+import com.example.amulet.shared.domain.practices.model.ScheduledSession
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
+import com.example.amulet.shared.domain.practices.model.toStorageString
 import com.example.amulet.shared.domain.practices.model.UserPreferences
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -184,7 +193,11 @@ class PracticesRepositoryImpl @Inject constructor(
             durationSec = null,
             completed = false,
             intensity = intensity,
-            brightness = brightness
+            brightness = brightness,
+            moodBefore = null,
+            moodAfter = null,
+            feedbackNote = null,
+            source = null
         )
         local.upsertSession(session)
         return Ok(session.toDomain())
@@ -217,6 +230,31 @@ class PracticesRepositoryImpl @Inject constructor(
         return Ok(updated.toDomain())
     }
 
+    override suspend fun skipScheduledSession(
+        session: ScheduledSession
+    ): AppResult<Unit> {
+        val source = PracticeSessionSource.ScheduleSkip(session.id).toStorageString()
+        val entity = com.example.amulet.core.database.entity.PracticeSessionEntity(
+            id = java.util.UUID.randomUUID().toString(),
+            userId = currentUserId,
+            practiceId = session.practiceId,
+            deviceId = null,
+            status = PracticeSessionStatus.CANCELLED.name,
+            startedAt = session.scheduledTime,
+            completedAt = session.scheduledTime,
+            durationSec = 0,
+            completed = false,
+            intensity = null,
+            brightness = null,
+            moodBefore = null,
+            moodAfter = null,
+            feedbackNote = null,
+            source = source
+        )
+        local.upsertSession(entity)
+        return Ok(Unit)
+    }
+
     override fun getUserPreferencesStream(): Flow<UserPreferences> =
         local.observePreferences(currentUserId).map { e ->
             val goals = e?.goalsJson?.let { json.parseToJsonElement(it).jsonArray.map { it.jsonPrimitive.content } } ?: emptyList()
@@ -244,7 +282,9 @@ class PracticesRepositoryImpl @Inject constructor(
                     daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
                     timeOfDay = e.timeOfDay,
                     reminderEnabled = e.reminderEnabled,
-                    createdAt = e.createdAt
+                    createdAt = e.createdAt,
+                    planId = e.planId,
+                    updatedAt = e.updatedAt
                 )
             }
         }
@@ -260,7 +300,9 @@ class PracticesRepositoryImpl @Inject constructor(
                     daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
                     timeOfDay = e.timeOfDay,
                     reminderEnabled = e.reminderEnabled,
-                    createdAt = e.createdAt
+                    createdAt = e.createdAt,
+                    planId = e.planId,
+                    updatedAt = e.updatedAt
                 )
             }
         }
@@ -273,11 +315,12 @@ class PracticesRepositoryImpl @Inject constructor(
             userId = currentUserId,
             practiceId = schedule.practiceId,
             courseId = schedule.courseId,
+            planId = schedule.planId,
             daysOfWeekJson = json.encodeToString(json.encodeToJsonElement(schedule.daysOfWeek)),
             timeOfDay = schedule.timeOfDay,
             reminderEnabled = schedule.reminderEnabled,
             createdAt = schedule.createdAt,
-            updatedAt = System.currentTimeMillis()
+            updatedAt = schedule.updatedAt ?: System.currentTimeMillis()
         )
         local.upsertSchedule(entity)
         return Ok(Unit)
@@ -306,4 +349,86 @@ class PracticesRepositoryImpl @Inject constructor(
         )
         return Ok(Unit)
     }
+
+    // region Plans
+
+    override fun getPlansStream(): Flow<List<PracticePlan>> =
+        local.observePlans(currentUserId).map { list -> list.map { it.toExtrasDomain() as PracticePlan } }
+
+    override fun getPlanById(id: String): Flow<PracticePlan?> =
+        local.observePlanById(id).map { it?.toExtrasDomain() as PracticePlan }
+
+    override fun getSchedulesByPlanStream(planId: String): Flow<List<PracticeSchedule>> =
+        local.observeSchedulesByPlan(planId).map { list ->
+            list.map { e ->
+                PracticeSchedule(
+                    id = e.id,
+                    userId = e.userId,
+                    practiceId = e.practiceId,
+                    courseId = e.courseId,
+                    daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
+                    timeOfDay = e.timeOfDay,
+                    reminderEnabled = e.reminderEnabled,
+                    createdAt = e.createdAt,
+                    planId = e.planId,
+                    updatedAt = e.updatedAt
+                )
+            }
+        }
+
+    override suspend fun upsertPlan(plan: PracticePlan): AppResult<Unit> {
+        val entity = com.example.amulet.core.database.entity.PlanEntity(
+            id = plan.id,
+            userId = currentUserId,
+            title = plan.title,
+            description = plan.description,
+            status = plan.status,
+            type = plan.type,
+            createdAt = plan.createdAt,
+            updatedAt = plan.updatedAt
+        )
+        local.upsertPlan(entity)
+        return Ok(Unit)
+    }
+
+    override suspend fun deletePlan(planId: String): AppResult<Unit> {
+        local.deletePlan(planId)
+        return Ok(Unit)
+    }
+
+    // endregion
+
+    // region Statistics & badges
+
+    override fun getStatisticsStream(): Flow<PracticeStatistics?> =
+        local.observeUserPracticeStats(currentUserId).map { it?.toExtrasDomain() as PracticeStatistics }
+
+    override fun getBadgesStream(): Flow<List<PracticeBadge>> =
+        local.observeBadges(currentUserId).map { list -> list.map { it.toExtrasDomain() as PracticeBadge } }
+
+    // endregion
+
+    // region Tags & collections
+
+    override fun getPracticeTagsStream(): Flow<List<PracticeTag>> =
+        local.observePracticeTags().map { list -> list.map { it.toExtrasDomain() as PracticeTag } }
+
+    override fun getCollectionsStream(): Flow<List<PracticeCollection>> =
+        local.observeCollections().map { collections ->
+            // Для простоты сейчас не подтягиваем items по коллекции пачками;
+            // предполагается, что вызов будет делать отдельные запросы при необходимости.
+            // Здесь возвращаем коллекции без items.
+            collections.map { c ->
+                PracticeCollection(
+                    id = c.id,
+                    code = c.code,
+                    title = c.title,
+                    description = c.description,
+                    order = c.order,
+                    items = emptyList()
+                )
+            }
+        }
+
+    // endregion
 }

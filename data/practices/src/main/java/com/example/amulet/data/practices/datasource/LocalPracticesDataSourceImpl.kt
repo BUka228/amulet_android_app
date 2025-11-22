@@ -3,12 +3,18 @@ package com.example.amulet.data.practices.datasource
 import com.example.amulet.core.database.TransactionRunner
 import com.example.amulet.core.database.dao.PracticeDao
 import com.example.amulet.core.database.dao.PracticeExtrasDao
+import com.example.amulet.core.database.entity.CollectionEntity
+import com.example.amulet.core.database.entity.CollectionItemEntity
+import com.example.amulet.core.database.entity.PlanEntity
 import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeFavoriteEntity
-import com.example.amulet.core.database.entity.PracticeSessionEntity
-import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.core.database.entity.PracticeScheduleEntity
+import com.example.amulet.core.database.entity.PracticeSessionEntity
+import com.example.amulet.core.database.entity.PracticeTagEntity
+import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserPracticeStatsEntity
+import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.data.practices.mapper.toEntity
 import com.example.amulet.data.practices.seed.PracticeSeed
 import com.example.amulet.shared.core.logging.Logger
@@ -109,4 +115,52 @@ class LocalPracticesDataSourceImpl @Inject constructor(
             practiceDao.upsertPractices(practiceEntities)
         }
     }
+
+    override fun observeSchedulesByPlan(planId: String): Flow<List<PracticeScheduleEntity>> =
+        extrasDao.observeSchedulesByPlan(planId)
+
+    override fun observePlans(userId: String): Flow<List<PlanEntity>> =
+        extrasDao.observePlans(userId)
+
+    override fun observePlanById(planId: String): Flow<PlanEntity?> =
+        extrasDao.observePlanById(planId)
+
+    override suspend fun upsertPlan(entity: PlanEntity) {
+        extrasDao.upsertPlan(entity)
+    }
+
+    override suspend fun upsertPlans(entities: List<PlanEntity>) {
+        extrasDao.upsertPlans(entities)
+    }
+
+    override suspend fun deletePlan(planId: String) {
+        extrasDao.deletePlan(planId)
+    }
+
+    override fun observeUserPracticeStats(userId: String): Flow<UserPracticeStatsEntity?> =
+        extrasDao.observeUserPracticeStats(userId)
+
+    override suspend fun upsertUserPracticeStats(entity: UserPracticeStatsEntity) {
+        extrasDao.upsertUserPracticeStats(entity)
+    }
+
+    override fun observeBadges(userId: String): Flow<List<UserBadgeEntity>> =
+        extrasDao.observeBadges(userId)
+
+    override suspend fun upsertBadges(entities: List<UserBadgeEntity>) {
+        extrasDao.upsertBadges(entities)
+    }
+
+    override suspend fun deleteBadge(badgeId: String) {
+        extrasDao.deleteBadge(badgeId)
+    }
+
+    override fun observePracticeTags(): Flow<List<PracticeTagEntity>> =
+        extrasDao.observePracticeTags()
+
+    override fun observeCollections(): Flow<List<CollectionEntity>> =
+        extrasDao.observeCollections()
+
+    override fun observeCollectionItems(collectionId: String): Flow<List<CollectionItemEntity>> =
+        extrasDao.observeCollectionItems(collectionId)
 }

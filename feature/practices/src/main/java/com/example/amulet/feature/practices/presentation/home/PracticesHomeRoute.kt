@@ -634,7 +634,7 @@ private fun QuickRitualsSection(state: PracticesHomeState, onIntent: (PracticesH
 @Composable
 fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> Unit) {
     if (state.recentSessions.isEmpty()) return
-    AmuletCard {
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
