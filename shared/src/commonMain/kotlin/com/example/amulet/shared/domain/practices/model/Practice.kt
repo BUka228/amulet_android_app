@@ -17,5 +17,7 @@ data class Practice(
     val isFavorite: Boolean = false,
     val usageCount: Int = 0,
     val createdAt: Long?,
-    val updatedAt: Long?
+    val updatedAt: Long?,
+    val steps: List<String> = emptyList(),
+    val safetyNotes: List<String> = emptyList()
 )

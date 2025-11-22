@@ -38,4 +38,11 @@ interface CourseDao {
 
     @Query("DELETE FROM course_progress WHERE userId = :userId AND courseId = :courseId")
     suspend fun resetProgress(userId: String, courseId: String)
+
+    @Query(
+        "SELECT DISTINCT c.* FROM courses c " +
+            "INNER JOIN course_items ci ON c.id = ci.courseId " +
+            "WHERE ci.practiceId = :practiceId ORDER BY c.title ASC"
+    )
+    fun observeCoursesByPracticeId(practiceId: String): Flow<List<CourseEntity>>
 }

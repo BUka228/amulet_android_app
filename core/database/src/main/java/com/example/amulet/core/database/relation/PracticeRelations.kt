@@ -4,6 +4,7 @@ import androidx.room.Embedded
 import androidx.room.Relation
 import com.example.amulet.core.database.entity.DeviceEntity
 import com.example.amulet.core.database.entity.PracticeEntity
+import com.example.amulet.core.database.entity.PracticeFavoriteEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserEntity
 
@@ -24,4 +25,13 @@ data class PracticeSessionWithDetails(
         entityColumn = "id"
     )
     val device: DeviceEntity?
+)
+
+data class PracticeWithFavorites(
+    @Embedded val practice: PracticeEntity,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "practiceId"
+    )
+    val favorites: List<PracticeFavoriteEntity>
 )

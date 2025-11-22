@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +74,7 @@ private fun PracticeScheduleScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { onIntent(PracticeScheduleIntent.NavigateBack) }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
             )

@@ -6,6 +6,7 @@ import com.example.amulet.shared.domain.courses.model.CourseId
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemId
 import com.example.amulet.shared.domain.courses.model.CourseProgress
+import com.example.amulet.shared.domain.practices.model.PracticeId
 import kotlinx.coroutines.flow.Flow
 
 interface CoursesRepository {
@@ -18,6 +19,8 @@ interface CoursesRepository {
     fun getCourseProgressStream(courseId: CourseId): Flow<CourseProgress?>
 
     fun getAllCoursesProgressStream(): Flow<List<CourseProgress>>
+
+    fun getCoursesByPracticeId(practiceId: PracticeId): Flow<List<Course>>
 
     suspend fun refreshCatalog(): AppResult<Unit>
 

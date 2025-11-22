@@ -26,7 +26,9 @@ fun PracticeSeed.toEntity(): PracticeEntity = PracticeEntity(
     usageCount = usageCount,
     localesJson = "[]", // Пустой JSON массив для локалей
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    stepsJson = if (steps.isEmpty()) null else steps.toJsonArrayString(),
+    safetyNotesJson = if (safetyNotes.isEmpty()) null else safetyNotes.toJsonArrayString()
 )
 
 fun PracticeSeed.toCategoryEntity(): PracticeCategoryEntity = PracticeCategoryEntity(

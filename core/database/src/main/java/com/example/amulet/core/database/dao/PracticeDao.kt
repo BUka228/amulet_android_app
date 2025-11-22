@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.relation.PracticeSessionWithDetails
+import com.example.amulet.core.database.relation.PracticeWithFavorites
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -25,6 +26,10 @@ interface PracticeDao {
 
     @Query("SELECT * FROM practices WHERE id = :id")
     fun observePracticeById(id: String): Flow<PracticeEntity?>
+
+    @Transaction
+    @Query("SELECT * FROM practices WHERE id = :practiceId")
+    fun observePracticeWithFavorites(practiceId: String): Flow<PracticeWithFavorites?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSession(session: PracticeSessionEntity)

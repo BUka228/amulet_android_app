@@ -24,7 +24,9 @@ data class PracticeSeed(
     val category: String? = null,
     val usageCount: Int = 0,
     val createdAt: Long? = System.currentTimeMillis(),
-    val updatedAt: Long? = System.currentTimeMillis()
+    val updatedAt: Long? = System.currentTimeMillis(),
+    val steps: List<String> = emptyList(),
+    val safetyNotes: List<String> = emptyList()
 )
 
 /**
@@ -44,5 +46,7 @@ fun Practice.toSeed(): PracticeSeed = PracticeSeed(
     audioUrl = audioUrl,
     usageCount = usageCount,
     createdAt = createdAt,
-    updatedAt = updatedAt
+    updatedAt = updatedAt,
+    steps = steps,
+    safetyNotes = safetyNotes
 )

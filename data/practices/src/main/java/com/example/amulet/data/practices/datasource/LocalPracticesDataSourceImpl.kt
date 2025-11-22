@@ -28,6 +28,9 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override fun observePracticeById(id: String): Flow<PracticeEntity?> = practiceDao.observePracticeById(id)
 
+    override fun observePracticeByIdWithFavorites(id: String) =
+        practiceDao.observePracticeWithFavorites(id)
+
     override fun observeCategories(): Flow<List<PracticeCategoryEntity>> = extrasDao.observeCategories()
 
     override fun observeFavoriteIds(userId: String): Flow<List<String>> = extrasDao.observeFavoriteIds(userId)

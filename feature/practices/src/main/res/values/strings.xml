@@ -74,4 +74,20 @@
     <string name="practice_details_add_to_plan">Add to plan</string>
     <string name="practice_details_start">Start practice</string>
     <string name="practice_details_open_pattern">Open pattern</string>
+    <string name="practice_details_amulet_connected">Amulet connected</string>
+    <string name="practice_details_amulet_connecting">Connecting to amulet…</string>
+    <string name="practice_details_amulet_disconnected">Amulet not connected</string>
+    <string name="practice_details_connect_amulet">Connect amulet</string>
+    <string name="practice_details_how_it_goes">How it goes</string>
+    <string name="practice_details_courses_title">Courses with this practice</string>
+    <string name="practice_details_course_items_count">%1$d sessions</string>
+    <string name="practice_details_audio_warning">This practice contains audio guidance</string>
+    <string name="practices_error_server">Server error</string>
+    <string name="practices_error_network">Network error</string>
+    <string name="practices_error_timeout">Request timed out</string>
+    <string name="practices_error_unauthorized">Not authorized</string>
+    <string name="practices_error_forbidden">Access denied</string>
+    <string name="practices_error_not_found">Not found</string>
+    <string name="practices_error_validation">Validation error</string>
+    <string name="practices_error_generic">Something went wrong</string>
 </resources>

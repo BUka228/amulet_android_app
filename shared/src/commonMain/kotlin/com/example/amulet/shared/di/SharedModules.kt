@@ -107,6 +107,7 @@ private val sharedModule = module {
     factory { GetCourseItemsStreamUseCase(get()) }
     factory { GetCourseProgressStreamUseCase(get()) }
     factory { GetAllCoursesProgressStreamUseCase(get()) }
+    factory { GetCoursesByPracticeIdUseCase(get()) }
     factory { RefreshCoursesUseCase(get()) }
     factory { RefreshCoursesCatalogUseCase(get()) }
     factory { StartCourseUseCase(get()) }

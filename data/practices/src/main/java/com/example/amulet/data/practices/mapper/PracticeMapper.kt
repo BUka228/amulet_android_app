@@ -28,6 +28,18 @@ fun PracticeEntity.toDomain(): Practice {
         else kotlinx.serialization.json.Json.decodeFromString<List<String>>(contraindicationsJson)
     } catch (e: Exception) { emptyList() }
     
+    val stepsJsonLocal = stepsJson
+    val steps = try {
+        if (stepsJsonLocal.isNullOrBlank() || stepsJsonLocal == "[]") emptyList()
+        else kotlinx.serialization.json.Json.decodeFromString<List<String>>(stepsJsonLocal)
+    } catch (e: Exception) { emptyList() }
+
+    val safetyNotesJsonLocal = safetyNotesJson
+    val safetyNotes = try {
+        if (safetyNotesJsonLocal.isNullOrBlank() || safetyNotesJsonLocal == "[]") emptyList()
+        else kotlinx.serialization.json.Json.decodeFromString<List<String>>(safetyNotesJsonLocal)
+    } catch (e: Exception) { emptyList() }
+    
     return Practice(
         id = id,
         type = PracticeType.valueOf(type),
@@ -43,7 +55,9 @@ fun PracticeEntity.toDomain(): Practice {
         isFavorite = false, // Set separately via favorites table
         usageCount = usageCount,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        steps = steps,
+        safetyNotes = safetyNotes
     )
 }
 

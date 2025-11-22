@@ -17,6 +17,7 @@ import com.example.amulet.shared.domain.courses.model.CourseId
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemId
 import com.example.amulet.shared.domain.courses.model.CourseProgress
+import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.onFailure
@@ -57,7 +58,11 @@ class CoursesRepositoryImpl @Inject constructor(
         // Эта реализация предполагает, что `local` может предоставить весь прогресс для пользователя.
         // Мы используем observeAllProgress для получения списка всех прогрессов.
         local.observeAllProgress(currentUserId).map { list -> list.map { it.toDomain(json) } }
-    
+
+    override fun getCoursesByPracticeId(practiceId: PracticeId): Flow<List<Course>> =
+        local.observeCoursesByPracticeId(practiceId).map { entities ->
+            entities.map { it.toDomain(json) }
+        }
 
     override suspend fun refreshCatalog(): AppResult<Unit> {
         Logger.d("Начало обновления каталога курсов", "CoursesRepositoryImpl")

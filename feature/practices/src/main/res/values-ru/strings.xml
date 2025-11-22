@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="practices_home_mood_title">Как вы сейчас?</string>
+    <string name="practices_home_mood_nervous_description">Чувствую тревогу или напряжение</string>
+    <string name="practices_home_mood_sleep_description">Хочу расслабиться и легко уснуть</string>
+    <string name="practices_home_mood_focus_description">Нужна концентрация и ясность</string>
+    <string name="practices_home_mood_relax_description">Хочу просто расслабиться и выдохнуть</string>
+    <string name="practices_home_mood_neutral_description">Выберите, как вы чувствуете себя сейчас</string>
     <string name="practices_home_recommended_title">Рекомендовано сейчас</string>
     <string name="practices_home_my_courses_title">Ваши курсы</string>
     <string name="practices_home_today_plan_heading">Сегодня по плану</string>
     <string name="practices_home_today_plan_empty">Пока нет запланированных практик.</string>
     <string name="practices_home_today_plan_cta">Создать свой ритуал дня</string>
     <string name="practices_home_today_plan_exists">У вас уже есть план на сегодня.</string>
+    <string name="practices_home_today_plan_count_format">Сегодня запланировано %d сессии</string>
     <string name="practices_home_quick_rituals_title">Быстрые ритуалы</string>
     <string name="practices_home_recent_title">Недавно использовали</string>
     <string name="practices_home_action_start">Начать</string>
@@ -24,6 +30,11 @@
     <string name="practice_goal_relaxation">Расслабление</string>
     <string name="practice_goal_anxiety">Снижение тревоги</string>
     <string name="practice_goal_mood">Поддержка настроения</string>
+    <string name="practice_badge_popular">Популярная</string>
+    <string name="course_progress_format" formatted="false">%d из %d занятий</string>
+    <string name="practices_home_menu_reschedule">Перенести</string>
+    <string name="practices_home_menu_cancel_reminder">Отменить напоминание</string>
+    <string name="practices_home_menu_details">Подробнее о практике</string>
     
     <!-- Search screen -->
     <string name="practices_search_title">Поиск</string>
@@ -63,4 +74,20 @@
     <string name="practice_details_add_to_plan">В план</string>
     <string name="practice_details_start">Начать практику</string>
     <string name="practice_details_open_pattern">Открыть паттерн</string>
+    <string name="practice_details_amulet_connected">Амулет подключён</string>
+    <string name="practice_details_amulet_connecting">Подключаем амулет…</string>
+    <string name="practice_details_amulet_disconnected">Амулет не подключён</string>
+    <string name="practice_details_connect_amulet">Подключить амулет</string>
+    <string name="practice_details_how_it_goes">Как проходит практика</string>
+    <string name="practice_details_courses_title">Курсы с этой практикой</string>
+    <string name="practice_details_course_items_count">%1$d сессий</string>
+    <string name="practice_details_audio_warning">Практика содержит аудио‑сопровождение</string>
+    <string name="practices_error_server">Ошибка сервера</string>
+    <string name="practices_error_network">Ошибка сети</string>
+    <string name="practices_error_timeout">Время ожидания истекло</string>
+    <string name="practices_error_unauthorized">Не авторизован</string>
+    <string name="practices_error_forbidden">Доступ запрещён</string>
+    <string name="practices_error_not_found">Не найдено</string>
+    <string name="practices_error_validation">Ошибка валидации</string>
+    <string name="practices_error_generic">Произошла ошибка</string>
 </resources>

@@ -48,7 +48,8 @@ fun AppNavHost(
 
         // Practices Graph - управление практиками
         practicesGraph(
-            navController = navController
+            navController = navController,
+            onNavigateToPairing = navController::navigateToPairing
         )
 
         // Placeholder destinations для bottom navigation

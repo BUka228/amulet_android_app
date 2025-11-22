@@ -1,22 +1,33 @@
 package com.example.amulet.feature.practices.presentation.details
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,14 +37,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.feature.practices.R
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
+import com.example.amulet.shared.domain.practices.model.Practice
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
+import com.example.amulet.shared.domain.practices.model.PracticeLevel
+import com.example.amulet.shared.domain.practices.model.PracticeType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +60,8 @@ fun PracticeDetailsRoute(
     onNavigateBack: () -> Unit,
     onNavigateToPattern: (String) -> Unit,
     onNavigateToPlan: (String) -> Unit,
+    onNavigateToCourse: (String) -> Unit,
+    onNavigateToPairing: () -> Unit,
     viewModel: PracticeDetailsViewModel = hiltViewModel()
 ) {
     viewModel.setIdIfEmpty(practiceId)
@@ -53,6 +73,8 @@ fun PracticeDetailsRoute(
                 is PracticeDetailsEffect.NavigateToPattern -> onNavigateToPattern(effect.patternId)
                 is PracticeDetailsEffect.NavigateBack -> onNavigateBack()
                 is PracticeDetailsEffect.NavigateToPlan -> onNavigateToPlan(effect.practiceId)
+                is PracticeDetailsEffect.NavigateToCourse -> onNavigateToCourse(effect.courseId)
+                is PracticeDetailsEffect.NavigateToPairing -> onNavigateToPairing()
             }
         }
     }
@@ -67,7 +89,7 @@ fun PracticeDetailsRoute(
                         navigationIcon = {
                             IconButton(onClick = { viewModel.handleIntent(PracticeDetailsIntent.NavigateBack) }) {
                                 Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = null
                                 )
                             }
@@ -115,8 +137,8 @@ private fun PracticeDetailsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (practice != null) {
             HeroSection(practice = practice)
@@ -125,17 +147,33 @@ private fun PracticeDetailsScreen(
                 AboutSection(description = it)
             }
 
+            if (practice.steps.isNotEmpty()) {
+                HowItGoesSection(steps = practice.steps)
+            }
+
             if (practice.audioUrl != null) {
                 AudioInfoSection()
             }
 
             AmuletSection(
                 pattern = state.pattern,
-                onOpenPattern = { onIntent(PracticeDetailsIntent.OpenPattern) }
+                connectionStatus = state.connectionStatus,
+                onOpenPattern = { onIntent(PracticeDetailsIntent.OpenPattern) },
+                onConnectAmulet = { onIntent(PracticeDetailsIntent.OpenPairing) }
             )
 
-            if (practice.contraindications.isNotEmpty()) {
-                SafetySection(contraindications = practice.contraindications)
+            if (state.courses.isNotEmpty()) {
+                CoursesEmbeddingSection(
+                    courses = state.courses,
+                    onOpenCourse = { courseId: String -> onIntent(PracticeDetailsIntent.OpenCourse(courseId)) }
+                )
+            }
+
+            if (practice.contraindications.isNotEmpty() || practice.safetyNotes.isNotEmpty()) {
+                SafetySection(
+                    contraindications = practice.contraindications,
+                    safetyNotes = practice.safetyNotes
+                )
             }
         }
 
@@ -144,85 +182,210 @@ private fun PracticeDetailsScreen(
 
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HeroSection(practice: com.example.amulet.shared.domain.practices.model.Practice) {
-    Column(
+private fun HeroSection(practice: Practice) {
+    val (containerColor, onContainerColor) = when (practice.goal) {
+        PracticeGoal.SLEEP -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimary
+        PracticeGoal.STRESS -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiary
+        PracticeGoal.ENERGY -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondary
+        PracticeGoal.FOCUS -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        PracticeGoal.RELAXATION -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondary
+        PracticeGoal.ANXIETY -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onError
+        PracticeGoal.MOOD -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondary
+        null -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    AmuletCard(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        backgroundColor = containerColor,
+        contentColor = onContainerColor
     ) {
-        val coverColor = when (practice.goal) {
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.SLEEP -> MaterialTheme.colorScheme.primaryContainer
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.STRESS -> MaterialTheme.colorScheme.tertiaryContainer
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.ENERGY -> MaterialTheme.colorScheme.secondaryContainer
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.FOCUS -> MaterialTheme.colorScheme.primary
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.RELAXATION -> MaterialTheme.colorScheme.secondary
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.ANXIETY -> MaterialTheme.colorScheme.errorContainer
-            com.example.amulet.shared.domain.practices.model.PracticeGoal.MOOD -> MaterialTheme.colorScheme.secondaryContainer
-            null -> MaterialTheme.colorScheme.surfaceVariant
-        }
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(MaterialTheme.shapes.large)
-                .background(coverColor)
-        )
-
-        Text(
-            text = practice.title,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            practice.goal?.let { goal ->
-                val resId = goalTitleRes(goal)
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = stringResource(id = resId)) }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SelfImprovement,
+                    contentDescription = null
+                )
+                Text(
+                    text = practice.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            val typeText = when (practice.type) {
-                com.example.amulet.shared.domain.practices.model.PracticeType.BREATH -> stringResource(id = R.string.practice_type_breath)
-                com.example.amulet.shared.domain.practices.model.PracticeType.MEDITATION -> stringResource(id = R.string.practice_type_meditation)
-                com.example.amulet.shared.domain.practices.model.PracticeType.SOUND -> stringResource(id = R.string.practice_type_sound)
-                else -> null
-            }
-            typeText?.let {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = it) }
-                )
-            }
-
-            practice.durationSec?.let { durationSec ->
-                val minutes = durationSec / 60
-                val durationText = stringResource(id = R.string.practices_home_duration_minutes, minutes)
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = durationText) }
-                )
-            }
-
-            practice.level?.let { level ->
-                val levelText = when (level) {
-                    com.example.amulet.shared.domain.practices.model.PracticeLevel.BEGINNER -> stringResource(id = R.string.practice_level_beginner)
-                    com.example.amulet.shared.domain.practices.model.PracticeLevel.INTERMEDIATE -> stringResource(id = R.string.practice_level_intermediate)
-                    com.example.amulet.shared.domain.practices.model.PracticeLevel.ADVANCED -> stringResource(id = R.string.practice_level_advanced)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                practice.goal?.let { goal ->
+                    val resId = goalTitleRes(goal)
+                    AssistChip(
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = containerColor,
+                            labelColor = onContainerColor
+                        ),
+                        onClick = {},
+                        label = { Text(text = stringResource(id = resId)) }
+                    )
                 }
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = levelText) }
+                    AssistChip(
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = containerColor,
+                            labelColor = onContainerColor
+                        ),
+                        onClick = {},
+                        label = { Text(text =   when (practice.type) {
+                            PracticeType.BREATH -> stringResource(id = R.string.practice_type_breath)
+                            PracticeType.MEDITATION -> stringResource(id = R.string.practice_type_meditation)
+                            PracticeType.SOUND -> stringResource(id = R.string.practice_type_sound)
+                        }) })
+
+                practice.durationSec?.let { durationSec ->
+                    val minutes = durationSec / 60
+                    val durationText = stringResource(id = R.string.practices_home_duration_minutes, minutes)
+                    AssistChip(
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = containerColor,
+                            labelColor = onContainerColor
+                        ),
+                        onClick = {},
+                        label = { Text(text = durationText) }
+                    )
+                }
+
+                practice.level?.let { level ->
+                    val levelText = when (level) {
+                        PracticeLevel.BEGINNER -> stringResource(id = R.string.practice_level_beginner)
+                        PracticeLevel.INTERMEDIATE -> stringResource(id = R.string.practice_level_intermediate)
+                        PracticeLevel.ADVANCED -> stringResource(id = R.string.practice_level_advanced)
+                    }
+                    AssistChip(
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = containerColor,
+                            labelColor = onContainerColor
+                        ),
+                        onClick = {},
+                        label = { Text(text = levelText) }
+                    )
+                }
+
+                if (practice.usageCount > 100) {
+                    AssistChip(
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = containerColor,
+                            labelColor = onContainerColor
+                        ),
+                        onClick = {},
+                        label = { Text(text = stringResource(id = R.string.practice_badge_popular)) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoursesEmbeddingSection(
+    courses: List<Course>,
+    onOpenCourse: (String) -> Unit
+) {
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(id = R.string.practice_details_courses_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
-            if (practice.usageCount > 100) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(text = stringResource(id = R.string.practice_badge_popular)) }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                courses.forEach { course ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { onOpenCourse(course.id) }
+                            .padding(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = course.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        course.description?.let { desc ->
+                            Text(
+                                text = desc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HowItGoesSection(steps: List<String>) {
+    if (steps.isEmpty()) return
+
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
+                Text(
+                    text = stringResource(id = R.string.practice_details_how_it_goes),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            steps.forEachIndexed { index, step ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Text(
+                        text = "${index + 1}.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = step,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }
@@ -230,114 +393,173 @@ private fun HeroSection(practice: com.example.amulet.shared.domain.practices.mod
 
 @Composable
 private fun AboutSection(description: String) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.practice_details_about),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium
-        )
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(id = R.string.practice_details_about),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
 
 @Composable
 private fun AudioInfoSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.medium
-            )
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Warning,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Практика содержит аудио‑сопровождение",
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
-
-@Composable
-private fun AmuletSection(
-    pattern: com.example.amulet.shared.domain.patterns.model.Pattern?,
-    onOpenPattern: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(id = R.string.practice_details_amulet),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            TextButton(onClick = onOpenPattern, enabled = pattern != null) {
-                Text(text = stringResource(id = R.string.practice_details_open_pattern))
-            }
-        }
-
-        if (pattern != null) {
-            Text(
-                text = pattern.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-        } else {
-            Text(
-                text = stringResource(id = R.string.practice_details_pattern_auto),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun SafetySection(contraindications: List<String>) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Warning,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.error
+                tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = stringResource(id = R.string.practice_details_safety),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        contraindications.forEach { item ->
-            Text(
-                text = "• $item",
+                text = stringResource(id = R.string.practice_details_audio_warning),
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+    }
+}
+
+@Composable
+private fun AmuletSection(
+    pattern: com.example.amulet.shared.domain.patterns.model.Pattern?,
+    connectionStatus: BleConnectionState,
+    onOpenPattern: () -> Unit,
+    onConnectAmulet: () -> Unit
+) {
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Bluetooth,
+                        contentDescription = null,
+                        tint = when (connectionStatus) {
+                            BleConnectionState.Connected -> MaterialTheme.colorScheme.primary
+                            BleConnectionState.Connecting,
+                            is BleConnectionState.Reconnecting -> MaterialTheme.colorScheme.tertiary
+                            is BleConnectionState.Failed,
+                            BleConnectionState.Disconnected -> MaterialTheme.colorScheme.error
+                        }
+                    )
+                    Text(
+                        text = stringResource(id = R.string.practice_details_amulet),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                TextButton(onClick = onOpenPattern, enabled = pattern != null) {
+                    Text(text = stringResource(id = R.string.practice_details_open_pattern))
+                }
+            }
+
+            if (pattern != null) {
+                Text(
+                    text = pattern.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                pattern.description?.let { description ->
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Text(
+                    text = stringResource(id = R.string.practice_details_pattern_auto),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (connectionStatus !is BleConnectionState.Connected) {
+                Button(onClick = onConnectAmulet, modifier = Modifier.fillMaxWidth()) {
+                    Icon(imageVector = Icons.Filled.Bluetooth, contentDescription = null)
+                    Text(text = stringResource(id = R.string.practice_details_connect_amulet))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SafetySection(
+    contraindications: List<String>,
+    safetyNotes: List<String>
+) {
+    AmuletCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = stringResource(id = R.string.practice_details_safety),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            contraindications.forEach { item ->
+                Text(
+                    text = "• $item",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            if (safetyNotes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                safetyNotes.forEach { note ->
+                    Text(
+                        text = "• $note",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -361,7 +583,7 @@ private fun PracticeDetailsBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -393,13 +615,13 @@ private fun PracticeDetailsBottomBar(
 }
 
 @Composable
-private fun goalTitleRes(goal: com.example.amulet.shared.domain.practices.model.PracticeGoal): Int = when (goal) {
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.SLEEP -> R.string.practice_goal_sleep
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.STRESS -> R.string.practice_goal_stress
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.ENERGY -> R.string.practice_goal_energy
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.FOCUS -> R.string.practice_goal_focus
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.RELAXATION -> R.string.practice_goal_relaxation
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.ANXIETY -> R.string.practice_goal_anxiety
-    com.example.amulet.shared.domain.practices.model.PracticeGoal.MOOD -> R.string.practice_goal_mood
+private fun goalTitleRes(goal: PracticeGoal): Int = when (goal) {
+    PracticeGoal.SLEEP -> R.string.practice_goal_sleep
+    PracticeGoal.STRESS -> R.string.practice_goal_stress
+    PracticeGoal.ENERGY -> R.string.practice_goal_energy
+    PracticeGoal.FOCUS -> R.string.practice_goal_focus
+    PracticeGoal.RELAXATION -> R.string.practice_goal_relaxation
+    PracticeGoal.ANXIETY -> R.string.practice_goal_anxiety
+    PracticeGoal.MOOD -> R.string.practice_goal_mood
 }
 

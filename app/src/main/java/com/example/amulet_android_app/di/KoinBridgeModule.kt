@@ -37,6 +37,7 @@ import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUse
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeScheduleUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
@@ -49,6 +50,7 @@ import com.example.amulet.shared.domain.courses.usecase.GetCourseItemsStreamUseC
 import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetAllCoursesProgressStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCoursesByPracticeIdUseCase
 import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesUseCase
 import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesCatalogUseCase
 import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
@@ -262,6 +264,7 @@ object KoinBridgeModule {
     @Provides fun provideUpdateUserPreferencesUseCase(koin: Koin): UpdateUserPreferencesUseCase = koin.get()
     @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()
     @Provides fun provideRefreshPracticesCatalogUseCase(koin: Koin): RefreshPracticesCatalogUseCase = koin.get()
+    @Provides fun provideUpsertPracticeScheduleUseCase(koin: Koin): UpsertPracticeScheduleUseCase = koin.get()
 
     // Courses UseCases
     @Provides fun provideGetCoursesStreamUseCase(koin: Koin): GetCoursesStreamUseCase = koin.get()
@@ -269,6 +272,7 @@ object KoinBridgeModule {
     @Provides fun provideGetCourseItemsStreamUseCase(koin: Koin): GetCourseItemsStreamUseCase = koin.get()
     @Provides fun provideGetCourseProgressStreamUseCase(koin: Koin): GetCourseProgressStreamUseCase = koin.get()
     @Provides fun provideGetAllCoursesProgressStreamUseCase(koin: Koin): GetAllCoursesProgressStreamUseCase = koin.get()
+    @Provides fun provideGetCoursesByPracticeIdUseCase(koin: Koin): GetCoursesByPracticeIdUseCase = koin.get()
     @Provides fun provideRefreshCoursesUseCase(koin: Koin): RefreshCoursesUseCase = koin.get()
     @Provides fun provideRefreshCoursesCatalogUseCase(koin: Koin): RefreshCoursesCatalogUseCase = koin.get()
     @Provides fun provideStartCourseUseCase(koin: Koin): StartCourseUseCase = koin.get()

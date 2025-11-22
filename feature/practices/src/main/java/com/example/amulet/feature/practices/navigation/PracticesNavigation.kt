@@ -49,6 +49,7 @@ fun NavController.navigateToPracticesSearch() {
 
 fun NavGraphBuilder.practicesGraph(
     navController: NavController,
+    onNavigateToPairing: () -> Unit,
 ) {
     navigation(startDestination = PracticesDestination.home, route = PracticesGraph.route) {
         composable(route = PracticesDestination.home) {
@@ -64,7 +65,9 @@ fun NavGraphBuilder.practicesGraph(
                 practiceId = id,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPattern = { patternId -> navController.navigate("patterns/preview/$patternId") },
-                onNavigateToPlan = { practiceIdForPlan -> navController.navigateToPracticeSchedule(practiceIdForPlan) }
+                onNavigateToPlan = { practiceIdForPlan -> navController.navigateToPracticeSchedule(practiceIdForPlan) },
+                onNavigateToCourse = { courseId -> navController.navigateToCourseDetails(courseId) },
+                onNavigateToPairing = onNavigateToPairing
             )
         }
         composable(route = PracticesDestination.courseDetails) { backStackEntry ->

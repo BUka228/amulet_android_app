@@ -39,7 +39,9 @@ data class PracticeEntity(
     val usageCount: Int,
     val localesJson: String,
     val createdAt: Long?,
-    val updatedAt: Long?
+    val updatedAt: Long?,
+    val stepsJson: String?,
+    val safetyNotesJson: String?
 )
 
 @Entity(

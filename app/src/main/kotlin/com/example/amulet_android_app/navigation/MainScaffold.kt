@@ -128,22 +128,22 @@ private fun shouldShowBottomBar(route: String): Boolean {
 private fun getBottomNavItems() = listOf(
     BottomNavItem(
         route = "dashboard/main",
-        icon = Icons.Default.Home,
+        icon = Icons.Default.Dashboard,
         label = stringResource(R.string.bottom_nav_home)
     ),
     BottomNavItem(
         route = "practices/home",
-        icon = Icons.AutoMirrored.Filled.List,
+        icon = Icons.Default.MenuBook,
         label = stringResource(R.string.bottom_nav_library)
     ),
     BottomNavItem(
         route = "hugs/main",
-        icon = Icons.Default.Favorite,
+        icon = Icons.Default.EmojiPeople,
         label = stringResource(R.string.bottom_nav_hugs)
     ),
     BottomNavItem(
         route = "patterns/list",
-        icon = Icons.Default.Notifications,
+        icon = Icons.Default.AutoGraph,
         label = stringResource(R.string.bottom_nav_patterns)
     ),
     BottomNavItem(

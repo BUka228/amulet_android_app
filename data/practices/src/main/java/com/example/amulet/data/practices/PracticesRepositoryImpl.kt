@@ -69,7 +69,11 @@ class PracticesRepositoryImpl @Inject constructor(
     }
 
     override fun getPracticeById(id: PracticeId): Flow<Practice?> =
-        local.observePracticeById(id).map { it?.toDomain() }
+        local.observePracticeByIdWithFavorites(id).map { relation ->
+            relation?.practice?.toDomain()?.copy(
+                isFavorite = relation.favorites.any { it.userId == currentUserId }
+            )
+        }
 
     override fun getCategoriesStream(): Flow<List<PracticeCategory>> =
         local.observeCategories().map { it.map { c -> PracticeCategory(c.id, c.title, c.order) } }

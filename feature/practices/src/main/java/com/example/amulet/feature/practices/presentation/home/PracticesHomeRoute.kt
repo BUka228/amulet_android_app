@@ -209,7 +209,7 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 IconButton(
@@ -649,7 +649,7 @@ private fun QuickRitualsSection(state: PracticesHomeState, onIntent: (PracticesH
 }
 
 @Composable
-private fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> Unit) {
+fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> Unit) {
     if (state.recentSessions.isEmpty()) return
         AmuletCard {
             Column(
@@ -788,14 +788,21 @@ private fun ScheduledSessionItem(
 @Composable
 private fun ErrorBanner(error: com.example.amulet.shared.core.AppError) {
     val errorMessage = when (error) {
-        is com.example.amulet.shared.core.AppError.Server -> error.message ?: "Ошибка сервера"
-        is com.example.amulet.shared.core.AppError.Network -> "Ошибка сети"
-        is com.example.amulet.shared.core.AppError.Timeout -> "Время ожидания истекло"
-        is com.example.amulet.shared.core.AppError.Unauthorized -> "Не авторизован"
-        is com.example.amulet.shared.core.AppError.Forbidden -> "Доступ запрещен"
-        is com.example.amulet.shared.core.AppError.NotFound -> "Не найдено"
-        is com.example.amulet.shared.core.AppError.Validation -> "Ошибка валидации"
-        else -> "Произошла ошибка"
+        is com.example.amulet.shared.core.AppError.Server ->
+            error.message ?: stringResource(id = R.string.practices_error_server)
+        is com.example.amulet.shared.core.AppError.Network ->
+            stringResource(id = R.string.practices_error_network)
+        is com.example.amulet.shared.core.AppError.Timeout ->
+            stringResource(id = R.string.practices_error_timeout)
+        is com.example.amulet.shared.core.AppError.Unauthorized ->
+            stringResource(id = R.string.practices_error_unauthorized)
+        is com.example.amulet.shared.core.AppError.Forbidden ->
+            stringResource(id = R.string.practices_error_forbidden)
+        is com.example.amulet.shared.core.AppError.NotFound ->
+            stringResource(id = R.string.practices_error_not_found)
+        is com.example.amulet.shared.core.AppError.Validation ->
+            stringResource(id = R.string.practices_error_validation)
+        else -> stringResource(id = R.string.practices_error_generic)
     }
     Box(
         modifier = Modifier

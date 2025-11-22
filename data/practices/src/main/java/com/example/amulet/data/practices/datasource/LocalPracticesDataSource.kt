@@ -6,12 +6,14 @@ import com.example.amulet.core.database.entity.PracticeFavoriteEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.core.database.entity.PracticeScheduleEntity
+import com.example.amulet.core.database.relation.PracticeWithFavorites
 import com.example.amulet.data.practices.seed.PracticeSeed
 import kotlinx.coroutines.flow.Flow
 
 interface LocalPracticesDataSource {
     fun observePractices(): Flow<List<PracticeEntity>>
     fun observePracticeById(id: String): Flow<PracticeEntity?>
+    fun observePracticeByIdWithFavorites(id: String): Flow<PracticeWithFavorites?>
     fun observeCategories(): Flow<List<PracticeCategoryEntity>>
     fun observeFavoriteIds(userId: String): Flow<List<String>>
     fun observeSessionsForUser(userId: String): Flow<List<PracticeSessionEntity>>
