@@ -122,6 +122,9 @@ private val sharedModule = module {
     factory { SearchCoursesUseCase(get()) }
     factory { CheckItemUnlockUseCase(get()) }
     factory { GetUnlockedItemsUseCase(get(), get()) }
+    factory { GetNextCourseItemUseCase(get(), get()) }
+    factory { CreateScheduleForCourseUseCase() }
+    factory { EnrollCourseUseCase(get(), get(), get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

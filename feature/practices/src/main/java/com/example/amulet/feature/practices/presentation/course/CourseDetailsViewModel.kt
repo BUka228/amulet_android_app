@@ -12,6 +12,7 @@ import com.example.amulet.shared.domain.courses.usecase.GetCourseModulesStreamUs
 import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
 import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
 import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
+import com.example.amulet.shared.domain.courses.usecase.EnrollCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsStreamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -21,6 +22,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
+
+@OptIn(kotlin.time.ExperimentalTime::class)
 @HiltViewModel
 class CourseDetailsViewModel @Inject constructor(
     private val getCourseByIdUseCase: GetCourseByIdUseCase,
@@ -33,6 +37,7 @@ class CourseDetailsViewModel @Inject constructor(
     private val resetCourseProgressUseCase: ResetCourseProgressUseCase,
     private val completeCourseItemUseCase: CompleteCourseItemUseCase,
     private val checkItemUnlockUseCase: CheckItemUnlockUseCase,
+    private val enrollCourseUseCase: EnrollCourseUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CourseDetailsState())
@@ -56,6 +61,7 @@ class CourseDetailsViewModel @Inject constructor(
                 getScheduledSessionsStreamUseCase()
             ) { course, items, modules, progress, sessions ->
                 val courseSessions = sessions.filter { it.courseId == id }
+                
                 // Auto-expand first module if none expanded and modules exist
                 val currentExpanded = _uiState.value.expandedModuleIds
                 val initialExpanded = if (currentExpanded.isEmpty() && modules.isNotEmpty()) {
@@ -66,12 +72,17 @@ class CourseDetailsViewModel @Inject constructor(
                 
                 // Проверяем статус разблокировки для каждого элемента
                 val unlockedItemIds = items.mapNotNull { item ->
-                    val isUnlocked = runCatching {
-                        checkItemUnlockUseCase(id, item.id)
-                    }.getOrDefault(true) // По умолчанию разблокирован в случае ошибки
-                    
+                    val isUnlocked = checkItemUnlockUseCase(id, item.id).component1() ?: true
+
                     if (isUnlocked) item.id else null
                 }.toSet()
+                
+                // Определяем ближайшие сессии (следующие 2-3)
+                val now = Clock.System.now().toEpochMilliseconds()
+                val upcomingSessions = courseSessions
+                    .filter { it.scheduledTime >= now }
+                    .sortedBy { it.scheduledTime }
+                    .take(3)
                 
                 _uiState.value.copy(
                     isLoading = false,
@@ -82,7 +93,8 @@ class CourseDetailsViewModel @Inject constructor(
                     progress = progress,
                     scheduledSessions = courseSessions,
                     expandedModuleIds = initialExpanded,
-                    unlockedItemIds = unlockedItemIds
+                    unlockedItemIds = unlockedItemIds,
+                    upcomingSessions = upcomingSessions
                 )
             }.collect { state -> _uiState.update { state } }
         }
@@ -96,6 +108,12 @@ class CourseDetailsViewModel @Inject constructor(
             CourseDetailsEvent.OnContinueCourse -> continueCourse()
             CourseDetailsEvent.OnResetCourse -> reset()
             CourseDetailsEvent.OnNavigateBack -> { /* Handled by UI */ }
+            is CourseDetailsEvent.OnOpenEnrollmentWizard -> openEnrollmentWizard(event.mode)
+            CourseDetailsEvent.OnDismissEnrollmentWizard -> dismissEnrollmentWizard()
+            is CourseDetailsEvent.OnEnrollCourse -> enrollCourse(event.params)
+            CourseDetailsEvent.OnOpenScheduleEdit -> { /* Handled by UI */ }
+            CourseDetailsEvent.OnRestartCourse -> resetAndEnroll()
+            CourseDetailsEvent.OnNextPracticeConsumed -> clearNextPractice()
         }
     }
 
@@ -112,9 +130,7 @@ class CourseDetailsViewModel @Inject constructor(
     }
 
     private fun handlePracticeClick(practiceId: String) {
-        // Here we can add logic to check if practice is locked
-        // For now, allow navigation to any practice
-        // In future: check if previous mandatory items are completed
+        // Logic for practice click handled by navigation in Route
     }
 
     private fun startCourse() {
@@ -124,11 +140,56 @@ class CourseDetailsViewModel @Inject constructor(
 
     private fun continueCourse() {
         val id = _uiState.value.courseId ?: return
-        viewModelScope.launch { continueCourseUseCase(id) }
+        viewModelScope.launch {
+            // Продолжаем курс и получаем следующий элемент
+            val result = continueCourseUseCase(id)
+            val nextItemId = result.component1()
+            if (nextItemId != null) {
+                val items = _uiState.value.items
+                val nextItem = items.firstOrNull { it.id == nextItemId }
+                nextItem?.practiceId?.let { practiceId ->
+                    _uiState.update { it.copy(nextPracticeId = practiceId) }
+                }
+            }
+        }
     }
 
     private fun reset() {
         val id = _uiState.value.courseId ?: return
         viewModelScope.launch { resetCourseProgressUseCase(id) }
+    }
+    
+    private fun openEnrollmentWizard(mode: CourseEnrollmentMode) {
+        _uiState.update { it.copy(showEnrollmentWizard = true, enrollmentMode = mode) }
+    }
+    
+    private fun dismissEnrollmentWizard() {
+        _uiState.update { it.copy(showEnrollmentWizard = false, enrollmentMode = null) }
+    }
+    
+    private fun enrollCourse(params: com.example.amulet.shared.domain.courses.model.EnrollmentParams) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(enrollmentInProgress = true) }
+            val result = enrollCourseUseCase(params)
+            _uiState.update { 
+                it.copy(
+                    enrollmentInProgress = false,
+                    showEnrollmentWizard = false
+                ) 
+            }
+            // TODO: Show success toast/snackbar
+        }
+    }
+    
+    private fun resetAndEnroll() {
+        val id = _uiState.value.courseId ?: return
+        viewModelScope.launch {
+            resetCourseProgressUseCase(id)
+            _uiState.update { it.copy(showEnrollmentWizard = true, enrollmentMode = CourseEnrollmentMode.REPEAT) }
+        }
+    }
+
+    private fun clearNextPractice() {
+        _uiState.update { it.copy(nextPracticeId = null) }
     }
 }

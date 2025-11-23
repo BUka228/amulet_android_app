@@ -63,6 +63,9 @@ import com.example.amulet.shared.domain.courses.usecase.GetCourseModulesStreamUs
 import com.example.amulet.shared.domain.courses.usecase.SearchCoursesUseCase
 import com.example.amulet.shared.domain.courses.usecase.CheckItemUnlockUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetUnlockedItemsUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetNextCourseItemUseCase
+import com.example.amulet.shared.domain.courses.usecase.CreateScheduleForCourseUseCase
+import com.example.amulet.shared.domain.courses.usecase.EnrollCourseUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
@@ -295,6 +298,8 @@ object KoinBridgeModule {
     @Provides fun provideSearchCoursesUseCase(koin: Koin): SearchCoursesUseCase = koin.get()
     @Provides fun provideCheckItemUnlockUseCase(koin: Koin): CheckItemUnlockUseCase = koin.get()
     @Provides fun provideGetUnlockedItemsUseCase(koin: Koin): GetUnlockedItemsUseCase = koin.get()
+    @Provides fun provideCreateScheduleForCourseUseCase(koin: Koin): CreateScheduleForCourseUseCase = koin.get()
+    @Provides fun provideEnrollCourseUseCase(koin: Koin): EnrollCourseUseCase = koin.get()
     
     // Initialization UseCase
     @Provides fun provideSeedLocalDataUseCase(koin: Koin): SeedLocalDataUseCase = koin.get()

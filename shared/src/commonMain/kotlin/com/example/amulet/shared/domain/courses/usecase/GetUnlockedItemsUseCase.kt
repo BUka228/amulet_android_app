@@ -29,10 +29,8 @@ class GetUnlockedItemsUseCase(
         ) { items, _ ->
             // Фильтруем элементы, оставляя только разблокированные
             items.filter { item ->
-                // Используем runCatching для безопасности
-                runCatching {
-                    checkItemUnlockUseCase(courseId, item.id)
-                }.getOrDefault(false)
+                val isUnlocked = checkItemUnlockUseCase(courseId, item.id).component1() ?: false
+                isUnlocked
             }
         }
     }

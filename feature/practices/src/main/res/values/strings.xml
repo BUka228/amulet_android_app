@@ -153,11 +153,57 @@
     <string name="practices_course_practice_duration_minutes">%1$d min</string>
     <string name="practices_course_action_continue">Continue course</string>
     <string name="practices_course_action_start">Start course</string>
+    <string name="practices_course_action_enroll">Enroll in course</string>
+    <string name="practices_course_action_enroll_plan">Add course to plan</string>
+    <string name="practices_course_action_restart">Restart course</string>
+    <string name="practices_course_action_edit_schedule">Edit schedule</string>
     <string name="practices_course_title">Courses</string>
     <string name="practices_course_reset_title">Reset course progress?</string>
     <string name="practices_course_reset_message">All completed practices and progress will be removed. This action cannot be undone.</string>
     <string name="practices_course_reset_confirm">Reset</string>
     <string name="practices_course_reset_cancel">Cancel</string>
+
+    <string name="practices_course_enrollment_title">Enroll in course</string>
+    <string name="practices_course_enrollment_title_plan">Add course to plan</string>
+    <string name="practices_course_enrollment_title_repeat">Repeat course</string>
+    <string name="practices_course_enrollment_message">We will add this course to your schedule using the recommended rhythm and the current time of day. You can adjust the plan later.</string>
+    <string name="practices_course_enrollment_summary">Rhythm: %1$s, time: %2$02d:%3$02d</string>
+    <string name="practices_course_enrollment_confirm">Enroll</string>
+    <string name="practices_course_enrollment_cancel">Cancel</string>
+
+    <string name="practices_course_enrollment_step_rhythm_title">Choose your rhythm</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle">We recommend a regular rhythm to build a habit.</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle_plan">Set how often you want this course in your schedule.</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle_repeat">Adjust the rhythm for your next run.</string>
+
+    <string name="practices_course_enrollment_rhythm_daily">Daily</string>
+    <string name="practices_course_enrollment_rhythm_three_times">3 times per week</string>
+    <string name="practices_course_enrollment_rhythm_flexible">Flexible</string>
+
+    <string name="practices_course_enrollment_step_time_title">When do you prefer to practice?</string>
+    <string name="practices_course_enrollment_step_time_subtitle">Choose the time of day that works best for you.</string>
+    <string name="practices_course_enrollment_time_morning">Morning</string>
+    <string name="practices_course_enrollment_time_day">Daytime</string>
+    <string name="practices_course_enrollment_time_evening">Evening</string>
+    <string name="practices_course_enrollment_time_night">Before sleep</string>
+
+    <string name="practices_course_enrollment_step_days_title">Select days of the week</string>
+    <string name="practices_course_enrollment_step_days_subtitle">You can fine-tune the schedule for this course.</string>
+
+    <string name="practices_course_enrollment_step_summary_title">Check your plan</string>
+    <string name="practices_course_enrollment_next">Next</string>
+    <string name="practices_course_enrollment_back">Back</string>
+
+    <string name="practices_course_completed_title">Course completed!</string>
+    <string name="practices_course_completed_time">Total time: %1$d min</string>
+    <string name="practices_course_recommended_days">Recommended: %1$d days</string>
+    <string name="practices_course_upcoming_sessions_title">Upcoming sessions</string>
+    <string name="practices_course_upcoming_session_item">Session at %1$s</string>
+
+    <string name="practices_course_continue_dialog_title">Continue course</string>
+    <string name="practices_course_continue_dialog_message">You have upcoming sessions in your schedule. Do you want to start the next practice now or open the schedule?</string>
+    <string name="practices_course_continue_dialog_start_now">Start now</string>
+    <string name="practices_course_continue_dialog_open_schedule">Open schedule</string>
 
 
     <!-- Week days -->

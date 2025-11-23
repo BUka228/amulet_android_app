@@ -7,4 +7,14 @@ data class CourseProgress(
     val percent: Int = 0,
     val totalTimeSec: Int = 0,
     val updatedAt: Long?
-)
+) {
+    /**
+     * Вычисляемый статус курса на основе прогресса
+     */
+    val status: CourseStatus
+        get() = when {
+            percent == 0 -> CourseStatus.NOT_ENROLLED
+            percent >= 100 -> CourseStatus.COMPLETED
+            else -> CourseStatus.IN_PROGRESS
+        }
+}

@@ -5,6 +5,7 @@ import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseModule
 import com.example.amulet.shared.domain.courses.model.CourseProgress
+import com.example.amulet.shared.domain.courses.model.EnrollmentParams
 import com.example.amulet.shared.domain.practices.model.ScheduledSession
 
 data class CourseDetailsState(
@@ -17,8 +18,19 @@ data class CourseDetailsState(
     val progress: CourseProgress? = null,
     val scheduledSessions: List<ScheduledSession> = emptyList(),
     val expandedModuleIds: Set<String> = emptySet(),
-    val unlockedItemIds: Set<String> = emptySet()
+    val unlockedItemIds: Set<String> = emptySet(),
+    val showEnrollmentWizard: Boolean = false,
+    val enrollmentInProgress: Boolean = false,
+    val nextPracticeId: String? = null,
+    val upcomingSessions: List<ScheduledSession> = emptyList(), // Ближайшие 2-3 сессии
+    val enrollmentMode: CourseEnrollmentMode? = null
 )
+
+enum class CourseEnrollmentMode {
+    STANDARD,
+    PLAN_FOCUSED,
+    REPEAT
+}
 
 sealed interface CourseDetailsEvent {
     data class OnModuleClick(val moduleId: String) : CourseDetailsEvent
@@ -27,4 +39,10 @@ sealed interface CourseDetailsEvent {
     data object OnContinueCourse : CourseDetailsEvent
     data object OnResetCourse : CourseDetailsEvent
     data object OnNavigateBack : CourseDetailsEvent
+    data class OnOpenEnrollmentWizard(val mode: CourseEnrollmentMode) : CourseDetailsEvent
+    data object OnDismissEnrollmentWizard : CourseDetailsEvent
+    data class OnEnrollCourse(val params: EnrollmentParams) : CourseDetailsEvent
+    data object OnOpenScheduleEdit : CourseDetailsEvent
+    data object OnRestartCourse : CourseDetailsEvent
+    data object OnNextPracticeConsumed : CourseDetailsEvent
 }

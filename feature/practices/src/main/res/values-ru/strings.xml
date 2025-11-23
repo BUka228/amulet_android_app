@@ -153,11 +153,57 @@
     <string name="practices_course_practice_duration_minutes">%1$d мин</string>
     <string name="practices_course_action_continue">Продолжить курс</string>
     <string name="practices_course_action_start">Начать курс</string>
+    <string name="practices_course_action_enroll">Записаться на курс</string>
+    <string name="practices_course_action_enroll_plan">Добавить курс в план</string>
+    <string name="practices_course_action_restart">Пройти ещё раз</string>
+    <string name="practices_course_action_edit_schedule">Изменить план</string>
     <string name="practices_course_title">Курсы</string>
     <string name="practices_course_reset_title">Сбросить прогресс курса?</string>
     <string name="practices_course_reset_message">Все выполненные практики и прогресс будут удалены. Это действие нельзя отменить.</string>
     <string name="practices_course_reset_confirm">Сбросить</string>
     <string name="practices_course_reset_cancel">Отмена</string>
+
+    <string name="practices_course_enrollment_title">Записаться на курс</string>
+    <string name="practices_course_enrollment_title_plan">Добавить курс в план</string>
+    <string name="practices_course_enrollment_title_repeat">Повторное прохождение курса</string>
+    <string name="practices_course_enrollment_message">Мы добавим этот курс в расписание, используя рекомендуемый ритм и текущее время суток. Позже вы сможете изменить план.</string>
+    <string name="practices_course_enrollment_summary">Ритм: %1$s, время: %2$02d:%3$02d</string>
+    <string name="practices_course_enrollment_confirm">Записаться</string>
+    <string name="practices_course_enrollment_cancel">Отмена</string>
+
+    <string name="practices_course_enrollment_step_rhythm_title">Выберите ритм</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle">Рекомендуем регулярный ритм, чтобы сформировать привычку.</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle_plan">Задайте, как часто вы хотите видеть курс в расписании.</string>
+    <string name="practices_course_enrollment_step_rhythm_subtitle_repeat">Подкорректируйте ритм для нового прохождения.</string>
+
+    <string name="practices_course_enrollment_rhythm_daily">Каждый день</string>
+    <string name="practices_course_enrollment_rhythm_three_times">3 раза в неделю</string>
+    <string name="practices_course_enrollment_rhythm_flexible">Гибкий ритм</string>
+
+    <string name="practices_course_enrollment_step_time_title">Когда вам удобнее заниматься?</string>
+    <string name="practices_course_enrollment_step_time_subtitle">Выберите время суток, которое вам подходит.</string>
+    <string name="practices_course_enrollment_time_morning">Утро</string>
+    <string name="practices_course_enrollment_time_day">День</string>
+    <string name="practices_course_enrollment_time_evening">Вечер</string>
+    <string name="practices_course_enrollment_time_night">Перед сном</string>
+
+    <string name="practices_course_enrollment_step_days_title">Выберите дни недели</string>
+    <string name="practices_course_enrollment_step_days_subtitle">Точно настройте расписание для этого курса.</string>
+
+    <string name="practices_course_enrollment_step_summary_title">Проверьте план</string>
+    <string name="practices_course_enrollment_next">Далее</string>
+    <string name="practices_course_enrollment_back">Назад</string>
+
+    <string name="practices_course_completed_title">Курс завершён!</string>
+    <string name="practices_course_completed_time">Всего времени: %1$d мин</string>
+    <string name="practices_course_recommended_days">Рекомендовано: %1$d дн.</string>
+    <string name="practices_course_upcoming_sessions_title">Ближайшие сессии</string>
+    <string name="practices_course_upcoming_session_item">Сессия в %1$s</string>
+
+    <string name="practices_course_continue_dialog_title">Продолжить курс</string>
+    <string name="practices_course_continue_dialog_message">У вас есть ближайшие сессии в расписании. Начать следующую практику сейчас или открыть расписание?</string>
+    <string name="practices_course_continue_dialog_start_now">Начать сейчас</string>
+    <string name="practices_course_continue_dialog_open_schedule">Открыть расписание</string>
 
     <!-- Week days -->
     <string name="weekday_mon">Пн</string>

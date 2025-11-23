@@ -42,8 +42,17 @@ import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseModule
 import com.example.amulet.shared.domain.courses.model.CourseProgress
+import com.example.amulet.shared.domain.courses.model.CourseRhythm
+import com.example.amulet.shared.domain.courses.model.EnrollmentParams
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun CourseDetailsRoute(
@@ -57,8 +66,12 @@ fun CourseDetailsRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Handle navigation events from ViewModel if needed, or just use callbacks
-    LaunchedEffect(Unit) {
-        // Future: Collect one-time events from ViewModel
+    LaunchedEffect(state.nextPracticeId) {
+        val nextId = state.nextPracticeId
+        if (nextId != null) {
+            onOpenPractice(nextId)
+            viewModel.onEvent(CourseDetailsEvent.OnNextPracticeConsumed)
+        }
     }
 
     CourseDetailsScreen(
@@ -67,17 +80,15 @@ fun CourseDetailsRoute(
             when (event) {
                 is CourseDetailsEvent.OnNavigateBack -> onNavigateBack()
                 is CourseDetailsEvent.OnPracticeClick -> onOpenPractice(event.practiceId)
-                is CourseDetailsEvent.OnStartCourse -> {
-                    viewModel.onEvent(event)
-                    onNavigateToSchedule() // Temporary flow until enrollment wizard
-                }
+                is CourseDetailsEvent.OnStartCourse -> viewModel.onEvent(event)
+                is CourseDetailsEvent.OnOpenScheduleEdit -> onNavigateToSchedule()
                 else -> viewModel.onEvent(event)
             }
         }
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 private fun CourseDetailsScreen(
     state: CourseDetailsState,
@@ -114,7 +125,10 @@ private fun CourseDetailsScreen(
                     CourseBottomBar(
                         state = state,
                         onStart = { onEvent(CourseDetailsEvent.OnStartCourse) },
-                        onContinue = { onEvent(CourseDetailsEvent.OnContinueCourse) }
+                        onContinue = { onEvent(CourseDetailsEvent.OnContinueCourse) },
+                        onEnroll = { onEvent(CourseDetailsEvent.OnOpenEnrollmentWizard(CourseEnrollmentMode.STANDARD)) },
+                        onRestart = { onEvent(CourseDetailsEvent.OnRestartCourse) },
+                        onEditSchedule = { onEvent(CourseDetailsEvent.OnOpenScheduleEdit) }
                     )
                 }
             )
@@ -144,6 +158,27 @@ private fun CourseDetailsScreen(
         )
     }
 
+    if (state.showEnrollmentWizard && state.courseId != null) {
+        CourseEnrollmentDialog(
+            courseId = state.courseId,
+            rhythm = state.course?.rhythm ?: CourseRhythm.DAILY,
+            enrollmentMode = state.enrollmentMode ?: CourseEnrollmentMode.STANDARD,
+            isLoading = state.enrollmentInProgress,
+            onConfirm = { params -> onEvent(CourseDetailsEvent.OnEnrollCourse(params)) },
+            onDismiss = { onEvent(CourseDetailsEvent.OnDismissEnrollmentWizard) }
+        )
+    }
+
+    val currentItemId = remember(state.items, state.unlockedItemIds, state.progress) {
+        val completed = state.progress?.completedItemIds ?: emptySet()
+        state.items
+            .sortedBy { it.order }
+            .firstOrNull { item ->
+                state.unlockedItemIds.contains(item.id) && !completed.contains(item.id)
+            }
+            ?.id
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -166,6 +201,75 @@ private fun CourseDetailsScreen(
             }
         }
 
+        // Upcoming sessions block
+        if (state.upcomingSessions.isNotEmpty()) {
+            item {
+                AmuletCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.EventAvailable,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = stringResource(id = R.string.practices_course_upcoming_sessions_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        state.upcomingSessions.forEach { session ->
+                            val timeZone = TimeZone.currentSystemDefault()
+                            val localDateTime = Instant
+                                .fromEpochMilliseconds(session.scheduledTime)
+                                .toLocalDateTime(timeZone)
+
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = session.practiceTitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.practices_course_upcoming_session_item,
+                                        session.status.name
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "${localDateTime.date} • %02d:%02d".format(
+                                        localDateTime.time.hour,
+                                        localDateTime.time.minute
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                session.courseTitle?.let { courseTitle ->
+                                    Text(
+                                        text = courseTitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        TextButton(onClick = { onEvent(CourseDetailsEvent.OnOpenScheduleEdit) }) {
+                            Text(text = stringResource(id = R.string.calendar_title))
+                        }
+                    }
+                }
+            }
+        }
+
         // Modules List
         if (state.modules.isNotEmpty()) {
             items(state.modules) { module ->
@@ -175,6 +279,7 @@ private fun CourseDetailsScreen(
                     isExpanded = state.expandedModuleIds.contains(module.id.value),
                     completedItemIds = state.progress?.completedItemIds ?: emptySet(),
                     unlockedItemIds = state.unlockedItemIds,
+                    currentItemId = currentItemId,
                     onToggle = { onEvent(CourseDetailsEvent.OnModuleClick(module.id.value)) },
                     onItemClick = { item ->
                         item.practiceId?.let { practiceId ->
@@ -190,6 +295,7 @@ private fun CourseDetailsScreen(
                     item = item,
                     isCompleted = state.progress?.completedItemIds?.contains(item.id) == true,
                     isLocked = !state.unlockedItemIds.contains(item.id),
+                    isCurrent = currentItemId == item.id,
                     onClick = {
                         item.practiceId?.let { practiceId ->
                             onEvent(CourseDetailsEvent.OnPracticeClick(practiceId))
@@ -200,6 +306,239 @@ private fun CourseDetailsScreen(
         }
 
         item { Spacer(Modifier.height(80.dp)) }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@Composable
+private fun CourseEnrollmentDialog(
+    courseId: String,
+    rhythm: CourseRhythm,
+    enrollmentMode: CourseEnrollmentMode,
+    isLoading: Boolean,
+    onConfirm: (EnrollmentParams) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val now = remember {
+        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    }
+
+    var selectedRhythm by remember { mutableStateOf(rhythm) }
+    var selectedTime by remember { mutableStateOf(now.time) }
+    var selectedDays by remember(selectedRhythm) {
+        mutableStateOf(
+            when (selectedRhythm) {
+                CourseRhythm.DAILY -> DayOfWeek.entries.toSet()
+                CourseRhythm.THREE_TIMES_WEEK -> setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
+                CourseRhythm.FLEXIBLE -> DayOfWeek.entries.toSet()
+            }
+        )
+    }
+
+    val titleRes = when (enrollmentMode) {
+        CourseEnrollmentMode.STANDARD -> R.string.practices_course_enrollment_title
+        CourseEnrollmentMode.PLAN_FOCUSED -> R.string.practices_course_enrollment_title_plan
+        CourseEnrollmentMode.REPEAT -> R.string.practices_course_enrollment_title_repeat
+    }
+
+    val rhythmSubtitleRes = when (enrollmentMode) {
+        CourseEnrollmentMode.STANDARD -> R.string.practices_course_enrollment_step_rhythm_subtitle
+        CourseEnrollmentMode.PLAN_FOCUSED -> R.string.practices_course_enrollment_step_rhythm_subtitle_plan
+        CourseEnrollmentMode.REPEAT -> R.string.practices_course_enrollment_step_rhythm_subtitle_repeat
+    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = stringResource(id = titleRes),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = stringResource(id = rhythmSubtitleRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Rhythm section
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(id = R.string.practices_course_enrollment_step_rhythm_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = { selectedRhythm = CourseRhythm.DAILY },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_rhythm_daily)) },
+                        leadingIcon = {
+                            if (selectedRhythm == CourseRhythm.DAILY) {
+                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    )
+                    AssistChip(
+                        onClick = { selectedRhythm = CourseRhythm.THREE_TIMES_WEEK },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_rhythm_three_times)) },
+                        leadingIcon = {
+                            if (selectedRhythm == CourseRhythm.THREE_TIMES_WEEK) {
+                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    )
+                    AssistChip(
+                        onClick = { selectedRhythm = CourseRhythm.FLEXIBLE },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_rhythm_flexible)) },
+                        leadingIcon = {
+                            if (selectedRhythm == CourseRhythm.FLEXIBLE) {
+                                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    )
+                }
+            }
+
+            // Time section
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(id = R.string.practices_course_enrollment_step_time_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(id = R.string.practices_course_enrollment_step_time_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val morningTime = LocalTime(hour = 8, minute = 0)
+                    val dayTime = LocalTime(hour = 13, minute = 0)
+                    val eveningTime = LocalTime(hour = 19, minute = 0)
+                    val nightTime = LocalTime(hour = 22, minute = 30)
+
+                    AssistChip(
+                        onClick = { selectedTime = morningTime },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_time_morning)) },
+                        leadingIcon = {
+                            if (selectedTime == morningTime) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                    AssistChip(
+                        onClick = { selectedTime = dayTime },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_time_day)) },
+                        leadingIcon = {
+                            if (selectedTime == dayTime) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                    AssistChip(
+                        onClick = { selectedTime = eveningTime },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_time_evening)) },
+                        leadingIcon = {
+                            if (selectedTime == eveningTime) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                    AssistChip(
+                        onClick = { selectedTime = nightTime },
+                        label = { Text(stringResource(id = R.string.practices_course_enrollment_time_night)) },
+                        leadingIcon = {
+                            if (selectedTime == nightTime) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+
+            // Days of week section
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(id = R.string.practices_course_enrollment_step_days_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(id = R.string.practices_course_enrollment_step_days_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val allDays = DayOfWeek.entries.toTypedArray()
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    allDays.forEach { day ->
+                        val selected = selectedDays.contains(day)
+                        FilterChip(
+                            selected = selected,
+                            onClick = {
+                                selectedDays = if (selected) {
+                                    selectedDays - day
+                                } else {
+                                    selectedDays + day
+                                }
+                            },
+                            label = { Text(day.displayNameShort()) }
+                        )
+                    }
+                }
+            }
+
+            // Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.practices_course_enrollment_cancel))
+                }
+
+                Button(
+                    onClick = {
+                        val params = EnrollmentParams(
+                            courseId = courseId,
+                            rhythm = selectedRhythm,
+                            preferredTime = selectedTime,
+                            selectedDays = selectedDays,
+                            startDate = now.date
+                        )
+                        onConfirm(params)
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(text = stringResource(id = R.string.practices_course_enrollment_confirm))
+                }
+            }
+        }
     }
 }
 
@@ -219,6 +558,24 @@ private fun PracticeLevel.displayName(): String = when (this) {
     PracticeLevel.BEGINNER -> stringResource(R.string.practice_level_beginner)
     PracticeLevel.INTERMEDIATE -> stringResource(R.string.practice_level_intermediate)
     PracticeLevel.ADVANCED -> stringResource(R.string.practice_level_advanced)
+}
+
+@Composable
+private fun CourseRhythm.displayName(): String = when (this) {
+    CourseRhythm.DAILY -> stringResource(R.string.practices_course_enrollment_rhythm_daily)
+    CourseRhythm.THREE_TIMES_WEEK -> stringResource(R.string.practices_course_enrollment_rhythm_three_times)
+    CourseRhythm.FLEXIBLE -> stringResource(R.string.practices_course_enrollment_rhythm_flexible)
+}
+
+@Composable
+private fun DayOfWeek.displayNameShort(): String = when (this) {
+    DayOfWeek.MONDAY -> stringResource(R.string.weekday_mon)
+    DayOfWeek.TUESDAY -> stringResource(R.string.weekday_tue)
+    DayOfWeek.WEDNESDAY -> stringResource(R.string.weekday_wed)
+    DayOfWeek.THURSDAY -> stringResource(R.string.weekday_thu)
+    DayOfWeek.FRIDAY -> stringResource(R.string.weekday_fri)
+    DayOfWeek.SATURDAY -> stringResource(R.string.weekday_sat)
+    DayOfWeek.SUNDAY -> stringResource(R.string.weekday_sun)
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -282,19 +639,6 @@ private fun CourseHero(course: Course?, progress: CourseProgress?) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    course?.totalDurationSec?.let { totalSec ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(Icons.Filled.Schedule, null, modifier = Modifier.size(16.dp))
-                            Text(
-                                text = stringResource(id = R.string.practices_course_total_duration, totalSec / 60),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
                     course?.modulesCount?.let { modulesCount ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -308,6 +652,41 @@ private fun CourseHero(course: Course?, progress: CourseProgress?) {
                             )
                         }
                     }
+                    course?.recommendedDays?.let { days ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Filled.Event, null, modifier = Modifier.size(16.dp))
+                            Text(
+                                text = stringResource(id = R.string.practices_course_recommended_days, days),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                course?.totalDurationSec?.let { totalSec ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Filled.Schedule, null, modifier = Modifier.size(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.practices_course_total_duration, totalSec / 60),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                course?.rhythm?.let { rhythm ->
+                    Text(
+                        text = rhythm.displayName(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 // Chips
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -348,6 +727,7 @@ private fun CourseModuleItem(
     isExpanded: Boolean,
     completedItemIds: Set<String>,
     unlockedItemIds: Set<String>,
+    currentItemId: String?,
     onToggle: () -> Unit,
     onItemClick: (CourseItem) -> Unit
 ) {
@@ -400,11 +780,13 @@ private fun CourseModuleItem(
                 items.forEachIndexed { index, item ->
                     val isLocked = !unlockedItemIds.contains(item.id)
                     val isCompleted = item.id in completedItemIds
+                    val isCurrent = currentItemId == item.id
                     
                     CoursePracticeItem(
                         item = item,
                         isCompleted = isCompleted,
                         isLocked = isLocked,
+                        isCurrent = isCurrent,
                         onClick = {
                             if (item.practiceId != null) {
                                 onItemClick(item)
@@ -426,6 +808,7 @@ private fun CoursePracticeItem(
     item: CourseItem,
     isCompleted: Boolean,
     isLocked: Boolean,
+    isCurrent: Boolean,
     onClick: () -> Unit
 ) {
     Row(
@@ -449,7 +832,13 @@ private fun CoursePracticeItem(
                     }
                 )
                 .then(
-                    if (!isCompleted && !isLocked) Modifier.border(2.dp, MaterialTheme.colorScheme.outline, CircleShape) else Modifier
+                    if (isCurrent && !isCompleted && !isLocked) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    } else if (!isCompleted && !isLocked) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                    } else {
+                        Modifier
+                    }
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -474,7 +863,11 @@ private fun CoursePracticeItem(
             Text(
                 text = item.title ?: stringResource(id = R.string.practices_course_practice_fallback_title),
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (isLocked) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+                color = when {
+                    isLocked -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    isCurrent -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                }
             )
             item.minDurationSec?.let {
                 Text(
@@ -497,30 +890,151 @@ private fun CoursePracticeItem(
 private fun CourseBottomBar(
     state: CourseDetailsState,
     onStart: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    onEnroll: () -> Unit,
+    onRestart: () -> Unit,
+    onEditSchedule: () -> Unit
 ) {
-    val isStarted = state.progress != null && state.progress.percent > 0
+    val progress = state.progress
+    val courseStatus = progress?.status ?: com.example.amulet.shared.domain.courses.model.CourseStatus.NOT_ENROLLED
+    var showContinueDialog by remember { mutableStateOf(false) }
     
     Surface(
         shadowElevation = 8.dp,
         tonalElevation = 2.dp
     ) {
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-            Button(
-                onClick = if (isStarted) onContinue else onStart,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = if (isStarted) {
-                        stringResource(id = R.string.practices_course_action_continue)
-                    } else {
-                        stringResource(id = R.string.practices_course_action_start)
-                    },
-                    style = MaterialTheme.typography.titleMedium
-                )
+            when (courseStatus) {
+                com.example.amulet.shared.domain.courses.model.CourseStatus.NOT_ENROLLED -> {
+                    // Состояние "Не начат": основная CTA
+                    Button(
+                        onClick = onEnroll,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.practices_course_action_enroll),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
+                com.example.amulet.shared.domain.courses.model.CourseStatus.IN_PROGRESS -> {
+                    // Состояние "В процессе"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                if (state.upcomingSessions.isNotEmpty()) {
+                                    showContinueDialog = true
+                                } else {
+                                    onContinue()
+                                }
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.practices_course_action_continue),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = onEditSchedule,
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.practices_course_action_edit_schedule),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                }
+                com.example.amulet.shared.domain.courses.model.CourseStatus.COMPLETED -> {
+                    // Состояние "Завершён"
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Блок итогов
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.practices_course_completed_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            progress?.let {
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.practices_course_completed_time,
+                                        it.totalTimeSec / 60
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        progress?.let {
+                            Text(
+                                text = stringResource(
+                                    id = R.string.practices_course_progress_label,
+                                    it.percent
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        Button(
+                            onClick = onRestart,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.practices_course_action_restart),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+
+    if (showContinueDialog && courseStatus == com.example.amulet.shared.domain.courses.model.CourseStatus.IN_PROGRESS) {
+        AlertDialog(
+            onDismissRequest = { showContinueDialog = false },
+            title = {
+                Text(text = stringResource(id = R.string.practices_course_continue_dialog_title))
+            },
+            text = {
+                Text(text = stringResource(id = R.string.practices_course_continue_dialog_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showContinueDialog = false
+                        onContinue()
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.practices_course_action_continue))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showContinueDialog = false
+                        onEditSchedule()
+                    }
+                ) {
+                    Text(text = stringResource(id = R.string.calendar_title))
+                }
+            }
+        )
     }
 }
 

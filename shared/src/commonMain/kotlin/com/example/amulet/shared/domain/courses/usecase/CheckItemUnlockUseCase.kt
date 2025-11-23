@@ -1,9 +1,13 @@
 package com.example.amulet.shared.domain.courses.usecase
 
+import com.example.amulet.shared.core.AppError
+import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.domain.courses.CoursesRepository
 import com.example.amulet.shared.domain.courses.model.CourseId
 import com.example.amulet.shared.domain.courses.model.CourseItemId
 import com.example.amulet.shared.domain.courses.model.UnlockCondition
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.firstOrNull
 
 /**
@@ -21,23 +25,29 @@ class CheckItemUnlockUseCase(
      * @param itemId ID элемента курса
      * @return true, если элемент разблокирован, false в противном случае
      */
-    suspend operator fun invoke(courseId: CourseId, itemId: CourseItemId): Boolean {
-        val items = coursesRepository.getCourseItemsStream(courseId).firstOrNull() ?: return false
-        val item = items.find { it.id == itemId } ?: return false
-        
-        // Если условие разблокировки не задано, элемент доступен по умолчанию
-        val unlockCondition = item.unlockCondition ?: return true
-        
-        val progress = coursesRepository.getCourseProgressStream(courseId).firstOrNull()
-        val completedItemIds = progress?.completedItemIds ?: emptySet()
-        
-        return checkCondition(
-            condition = unlockCondition,
-            currentItem = item,
-            allItems = items,
-            completedItemIds = completedItemIds,
-            currentPercent = progress?.percent ?: 0
-        )
+    suspend operator fun invoke(courseId: CourseId, itemId: CourseItemId): AppResult<Boolean> {
+        return try {
+            val items = coursesRepository.getCourseItemsStream(courseId).firstOrNull() ?: return Ok(false)
+            val item = items.find { it.id == itemId } ?: return Ok(false)
+
+            // Если условие разблокировки не задано, элемент доступен по умолчанию
+            val unlockCondition = item.unlockCondition ?: return Ok(true)
+
+            val progress = coursesRepository.getCourseProgressStream(courseId).firstOrNull()
+            val completedItemIds = progress?.completedItemIds ?: emptySet()
+
+            Ok(
+                checkCondition(
+                    condition = unlockCondition,
+                    currentItem = item,
+                    allItems = items,
+                    completedItemIds = completedItemIds,
+                    currentPercent = progress?.percent ?: 0
+                )
+            )
+        } catch (e: Exception) {
+            Err(AppError.Unknown)
+        }
     }
     
     /**
