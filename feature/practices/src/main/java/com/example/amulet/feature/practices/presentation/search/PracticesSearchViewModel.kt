@@ -2,6 +2,7 @@ package com.example.amulet.feature.practices.presentation.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.shared.domain.courses.usecase.SearchCoursesUseCase
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class PracticesSearchViewModel @Inject constructor(
     private val searchPracticesUseCase: SearchPracticesUseCase,
+    private val searchCoursesUseCase: SearchCoursesUseCase,
     private val getRecommendationsStreamUseCase: GetRecommendationsStreamUseCase,
 ) : ViewModel() {
 
@@ -44,6 +46,7 @@ class PracticesSearchViewModel @Inject constructor(
             is PracticesSearchEvent.OnDurationRangeChange -> onDurationRangeChange(event.fromSec, event.toSec)
             is PracticesSearchEvent.OnHasAudioChange -> onHasAudioChange(event.hasAudio)
             is PracticesSearchEvent.OnAmuletRequiredChange -> onAmuletRequiredChange(event.amuletRequired)
+            is PracticesSearchEvent.OnCoursesFilterChange -> onCoursesFilterChange(event.selected)
             PracticesSearchEvent.OnToggleAdvancedFilters -> toggleAdvancedFilters()
             PracticesSearchEvent.OnToggleQuickFilters -> toggleQuickFilters()
             PracticesSearchEvent.OnClearFilters -> clearFilters()
@@ -97,6 +100,11 @@ class PracticesSearchViewModel @Inject constructor(
         performSearch()
     }
 
+    private fun onCoursesFilterChange(selected: Boolean) {
+        _uiState.update { it.copy(isCoursesFilterSelected = selected) }
+        performSearch()
+    }
+
     private fun toggleAdvancedFilters() {
         _uiState.update { it.copy(isAdvancedFiltersVisible = !it.isAdvancedFiltersVisible) }
     }
@@ -110,7 +118,8 @@ class PracticesSearchViewModel @Inject constructor(
             it.copy(
                 filter = PracticeFilter(),
                 query = "",
-                isAdvancedFiltersVisible = false
+                isAdvancedFiltersVisible = false,
+                isCoursesFilterSelected = false
             )
         }
         queryFlow.value = ""
@@ -132,24 +141,48 @@ class PracticesSearchViewModel @Inject constructor(
         viewModelScope.launch {
             val query = _uiState.value.query
             val filter = _uiState.value.filter
+            val coursesSelected = _uiState.value.isCoursesFilterSelected
 
-            if (query.isBlank() && filter == PracticeFilter()) {
+            if (query.isBlank() && filter == PracticeFilter() && !coursesSelected) {
                 _uiState.update { it.copy(results = emptyList(), isLoading = false, error = null) }
                 return@launch
             }
 
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            val result = searchPracticesUseCase(
-                query = query,
-                filter = filter,
-            )
+            val practicesResult = if (!coursesSelected) {
+                searchPracticesUseCase(query, filter)
+            } else {
+                null
+            }
+            
+            val coursesResult = if (filter.type == null) { // Only search courses if type filter is not specific to practices (e.g. BREATH)
+                 searchCoursesUseCase(query, filter)
+            } else {
+                null
+            }
+
+            val practices = practicesResult?.component1() ?: emptyList()
+            val courses = coursesResult?.component1() ?: emptyList()
+            val error = practicesResult?.component2() ?: coursesResult?.component2()
+
+            val combinedResults = mutableListOf<SearchResultItem>()
+            
+            if (courses.isNotEmpty()) {
+                combinedResults.add(SearchResultItem.HeaderItem(SearchResultHeaderType.COURSES))
+                combinedResults.addAll(courses.map { SearchResultItem.CourseItem(it) })
+            }
+            
+            if (practices.isNotEmpty()) {
+                combinedResults.add(SearchResultItem.HeaderItem(SearchResultHeaderType.PRACTICES))
+                combinedResults.addAll(practices.map { SearchResultItem.PracticeItem(it) })
+            }
             
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    results = result.component1() ?: emptyList(),
-                    error = result.component2(),
+                    results = combinedResults,
+                    error = error,
                 )
             }
         }

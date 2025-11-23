@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.combine
 
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.model.PracticeSchedule
+import com.example.amulet.shared.domain.courses.CoursesRepository
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
@@ -18,17 +19,20 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.days
 @OptIn(kotlin.time.ExperimentalTime::class)
 class GetScheduledSessionsStreamUseCase(
-    private val repository: PracticesRepository
+    private val repository: PracticesRepository,
+    private val coursesRepository: CoursesRepository
 ) {
     operator fun invoke(): Flow<List<ScheduledSession>> {
         return combine(
             repository.getSchedulesStream(),
-            repository.getPracticesStream(PracticeFilter())
-        ) { schedules, practices ->
+            repository.getPracticesStream(PracticeFilter()),
+            coursesRepository.getCoursesStream()
+        ) { schedules, practices, courses ->
             val now = Clock.System.now()
             val timeZone = TimeZone.currentSystemDefault()
             val today = now.toLocalDateTime(timeZone).date
             val practicesMap = practices.associateBy { it.id }
+            val coursesMap = courses.associateBy { it.id }
 
             schedules.mapNotNull { schedule ->
                 // Проверяем, запланирована ли сессия на сегодня (1=Понедельник, 7=Воскресенье)
@@ -48,9 +52,10 @@ class GetScheduledSessionsStreamUseCase(
                         id = "${schedule.id}_${today}", // Generate a session ID
                         practiceId = schedule.practiceId,
                         practiceTitle = practicesMap[schedule.practiceId]?.title ?: "Практика",
-                        courseId = null, // Schedule currently doesn't support courseId directly, need update model if needed
+                        courseId = schedule.courseId,
                         scheduledTime = scheduledInstant.toEpochMilliseconds(),
-                        status = ScheduledSessionStatus.PLANNED
+                        status = ScheduledSessionStatus.PLANNED,
+                        courseTitle = schedule.courseId?.let { id -> coursesMap[id]?.title }
                     )
                 } else {
                     null

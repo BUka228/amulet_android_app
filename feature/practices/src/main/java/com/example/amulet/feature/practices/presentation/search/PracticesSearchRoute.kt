@@ -32,12 +32,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.practices.R
+import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.practices.model.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PracticesSearchRoute(
     onOpenPractice: (String) -> Unit,
+    onOpenCourse: (String) -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: PracticesSearchViewModel = hiltViewModel()
 ) {
@@ -47,6 +49,7 @@ fun PracticesSearchRoute(
         state = state,
         onEvent = viewModel::onEvent,
         onOpenPractice = onOpenPractice,
+        onOpenCourse = onOpenCourse,
         onNavigateBack = onNavigateBack
     )
 }
@@ -57,6 +60,7 @@ private fun PracticesSearchScreen(
     state: PracticesSearchState,
     onEvent: (PracticesSearchEvent) -> Unit,
     onOpenPractice: (String) -> Unit,
+    onOpenCourse: (String) -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val scaffoldState = LocalScaffoldState.current
@@ -169,28 +173,41 @@ private fun PracticesSearchScreen(
 
         // Results or Recommendations or Empty
         if (state.results.isNotEmpty()) {
-            item {
-                Text(
-                    text = stringResource(R.string.practices_search_results_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
+            items(state.results) { item ->
+                when (item) {
+                    is SearchResultItem.HeaderItem -> {
+                        Text(
+                            text = when (item.type) {
+                                SearchResultHeaderType.COURSES -> stringResource(R.string.practices_search_header_courses)
+                                SearchResultHeaderType.PRACTICES -> stringResource(R.string.practices_search_header_practices)
+                            },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                        )
+                    }
+                    is SearchResultItem.CourseItem -> {
+                        CourseCard(
+                            course = item.course,
+                            onClick = { onOpenCourse(item.course.id) }
+                        )
+                    }
+                    is SearchResultItem.PracticeItem -> {
+                        PracticeCard(
+                            practice = item.practice,
+                            onClick = { onOpenPractice(item.practice.id) }
+                        )
+                    }
+                }
             }
-            items(state.results, key = { it.id }) { practice ->
-                PracticeCard(
-                    practice = practice,
-                    onClick = { onOpenPractice(practice.id) }
-                )
-            }
-        } else if (!state.isLoading && (state.query.isNotEmpty() || state.filter != PracticeFilter())) {
+        } else if (!state.isLoading && (state.query.isNotEmpty() || state.filter != PracticeFilter() || state.isCoursesFilterSelected)) {
             // Empty search result
             item {
                 EmptySearchResult(
                     onClearFilters = { onEvent(PracticesSearchEvent.OnClearFilters) }
                 )
             }
-        } else if (state.query.isEmpty() && state.filter == PracticeFilter()) {
+        } else if (state.query.isEmpty() && state.filter == PracticeFilter() && !state.isCoursesFilterSelected) {
             // Recommendations when no query
             item {
                 Text(
@@ -240,43 +257,6 @@ private fun PracticesSearchScreen(
     }
 }
 
-@Composable
-private fun QuickFiltersToggleButton(
-    isExpanded: Boolean,
-    onClick: () -> Unit
-) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "arrow_rotation"
-    )
-    
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = MaterialTheme.colorScheme.primary
-        )
-    ) {
-        Icon(
-            imageVector = Icons.Filled.ExpandMore,
-            contentDescription = null,
-            modifier = Modifier
-                .size(20.dp)
-                .rotate(rotation)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = if (isExpanded) {
-                stringResource(R.string.practices_search_filter_type) + " / " + 
-                stringResource(R.string.practices_search_filter_goal)
-            } else {
-                stringResource(R.string.practices_search_filter_type) + " / " + 
-                stringResource(R.string.practices_search_filter_goal)
-            }
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun QuickFiltersSection(
@@ -295,7 +275,7 @@ private fun QuickFiltersSection(
                 exit = shrinkVertically() + fadeOut()
             ) {
                 Column {
-                    // Practice Type Filters
+                    // Type Filters (including Courses)
                     Text(
                         text = stringResource(R.string.practices_search_filter_type),
                         style = MaterialTheme.typography.labelLarge,
@@ -304,6 +284,22 @@ private fun QuickFiltersSection(
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        // Courses Filter Chip
+                        FilterChip(
+                            selected = state.isCoursesFilterSelected,
+                            onClick = {
+                                onEvent(PracticesSearchEvent.OnCoursesFilterChange(!state.isCoursesFilterSelected))
+                            },
+                            label = { Text(stringResource(R.string.practices_search_type_courses_chip)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.School,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+
                         PracticeType.entries.forEach { type ->
                             val isSelected = state.filter.type == type
                             FilterChip(
@@ -535,6 +531,96 @@ private fun AdvancedFiltersContent(
 }
 
 @Composable
+private fun CourseCard(
+    course: Course,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = course.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = { },
+                        label = { Text("Курс", style = MaterialTheme.typography.labelSmall) },
+                        modifier = Modifier.height(24.dp),
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    )
+                    course.goal?.let { goal ->
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(goal.displayName(), style = MaterialTheme.typography.labelSmall) },
+                            modifier = Modifier.height(24.dp)
+                        )
+                    }
+                }
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    course.totalDurationSec?.let { duration ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Schedule,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = stringResource(R.string.practices_home_duration_minutes, duration / 60),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    
+                    course.level?.let { level ->
+                        Text(
+                            text = level.displayName(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PracticeCard(
     practice: Practice,
     onClick: () -> Unit,
@@ -683,10 +769,13 @@ private fun EmptySearchResult(
 @Composable
 private fun ErrorMessage(error: com.example.amulet.shared.core.AppError) {
     val errorMessage = when (error) {
-        is com.example.amulet.shared.core.AppError.Server -> error.message ?: "Server error"
-        is com.example.amulet.shared.core.AppError.Network -> "Network error"
-        is com.example.amulet.shared.core.AppError.Timeout -> "Request timeout"
-        else -> "An error occurred"
+        is com.example.amulet.shared.core.AppError.Server ->
+            error.message ?: stringResource(R.string.practices_error_server)
+        is com.example.amulet.shared.core.AppError.Network ->
+            stringResource(R.string.practices_error_network)
+        is com.example.amulet.shared.core.AppError.Timeout ->
+            stringResource(R.string.practices_error_timeout)
+        else -> stringResource(R.string.practices_error_generic)
     }
     
     Box(

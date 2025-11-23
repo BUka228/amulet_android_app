@@ -90,8 +90,8 @@ private val sharedModule = module {
     factory { SetFavoritePracticeUseCase(get()) }
     factory { GetActiveSessionStreamUseCase(get()) }
     factory { GetSessionsHistoryStreamUseCase(get()) }
-    factory { GetScheduledSessionsStreamUseCase(get()) }
-    factory { GetScheduledSessionsForDateRangeUseCase(get()) }
+    factory { GetScheduledSessionsStreamUseCase(get(), get()) }
+    factory { GetScheduledSessionsForDateRangeUseCase(get(), get()) }
     factory { RefreshPracticesCatalogUseCase(get()) }
     factory { StartPracticeUseCase(get()) }
     factory { PauseSessionUseCase(get()) }
@@ -109,6 +109,7 @@ private val sharedModule = module {
     factory { GetCoursesStreamUseCase(get()) }
     factory { GetCourseByIdUseCase(get()) }
     factory { GetCourseItemsStreamUseCase(get()) }
+    factory { GetCourseModulesStreamUseCase(get()) }
     factory { GetCourseProgressStreamUseCase(get()) }
     factory { GetAllCoursesProgressStreamUseCase(get()) }
     factory { GetCoursesByPracticeIdUseCase(get()) }
@@ -118,6 +119,9 @@ private val sharedModule = module {
     factory { ContinueCourseUseCase(get()) }
     factory { CompleteCourseItemUseCase(get()) }
     factory { ResetCourseProgressUseCase(get()) }
+    factory { SearchCoursesUseCase(get()) }
+    factory { CheckItemUnlockUseCase(get()) }
+    factory { GetUnlockedItemsUseCase(get(), get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

@@ -60,5 +60,6 @@ sealed class CalendarIntent {
 
 sealed class CalendarEffect {
     data class NavigateToPractice(val practiceId: String) : CalendarEffect()
+    data class NavigateToCourse(val courseId: String) : CalendarEffect()
     object NavigateBack : CalendarEffect()
 }

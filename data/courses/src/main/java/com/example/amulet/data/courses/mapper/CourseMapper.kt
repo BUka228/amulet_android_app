@@ -8,6 +8,7 @@ import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemType
 import com.example.amulet.shared.domain.courses.model.CourseProgress
 import com.example.amulet.shared.domain.courses.model.CourseRhythm
+import com.example.amulet.shared.domain.courses.model.UnlockCondition
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
 import kotlinx.serialization.json.Json
@@ -15,6 +16,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.decodeFromString
 
 fun CourseEntity.toDomain(): Course = Course(
     id = id,
@@ -59,7 +61,11 @@ fun CourseItemEntity.toDomain(): CourseItem = CourseItem(
     title = title,
     description = description,
     mandatory = mandatory,
-    minDurationSec = minDurationSec
+    minDurationSec = minDurationSec,
+    moduleId = moduleId?.let { com.example.amulet.shared.domain.courses.model.CourseModuleId(it) },
+    unlockCondition = unlockConditionJson?.let { 
+        runCatching { Json.decodeFromString<UnlockCondition>(it) }.getOrNull() 
+    }
 )
 
 fun CourseProgressEntity.toDomain(): CourseProgress = CourseProgress(

@@ -4,6 +4,7 @@ import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.model.CourseItem
 import com.example.amulet.shared.domain.courses.model.CourseItemType
 import com.example.amulet.shared.domain.courses.model.CourseRhythm
+import com.example.amulet.shared.domain.courses.model.UnlockCondition
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
 
@@ -24,6 +25,7 @@ data class CourseSeed(
     val difficulty: String? = null,
     val coverUrl: String? = null,
     val category: String? = null,
+    val modules: List<CourseModuleSeed> = emptyList(),
     val items: List<CourseItemSeed> = emptyList(),
     val createdAt: Long? = System.currentTimeMillis(),
     val updatedAt: Long? = System.currentTimeMillis()
@@ -42,7 +44,21 @@ data class CourseItemSeed(
     val description: String?,
     val mandatory: Boolean = true,
     val minDurationSec: Int? = null,
-    val contentUrl: String? = null
+    val contentUrl: String? = null,
+    val moduleId: String? = null,
+    val unlockCondition: UnlockCondition? = null
+)
+
+/**
+ * Модель модуля курса для сидирования.
+ */
+data class CourseModuleSeed(
+    val id: String,
+    val courseId: String,
+    val order: Int,
+    val title: String?,
+    val description: String? = null,
+    val recommendedDayOffset: Int? = null
 )
 
 /**
@@ -63,6 +79,7 @@ fun Course.toSeed(items: List<CourseItem> = emptyList()): CourseSeed = CourseSee
     coverUrl = coverUrl,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    // modules are not derived from domain here; they are defined in CourseSeedData
     items = items.map { it.toItemSeed() }
 )
 
@@ -75,5 +92,6 @@ fun CourseItem.toItemSeed(): CourseItemSeed = CourseItemSeed(
     title = title,
     description = description,
     mandatory = mandatory,
-    minDurationSec = minDurationSec
+    minDurationSec = minDurationSec,
+    unlockCondition = unlockCondition
 )

@@ -41,7 +41,16 @@ class LocalCoursesDataSourceImpl @Inject constructor(
         Logger.d("Создание курсов: ${courseEntities.size}", "LocalCoursesDataSourceImpl")
         dao.upsertCourses(courseEntities)
         
-        // 2) Вставим элементы курсов
+        // 2) Вставим модули курсов
+        val moduleEntities = presets.flatMap { course ->
+            course.modules.map { module -> module.toEntity() }
+        }
+        if (moduleEntities.isNotEmpty()) {
+            Logger.d("Создание модулей курсов: ${moduleEntities.size}", "LocalCoursesDataSourceImpl")
+            dao.upsertCourseModules(moduleEntities)
+        }
+
+        // 3) Вставим элементы курсов
         val itemEntities = presets.flatMap { course -> 
             course.items.map { item -> item.toEntity() }
         }

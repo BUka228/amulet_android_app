@@ -29,6 +29,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.isoDayNumber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -59,6 +60,8 @@ class CalendarViewModel @Inject constructor(
 
     private var plannerExistingScheduleId: String? = null
     private var plannerExistingScheduleCreatedAt: Long? = null
+    private var plannerExistingScheduleCourseId: String? = null
+    private var plannerExistingSchedulePlanId: String? = null
 
     init {
         loadSessions()
@@ -78,6 +81,8 @@ class CalendarViewModel @Inject constructor(
         // Открываем шит без выбранной практики, пользователь выберет её из списка
         plannerExistingScheduleId = null
         plannerExistingScheduleCreatedAt = null
+        plannerExistingScheduleCourseId = null
+        plannerExistingSchedulePlanId = null
         _state.update {
             it.copy(
                 plannerPracticeId = null,
@@ -96,6 +101,8 @@ class CalendarViewModel @Inject constructor(
             // Сброс локального состояния id расписания
             plannerExistingScheduleId = null
             plannerExistingScheduleCreatedAt = null
+            plannerExistingScheduleCourseId = null
+            plannerExistingSchedulePlanId = null
 
             // Подгружаем заголовок практики
             val practice = getPracticeByIdUseCase(practiceId).firstOrNull()
@@ -105,6 +112,8 @@ class CalendarViewModel @Inject constructor(
 
             plannerExistingScheduleId = schedule?.id
             plannerExistingScheduleCreatedAt = schedule?.createdAt
+            plannerExistingScheduleCourseId = schedule?.courseId
+            plannerExistingSchedulePlanId = schedule?.planId
 
             _state.update { state ->
                 state.copy(
@@ -152,11 +161,13 @@ class CalendarViewModel @Inject constructor(
                 id = plannerExistingScheduleId ?: java.util.UUID.randomUUID().toString(),
                 userId = "", // userId берётся на уровне репозитория
                 practiceId = practiceId,
-                courseId = null,
+                courseId = plannerExistingScheduleCourseId,
                 daysOfWeek = snapshot.plannerSelectedDays.toList().sorted(),
                 timeOfDay = snapshot.plannerTimeOfDay,
                 reminderEnabled = snapshot.plannerReminderEnabled,
-                createdAt = plannerExistingScheduleCreatedAt ?: System.currentTimeMillis()
+                createdAt = plannerExistingScheduleCreatedAt ?: System.currentTimeMillis(),
+                planId = plannerExistingSchedulePlanId,
+                updatedAt = System.currentTimeMillis()
             )
 
             val result = upsertPracticeScheduleUseCase(schedule)
@@ -214,16 +225,22 @@ class CalendarViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, error = null) }
             try {
                 val month = _state.value.currentMonth
-                // Load sessions for the whole month plus some padding for calendar grid
+                // Рассчитываем диапазон, который покрывает весь календарный грид.
+                // 1) Находим первый и последний день месяца
                 val startOfMonth = LocalDate(month.year, month.month, 1)
                 val endOfMonth = startOfMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
-                
-                // Add padding for grid (e.g. start from previous monday)
-                // For simplicity, we just load current month for now, 
-                // but ideally we should calculate visible range.
-                // Let's load from 1st to end of month.
-                
-                getScheduledSessionsForDateRangeUseCase(startOfMonth, endOfMonth)
+
+                // 2) Сдвигаем начало к понедельнику (или первому дню недели для грида)
+                val startDayOfWeek = startOfMonth.dayOfWeek.isoDayNumber // Пн = 1, Вс = 7
+                val daysToSubtract = (startDayOfWeek - 1).coerceAtLeast(0)
+                val gridStart = startOfMonth.minus(daysToSubtract.toLong(), DateTimeUnit.DAY)
+
+                // 3) Сдвигаем конец к воскресенью
+                val endDayOfWeek = endOfMonth.dayOfWeek.isoDayNumber
+                val daysToAdd = (7 - endDayOfWeek).coerceAtLeast(0)
+                val gridEnd = endOfMonth.plus(daysToAdd.toLong(), DateTimeUnit.DAY)
+
+                getScheduledSessionsForDateRangeUseCase(gridStart, gridEnd)
                     .collect { sessions ->
                         _state.update { it.copy(sessions = sessions, isLoading = false) }
                     }
@@ -235,10 +252,14 @@ class CalendarViewModel @Inject constructor(
     }
 
     private fun openSession(sessionId: String) {
-        // Find session and navigate to practice details
         val session = _state.value.sessions.find { it.id == sessionId }
-        session?.practiceId?.let { practiceId ->
-            _effects.trySend(CalendarEffect.NavigateToPractice(practiceId))
+        val courseId = session?.courseId
+        if (courseId != null) {
+            _effects.trySend(CalendarEffect.NavigateToCourse(courseId))
+        } else {
+            session?.practiceId?.let { practiceId ->
+                _effects.trySend(CalendarEffect.NavigateToPractice(practiceId))
+            }
         }
     }
 

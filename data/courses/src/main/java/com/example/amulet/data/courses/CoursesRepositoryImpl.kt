@@ -78,8 +78,12 @@ class CoursesRepositoryImpl @Inject constructor(
                 Logger.d("Переходим к сидированию предустановленных курсов (офлайн)", "CoursesRepositoryImpl")
                 val courses: List<CourseSeed> = CourseSeedData.getCourses()
                 val courseItems = CourseSeedData.getCourseItems()
+                val courseModules = CourseSeedData.getCourseModules()
                 val seeds = courses.map { seed ->
-                    seed.copy(items = courseItems[seed.id] ?: emptyList())
+                    seed.copy(
+                        items = courseItems[seed.id] ?: emptyList(),
+                        modules = courseModules[seed.id] ?: emptyList()
+                    )
                 }
                 local.seedPresets(seeds)
                 Logger.d("Сидирование курсов завершено: ${seeds.size} курсов", "CoursesRepositoryImpl")
@@ -99,8 +103,12 @@ class CoursesRepositoryImpl @Inject constructor(
         return try {
             val courses: List<CourseSeed> = CourseSeedData.getCourses()
             val courseItems = CourseSeedData.getCourseItems()
+            val courseModules = CourseSeedData.getCourseModules()
             val seeds = courses.map { seed ->
-                seed.copy(items = courseItems[seed.id] ?: emptyList())
+                seed.copy(
+                    items = courseItems[seed.id] ?: emptyList(),
+                    modules = courseModules[seed.id] ?: emptyList()
+                )
             }
             local.seedPresets(seeds)
             Logger.d("Локальное сидирование курсов завершено: ${seeds.size} курсов", "CoursesRepositoryImpl")

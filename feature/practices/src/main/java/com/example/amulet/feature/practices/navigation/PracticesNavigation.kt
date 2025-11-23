@@ -84,12 +84,15 @@ fun NavGraphBuilder.practicesGraph(
             val id = backStackEntry.arguments?.getString("courseId") ?: return@composable
             CourseDetailsRoute(
                 courseId = id,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSchedule = { navController.navigateToCalendar() },
+                onOpenPractice = { practiceId -> navController.navigateToPracticeDetails(practiceId) }
             )
         }
         composable(route = PracticesDestination.search) {
             PracticesSearchRoute(
                 onOpenPractice = { id -> navController.navigateToPracticeDetails(id) },
+                onOpenCourse = { id -> navController.navigateToCourseDetails(id) },
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -108,6 +111,9 @@ fun NavGraphBuilder.practicesGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPractice = { id ->
                     navController.navigateToPracticeDetails(id)
+                },
+                onNavigateToCourse = { id ->
+                    navController.navigateToCourseDetails(id)
                 }
             )
         }

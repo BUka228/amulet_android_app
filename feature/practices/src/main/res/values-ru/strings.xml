@@ -45,6 +45,9 @@
     <string name="practices_search_empty_message">Попробуйте изменить фильтры или ключевые слова поиска</string>
     <string name="practices_search_clear_filters">Сбросить фильтры</string>
     <string name="practices_search_advanced_filters">Фильтры</string>
+    <string name="practices_search_type_courses_chip">Курсы</string>
+    <string name="practices_search_header_courses">Курсы</string>
+    <string name="practices_search_header_practices">Практики</string>
     <string name="practices_search_filter_type">Тип</string>
     <string name="practices_search_filter_goal">Цель</string>
     <string name="practices_search_filter_level">Уровень</string>
@@ -122,6 +125,11 @@
     <string name="schedule_overdue_action_do_now">Выполнить</string>
     <string name="schedule_overdue_action_skip">Пропустить</string>
 
+    <!-- Session status labels -->
+    <string name="session_status_planned">Запланирована</string>
+    <string name="session_status_missed">Просрочена</string>
+    <string name="session_status_completed">Выполнена</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Добавить в план</string>
     <string name="planning_back">Назад</string>
@@ -134,6 +142,22 @@
     <string name="planning_reminders">Напоминания</string>
     <string name="planning_cancel">Отменить</string>
     <string name="planning_save">Сохранить</string>
+    
+    <!-- Course details screen -->
+    <string name="practices_course_total_duration">%1$d мин всего</string>
+    <string name="practices_course_modules_count">%1$d модулей</string>
+    <string name="practices_course_progress_label">Прогресс: %1$d%%</string>
+    <string name="practices_course_module_fallback_title">Модуль</string>
+    <string name="practices_course_module_completed_items">%1$d / %2$d выполнено</string>
+    <string name="practices_course_practice_fallback_title">Практика</string>
+    <string name="practices_course_practice_duration_minutes">%1$d мин</string>
+    <string name="practices_course_action_continue">Продолжить курс</string>
+    <string name="practices_course_action_start">Начать курс</string>
+    <string name="practices_course_title">Курсы</string>
+    <string name="practices_course_reset_title">Сбросить прогресс курса?</string>
+    <string name="practices_course_reset_message">Все выполненные практики и прогресс будут удалены. Это действие нельзя отменить.</string>
+    <string name="practices_course_reset_confirm">Сбросить</string>
+    <string name="practices_course_reset_cancel">Отмена</string>
 
     <!-- Week days -->
     <string name="weekday_mon">Пн</string>

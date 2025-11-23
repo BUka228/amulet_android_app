@@ -1,5 +1,6 @@
 package com.example.amulet.feature.practices.presentation.calendar
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
@@ -128,19 +130,21 @@ fun CalendarScreen(
             onModeChange = { onIntent(CalendarIntent.ChangeViewMode(it)) }
         )
 
-        // Content based on view mode
-        when (state.viewMode) {
-            ScheduleViewMode.CALENDAR -> {
-                CalendarViewContent(
-                    state = state,
-                    onIntent = onIntent
-                )
-            }
-            ScheduleViewMode.LIST -> {
-                ScheduleListView(
-                    state = state,
-                    onIntent = onIntent
-                )
+        // Content based on view mode with crossfade animation
+        Crossfade(targetState = state.viewMode, label = "schedule_view_mode") { mode ->
+            when (mode) {
+                ScheduleViewMode.CALENDAR -> {
+                    CalendarViewContent(
+                        state = state,
+                        onIntent = onIntent
+                    )
+                }
+                ScheduleViewMode.LIST -> {
+                    ScheduleListView(
+                        state = state,
+                        onIntent = onIntent
+                    )
+                }
             }
         }
     }
@@ -785,7 +789,10 @@ fun SessionItem(
     }
 
     AmuletCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onIntent(CalendarIntent.OpenSession(session.id)) },
         backgroundColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
         elevation = com.example.amulet.core.design.components.card.CardElevation.None
     ) {
@@ -831,10 +838,20 @@ fun SessionItem(
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(
+                        {onIntent(CalendarIntent.StartSession(session.id))}
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null
+                        )
+                    }
                 }
                 
                 // Metadata chips - duration and course indicator
                 Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -845,12 +862,15 @@ fun SessionItem(
                         )
                     }
                     
-                    session.courseId?.let {
+                    session.courseId?.let { _ ->
+                        val label = session.courseTitle ?: "Курс"
                         MetadataChip(
                             icon = Icons.Default.CalendarToday,
-                            text = "Курс"
+                            text = label
                         )
                     }
+
+                    SessionStatusChip(status = session.status)
                 }
                 
                 // Quick actions
@@ -858,25 +878,32 @@ fun SessionItem(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    if (canStart) {
+                    if (session.status == ScheduledSessionStatus.MISSED) {
                         Button(
                             onClick = { onIntent(CalendarIntent.StartSession(session.id)) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(stringResource(R.string.session_action_start))
+                            Text(text = stringResource(R.string.schedule_overdue_action_do_now))
                         }
-                    }
-                    OutlinedButton(
-                        onClick = { onIntent(CalendarIntent.OpenPlanner(session.practiceId)) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.session_action_reschedule))
-                    }
-                    OutlinedButton(
-                        onClick = { showCancelDialog = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.session_action_cancel))
+                        OutlinedButton(
+                            onClick = { showCancelDialog = true },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = stringResource(R.string.schedule_overdue_action_skip))
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onIntent(CalendarIntent.OpenPlanner(session.practiceId)) },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.session_action_reschedule))
+                        }
+                        OutlinedButton(
+                            onClick = { showCancelDialog = true },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.session_action_cancel))
+                        }
                     }
                 }
             }
@@ -983,24 +1010,6 @@ private fun ScheduleListView(
     val today = kotlin.time.Clock.System.now().toLocalDateTime(timeZone).date
     val endDate = today.plus(7, DateTimeUnit.DAY)
 
-    val threeDaysAgo = today.minus(3, DateTimeUnit.DAY)
-    val nowMillis = kotlin.time.Clock.System.now().toEpochMilliseconds()
-
-    // Просроченные сессии за последние несколько дней
-    // Показываем только ещё не обработанные (PLANNED) сессии, срок которых уже прошёл.
-    val overdueSessions = remember(state.sessions, today) {
-        state.sessions.filter { session ->
-            val sessionDate = kotlinx.datetime.Instant.fromEpochMilliseconds(session.scheduledTime)
-                .toLocalDateTime(timeZone).date
-            val isBeforeToday = sessionDate < today
-            val isWithinWindow = sessionDate >= threeDaysAgo
-            val isPlanned = session.status == ScheduledSessionStatus.PLANNED
-            val isTimePassed = session.scheduledTime < nowMillis
-
-            isBeforeToday && isWithinWindow && isPlanned && isTimePassed
-        }.sortedByDescending { it.scheduledTime }
-    }
-
     // Сессии на ближайшие 7 дней
     val upcomingSessions = remember(state.sessions, today) {
         state.sessions.filter {
@@ -1018,7 +1027,7 @@ private fun ScheduleListView(
         }
     }
 
-    if (sessionsByDate.isEmpty() && overdueSessions.isEmpty()) {
+    if (sessionsByDate.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -1031,34 +1040,6 @@ private fun ScheduleListView(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (overdueSessions.isNotEmpty()) {
-            item {
-                AmuletCard(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.schedule_overdue_sessions),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        overdueSessions.forEach { session ->
-                            OverdueSessionItem(
-                                session = session,
-                                onIntent = onIntent
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
         sessionsByDate.forEach { (date, sessions) ->
             item {
                 AmuletCard(
@@ -1109,7 +1090,7 @@ private fun OverdueSessionItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f), RoundedCornerShape(12.dp))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -1131,7 +1112,10 @@ private fun OverdueSessionItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+
             }
+            SessionStatusChip(status = session.status)
         }
 
         Row(
@@ -1200,5 +1184,45 @@ private fun DateGroupHeader(date: LocalDate, today: LocalDate) {
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(vertical = 8.dp)
     )
+}
+
+@Composable
+private fun SessionStatusChip(status: ScheduledSessionStatus) {
+    val (label, borderColor, contentColor) = when (status) {
+        ScheduledSessionStatus.PLANNED -> Triple(
+            stringResource(id = R.string.session_status_planned),
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        ScheduledSessionStatus.MISSED -> Triple(
+            stringResource(id = R.string.session_status_missed),
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer
+        )
+        ScheduledSessionStatus.COMPLETED -> Triple(
+            stringResource(id = R.string.session_status_completed),
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    }
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(borderColor))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor
+            )
+        }
+    }
 }
 

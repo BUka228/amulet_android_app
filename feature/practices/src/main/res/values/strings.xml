@@ -45,6 +45,9 @@
     <string name="practices_search_empty_message">Try changing your search filters or keywords</string>
     <string name="practices_search_clear_filters">Clear filters</string>
     <string name="practices_search_advanced_filters">Filters</string>
+    <string name="practices_search_type_courses_chip">Courses</string>
+    <string name="practices_search_header_courses">Courses</string>
+    <string name="practices_search_header_practices">Practices</string>
     <string name="practices_search_filter_type">Type</string>
     <string name="practices_search_filter_goal">Goal</string>
     <string name="practices_search_filter_level">Level</string>
@@ -122,6 +125,11 @@
     <string name="schedule_overdue_action_do_now">Do now</string>
     <string name="schedule_overdue_action_skip">Skip</string>
 
+    <!-- Session status labels -->
+    <string name="session_status_planned">Planned</string>
+    <string name="session_status_missed">Missed</string>
+    <string name="session_status_completed">Completed</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Add to plan</string>
     <string name="planning_back">Back</string>
@@ -134,6 +142,23 @@
     <string name="planning_reminders">Reminders</string>
     <string name="planning_cancel">Cancel</string>
     <string name="planning_save">Save</string>
+    
+    <!-- Course details screen -->
+    <string name="practices_course_total_duration">%1$d min total</string>
+    <string name="practices_course_modules_count">%1$d modules</string>
+    <string name="practices_course_progress_label">Progress: %1$d%%</string>
+    <string name="practices_course_module_fallback_title">Module</string>
+    <string name="practices_course_module_completed_items">%1$d / %2$d completed</string>
+    <string name="practices_course_practice_fallback_title">Practice</string>
+    <string name="practices_course_practice_duration_minutes">%1$d min</string>
+    <string name="practices_course_action_continue">Continue course</string>
+    <string name="practices_course_action_start">Start course</string>
+    <string name="practices_course_title">Courses</string>
+    <string name="practices_course_reset_title">Reset course progress?</string>
+    <string name="practices_course_reset_message">All completed practices and progress will be removed. This action cannot be undone.</string>
+    <string name="practices_course_reset_confirm">Reset</string>
+    <string name="practices_course_reset_cancel">Cancel</string>
+
 
     <!-- Week days -->
     <string name="weekday_mon">Mon</string>

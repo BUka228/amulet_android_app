@@ -22,4 +22,5 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.material3)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.coil.compose)
 }

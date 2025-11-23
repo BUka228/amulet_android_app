@@ -2,6 +2,7 @@ package com.example.amulet.data.courses.seed
 
 import com.example.amulet.shared.domain.courses.model.CourseItemType
 import com.example.amulet.shared.domain.courses.model.CourseRhythm
+import com.example.amulet.shared.domain.courses.model.UnlockCondition
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
 
@@ -24,7 +25,7 @@ object CourseSeedData {
             modulesCount = 7,
             recommendedDays = 7,
             difficulty = "easy",
-            coverUrl = null
+            coverUrl = "course_sleep_7days"
         ),
         
         // === КУРС 2: Снижение стресса ===
@@ -40,7 +41,7 @@ object CourseSeedData {
             modulesCount = 10,
             recommendedDays = 10,
             difficulty = "easy",
-            coverUrl = null
+            coverUrl = "course_stress_relief"
         ),
         
         // === КУРС 3: Фокус и концентрация ===
@@ -56,7 +57,7 @@ object CourseSeedData {
             modulesCount = 6,
             recommendedDays = 14,
             difficulty = "medium",
-            coverUrl = null
+            coverUrl = "course_focus_concentration"
         ),
         
         // === КУРС 4: Энергия на весь день ===
@@ -72,7 +73,7 @@ object CourseSeedData {
             modulesCount = 5,
             recommendedDays = 5,
             difficulty = "easy",
-            coverUrl = null
+            coverUrl = "course_energy_boost"
         ),
         
         // === КУРС 5: Работа с тревожностью ===
@@ -88,10 +89,94 @@ object CourseSeedData {
             modulesCount = 8,
             recommendedDays = null,
             difficulty = "medium",
-            coverUrl = null
+            coverUrl = "course_anxiety_management"
         )
     )
     
+    fun getCourseModules(): Map<String, List<CourseModuleSeed>> = mapOf(
+        // === Modules for "Сон за 7 дней" ===
+        "course_sleep_7days" to listOf(
+            CourseModuleSeed(
+                id = "course_sleep_7days_day1",
+                courseId = "course_sleep_7days",
+                order = 1,
+                title = "День 1: Знакомство с дыханием 4-7-8"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day2",
+                courseId = "course_sleep_7days",
+                order = 2,
+                title = "День 2: Углубление практики"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day3",
+                courseId = "course_sleep_7days",
+                order = 3,
+                title = "День 3: Сканирование тела"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day4",
+                courseId = "course_sleep_7days",
+                order = 4,
+                title = "День 4: Звуки океана"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day5",
+                courseId = "course_sleep_7days",
+                order = 5,
+                title = "День 5: Медитация перед сном"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day6",
+                courseId = "course_sleep_7days",
+                order = 6,
+                title = "День 6: Комбинация техник"
+            ),
+            CourseModuleSeed(
+                id = "course_sleep_7days_day7",
+                courseId = "course_sleep_7days",
+                order = 7,
+                title = "День 7: Финальная практика"
+            )
+        ),
+        // === Modules for "Снижение стресса" ===
+        "course_stress_relief" to (1..10).map { day ->
+            CourseModuleSeed(
+                id = "course_stress_day$day",
+                courseId = "course_stress_relief",
+                order = day,
+                title = "День $day"
+            )
+        },
+        // === Modules for "Фокус и концентрация" ===
+        "course_focus_concentration" to (1..6).map { index ->
+            CourseModuleSeed(
+                id = "course_focus_session$index",
+                courseId = "course_focus_concentration",
+                order = index,
+                title = "Сессия $index"
+            )
+        },
+        // === Modules for "Энергия на весь день" ===
+        "course_energy_boost" to (1..5).map { day ->
+            CourseModuleSeed(
+                id = "course_energy_day$day",
+                courseId = "course_energy_boost",
+                order = day,
+                title = "День $day"
+            )
+        },
+        // === Modules for "Работа с тревожностью" ===
+        "course_anxiety_management" to (1..8).map { index ->
+            CourseModuleSeed(
+                id = "course_anxiety_module$index",
+                courseId = "course_anxiety_management",
+                order = index,
+                title = "Модуль $index"
+            )
+        }
+    )
+
     fun getCourseItems(): Map<String, List<CourseItemSeed>> = mapOf(
         // === Items для "Сон за 7 дней" ===
         "course_sleep_7days" to listOf(
@@ -104,7 +189,8 @@ object CourseSeedData {
                 title = "День 1: Знакомство с дыханием 4-7-8",
                 description = "Базовая техника для засыпания",
                 mandatory = true,
-                minDurationSec = 300
+                minDurationSec = 300,
+                moduleId = "course_sleep_7days_day1"
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day2",
@@ -115,7 +201,9 @@ object CourseSeedData {
                 title = "День 2: Углубление практики",
                 description = "Второй день с дыханием 4-7-8",
                 mandatory = true,
-                minDurationSec = 300
+                minDurationSec = 300,
+                moduleId = "course_sleep_7days_day2",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day3",
@@ -126,7 +214,9 @@ object CourseSeedData {
                 title = "День 3: Сканирование тела",
                 description = "Расслабление каждой части тела",
                 mandatory = true,
-                minDurationSec = 900
+                minDurationSec = 900,
+                moduleId = "course_sleep_7days_day3",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day4",
@@ -137,7 +227,9 @@ object CourseSeedData {
                 title = "День 4: Звуки океана",
                 description = "Погружение в звуки природы",
                 mandatory = true,
-                minDurationSec = 1800
+                minDurationSec = 1800,
+                moduleId = "course_sleep_7days_day4",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day5",
@@ -148,7 +240,9 @@ object CourseSeedData {
                 title = "День 5: Медитация перед сном",
                 description = "Специализированная практика для сна",
                 mandatory = true,
-                minDurationSec = 1200
+                minDurationSec = 1200,
+                moduleId = "course_sleep_7days_day5",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day6",
@@ -159,7 +253,9 @@ object CourseSeedData {
                 title = "День 6: Комбинация техник",
                 description = "Сканирование и дыхание",
                 mandatory = true,
-                minDurationSec = 900
+                minDurationSec = 900,
+                moduleId = "course_sleep_7days_day6",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             ),
             CourseItemSeed(
                 id = "course_sleep_7days_day7",
@@ -170,7 +266,14 @@ object CourseSeedData {
                 title = "День 7: Финальная практика",
                 description = "Закрепление всех техник",
                 mandatory = true,
-                minDurationSec = 1200
+                minDurationSec = 1200,
+                moduleId = "course_sleep_7days_day7",
+                unlockCondition = UnlockCondition.And(
+                    listOf(
+                        UnlockCondition.CompletePreviousItem,
+                        UnlockCondition.MinimumProgress(85)
+                    )
+                )
             )
         ),
         
@@ -185,7 +288,8 @@ object CourseSeedData {
                 title = "День 1: Квадратное дыхание",
                 description = "Основа стрессоустойчивости",
                 mandatory = true,
-                minDurationSec = 420
+                minDurationSec = 420,
+                moduleId = "course_stress_day1"
             ),
             CourseItemSeed(
                 id = "course_stress_day2",
@@ -196,7 +300,8 @@ object CourseSeedData {
                 title = "День 2: Экспресс-техника",
                 description = "Быстрое снятие стресса",
                 mandatory = true,
-                minDurationSec = 300
+                minDurationSec = 300,
+                moduleId = "course_stress_day2"
             ),
             CourseItemSeed(
                 id = "course_stress_day3",
@@ -207,7 +312,8 @@ object CourseSeedData {
                 title = "День 3: Осознанность",
                 description = "Наблюдение за стрессом без реакции",
                 mandatory = true,
-                minDurationSec = 600
+                minDurationSec = 600,
+                moduleId = "course_stress_day3"
             ),
             CourseItemSeed(
                 id = "course_stress_day4",
@@ -218,7 +324,8 @@ object CourseSeedData {
                 title = "День 4: Лесные звуки",
                 description = "Природная терапия",
                 mandatory = false,
-                minDurationSec = 1800
+                minDurationSec = 1800,
+                moduleId = "course_stress_day4"
             ),
             CourseItemSeed(
                 id = "course_stress_day5",  
@@ -229,9 +336,69 @@ object CourseSeedData {
                 title = "День 5: Углубление дыхания",
                 description = "Продвинутая работа с дыханием",
                 mandatory = true,
-                minDurationSec = 420
+                minDurationSec = 420,
+                moduleId = "course_stress_day5"
+            ),
+            CourseItemSeed(
+                id = "course_stress_day6",
+                courseId = "course_stress_relief",
+                order = 6,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_body_scan",
+                title = "День 6: Расслабление тела",
+                description = "Глубокое сканирование тела для снятия напряжения",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_stress_day6"
+            ),
+            CourseItemSeed(
+                id = "course_stress_day7",
+                courseId = "course_stress_relief",
+                order = 7,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_mindfulness",
+                title = "День 7: Осознанность в действии",
+                description = "Практика наблюдения за мыслями и эмоциями",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_stress_day7"
+            ),
+            CourseItemSeed(
+                id = "course_stress_day8",
+                courseId = "course_stress_relief",
+                order = 8,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_soundscape_forest",
+                title = "День 8: Длительное восстановление",
+                description = "Расширенная сессия с природными звуками",
+                mandatory = false,
+                minDurationSec = 1800,
+                moduleId = "course_stress_day8"
+            ),
+            CourseItemSeed(
+                id = "course_stress_day9",
+                courseId = "course_stress_relief",
+                order = 9,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_mixed_stress_relief",
+                title = "День 9: Комбинированная практика",
+                description = "Сочетание дыхания и осознанности",
+                mandatory = true,
+                minDurationSec = 600,
+                moduleId = "course_stress_day9"
+            ),
+            CourseItemSeed(
+                id = "course_stress_day10",
+                courseId = "course_stress_relief",
+                order = 10,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_mindfulness",
+                title = "День 10: Итоговая сессия",
+                description = "Закрепление навыков стрессоустойчивости",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_stress_day10"
             )
-            // Остальные дни 6-10 аналогично...
         ),
         
         // === Items для "Фокус и концентрация" ===
@@ -245,7 +412,8 @@ object CourseSeedData {
                 title = "Сессия 1: Базовый фокус",
                 description = "Тренировка концентрации",
                 mandatory = true,
-                minDurationSec = 900
+                minDurationSec = 900,
+                moduleId = "course_focus_session1"
             ),
             CourseItemSeed(
                 id = "course_focus_session2",
@@ -256,9 +424,62 @@ object CourseSeedData {
                 title = "Сессия 2: Углубление",
                 description = "Более длительная концентрация",
                 mandatory = true,
-                minDurationSec = 900
+                minDurationSec = 900,
+                moduleId = "course_focus_session2",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_focus_session3",
+                courseId = "course_focus_concentration",
+                order = 3,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_focus",
+                title = "Сессия 3: Фокус на задаче",
+                description = "Отработка удержания внимания на одном объекте",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_focus_session3",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_focus_session4",
+                courseId = "course_focus_concentration",
+                order = 4,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_focus",
+                title = "Сессия 4: Глубокая концентрация",
+                description = "Увеличение продолжительности непрерывной работы ума",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_focus_session4",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_focus_session5",
+                courseId = "course_focus_concentration",
+                order = 5,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_mindfulness",
+                title = "Сессия 5: Осознанная продуктивность",
+                description = "Связь фокуса и отдыха",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_focus_session5",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_focus_session6",
+                courseId = "course_focus_concentration",
+                order = 6,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_focus",
+                title = "Сессия 6: Итоговая тренировка",
+                description = "Закрепление навыков глубокой концентрации",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_focus_session6",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             )
-            // Остальные сессии 3-6 аналогично...
         ),
         
         // === Items для "Энергия на весь день" ===
@@ -272,7 +493,8 @@ object CourseSeedData {
                 title = "День 1: Бодрящее дыхание",
                 description = "Пробуждение энергии",
                 mandatory = true,
-                minDurationSec = 180
+                minDurationSec = 180,
+                moduleId = "course_energy_day1"
             ),
             CourseItemSeed(
                 id = "course_energy_day2",
@@ -283,9 +505,45 @@ object CourseSeedData {
                 title = "День 2: Утренний ритуал",
                 description = "Комплексная практика",
                 mandatory = true,
-                minDurationSec = 600
+                minDurationSec = 600,
+                moduleId = "course_energy_day2"
+            ),
+            CourseItemSeed(
+                id = "course_energy_day3",
+                courseId = "course_energy_boost",
+                order = 3,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_breathing_energizing",
+                title = "День 3: Быстрое восстановление",
+                description = "Короткая сессия для перезагрузки днём",
+                mandatory = true,
+                minDurationSec = 300,
+                moduleId = "course_energy_day3"
+            ),
+            CourseItemSeed(
+                id = "course_energy_day4",
+                courseId = "course_energy_boost",
+                order = 4,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_mixed_morning",
+                title = "День 4: Энергия без кофе",
+                description = "Комбинированная практика для бодрости",
+                mandatory = true,
+                minDurationSec = 600,
+                moduleId = "course_energy_day4"
+            ),
+            CourseItemSeed(
+                id = "course_energy_day5",
+                courseId = "course_energy_boost",
+                order = 5,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_mixed_morning",
+                title = "День 5: Закрепление ритуала",
+                description = "Формирование устойчивой утренней привычки",
+                mandatory = true,
+                minDurationSec = 600,
+                moduleId = "course_energy_day5"
             )
-            // Остальные дни 3-5 аналогично...
         ),
         
         // === Items для "Работа с тревожностью" ===
@@ -299,7 +557,8 @@ object CourseSeedData {
                 title = "Модуль 1: Основы",
                 description = "Знакомство с тревогой",
                 mandatory = true,
-                minDurationSec = 720
+                minDurationSec = 720,
+                moduleId = "course_anxiety_module1"
             ),
             CourseItemSeed(
                 id = "course_anxiety_module2",
@@ -310,9 +569,88 @@ object CourseSeedData {
                 title = "Модуль 2: Дыхание",
                 description = "Дыхательные техники для тревоги",
                 mandatory = true,
-                minDurationSec = 420
+                minDurationSec = 420,
+                moduleId = "course_anxiety_module2",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module3",
+                courseId = "course_anxiety_management",
+                order = 3,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_mindfulness",
+                title = "Модуль 3: Работа с мыслями",
+                description = "Осознанное наблюдение за тревожными мыслями",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_anxiety_module3",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module4",
+                courseId = "course_anxiety_management",
+                order = 4,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_body_scan",
+                title = "Модуль 4: Тело и тревога",
+                description = "Расслабление мышечного напряжения",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_anxiety_module4",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module5",
+                courseId = "course_anxiety_management",
+                order = 5,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_soundscape_forest",
+                title = "Модуль 5: Безопасное пространство",
+                description = "Создание чувства опоры через звуки природы",
+                mandatory = false,
+                minDurationSec = 1800,
+                moduleId = "course_anxiety_module5",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module6",
+                courseId = "course_anxiety_management",
+                order = 6,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_mixed_anxiety",
+                title = "Модуль 6: Комбинированная практика",
+                description = "Сочетание дыхания, осознанности и звука",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_anxiety_module6",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module7",
+                courseId = "course_anxiety_management",
+                order = 7,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_meditation_mindfulness",
+                title = "Модуль 7: Принятие и отпускание",
+                description = "Практика принятия тревоги без сопротивления",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_anxiety_module7",
+                unlockCondition = UnlockCondition.CompletePreviousItem
+            ),
+            CourseItemSeed(
+                id = "course_anxiety_module8",
+                courseId = "course_anxiety_management",
+                order = 8,
+                type = CourseItemType.PRACTICE,
+                practiceId = "practice_mixed_anxiety",
+                title = "Модуль 8: Закрепление результата",
+                description = "Финальная сессия для интеграции навыков",
+                mandatory = true,
+                minDurationSec = 900,
+                moduleId = "course_anxiety_module8",
+                unlockCondition = UnlockCondition.CompletePreviousItem
             )
-            // Остальные модули 3-8 аналогично...
         )
     )
 }

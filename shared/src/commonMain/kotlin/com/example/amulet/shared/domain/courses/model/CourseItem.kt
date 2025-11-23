@@ -11,5 +11,7 @@ data class CourseItem(
     val title: String?,
     val description: String?,
     val mandatory: Boolean = true,
-    val minDurationSec: Int? = null
+    val minDurationSec: Int? = null,
+    val moduleId: CourseModuleId? = null,
+    val unlockCondition: UnlockCondition? = null
 )

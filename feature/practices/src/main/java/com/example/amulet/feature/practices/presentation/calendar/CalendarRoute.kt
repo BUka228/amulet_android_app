@@ -11,6 +11,7 @@ fun CalendarRoute(
     initialPracticeId: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToPractice: (String) -> Unit,
+    onNavigateToCourse: (String) -> Unit,
     viewModel: CalendarViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -23,6 +24,7 @@ fun CalendarRoute(
             when (effect) {
                 CalendarEffect.NavigateBack -> onNavigateBack()
                 is CalendarEffect.NavigateToPractice -> onNavigateToPractice(effect.practiceId)
+                is CalendarEffect.NavigateToCourse -> onNavigateToCourse(effect.courseId)
             }
         }
     }

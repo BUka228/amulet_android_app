@@ -16,6 +16,7 @@ class ObserveCurrentUserUseCase(
     private val userRepository: UserRepository,
     private val sessionProvider: UserSessionProvider
 ) {
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     operator fun invoke(): Flow<User?> {
         return sessionProvider.sessionContext
             .flatMapLatest { context ->

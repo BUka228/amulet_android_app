@@ -9,7 +9,8 @@ data class ScheduledSession(
     val courseId: String? = null,
     val scheduledTime: Long,
     val status: ScheduledSessionStatus = ScheduledSessionStatus.PLANNED,
-    val durationSec: Int? = null
+    val durationSec: Int? = null,
+    val courseTitle: String? = null
 )
 
 enum class ScheduledSessionStatus {

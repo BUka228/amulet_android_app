@@ -59,6 +59,10 @@ import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesUseCase
 import com.example.amulet.shared.domain.courses.usecase.RefreshCoursesCatalogUseCase
 import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
 import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetCourseModulesStreamUseCase
+import com.example.amulet.shared.domain.courses.usecase.SearchCoursesUseCase
+import com.example.amulet.shared.domain.courses.usecase.CheckItemUnlockUseCase
+import com.example.amulet.shared.domain.courses.usecase.GetUnlockedItemsUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet_android_app.BuildConfig
 import dagger.Module
@@ -287,6 +291,10 @@ object KoinBridgeModule {
     @Provides fun provideContinueCourseUseCase(koin: Koin): ContinueCourseUseCase = koin.get()
     @Provides fun provideCompleteCourseItemUseCase(koin: Koin): CompleteCourseItemUseCase = koin.get()
     @Provides fun provideResetCourseProgressUseCase(koin: Koin): ResetCourseProgressUseCase = koin.get()
+    @Provides fun provideGetCourseModulesStreamUseCase(koin: Koin): GetCourseModulesStreamUseCase = koin.get()
+    @Provides fun provideSearchCoursesUseCase(koin: Koin): SearchCoursesUseCase = koin.get()
+    @Provides fun provideCheckItemUnlockUseCase(koin: Koin): CheckItemUnlockUseCase = koin.get()
+    @Provides fun provideGetUnlockedItemsUseCase(koin: Koin): GetUnlockedItemsUseCase = koin.get()
     
     // Initialization UseCase
     @Provides fun provideSeedLocalDataUseCase(koin: Koin): SeedLocalDataUseCase = koin.get()
