@@ -103,6 +103,7 @@ private val sharedModule = module {
     factory { UpsertPracticeScheduleUseCase(get()) }
     factory { GetScheduleByPracticeIdUseCase(get()) }
     factory { DeletePracticeScheduleUseCase(get()) }
+    factory { DeleteSchedulesForCourseUseCase(get()) }
     factory { SkipScheduledSessionUseCase(get()) }
 
     // Courses UseCases

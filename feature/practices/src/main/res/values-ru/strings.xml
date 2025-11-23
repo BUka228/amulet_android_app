@@ -200,6 +200,11 @@
     <string name="practices_course_upcoming_sessions_title">Ближайшие сессии</string>
     <string name="practices_course_upcoming_session_item">Сессия в %1$s</string>
 
+    <!-- Session status labels -->
+    <string name="schedule_status_planned">Запланирована</string>
+    <string name="schedule_status_missed">Пропущена</string>
+    <string name="schedule_status_completed">Завершена</string>
+
     <string name="practices_course_continue_dialog_title">Продолжить курс</string>
     <string name="practices_course_continue_dialog_message">У вас есть ближайшие сессии в расписании. Начать следующую практику сейчас или открыть расписание?</string>
     <string name="practices_course_continue_dialog_start_now">Начать сейчас</string>

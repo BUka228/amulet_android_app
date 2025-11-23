@@ -14,6 +14,7 @@ import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCa
 import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
 import com.example.amulet.shared.domain.courses.usecase.EnrollCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,7 @@ class CourseDetailsViewModel @Inject constructor(
     private val completeCourseItemUseCase: CompleteCourseItemUseCase,
     private val checkItemUnlockUseCase: CheckItemUnlockUseCase,
     private val enrollCourseUseCase: EnrollCourseUseCase,
+    private val deleteSchedulesForCourseUseCase: DeleteSchedulesForCourseUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CourseDetailsState())
@@ -156,7 +158,10 @@ class CourseDetailsViewModel @Inject constructor(
 
     private fun reset() {
         val id = _uiState.value.courseId ?: return
-        viewModelScope.launch { resetCourseProgressUseCase(id) }
+        viewModelScope.launch {
+            resetCourseProgressUseCase(id)
+            deleteSchedulesForCourseUseCase(id)
+        }
     }
     
     private fun openEnrollmentWizard(mode: CourseEnrollmentMode) {
@@ -185,6 +190,7 @@ class CourseDetailsViewModel @Inject constructor(
         val id = _uiState.value.courseId ?: return
         viewModelScope.launch {
             resetCourseProgressUseCase(id)
+            deleteSchedulesForCourseUseCase(id)
             _uiState.update { it.copy(showEnrollmentWizard = true, enrollmentMode = CourseEnrollmentMode.REPEAT) }
         }
     }

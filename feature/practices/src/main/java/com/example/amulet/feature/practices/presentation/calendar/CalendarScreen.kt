@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -764,7 +766,7 @@ private fun EmptySchedulePlaceholder(onIntent: (CalendarIntent) -> Unit) {
     }
 }
 
-@OptIn(kotlin.time.ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, ExperimentalLayoutApi::class)
 @Composable
 fun SessionItem(
     session: ScheduledSession,
@@ -850,9 +852,9 @@ fun SessionItem(
                 }
                 
                 // Metadata chips - duration and course indicator
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     session.durationSec?.let { duration ->

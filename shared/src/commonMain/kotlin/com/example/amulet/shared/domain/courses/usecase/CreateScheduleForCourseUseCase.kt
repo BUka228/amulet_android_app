@@ -22,32 +22,39 @@ class CreateScheduleForCourseUseCase {
         courseItems: List<CourseItem>
     ): List<PracticeSchedule> {
         val mandatoryItems = courseItems.filter { it.mandatory }.sortedBy { it.order }
-        
+
         if (mandatoryItems.isEmpty()) return emptyList()
-        
-        val schedules = mutableListOf<PracticeSchedule>()
+
         val now = System.currentTimeMillis()
-        
-        // Создаём одно расписание для каждой практики курса
-        // Они будут генерировать ScheduledSession автоматически
-        mandatoryItems.forEach { item ->
-            item.practiceId?.let { practiceId ->
-                val schedule = PracticeSchedule(
-                    id = UUID.randomUUID().toString(),
-                    userId = "", // Будет заполнено в репозитории
-                    practiceId = practiceId,
-                    courseId = params.courseId,
-                    daysOfWeek = params.selectedDays.map { it.isoDayNumber }.sorted(),
-                    timeOfDay = "${params.preferredTime.hour.toString().padStart(2, '0')}:${params.preferredTime.minute.toString().padStart(2, '0')}",
-                    reminderEnabled = true,
-                    createdAt = now,
-                    updatedAt = now,
-                    planId = null
-                )
-                schedules.add(schedule)
-            }
+
+        // Дни недели, выбранные пользователем, в ISO-формате (1=Пн..7=Вс)
+        val selectedDaysIso = params.selectedDays
+            .map { it.isoDayNumber }
+            .sorted()
+
+        if (selectedDaysIso.isEmpty()) return emptyList()
+
+        // Маппируем первые обязательные практики на выбранные дни:
+        // 1 день = 1 практика, чтобы в один слот не падала пачка практик
+        val pairs = mandatoryItems
+            .filter { it.practiceId != null }
+            .zip(selectedDaysIso)
+
+        val schedules = pairs.map { (item, dayIso) ->
+            PracticeSchedule(
+                id = UUID.randomUUID().toString(),
+                userId = "", // Будет заполнено в репозитории
+                practiceId = item.practiceId!!,
+                courseId = params.courseId,
+                daysOfWeek = listOf(dayIso),
+                timeOfDay = "${params.preferredTime.hour.toString().padStart(2, '0')}:${params.preferredTime.minute.toString().padStart(2, '0')}",
+                reminderEnabled = true,
+                createdAt = now,
+                updatedAt = now,
+                planId = null
+            )
         }
-        
+
         return schedules
     }
     

@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -34,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.border
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.shared.domain.courses.model.CourseItemType
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
@@ -46,6 +46,7 @@ import com.example.amulet.shared.domain.courses.model.CourseRhythm
 import com.example.amulet.shared.domain.courses.model.EnrollmentParams
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
+import com.example.amulet.shared.domain.practices.model.ScheduledSessionStatus
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -204,10 +205,20 @@ private fun CourseDetailsScreen(
         // Upcoming sessions block
         if (state.upcomingSessions.isNotEmpty()) {
             item {
-                AmuletCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)) {
+                val session = state.upcomingSessions.first()
+                val timeZone = TimeZone.currentSystemDefault()
+                val localDateTime = Instant
+                    .fromEpochMilliseconds(session.scheduledTime)
+                    .toLocalDateTime(timeZone)
+
+                AmuletCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -218,31 +229,11 @@ private fun CourseDetailsScreen(
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Text(
-                                text = stringResource(id = R.string.practices_course_upcoming_sessions_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        state.upcomingSessions.forEach { session ->
-                            val timeZone = TimeZone.currentSystemDefault()
-                            val localDateTime = Instant
-                                .fromEpochMilliseconds(session.scheduledTime)
-                                .toLocalDateTime(timeZone)
-
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column {
                                 Text(
-                                    text = session.practiceTitle,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(
-                                        id = R.string.practices_course_upcoming_session_item,
-                                        session.status.name
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = stringResource(id = R.string.practices_course_upcoming_sessions_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = "${localDateTime.date} • %02d:%02d".format(
@@ -252,18 +243,45 @@ private fun CourseDetailsScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                session.courseTitle?.let { courseTitle ->
-                                    Text(
-                                        text = courseTitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            TextButton(onClick = { onEvent(CourseDetailsEvent.OnOpenScheduleEdit) }) {
+                                Text(text = stringResource(id = R.string.calendar_title))
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                    modifier = Modifier.width(16.dp),
+                                    contentDescription = null,
+                                )
                             }
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        TextButton(onClick = { onEvent(CourseDetailsEvent.OnOpenScheduleEdit) }) {
-                            Text(text = stringResource(id = R.string.calendar_title))
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = session.practiceTitle,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = when (session.status) {
+                                        ScheduledSessionStatus.PLANNED -> stringResource(R.string.schedule_status_planned)
+                                        ScheduledSessionStatus.MISSED -> stringResource(R.string.schedule_status_missed)
+                                        ScheduledSessionStatus.COMPLETED -> stringResource(R.string.schedule_status_completed)
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
@@ -324,7 +342,6 @@ private fun CourseEnrollmentDialog(
     }
 
     var selectedRhythm by remember { mutableStateOf(rhythm) }
-    var selectedTime by remember { mutableStateOf(now.time) }
     var selectedDays by remember(selectedRhythm) {
         mutableStateOf(
             when (selectedRhythm) {
@@ -347,6 +364,16 @@ private fun CourseEnrollmentDialog(
         CourseEnrollmentMode.REPEAT -> R.string.practices_course_enrollment_step_rhythm_subtitle_repeat
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Time picker state: по умолчанию устанавливаем утреннее время,
+    // чтобы соответствующий чип «утро» был выбран при открытии шита
+    val timePickerState = rememberTimePickerState(
+        initialHour = 8,
+        initialMinute = 0,
+        is24Hour = true
+    )
+
+    var showTimePickerDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -418,6 +445,11 @@ private fun CourseEnrollmentDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                val selectedTime = LocalTime(
+                    hour = timePickerState.hour,
+                    minute = timePickerState.minute
+                )
+                val selectedTimeText = "%02d:%02d".format(selectedTime.hour, selectedTime.minute)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val morningTime = LocalTime(hour = 8, minute = 0)
                     val dayTime = LocalTime(hour = 13, minute = 0)
@@ -425,7 +457,10 @@ private fun CourseEnrollmentDialog(
                     val nightTime = LocalTime(hour = 22, minute = 30)
 
                     AssistChip(
-                        onClick = { selectedTime = morningTime },
+                        onClick = {
+                            timePickerState.hour = morningTime.hour
+                            timePickerState.minute = morningTime.minute
+                        },
                         label = { Text(stringResource(id = R.string.practices_course_enrollment_time_morning)) },
                         leadingIcon = {
                             if (selectedTime == morningTime) {
@@ -438,7 +473,10 @@ private fun CourseEnrollmentDialog(
                         }
                     )
                     AssistChip(
-                        onClick = { selectedTime = dayTime },
+                        onClick = {
+                            timePickerState.hour = dayTime.hour
+                            timePickerState.minute = dayTime.minute
+                        },
                         label = { Text(stringResource(id = R.string.practices_course_enrollment_time_day)) },
                         leadingIcon = {
                             if (selectedTime == dayTime) {
@@ -451,7 +489,10 @@ private fun CourseEnrollmentDialog(
                         }
                     )
                     AssistChip(
-                        onClick = { selectedTime = eveningTime },
+                        onClick = {
+                            timePickerState.hour = eveningTime.hour
+                            timePickerState.minute = eveningTime.minute
+                        },
                         label = { Text(stringResource(id = R.string.practices_course_enrollment_time_evening)) },
                         leadingIcon = {
                             if (selectedTime == eveningTime) {
@@ -464,7 +505,10 @@ private fun CourseEnrollmentDialog(
                         }
                     )
                     AssistChip(
-                        onClick = { selectedTime = nightTime },
+                        onClick = {
+                            timePickerState.hour = nightTime.hour
+                            timePickerState.minute = nightTime.minute
+                        },
                         label = { Text(stringResource(id = R.string.practices_course_enrollment_time_night)) },
                         leadingIcon = {
                             if (selectedTime == nightTime) {
@@ -476,6 +520,17 @@ private fun CourseEnrollmentDialog(
                             }
                         }
                     )
+                }
+                OutlinedButton(
+                    onClick = { showTimePickerDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = selectedTimeText)
                 }
             }
 
@@ -526,7 +581,10 @@ private fun CourseEnrollmentDialog(
                         val params = EnrollmentParams(
                             courseId = courseId,
                             rhythm = selectedRhythm,
-                            preferredTime = selectedTime,
+                            preferredTime = LocalTime(
+                                hour = timePickerState.hour,
+                                minute = timePickerState.minute
+                            ),
                             selectedDays = selectedDays,
                             startDate = now.date
                         )
@@ -538,6 +596,24 @@ private fun CourseEnrollmentDialog(
                     Text(text = stringResource(id = R.string.practices_course_enrollment_confirm))
                 }
             }
+        }
+        if (showTimePickerDialog) {
+            AlertDialog(
+                onDismissRequest = { showTimePickerDialog = false },
+                confirmButton = {
+                    TextButton(onClick = { showTimePickerDialog = false }) {
+                        Text(text = stringResource(id = android.R.string.ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePickerDialog = false }) {
+                        Text(text = stringResource(id = android.R.string.cancel))
+                    }
+                },
+                text = {
+                    TimePicker(state = timePickerState)
+                }
+            )
         }
     }
 }
