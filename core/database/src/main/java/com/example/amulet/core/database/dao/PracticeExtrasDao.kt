@@ -13,6 +13,7 @@ import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.core.database.entity.PracticeTagCrossRef
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserMoodEntryEntity
 import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import kotlinx.coroutines.flow.Flow
@@ -92,6 +93,14 @@ interface PracticeExtrasDao {
 
     @Query("DELETE FROM user_badges WHERE id = :badgeId")
     suspend fun deleteBadge(badgeId: String)
+
+    // Mood entries
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMoodEntry(entry: UserMoodEntryEntity)
+
+    @Query("SELECT * FROM user_mood_entries WHERE userId = :userId ORDER BY createdAt DESC")
+    fun observeMoodEntries(userId: String): Flow<List<UserMoodEntryEntity>>
 
     // Practice tags
     @Insert(onConflict = OnConflictStrategy.REPLACE)

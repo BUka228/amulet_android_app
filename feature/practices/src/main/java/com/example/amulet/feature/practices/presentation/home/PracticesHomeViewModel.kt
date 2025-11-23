@@ -9,6 +9,7 @@ import com.example.amulet.shared.domain.practices.usecase.GetFavoritesStreamUseC
 import com.example.amulet.shared.domain.practices.usecase.GetPracticesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.ResumeSessionUseCase
@@ -47,7 +48,8 @@ class PracticesHomeViewModel @Inject constructor(
     private val getCoursesStreamUseCase: GetCoursesStreamUseCase,
     private val getAllCoursesProgressStreamUseCase: com.example.amulet.shared.domain.courses.usecase.GetAllCoursesProgressStreamUseCase,
     private val refreshPracticesCatalogUseCase: com.example.amulet.shared.domain.practices.usecase.RefreshPracticesCatalogUseCase,
-    private val refreshCoursesCatalogUseCase: com.example.amulet.shared.domain.courses.usecase.RefreshCoursesCatalogUseCase
+    private val refreshCoursesCatalogUseCase: com.example.amulet.shared.domain.courses.usecase.RefreshCoursesCatalogUseCase,
+    private val logMoodSelectionUseCase: LogMoodSelectionUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PracticesHomeState())
@@ -169,6 +171,7 @@ class PracticesHomeViewModel @Inject constructor(
     fun onIntent(intent: PracticesHomeIntent) {
         when (intent) {
             is PracticesHomeIntent.SelectMood -> onSelectMood(intent.mood)
+            PracticesHomeIntent.SaveSelectedMood -> onSaveSelectedMood()
             PracticesHomeIntent.Refresh -> refresh()
             is PracticesHomeIntent.OpenPractice -> emitEffect(PracticesHomeEffect.NavigateToPractice(intent.practiceId))
             is PracticesHomeIntent.OpenCourse -> emitEffect(PracticesHomeEffect.NavigateToCourse(intent.courseId))
@@ -185,7 +188,22 @@ class PracticesHomeViewModel @Inject constructor(
 
     private fun onSelectMood(mood: MoodChip) {
         _state.update { it.copy(selectedMood = mood) }
-        // На данном этапе фильтрация реализуется на уровне UI/подборок в будущем
+    }
+
+    private fun onSaveSelectedMood() {
+        val currentMood = _state.value.selectedMood
+
+        val moodKind = when (currentMood) {
+            MoodChip.Nervous -> com.example.amulet.shared.domain.practices.model.MoodKind.NERVOUS
+            MoodChip.Sleep -> com.example.amulet.shared.domain.practices.model.MoodKind.SLEEP
+            MoodChip.Focus -> com.example.amulet.shared.domain.practices.model.MoodKind.FOCUS
+            MoodChip.Relax -> com.example.amulet.shared.domain.practices.model.MoodKind.RELAX
+            MoodChip.Neutral -> com.example.amulet.shared.domain.practices.model.MoodKind.NEUTRAL
+        }
+
+        viewModelScope.launch {
+            logMoodSelectionUseCase(moodKind)
+        }
     }
 
     private fun refresh() {

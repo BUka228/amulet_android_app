@@ -10,6 +10,7 @@ import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserMoodEntryEntity
 import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.core.database.relation.PracticeWithFavorites
@@ -52,6 +53,10 @@ interface LocalPracticesDataSource {
     fun observeBadges(userId: String): Flow<List<UserBadgeEntity>>
     suspend fun upsertBadges(entities: List<UserBadgeEntity>)
     suspend fun deleteBadge(badgeId: String)
+
+    // Mood history
+    fun observeMoodEntries(userId: String): Flow<List<UserMoodEntryEntity>>
+    suspend fun upsertMoodEntry(entity: UserMoodEntryEntity)
 
     // Tags
     fun observePracticeTags(): Flow<List<PracticeTagEntity>>

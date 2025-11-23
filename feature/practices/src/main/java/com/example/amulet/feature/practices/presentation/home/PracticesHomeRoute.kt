@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SentimentDissatisfied
@@ -51,7 +52,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -67,6 +67,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AssistChip
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
@@ -193,42 +194,64 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ){
+                Row(
+
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = selectedColor.copy(alpha = 0.16f),
+                            disabledContainerColor = selectedColor.copy(alpha = 0.16f),
+                            contentColor = selectedColor,
+                            disabledContentColor = selectedColor
+                        )
+                    ) {
+                        Icon(
+                            imageVector = selectedIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.practices_home_mood_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = selectedDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                val saveEnabled = state.selectedMood != MoodChip.Neutral
                 IconButton(
-                    onClick = {},
-                    enabled = false,
-                    modifier = Modifier.size(56.dp),
+                    onClick = { onIntent(PracticesHomeIntent.SaveSelectedMood) },
+                    enabled = saveEnabled,
+                    modifier = Modifier.size(32.dp),
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = selectedColor.copy(alpha = 0.16f),
-                        disabledContainerColor = selectedColor.copy(alpha = 0.16f),
-                        contentColor = selectedColor,
-                        disabledContentColor = selectedColor
+                        containerColor = if (saveEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                        contentColor = if (saveEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 ) {
                     Icon(
-                        imageVector = selectedIcon,
+                        imageVector = Icons.Filled.Check,
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.practices_home_mood_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = selectedDescription,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

@@ -48,6 +48,7 @@ data class PracticesHomeState(
 
 sealed class PracticesHomeIntent {
     data class SelectMood(val mood: MoodChip) : PracticesHomeIntent()
+    object SaveSelectedMood : PracticesHomeIntent()
 
     object Refresh : PracticesHomeIntent()
 

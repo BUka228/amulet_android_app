@@ -48,6 +48,7 @@ import com.example.amulet.core.database.entity.PlanEntity
 import com.example.amulet.core.database.entity.PracticeTagCrossRef
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserMoodEntryEntity
 import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 
 @Database(
@@ -83,9 +84,10 @@ import com.example.amulet.core.database.entity.UserPracticeStatsEntity
         PrivacyJobEntity::class,
         FirmwareInfoEntity::class,
         OutboxActionEntity::class,
-        RemoteKeyEntity::class
+        RemoteKeyEntity::class,
+        UserMoodEntryEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(DatabaseTypeConverters::class)

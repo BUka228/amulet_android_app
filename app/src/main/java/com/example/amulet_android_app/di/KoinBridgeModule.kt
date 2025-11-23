@@ -19,6 +19,7 @@ import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticesRepository
+import com.example.amulet.shared.domain.practices.MoodRepository
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetCategoriesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetFavoritesStreamUseCase
@@ -43,6 +44,7 @@ import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeSchedule
 import com.example.amulet.shared.domain.practices.usecase.DeletePracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
@@ -99,6 +101,7 @@ object KoinBridgeModule {
         hugsRepository: HugsRepository,
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
+        moodRepository: MoodRepository,
         coursesRepository: CoursesRepository,
         privacyRepository: PrivacyRepository,
         rulesRepository: RulesRepository
@@ -116,6 +119,7 @@ object KoinBridgeModule {
                 single<HugsRepository> { hugsRepository }
                 single<PatternsRepository> { patternsRepository }
                 single<PracticesRepository> { practicesRepository }
+                single<MoodRepository> { moodRepository }
                 single<CoursesRepository> { coursesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
@@ -282,6 +286,7 @@ object KoinBridgeModule {
     @Provides fun provideDeletePracticeScheduleUseCase(koin: Koin): DeletePracticeScheduleUseCase = koin.get()
     @Provides fun provideDeleteSchedulesForCourseUseCase(koin: Koin): DeleteSchedulesForCourseUseCase = koin.get()
     @Provides fun provideSkipScheduledSessionUseCase(koin: Koin): SkipScheduledSessionUseCase = koin.get()
+    @Provides fun provideLogMoodSelectionUseCase(koin: Koin): LogMoodSelectionUseCase = koin.get()
 
     // Courses UseCases
     @Provides fun provideGetCoursesStreamUseCase(koin: Koin): GetCoursesStreamUseCase = koin.get()

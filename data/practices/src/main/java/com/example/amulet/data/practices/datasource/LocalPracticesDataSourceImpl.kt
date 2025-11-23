@@ -13,6 +13,7 @@ import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserMoodEntryEntity
 import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.data.practices.mapper.toEntity
@@ -153,6 +154,13 @@ class LocalPracticesDataSourceImpl @Inject constructor(
 
     override suspend fun deleteBadge(badgeId: String) {
         extrasDao.deleteBadge(badgeId)
+    }
+
+    override fun observeMoodEntries(userId: String): Flow<List<UserMoodEntryEntity>> =
+        extrasDao.observeMoodEntries(userId)
+
+    override suspend fun upsertMoodEntry(entity: UserMoodEntryEntity) {
+        extrasDao.upsertMoodEntry(entity)
     }
 
     override fun observePracticeTags(): Flow<List<PracticeTagEntity>> =

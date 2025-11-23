@@ -5,6 +5,7 @@ import com.example.amulet.core.database.entity.CollectionItemEntity
 import com.example.amulet.core.database.entity.PlanEntity
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
+import com.example.amulet.core.database.entity.UserMoodEntryEntity
 import com.example.amulet.core.database.entity.UserPracticeStatsEntity
 import com.example.amulet.shared.domain.practices.model.PracticeBadge
 import com.example.amulet.shared.domain.practices.model.PracticeCollection
@@ -14,6 +15,9 @@ import com.example.amulet.shared.domain.practices.model.PracticeStatistics
 import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeType
+import com.example.amulet.shared.domain.practices.model.MoodEntry
+import com.example.amulet.shared.domain.practices.model.MoodKind
+import com.example.amulet.shared.domain.practices.model.MoodSource
 import com.example.amulet.shared.domain.user.model.UserId
 
 fun PlanEntity.toDomain(): PracticePlan = PracticePlan(
@@ -81,4 +85,26 @@ fun CollectionItemEntity.toDomain(): PracticeCollectionItem = PracticeCollection
     practiceId = practiceId,
     courseId = courseId,
     order = order
+)
+
+fun UserMoodEntryEntity.toDomain(): MoodEntry? {
+    val moodKind = runCatching { MoodKind.valueOf(mood) }.getOrNull()
+    val moodSource = runCatching { MoodSource.valueOf(source) }.getOrNull()
+    if (moodKind == null || moodSource == null) return null
+
+    return MoodEntry(
+        id = id,
+        userId = UserId(userId),
+        mood = moodKind,
+        source = moodSource,
+        createdAt = createdAt
+    )
+}
+
+fun MoodEntry.toEntity(): UserMoodEntryEntity = UserMoodEntryEntity(
+    id = id,
+    userId = userId.value,
+    mood = mood.name,
+    source = source.name,
+    createdAt = createdAt
 )

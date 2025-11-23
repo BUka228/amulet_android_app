@@ -105,6 +105,7 @@ private val sharedModule = module {
     factory { DeletePracticeScheduleUseCase(get()) }
     factory { DeleteSchedulesForCourseUseCase(get()) }
     factory { SkipScheduledSessionUseCase(get()) }
+    factory { LogMoodSelectionUseCase(get()) }
 
     // Courses UseCases
     factory { GetCoursesStreamUseCase(get()) }

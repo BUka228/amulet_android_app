@@ -186,3 +186,23 @@ data class CollectionItemEntity(
     val courseId: String?,
     val order: Int
 )
+
+@Entity(
+    tableName = "user_mood_entries",
+    foreignKeys = [
+        ForeignKey(
+            entity = UserEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["userId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["userId", "createdAt"])]
+)
+data class UserMoodEntryEntity(
+    @PrimaryKey val id: String,
+    val userId: String,
+    val mood: String,
+    val source: String,
+    val createdAt: Long
+)
