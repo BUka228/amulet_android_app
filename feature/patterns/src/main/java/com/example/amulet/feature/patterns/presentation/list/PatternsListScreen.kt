@@ -286,7 +286,7 @@ fun PatternsListScreen(
                 selectedTags = state.selectedTags,
                 availableTags = state.availableTags,
                 onKindToggle = { kind -> onEvent(PatternsListEvent.ToggleKindFilter(kind)) },
-                onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) },
+                onTagClick = { tag -> onEvent(PatternsListEvent.ToggleTagFilter(tag)) },
                 onClearFilters = { onEvent(PatternsListEvent.ClearFilters) },
                 onDismiss = { onEvent(PatternsListEvent.HideFilterSheet) }
             )
