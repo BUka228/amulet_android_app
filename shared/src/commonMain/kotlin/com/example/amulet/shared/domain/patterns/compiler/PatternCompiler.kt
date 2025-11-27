@@ -11,6 +11,7 @@ interface PatternCompiler {
     fun compile(
         spec: PatternSpec,
         hardwareVersion: Int,
-        firmwareVersion: String
+        firmwareVersion: String,
+        intensity: Double = 1.0
     ): AmuletCommandPlan
 }

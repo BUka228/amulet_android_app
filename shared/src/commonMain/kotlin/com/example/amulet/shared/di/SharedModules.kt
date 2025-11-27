@@ -10,9 +10,12 @@ import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
+import com.example.amulet.shared.domain.patterns.PatternPlaybackService
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
 import com.example.amulet.shared.domain.patterns.usecase.*
+import com.example.amulet.shared.domain.practices.PracticeSessionManager
+import com.example.amulet.shared.domain.practices.PracticeSessionManagerImpl
 import com.example.amulet.shared.domain.practices.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
@@ -49,6 +52,7 @@ private val sharedModule = module {
     factory { DisconnectFromDeviceUseCase(get()) }
     factory { ObserveConnectionStateUseCase(get()) }
     factory { ObserveConnectedDeviceStatusUseCase(get()) }
+    factory { ObserveDeviceSessionStatusUseCase(get(), get()) }
     factory { UpdateDeviceSettingsUseCase(get()) }
 
     // OTA UseCases
@@ -57,8 +61,9 @@ private val sharedModule = module {
     factory { StartWifiOtaUpdateUseCase(get()) }
     factory { CancelOtaUpdateUseCase(get()) }
     
-    // Patterns Compiler
+    // Patterns Compiler / Playback
     single<PatternCompiler> { PatternCompilerImpl() }
+    single { PatternPlaybackService(get(), get(), get()) }
     
     // Patterns UseCases
     factory { PatternValidator() }
@@ -78,7 +83,8 @@ private val sharedModule = module {
     factory { CreateTagsUseCase(get()) }
     factory { SetPatternTagsUseCase(get()) }
     factory { DeleteTagsUseCase(get()) }
-    factory { PreviewPatternOnDeviceUseCase(get(), get()) }
+    factory { PreviewPatternOnDeviceUseCase(get()) }
+    factory { ClearCurrentDevicePatternUseCase(get()) }
 
     // Practices UseCases
     factory { GetPracticesStreamUseCase(get()) }
@@ -94,9 +100,8 @@ private val sharedModule = module {
     factory { GetScheduledSessionsForDateRangeUseCase(get(), get()) }
     factory { RefreshPracticesCatalogUseCase(get()) }
     factory { StartPracticeUseCase(get()) }
-    factory { PauseSessionUseCase(get()) }
-    factory { ResumeSessionUseCase(get()) }
     factory { StopSessionUseCase(get()) }
+    factory { StartPracticePatternOnDeviceUseCase(get(), get(), get()) }
     factory { GetUserPreferencesStreamUseCase(get()) }
     factory { UpdateUserPreferencesUseCase(get()) }
     factory { GetRecommendationsStreamUseCase(get()) }
@@ -106,6 +111,19 @@ private val sharedModule = module {
     factory { DeleteSchedulesForCourseUseCase(get()) }
     factory { SkipScheduledSessionUseCase(get()) }
     factory { LogMoodSelectionUseCase(get()) }
+    factory { GetPracticeScriptUseCase(get()) }
+
+    // Practices Manager
+    factory<PracticeSessionManager> {
+        PracticeSessionManagerImpl(
+            startPractice = get(),
+            stopSessionUseCase = get(),
+            getActiveSessionStreamUseCase = get(),
+            getPracticeById = get(),
+            startPracticePatternOnDevice = get(),
+            clearCurrentDevicePattern = get(),
+        )
+    }
 
     // Courses UseCases
     factory { GetCoursesStreamUseCase(get()) }
@@ -127,6 +145,9 @@ private val sharedModule = module {
     factory { GetNextCourseItemUseCase(get(), get()) }
     factory { CreateScheduleForCourseUseCase() }
     factory { EnrollCourseUseCase(get(), get(), get()) }
+
+    // Complete practice session (нужен доступ к практикам и курсам для источника FromCourse)
+    factory { CompletePracticeSessionUseCase(get(), get()) }
 }
 
 fun sharedKoinModules(): List<Module> = listOf(sharedModule)

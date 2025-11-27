@@ -18,9 +18,12 @@ import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
+import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.MoodRepository
+import com.example.amulet.shared.domain.practices.usecase.CompletePracticeSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetPracticeScriptUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetCategoriesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetFavoritesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
@@ -31,10 +34,8 @@ import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsSt
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsForDateRangeUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetScheduleByPracticeIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetUserPreferencesStreamUseCase
-import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.RefreshPracticesUseCase
 import com.example.amulet.shared.domain.practices.usecase.RefreshPracticesCatalogUseCase
-import com.example.amulet.shared.domain.practices.usecase.ResumeSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.SearchPracticesUseCase
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
@@ -45,6 +46,7 @@ import com.example.amulet.shared.domain.practices.usecase.DeletePracticeSchedule
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
+import com.example.amulet.shared.domain.practices.usecase.StartPracticePatternOnDeviceUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
@@ -187,6 +189,9 @@ object KoinBridgeModule {
     fun provideObserveConnectedDeviceStatusUseCase(koin: Koin): ObserveConnectedDeviceStatusUseCase = koin.get()
 
     @Provides
+    fun provideObserveDeviceSessionStatusUseCase(koin: Koin): ObserveDeviceSessionStatusUseCase = koin.get()
+
+    @Provides
     fun provideUpdateDeviceSettingsUseCase(koin: Koin): UpdateDeviceSettingsUseCase = koin.get()
 
     // OTA UseCases
@@ -258,8 +263,8 @@ object KoinBridgeModule {
     @Provides
     fun provideCreateTagsUseCase(koin: Koin): CreateTagsUseCase = koin.get()
 
-    @Provides
-    fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
+    @Provides fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
+    @Provides fun provideClearCurrentDevicePatternUseCase(koin: Koin): ClearCurrentDevicePatternUseCase = koin.get()
 
     // Practices UseCases
     @Provides fun provideGetPracticesStreamUseCase(koin: Koin): GetPracticesStreamUseCase = koin.get()
@@ -274,9 +279,8 @@ object KoinBridgeModule {
     @Provides fun provideGetScheduledSessionsStreamUseCase(koin: Koin): GetScheduledSessionsStreamUseCase = koin.get()
     @Provides fun provideGetScheduledSessionsForDateRangeUseCase(koin: Koin): GetScheduledSessionsForDateRangeUseCase = koin.get()
     @Provides fun provideStartPracticeUseCase(koin: Koin): StartPracticeUseCase = koin.get()
-    @Provides fun providePauseSessionUseCase(koin: Koin): PauseSessionUseCase = koin.get()
-    @Provides fun provideResumeSessionUseCase(koin: Koin): ResumeSessionUseCase = koin.get()
     @Provides fun provideStopSessionUseCase(koin: Koin): StopSessionUseCase = koin.get()
+    @Provides fun provideStartPracticePatternOnDeviceUseCase(koin: Koin): StartPracticePatternOnDeviceUseCase = koin.get()
     @Provides fun provideGetUserPreferencesStreamUseCase(koin: Koin): GetUserPreferencesStreamUseCase = koin.get()
     @Provides fun provideUpdateUserPreferencesUseCase(koin: Koin): UpdateUserPreferencesUseCase = koin.get()
     @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()
@@ -287,6 +291,11 @@ object KoinBridgeModule {
     @Provides fun provideDeleteSchedulesForCourseUseCase(koin: Koin): DeleteSchedulesForCourseUseCase = koin.get()
     @Provides fun provideSkipScheduledSessionUseCase(koin: Koin): SkipScheduledSessionUseCase = koin.get()
     @Provides fun provideLogMoodSelectionUseCase(koin: Koin): LogMoodSelectionUseCase = koin.get()
+    @Provides fun provideCompletePracticeSessionUseCase(koin: Koin): CompletePracticeSessionUseCase = koin.get()
+    @Provides fun provideGetPracticeScriptUseCase(koin: Koin): GetPracticeScriptUseCase = koin.get()
+
+    // Practices Manager
+    @Provides fun providePracticeSessionManager(koin: Koin): PracticeSessionManager = koin.get()
 
     // Courses UseCases
     @Provides fun provideGetCoursesStreamUseCase(koin: Koin): GetCoursesStreamUseCase = koin.get()

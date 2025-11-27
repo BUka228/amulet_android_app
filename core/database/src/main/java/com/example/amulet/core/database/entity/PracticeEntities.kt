@@ -89,5 +89,9 @@ data class PracticeSessionEntity(
     val moodBefore: Int?,
     val moodAfter: Int?,
     val feedbackNote: String?,
-    val source: String?
+    val source: String?,
+    val actualDurationSec: Int? = null,
+    val vibrationLevel: Double? = null,
+    val audioMode: String? = null,
+    val rating: Int? = null
 )

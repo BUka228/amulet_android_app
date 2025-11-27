@@ -32,5 +32,6 @@ sealed class PracticeDetailsEffect {
     object NavigateBack : PracticeDetailsEffect()
     data class NavigateToPlan(val practiceId: String) : PracticeDetailsEffect()
     data class NavigateToCourse(val courseId: String) : PracticeDetailsEffect()
+    data class NavigateToSession(val practiceId: String) : PracticeDetailsEffect()
     object NavigateToPairing : PracticeDetailsEffect()
 }

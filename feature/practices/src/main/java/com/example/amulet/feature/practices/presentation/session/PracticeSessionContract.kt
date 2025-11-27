@@ -1,0 +1,53 @@
+package com.example.amulet.feature.practices.presentation.session
+
+import com.example.amulet.shared.core.AppError
+import com.example.amulet.shared.domain.practices.PracticeProgress
+import com.example.amulet.shared.domain.practices.model.Practice
+import com.example.amulet.shared.domain.practices.model.PracticeSession
+import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
+
+data class PracticeSessionState(
+    val isLoading: Boolean = true,
+    val error: AppError? = null,
+    val practiceId: String? = null,
+    val session: PracticeSession? = null,
+    val progress: PracticeProgress? = null,
+
+    // Данные практики
+    val practice: Practice? = null,
+    val title: String? = null,
+    val goal: String? = null,
+    val type: String? = null,
+    val totalDurationSec: Int? = null,
+
+    // Настройки
+    val brightnessLevel: Double? = null,
+    val vibrationLevel: Double? = null,
+    val audioMode: PracticeAudioMode? = null,
+
+    // Статус амулета
+    val connectionState: BleConnectionState = BleConnectionState.Disconnected,
+    val batteryLevel: Int? = null,
+    val isCharging: Boolean = false,
+    val isDeviceOnline: Boolean = false,
+    val patternName: String? = null,
+
+    // Финальный блок
+    val pendingRating: Int? = null,
+    val pendingNote: String? = null,
+)
+
+sealed class PracticeSessionIntent {
+    object Start : PracticeSessionIntent()
+    data class Stop(val completed: Boolean) : PracticeSessionIntent()
+    data class ChangeBrightness(val level: Double) : PracticeSessionIntent()
+    data class ChangeAudioMode(val mode: PracticeAudioMode) : PracticeSessionIntent()
+    data class Rate(val rating: Int?, val note: String?) : PracticeSessionIntent()
+    object NavigateBack : PracticeSessionIntent()
+}
+
+sealed class PracticeSessionEffect {
+    object NavigateBack : PracticeSessionEffect()
+    data class ShowError(val error: AppError) : PracticeSessionEffect()
+}

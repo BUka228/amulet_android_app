@@ -62,6 +62,7 @@ dependencies {
     implementation(project(":shared"))
     implementation(project(":core:design"))
     implementation(project(":core:auth"))
+    implementation(project(":core:foreground"))
     implementation(project(":core:telemetry"))
     implementation(project(":core:supabase"))
     implementation(project(":core:turnstile"))

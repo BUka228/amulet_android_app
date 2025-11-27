@@ -11,11 +11,7 @@ import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStre
 import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamUseCase
-import com.example.amulet.shared.domain.practices.usecase.PauseSessionUseCase
-import com.example.amulet.shared.domain.practices.usecase.ResumeSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
-import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
-import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 
 @HiltViewModel
 class PracticesHomeViewModel @Inject constructor(
@@ -61,6 +58,7 @@ class PracticesHomeViewModel @Inject constructor(
     init {
         observeData()
         updateGreeting()
+        observeActiveSession()
     }
 
     private fun updateGreeting() {
@@ -213,6 +211,17 @@ class PracticesHomeViewModel @Inject constructor(
             refreshPracticesCatalogUseCase()
             refreshCoursesCatalogUseCase()
             _state.update { it.copy(isRefreshing = false) }
+        }
+    }
+
+    private fun observeActiveSession() {
+        viewModelScope.launch {
+            // Для совсем новых пользователей (без истории сессий) не навигируем
+            val history = getSessionsHistoryStreamUseCase(limit = 1).firstOrNull().orEmpty()
+            if (history.isEmpty()) return@launch
+
+            val active = getActiveSessionStreamUseCase().firstOrNull() ?: return@launch
+            emitEffect(PracticesHomeEffect.NavigateToPracticeSession(active.practiceId))
         }
     }
 

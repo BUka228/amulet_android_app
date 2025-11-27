@@ -71,6 +71,8 @@ sealed class PracticesHomeEffect {
     data class NavigateToPractice(val practiceId: String) : PracticesHomeEffect()
     data class NavigateToCourse(val courseId: String) : PracticesHomeEffect()
 
+    data class NavigateToPracticeSession(val practiceId: String) : PracticesHomeEffect()
+
     object NavigateToSchedule : PracticesHomeEffect()
     object NavigateToStats : PracticesHomeEffect()
     object NavigateToSearch : PracticesHomeEffect()

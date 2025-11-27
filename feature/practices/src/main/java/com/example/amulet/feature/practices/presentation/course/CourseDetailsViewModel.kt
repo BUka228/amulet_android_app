@@ -13,6 +13,9 @@ import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamU
 import com.example.amulet.shared.domain.courses.usecase.ResetCourseProgressUseCase
 import com.example.amulet.shared.domain.courses.usecase.StartCourseUseCase
 import com.example.amulet.shared.domain.courses.usecase.EnrollCourseUseCase
+import com.example.amulet.shared.domain.practices.PracticeSessionManager
+import com.example.amulet.shared.domain.practices.model.PracticeId
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +43,7 @@ class CourseDetailsViewModel @Inject constructor(
     private val checkItemUnlockUseCase: CheckItemUnlockUseCase,
     private val enrollCourseUseCase: EnrollCourseUseCase,
     private val deleteSchedulesForCourseUseCase: DeleteSchedulesForCourseUseCase,
+    private val practiceSessionManager: PracticeSessionManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CourseDetailsState())
@@ -150,6 +154,16 @@ class CourseDetailsViewModel @Inject constructor(
                 val items = _uiState.value.items
                 val nextItem = items.firstOrNull { it.id == nextItemId }
                 nextItem?.practiceId?.let { practiceId ->
+                    // Стартуем сессию практики в контексте курса, чтобы
+                    // CompletePracticeSessionUseCase смог обновить прогресс курса.
+                    practiceSessionManager.startSession(
+                        practiceId = practiceId as PracticeId,
+                        source = PracticeSessionSource.FromCourse(
+                            courseId = id,
+                            itemId = nextItemId,
+                        ),
+                    )
+
                     _uiState.update { it.copy(nextPracticeId = practiceId) }
                 }
             }

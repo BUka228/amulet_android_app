@@ -30,11 +30,13 @@ class PatternCompilerImpl : PatternCompiler {
     override fun compile(
         spec: PatternSpec,
         hardwareVersion: Int,
-        firmwareVersion: String
+        firmwareVersion: String,
+        intensity: Double
     ): AmuletCommandPlan {
         Logger.d("Начало компиляции паттерна: ${spec.type}, элементов: ${spec.elements.size}", "PatternCompiler")
         val commands = mutableListOf<AmuletCommand>()
         var totalDuration = 0L
+        val intensityFactor = intensity.coerceIn(0.0, 1.0).toFloat()
         
         for (element in spec.elements) {
             Logger.d("Компиляция элемента: ${element::class.simpleName}", "PatternCompiler")
@@ -42,7 +44,7 @@ class PatternCompilerImpl : PatternCompiler {
                 is PatternElementBreathing -> {
                     // Команда BREATHING:color:durationMs
                     commands.add(AmuletCommand.Breathing(
-                        color = Rgb.fromHex(element.color),
+                        color = scaleRgb(Rgb.fromHex(element.color), intensityFactor),
                         durationMs = element.durationMs
                     ))
                     totalDuration += element.durationMs
@@ -51,7 +53,7 @@ class PatternCompilerImpl : PatternCompiler {
                 is PatternElementPulse -> {
                     // Команда PULSE:color:intervalMs:repeats
                     commands.add(AmuletCommand.Pulse(
-                        color = Rgb.fromHex(element.color),
+                        color = scaleRgb(Rgb.fromHex(element.color), intensityFactor),
                         intervalMs = element.speed,
                         repeats = element.repeats
                     ))
@@ -67,7 +69,7 @@ class PatternCompilerImpl : PatternCompiler {
                             ChaseDirection.COUNTER_CLOCKWISE
                     }
                     commands.add(AmuletCommand.Chase(
-                        color = Rgb.fromHex(element.color),
+                        color = scaleRgb(Rgb.fromHex(element.color), intensityFactor),
                         direction = direction,
                         speedMs = element.speedMs
                     ))
@@ -78,7 +80,7 @@ class PatternCompilerImpl : PatternCompiler {
                 is PatternElementFill -> {
                     // Команда FILL:color:durationMs
                     commands.add(AmuletCommand.Fill(
-                        color = Rgb.fromHex(element.color),
+                        color = scaleRgb(Rgb.fromHex(element.color), intensityFactor),
                         durationMs = element.durationMs
                     ))
                     totalDuration += element.durationMs
@@ -87,7 +89,7 @@ class PatternCompilerImpl : PatternCompiler {
                 is PatternElementSpinner -> {
                     // Команда SPINNER:color1,color2:speedMs
                     commands.add(AmuletCommand.Spinner(
-                        colors = element.colors.map { Rgb.fromHex(it) },
+                        colors = element.colors.map { scaleRgb(Rgb.fromHex(it), intensityFactor) },
                         speedMs = element.speedMs
                     ))
                     // Длительность одного оборота
@@ -97,7 +99,7 @@ class PatternCompilerImpl : PatternCompiler {
                 is PatternElementProgress -> {
                     // Команда PROGRESS:color:activeLeds
                     commands.add(AmuletCommand.Progress(
-                        color = Rgb.fromHex(element.color),
+                        color = scaleRgb(Rgb.fromHex(element.color), intensityFactor),
                         activeLeds = element.activeLeds
                     ))
                     // Статичный элемент, длительность не добавляется

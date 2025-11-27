@@ -58,6 +58,7 @@ fun PracticeDetailsRoute(
     onNavigateToPlan: (String) -> Unit,
     onNavigateToCourse: (String) -> Unit,
     onNavigateToPairing: () -> Unit,
+    onNavigateToSession: (String) -> Unit,
     viewModel: PracticeDetailsViewModel = hiltViewModel()
 ) {
     viewModel.setIdIfEmpty(practiceId)
@@ -70,6 +71,7 @@ fun PracticeDetailsRoute(
                 is PracticeDetailsEffect.NavigateBack -> onNavigateBack()
                 is PracticeDetailsEffect.NavigateToPlan -> onNavigateToPlan(effect.practiceId)
                 is PracticeDetailsEffect.NavigateToCourse -> onNavigateToCourse(effect.courseId)
+                is PracticeDetailsEffect.NavigateToSession -> onNavigateToSession(effect.practiceId)
                 is PracticeDetailsEffect.NavigateToPairing -> onNavigateToPairing()
             }
         }

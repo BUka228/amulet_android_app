@@ -38,7 +38,8 @@ include(
     ":core:design",
     ":core:config",
     ":core:notifications",
-    ":core:turnstile"
+    ":core:turnstile",
+    ":core:foreground"
 )
 
 include(
@@ -85,6 +86,7 @@ project(":core:design").projectDir = file("core/design")
 project(":core:config").projectDir = file("core/config")
 project(":core:turnstile").projectDir = file("core/turnstile")
 project(":core:notifications").projectDir = file("core/notifications")
+project(":core:foreground").projectDir = file("core/foreground")
 
 project(":data:user").projectDir = file("data/user")
 project(":data:devices").projectDir = file("data/devices")

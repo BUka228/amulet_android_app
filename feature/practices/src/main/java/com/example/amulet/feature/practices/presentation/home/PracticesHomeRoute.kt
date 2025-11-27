@@ -78,6 +78,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeGoal
 @Composable
 fun PracticesHomeRoute(
     onOpenPractice: (String) -> Unit,
+    onOpenSession: (String) -> Unit,
     onOpenCourse: (String) -> Unit,
     onOpenSchedule: () -> Unit,
     onOpenSearch: () -> Unit,
@@ -90,6 +91,7 @@ fun PracticesHomeRoute(
             when (effect) {
                 is PracticesHomeEffect.NavigateToPractice -> onOpenPractice(effect.practiceId)
                 is PracticesHomeEffect.NavigateToCourse -> onOpenCourse(effect.courseId)
+                is PracticesHomeEffect.NavigateToPracticeSession -> onOpenSession(effect.practiceId)
                 PracticesHomeEffect.NavigateToSchedule -> onOpenSchedule()
                 PracticesHomeEffect.NavigateToStats -> Unit
                 PracticesHomeEffect.NavigateToSearch -> onOpenSearch()
@@ -377,12 +379,12 @@ private fun RecommendedSection(state: PracticesHomeState, onIntent: (PracticesHo
 
 @Composable
 private fun RecommendedItemCard(
+    modifier: Modifier = Modifier,
     title: String,
     goal: Int?,
     durationMinutes: Int?,
     badge: String? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier,

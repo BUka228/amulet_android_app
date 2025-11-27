@@ -19,5 +19,6 @@ data class Practice(
     val createdAt: Long?,
     val updatedAt: Long?,
     val steps: List<String> = emptyList(),
-    val safetyNotes: List<String> = emptyList()
+    val safetyNotes: List<String> = emptyList(),
+    val script: PracticeScript? = null
 )

@@ -2,6 +2,8 @@ package com.example.amulet.feature.practices.presentation.calendar
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.shared.domain.practices.PracticeSessionManager
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.usecase.GetScheduledSessionsForDateRangeUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetScheduleByPracticeIdUseCase
@@ -41,6 +43,7 @@ class CalendarViewModel @Inject constructor(
     private val deletePracticeScheduleUseCase: DeletePracticeScheduleUseCase,
     private val getPracticesStreamUseCase: GetPracticesStreamUseCase,
     private val skipScheduledSessionUseCase: SkipScheduledSessionUseCase,
+    private val practiceSessionManager: PracticeSessionManager,
 ) : ViewModel() {
 
     private val timeZone = TimeZone.currentSystemDefault()
@@ -264,8 +267,19 @@ class CalendarViewModel @Inject constructor(
     }
 
     private fun startSession(sessionId: String) {
-        // Same as openSession - navigate to practice where user can start it
-        openSession(sessionId)
+        viewModelScope.launch {
+            val scheduled = _state.value.sessions.find { it.id == sessionId } ?: return@launch
+
+            // Стартуем сессию практики с источником FromSchedule, чтобы
+            // в истории можно было пометить слот как COMPLETED.
+            practiceSessionManager.startSession(
+                practiceId = scheduled.practiceId as PracticeId,
+                source = PracticeSessionSource.FromSchedule(scheduled.id),
+            )
+
+            // Навигация остаётся прежней: открываем практику/курс, где пользователь видит детали.
+            openSession(sessionId)
+        }
     }
 
     private fun rescheduleSession(sessionId: String, newTime: Long) {

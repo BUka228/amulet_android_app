@@ -12,10 +12,12 @@ import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.practices.model.PracticePlan
 import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.PracticeSession
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.PracticeStatistics
 import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import kotlinx.coroutines.flow.Flow
 
 interface PracticesRepository {
@@ -53,19 +55,20 @@ interface PracticesRepository {
         practiceId: PracticeId,
         intensity: Double? = null,
         brightness: Double? = null,
+        vibrationLevel: Double? = null,
+        audioMode: PracticeAudioMode? = null,
+        source: PracticeSessionSource? = PracticeSessionSource.Manual,
     ): AppResult<PracticeSession>
-
-    suspend fun pauseSession(
-        sessionId: PracticeSessionId
-    ): AppResult<Unit>
-
-    suspend fun resumeSession(
-        sessionId: PracticeSessionId
-    ): AppResult<Unit>
 
     suspend fun stopSession(
         sessionId: PracticeSessionId,
         completed: Boolean
+    ): AppResult<PracticeSession>
+
+    suspend fun updateSessionFeedback(
+        sessionId: PracticeSessionId,
+        rating: Int?,
+        feedbackNote: String?,
     ): AppResult<PracticeSession>
 
     fun getUserPreferencesStream(): Flow<UserPreferences>

@@ -3,8 +3,9 @@ package com.example.amulet.feature.practices.presentation.details
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.shared.domain.practices.PracticeSessionManager
+import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
-import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesByPracticeIdUseCase
 import com.example.amulet.shared.domain.practices.model.PracticeId
@@ -23,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PracticeDetailsViewModel @Inject constructor(
     private val getPracticeByIdUseCase: GetPracticeByIdUseCase,
-    private val startPracticeUseCase: StartPracticeUseCase,
+    private val practiceSessionManager: PracticeSessionManager,
     private val getPatternByIdUseCase: com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase,
     private val setFavoritePracticeUseCase: SetFavoritePracticeUseCase,
     private val getCoursesByPracticeIdUseCase: GetCoursesByPracticeIdUseCase,
@@ -106,8 +107,15 @@ class PracticeDetailsViewModel @Inject constructor(
         val id = _uiState.value.practiceId ?: return
         Log.d(TAG, "start: practiceId=$id")
         viewModelScope.launch {
-            val result = startPracticeUseCase(id)
+            val result = practiceSessionManager.startSession(
+                practiceId = id as PracticeId,
+                source = PracticeSessionSource.Manual,
+            )
+            val error = result.component2()
             Log.d(TAG, "start: result=$result")
+            if (error == null) {
+                _effect.send(PracticeDetailsEffect.NavigateToSession(id))
+            }
         }
     }
 

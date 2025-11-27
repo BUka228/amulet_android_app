@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":shared"))
     implementation(project(":core:design"))
     implementation(project(":core:auth"))
+    implementation(project(":core:foreground"))
     implementation(project(":data:practices"))
     implementation(project(":data:courses"))
 

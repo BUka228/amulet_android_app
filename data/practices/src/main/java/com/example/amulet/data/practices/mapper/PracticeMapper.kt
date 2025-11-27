@@ -10,6 +10,11 @@ import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeSession
+import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
+import com.example.amulet.shared.domain.practices.model.PracticeScript
+import com.example.amulet.shared.domain.practices.model.PracticeStep
+import com.example.amulet.shared.domain.practices.model.PracticeStepType
+import com.example.amulet.shared.domain.practices.model.parsePracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeType
 import com.example.amulet.shared.domain.practices.model.UserPreferences
@@ -39,10 +44,49 @@ fun PracticeEntity.toDomain(): Practice {
         if (safetyNotesJsonLocal.isNullOrBlank() || safetyNotesJsonLocal == "[]") emptyList()
         else kotlinx.serialization.json.Json.decodeFromString<List<String>>(safetyNotesJsonLocal)
     } catch (e: Exception) { emptyList() }
+
+    val practiceType = PracticeType.valueOf(type)
+
+    val script = if (steps.isEmpty()) {
+        null
+    } else {
+        val perStepDurationSec: Int? = when (practiceType) {
+            PracticeType.BREATH, PracticeType.SOUND ->
+                durationSec?.takeIf { it > 0 && steps.isNotEmpty() }?.let { total ->
+                    (total / steps.size).coerceAtLeast(1)
+                }
+            else -> null
+        }
+
+        PracticeScript(
+            steps = steps.mapIndexed { index, text ->
+                val stepType = when (practiceType) {
+                    PracticeType.BREATH -> PracticeStepType.BREATH_STEP
+                    PracticeType.SOUND -> PracticeStepType.SOUND_SCAPE
+                    PracticeType.MEDITATION -> if (title.contains("сканирование тела", ignoreCase = true)) {
+                        PracticeStepType.BODY_SCAN
+                    } else {
+                        PracticeStepType.TEXT_HINT
+                    }
+                    else -> PracticeStepType.TEXT_HINT
+                }
+                PracticeStep(
+                    order = index,
+                    type = stepType,
+                    title = null,
+                    description = text,
+                    durationSec = perStepDurationSec,
+                    patternId = null,
+                    audioUrl = null,
+                    extra = emptyMap()
+                )
+            }
+        )
+    }
     
     return Practice(
         id = id,
-        type = PracticeType.valueOf(type),
+        type = practiceType,
         title = title,
         description = description,
         durationSec = durationSec,
@@ -57,7 +101,8 @@ fun PracticeEntity.toDomain(): Practice {
         createdAt = createdAt,
         updatedAt = updatedAt,
         steps = steps,
-        safetyNotes = safetyNotes
+        safetyNotes = safetyNotes,
+        script = script
     )
 }
 
@@ -76,7 +121,13 @@ fun PracticeSessionEntity.toDomain(): PracticeSession = PracticeSession(
     moodBefore = moodBefore,
     moodAfter = moodAfter,
     feedbackNote = feedbackNote,
-    source = source
+    source = parsePracticeSessionSource(source),
+    actualDurationSec = actualDurationSec,
+    vibrationLevel = vibrationLevel,
+    audioMode = audioMode?.let {
+        runCatching { PracticeAudioMode.valueOf(it) }.getOrNull()
+    },
+    rating = rating
 )
 
 fun PracticeCategoryEntity.toDomain(): PracticeCategory = PracticeCategory(

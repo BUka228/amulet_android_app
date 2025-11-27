@@ -36,6 +36,7 @@ import com.github.michaelbull.result.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.encodeToJsonElement
@@ -165,10 +166,15 @@ class PracticesRepositoryImpl @Inject constructor(
         return Ok(Unit)
     }
 
-    override fun getActiveSessionStream(): Flow<PracticeSession?> =
-        local.observeSessionsForUser(currentUserId).map { list ->
+    override fun getActiveSessionStream(): Flow<PracticeSession?> {
+        val ctx = sessionProvider.currentContext
+        val userId = (ctx as? UserSessionContext.LoggedIn)?.userId?.value
+            ?: return flowOf(null)
+
+        return local.observeSessionsForUser(userId).map { list ->
             list.firstOrNull { it.status == PracticeSessionStatus.ACTIVE.name }?.toDomain()
         }
+    }
 
     override fun getSessionsHistoryStream(limit: Int?): Flow<List<PracticeSession>> =
         local.observeSessionsForUser(currentUserId).map { list ->
@@ -179,7 +185,10 @@ class PracticesRepositoryImpl @Inject constructor(
     override suspend fun startPractice(
         practiceId: PracticeId,
         intensity: Double?,
-        brightness: Double?
+        brightness: Double?,
+        vibrationLevel: Double?,
+        audioMode: com.example.amulet.shared.domain.practices.model.PracticeAudioMode?,
+        source: PracticeSessionSource?,
     ): AppResult<PracticeSession> {
         val now = System.currentTimeMillis()
         val session = com.example.amulet.core.database.entity.PracticeSessionEntity(
@@ -197,24 +206,14 @@ class PracticesRepositoryImpl @Inject constructor(
             moodBefore = null,
             moodAfter = null,
             feedbackNote = null,
-            source = null
+            source = source?.toStorageString(),
+            actualDurationSec = null,
+            vibrationLevel = vibrationLevel,
+            audioMode = audioMode?.name,
+            rating = null
         )
         local.upsertSession(session)
         return Ok(session.toDomain())
-    }
-
-    override suspend fun pauseSession(sessionId: PracticeSessionId): AppResult<Unit> {
-        val current = local.getSessionById(sessionId) ?: return Err(AppError.NotFound)
-        if (current.status != PracticeSessionStatus.ACTIVE.name) return Ok(Unit)
-        local.upsertSession(current.copy(status = PracticeSessionStatus.CANCELLED.name))
-        return Ok(Unit)
-    }
-
-    override suspend fun resumeSession(sessionId: PracticeSessionId): AppResult<Unit> {
-        val current = local.getSessionById(sessionId) ?: return Err(AppError.NotFound)
-        if (current.status == PracticeSessionStatus.ACTIVE.name) return Ok(Unit)
-        local.upsertSession(current.copy(status = PracticeSessionStatus.ACTIVE.name))
-        return Ok(Unit)
     }
 
     override suspend fun stopSession(sessionId: PracticeSessionId, completed: Boolean): AppResult<PracticeSession> {
@@ -225,6 +224,20 @@ class PracticesRepositoryImpl @Inject constructor(
             completedAt = now,
             durationSec = (((now - current.startedAt) / 1000).toInt()).coerceAtLeast(0),
             completed = completed
+        )
+        local.upsertSession(updated)
+        return Ok(updated.toDomain())
+    }
+
+    override suspend fun updateSessionFeedback(
+        sessionId: PracticeSessionId,
+        rating: Int?,
+        feedbackNote: String?,
+    ): AppResult<PracticeSession> {
+        val current = local.getSessionById(sessionId) ?: return Err(AppError.NotFound)
+        val updated = current.copy(
+            rating = rating,
+            feedbackNote = feedbackNote,
         )
         local.upsertSession(updated)
         return Ok(updated.toDomain())
@@ -249,7 +262,11 @@ class PracticesRepositoryImpl @Inject constructor(
             moodBefore = null,
             moodAfter = null,
             feedbackNote = null,
-            source = source
+            source = source,
+            actualDurationSec = 0,
+            vibrationLevel = null,
+            audioMode = null,
+            rating = null
         )
         local.upsertSession(entity)
         return Ok(Unit)

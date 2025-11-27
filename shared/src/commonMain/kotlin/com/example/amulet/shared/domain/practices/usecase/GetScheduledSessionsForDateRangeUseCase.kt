@@ -7,7 +7,6 @@ import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.practices.model.ScheduledSessionStatus
-import com.example.amulet.shared.domain.practices.model.parsePracticeSessionSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.LocalDate
@@ -35,9 +34,19 @@ class GetScheduledSessionsForDateRangeUseCase(
         ) { schedules, practices, courses, sessionsHistory ->
             val practicesMap = practices.associateBy { it.id }
             val coursesMap = courses.associateBy { it.id }
+
+            // Идентификаторы слотов расписания, помеченных как "пропущенные" (ScheduleSkip)
             val skippedIds: Set<String> = sessionsHistory.mapNotNull { session: PracticeSession ->
-                when (val source = parsePracticeSessionSource(session.source)) {
+                when (val source = session.source) {
                     is PracticeSessionSource.ScheduleSkip -> source.scheduledId
+                    else -> null
+                }
+            }.toSet()
+
+            // Идентификаторы слотов расписания, по которым есть завершённая сессия (FromSchedule)
+            val completedIds: Set<String> = sessionsHistory.mapNotNull { session: PracticeSession ->
+                when (val source = session.source) {
+                    is PracticeSessionSource.FromSchedule -> source.scheduledId
                     else -> null
                 }
             }.toSet()
@@ -65,10 +74,10 @@ class GetScheduledSessionsForDateRangeUseCase(
                         continue
                     }
 
-                    val status = if (scheduledInstant < now) {
-                        ScheduledSessionStatus.MISSED
-                    } else {
-                        ScheduledSessionStatus.PLANNED
+                    val status = when {
+                        scheduledId in completedIds -> ScheduledSessionStatus.COMPLETED
+                        scheduledInstant < now -> ScheduledSessionStatus.MISSED
+                        else -> ScheduledSessionStatus.PLANNED
                     }
 
                     sessions.add(
