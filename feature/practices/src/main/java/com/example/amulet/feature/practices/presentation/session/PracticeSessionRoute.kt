@@ -1,6 +1,12 @@
 package com.example.amulet.feature.practices.presentation.session
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PracticeSessionRoute(
     practiceId: String,
