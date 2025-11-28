@@ -685,7 +685,7 @@ fun RecentSection(state: PracticesHomeState, onIntent: (PracticesHomeIntent) -> 
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                             ),
-                            onClick = { onIntent(PracticesHomeIntent.ShowPracticeDetails(session.practiceId)) }
+                            onClick = { onIntent(PracticesHomeIntent.OpenPracticeSession(session.practiceId)) }
                         ) {
                             Row(
                                 modifier = Modifier

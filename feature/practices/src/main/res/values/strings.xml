@@ -130,6 +130,27 @@
     <string name="session_status_missed">Missed</string>
     <string name="session_status_completed">Completed</string>
 
+    <!-- Practice session screen -->
+    <string name="practice_session_default_title">Practice</string>
+    <string name="practice_session_brightness">Brightness</string>
+    <string name="practice_session_audio_mode">Audio mode</string>
+    <string name="practice_session_steps_title">Practice steps</string>
+    <string name="practice_session_step_fallback">Step %1$d</string>
+    <string name="practice_session_device_online">Online</string>
+    <string name="practice_session_device_offline">Offline</string>
+    <string name="practice_session_completed_title">🎉 Practice completed!</string>
+    <string name="practice_session_stat_duration">Duration</string>
+    <string name="practice_session_stat_steps">Steps</string>
+    <string name="practice_session_rating_title">How do you feel?</string>
+    <string name="practice_session_back_home">Back to home</string>
+    <string name="practice_session_plan_tomorrow">Plan for tomorrow</string>
+    <string name="practice_session_fallback_breathe">Breathe</string>
+    <string name="practice_session_duration_minutes_seconds">%1$d min %2$d s</string>
+    <string name="practice_session_duration_seconds">%1$d s</string>
+
+    <string name="practice_session_action_start">Start</string>
+    <string name="practice_session_action_finish">Finish</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Add to plan</string>
     <string name="planning_back">Back</string>

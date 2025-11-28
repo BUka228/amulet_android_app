@@ -105,17 +105,10 @@ class PracticeDetailsViewModel @Inject constructor(
 
     private fun start() {
         val id = _uiState.value.practiceId ?: return
-        Log.d(TAG, "start: practiceId=$id")
+        Log.d(TAG, "start: navigate to session for practiceId=$id")
         viewModelScope.launch {
-            val result = practiceSessionManager.startSession(
-                practiceId = id as PracticeId,
-                source = PracticeSessionSource.Manual,
-            )
-            val error = result.component2()
-            Log.d(TAG, "start: result=$result")
-            if (error == null) {
-                _effect.send(PracticeDetailsEffect.NavigateToSession(id))
-            }
+            // Больше не запускаем сессию отсюда, только навигируем на экран сессии.
+            _effect.send(PracticeDetailsEffect.NavigateToSession(id))
         }
     }
 

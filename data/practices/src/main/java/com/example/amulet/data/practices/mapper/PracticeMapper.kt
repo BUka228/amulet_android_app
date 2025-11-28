@@ -4,6 +4,7 @@ import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
+import com.example.amulet.data.practices.seed.PracticeScriptSeedData
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
 import com.example.amulet.shared.domain.practices.model.PracticeId
@@ -47,7 +48,11 @@ fun PracticeEntity.toDomain(): Practice {
 
     val practiceType = PracticeType.valueOf(type)
 
-    val script = if (steps.isEmpty()) {
+    val seededScript = PracticeScriptSeedData.getScriptForPractice(id)
+
+    val script = if (seededScript != null) {
+        seededScript
+    } else if (steps.isEmpty()) {
         null
     } else {
         val perStepDurationSec: Int? = when (practiceType) {
@@ -68,7 +73,6 @@ fun PracticeEntity.toDomain(): Practice {
                     } else {
                         PracticeStepType.TEXT_HINT
                     }
-                    else -> PracticeStepType.TEXT_HINT
                 }
                 PracticeStep(
                     order = index,

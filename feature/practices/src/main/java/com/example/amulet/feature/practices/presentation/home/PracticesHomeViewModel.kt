@@ -58,7 +58,8 @@ class PracticesHomeViewModel @Inject constructor(
     init {
         observeData()
         updateGreeting()
-        observeActiveSession()
+        // Больше не навигируем автоматически к активной сессии.
+        // Пользователь сам выбирает практику и запускает её с экрана сессии.
     }
 
     private fun updateGreeting() {
@@ -181,6 +182,7 @@ class PracticesHomeViewModel @Inject constructor(
             is PracticesHomeIntent.RescheduleSession -> emitEffect(PracticesHomeEffect.NavigateToSchedule) // Placeholder
             is PracticesHomeIntent.CancelSession -> { /* TODO: Implement cancel session logic */ }
             is PracticesHomeIntent.ShowPracticeDetails -> emitEffect(PracticesHomeEffect.NavigateToPractice(intent.practiceId))
+            is PracticesHomeIntent.OpenPracticeSession -> emitEffect(PracticesHomeEffect.NavigateToPracticeSession(intent.practiceId))
         }
     }
 
@@ -214,16 +216,9 @@ class PracticesHomeViewModel @Inject constructor(
         }
     }
 
-    private fun observeActiveSession() {
-        viewModelScope.launch {
-            // Для совсем новых пользователей (без истории сессий) не навигируем
-            val history = getSessionsHistoryStreamUseCase(limit = 1).firstOrNull().orEmpty()
-            if (history.isEmpty()) return@launch
-
-            val active = getActiveSessionStreamUseCase().firstOrNull() ?: return@launch
-            emitEffect(PracticesHomeEffect.NavigateToPracticeSession(active.practiceId))
-        }
-    }
+    // Ранее здесь была логика observeActiveSession(), автоматически навигировавшая
+    // пользователя к активной сессии. Теперь старт и переход осуществляются явно
+    // через экран сессии и действия пользователя.
 
     private fun toggleFavorite(practiceId: String, favorite: Boolean) {
         viewModelScope.launch {

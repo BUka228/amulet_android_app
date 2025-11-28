@@ -63,16 +63,15 @@ class PracticeSessionViewModel @Inject constructor(
 
     private fun observeSession() {
         viewModelScope.launch {
-            val sessionTripleFlow = combine(
+            val sessionAndProgressFlow = combine(
                 practiceSessionManager.activeSession,
                 practiceSessionManager.progress,
-                practiceSessionManager.scriptStepIndex,
-            ) { session, progress, scriptStepIndex ->
-                Triple(session, progress, scriptStepIndex)
+            ) { session, progress ->
+                Pair(session, progress)
             }
 
-            val practiceFlow = sessionTripleFlow.flatMapLatest { triple ->
-                val session = triple.first
+            val practiceFlow = sessionAndProgressFlow.flatMapLatest { pair ->
+                val session = pair.first
                 session?.let { getPracticeByIdUseCase(it.practiceId) }
                     ?: kotlinx.coroutines.flow.flowOf(null)
             }
@@ -81,26 +80,25 @@ class PracticeSessionViewModel @Inject constructor(
             val userPrefsFlow = getUserPreferencesStreamUseCase()
 
             combine(
-                sessionTripleFlow,
+                sessionAndProgressFlow,
                 practiceFlow,
                 deviceSessionFlow,
                 userPrefsFlow,
-            ) { sessionTriple, practice, deviceSession, prefs ->
-                val (session, progress, scriptStepIndex) = sessionTriple
+            ) { sessionAndProgress, practice, deviceSession, prefs ->
+                val (session, progress) = sessionAndProgress
                 val deviceStatus: DeviceSessionStatus = deviceSession
                 _state.update {
                     it.copy(
                         isLoading = false,
                         session = session,
                         progress = progress,
-                        currentStepIndex = scriptStepIndex,
+                        currentStepIndex = progress?.currentStepIndex,
                         practice = practice,
                         title = practice?.title,
-                        goal = practice?.goal?.name,
                         type = practice?.type?.name,
                         totalDurationSec = progress?.totalSec ?: practice?.durationSec,
-                        brightnessLevel = prefs?.defaultBrightness,
-                        vibrationLevel = prefs?.defaultIntensity,
+                        brightnessLevel = prefs.defaultBrightness,
+                        vibrationLevel = prefs.defaultIntensity,
                         audioMode = session?.audioMode,
                         connectionState = deviceStatus.connection,
                         batteryLevel = deviceStatus.liveStatus?.batteryLevel,

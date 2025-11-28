@@ -130,6 +130,27 @@
     <string name="session_status_missed">Просрочена</string>
     <string name="session_status_completed">Выполнена</string>
 
+    <!-- Practice session screen -->
+    <string name="practice_session_default_title">Практика</string>
+    <string name="practice_session_brightness">Яркость</string>
+    <string name="practice_session_audio_mode">Аудио режим</string>
+    <string name="practice_session_steps_title">Этапы практики</string>
+    <string name="practice_session_step_fallback">Шаг %1$d</string>
+    <string name="practice_session_device_online">Подключен</string>
+    <string name="practice_session_device_offline">Не в сети</string>
+    <string name="practice_session_completed_title">🎉 Практика завершена!</string>
+    <string name="practice_session_stat_duration">Длительность</string>
+    <string name="practice_session_stat_steps">Этапов</string>
+    <string name="practice_session_rating_title">Как вы себя чувствуете?</string>
+    <string name="practice_session_back_home">Вернуться домой</string>
+    <string name="practice_session_plan_tomorrow">Запланировать на завтра</string>
+    <string name="practice_session_fallback_breathe">Дышите</string>
+    <string name="practice_session_duration_minutes_seconds">%1$d мин %2$d с</string>
+    <string name="practice_session_duration_seconds">%1$d с</string>
+
+    <string name="practice_session_action_start">Начать</string>
+    <string name="practice_session_action_finish">Завершить</string>
+
     <!-- Planning screen -->
     <string name="planning_title">Добавить в план</string>
     <string name="planning_back">Назад</string>

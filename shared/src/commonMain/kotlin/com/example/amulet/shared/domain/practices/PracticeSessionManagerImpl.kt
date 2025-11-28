@@ -17,11 +17,14 @@ import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.onSuccess
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -29,8 +32,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class PracticeSessionManagerImpl(
     private val startPractice: StartPracticeUseCase,
     private val stopSessionUseCase: StopSessionUseCase,
@@ -42,6 +47,8 @@ class PracticeSessionManagerImpl(
     private val tickerIntervalMs: Long = 1000L
 ) : PracticeSessionManager {
 
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
+
     override val activeSession: Flow<PracticeSession?> = getActiveSessionStreamUseCase()
 
     override val progress: Flow<PracticeProgress?> =
@@ -49,7 +56,20 @@ class PracticeSessionManagerImpl(
             if (session == null) flowOf(null) else buildProgressFlow(session)
         }
 
-    override val scriptStepIndex: Flow<Int?> = scriptOrchestrator.currentStepIndex
+    init {
+        scope.launch {
+            activeSession.collect { session ->
+                if (session != null && session.status == PracticeSessionStatus.ACTIVE) {
+                    val practice = getPracticeById(session.practiceId).firstOrNull()
+                    if (practice != null) {
+                        scriptOrchestrator.start(practice, session)
+                    }
+                } else {
+                    scriptOrchestrator.stop()
+                }
+            }
+        }
+    }
 
     override suspend fun startSession(
         practiceId: PracticeId,
@@ -65,13 +85,7 @@ class PracticeSessionManagerImpl(
             audioMode = null,
             source = source,
         )
-        result.onSuccess { session ->
-            val practice = getPracticeById(session.practiceId).firstOrNull()
-            if (practice != null) {
-                // Весь запуск паттернов (со скриптом или без) делегируем оркестратору.
-                scriptOrchestrator.start(practice, session)
-            }
-        }
+        // Оркестратор запустится автоматически через activeSession.collect
         result
     }
 
@@ -79,9 +93,11 @@ class PracticeSessionManagerImpl(
         val session = activeSession.firstOrNull()
         val sessionId = session?.id ?: return@withContext Err(AppError.NotFound)
         val result = stopSessionUseCase(sessionId, completed)
-        // Останавливаем оркестратор и принудительно очищаем амулет.
-        scriptOrchestrator.stop()
-        clearCurrentDevicePattern()
+        // Оркестратор остановится автоматически через activeSession.collect
+        // Но для мгновенной реакции можно и тут дернуть, хотя не обязательно.
+        // Оставим только очистку, если вдруг что-то пойдет не так с реактивностью,
+        // но вообще clearCurrentDevicePattern вызывается и в orchestrator.stop().
+        // Поэтому здесь просто возвращаем результат.
         result
     }
 

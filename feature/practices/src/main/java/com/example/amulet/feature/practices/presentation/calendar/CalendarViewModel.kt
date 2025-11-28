@@ -267,19 +267,9 @@ class CalendarViewModel @Inject constructor(
     }
 
     private fun startSession(sessionId: String) {
-        viewModelScope.launch {
-            val scheduled = _state.value.sessions.find { it.id == sessionId } ?: return@launch
-
-            // Стартуем сессию практики с источником FromSchedule, чтобы
-            // в истории можно было пометить слот как COMPLETED.
-            practiceSessionManager.startSession(
-                practiceId = scheduled.practiceId as PracticeId,
-                source = PracticeSessionSource.FromSchedule(scheduled.id),
-            )
-
-            // Навигация остаётся прежней: открываем практику/курс, где пользователь видит детали.
-            openSession(sessionId)
-        }
+        // Больше не стартуем сессию автоматически из расписания.
+        // Пользователь попадает на экран сессии и запускает практику вручную.
+        openSession(sessionId)
     }
 
     private fun rescheduleSession(sessionId: String, newTime: Long) {

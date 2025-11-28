@@ -52,77 +52,104 @@ class PracticeScriptOrchestratorImpl(
     override val currentStepIndex: StateFlow<Int?> = _currentStepIndex.asStateFlow()
 
     private var currentJob: Job? = null
+    private var currentSessionId: String? = null
 
     override fun start(practice: Practice, session: PracticeSession) {
-        val script = practice.script
-        val steps: List<PracticeStep> = when {
-            script != null && script.steps.isNotEmpty() ->
-                script.steps.sortedBy { it.order }
-            practice.patternId != null -> {
-                // Фолбэк: одна «ступень» с паттерном практики и общей длительностью.
-                val duration = practice.durationSec
-                    ?: session.durationSec
-                    ?: 0
-                listOf(
-                    PracticeStep(
-                        order = 0,
-                        type = PracticeStepType.CUSTOM,
-                        title = null,
-                        description = null,
-                        durationSec = duration,
-                        patternId = practice.patternId.value,
-                    )
-                )
-            }
-            else -> emptyList()
+        // Если сессия та же самая и джоба активна, просто обновляем (или игнорируем, если не нужно)
+        // Но для надежности при "start" (который теперь работает как sync) лучше перезапустить логику,
+        // учитывая прошедшее время.
+        // Однако, чтобы не прерывать воспроизведение при каждом чихе, проверим ID.
+        if (currentSessionId == session.id && currentJob?.isActive == true) {
+            return
         }
-        if (steps.isEmpty()) return
 
+        currentSessionId = session.id
         currentJob?.cancel()
 
         currentJob = scope.launch {
-            steps.forEachIndexed { index, step ->
-                if (!currentCoroutineContext().isActive) return@launch
-
-                _currentStepIndex.value = index
-
-                val stepPatternId = step.patternId?.let { PatternId(it) } ?: practice.patternId
-
-                if (stepPatternId != null) {
-                    val pattern = getPatternByIdUseCase(stepPatternId).firstOrNull()
-                    if (pattern != null) {
-                        // Используем интенсивность сессии, если она задана
-                        val intensity = session.intensity ?: 1.0
-                        patternPlaybackService.playOnConnectedDevice(pattern.spec, intensity)
-                    }
+            val script = practice.script
+            val steps: List<PracticeStep> = when {
+                script != null && script.steps.isNotEmpty() ->
+                    script.steps.sortedBy { it.order }
+                practice.patternId != null -> {
+                    val duration = practice.durationSec
+                        ?: session.durationSec
+                        ?: 0
+                    listOf(
+                        PracticeStep(
+                            order = 0,
+                            type = PracticeStepType.CUSTOM,
+                            title = null,
+                            description = null,
+                            durationSec = duration,
+                            patternId = practice.patternId.value,
+                        )
+                    )
                 }
+                else -> emptyList()
+            }
 
-                val durationSec = step.durationSec
-                    ?: practice.durationSec
-                    ?: session.durationSec
-                    ?: 0
+            if (steps.isEmpty()) return@launch
 
-                val safeDuration = durationSec.coerceAtLeast(0)
-                if (safeDuration > 0) {
-                    var elapsed = 0
-                    while (elapsed < safeDuration && currentCoroutineContext().isActive) {
-                        delay(1000L)
-                        elapsed++
+            val startTime = session.startedAt
+            val now = System.currentTimeMillis()
+            // Сколько времени уже прошло от начала сессии (в мс)
+            val elapsedMs = (now - startTime).coerceAtLeast(0)
+            
+            // Найдем, на каком мы сейчас шаге
+            var accumulatedDurationMs = 0L
+            
+            for ((index, step) in steps.withIndex()) {
+                if (!isActive) return@launch
+
+                val stepDurationSec = step.durationSec ?: 0
+                val stepDurationMs = stepDurationSec * 1000L
+                
+                val stepEndTimeMs = accumulatedDurationMs + stepDurationMs
+                
+                if (elapsedMs < stepEndTimeMs) {
+                    // Мы внутри этого шага.
+                    // Нужно сыграть паттерн и подождать остаток времени.
+                    
+                    _currentStepIndex.value = index
+                    
+                    val stepPatternId = step.patternId?.let { PatternId(it) } ?: practice.patternId
+                    if (stepPatternId != null) {
+                        val pattern = getPatternByIdUseCase(stepPatternId).firstOrNull()
+                        if (pattern != null) {
+                            val intensity = session.intensity ?: 1.0
+                            patternPlaybackService.playOnConnectedDevice(pattern.spec, intensity)
+                        }
                     }
+
+                    // Сколько осталось до конца шага
+                    val timeRemainingInStep = stepEndTimeMs - elapsedMs
+                    // Но elapsedMs мы считали в начале. Сейчас время могло чуть уйти.
+                    // Пересчитаем точнее:
+                    val currentNow = System.currentTimeMillis()
+                    val currentElapsed = currentNow - startTime
+                    val exactRemaining = stepEndTimeMs - currentElapsed
+                    
+                    if (exactRemaining > 0) {
+                        delay(exactRemaining)
+                    }
+                } else {
+                    // Этот шаг уже прошел. Пропускаем.
+                    // Если это был последний шаг, и мы его проскочили - цикл закончится, джоба завершится.
                 }
+                
+                accumulatedDurationMs += stepDurationMs
             }
 
             _currentStepIndex.value = null
+            currentSessionId = null
         }
     }
 
     override suspend fun stop() {
-        val job = currentJob
-        if (job != null) {
-            job.cancelAndJoin()
-            currentJob = null
-        }
-
+        currentJob?.cancelAndJoin()
+        currentJob = null
+        currentSessionId = null
         _currentStepIndex.value = null
         patternPlaybackService.clearCurrentDevice()
     }

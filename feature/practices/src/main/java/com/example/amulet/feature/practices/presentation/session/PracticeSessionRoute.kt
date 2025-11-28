@@ -1,5 +1,6 @@
 package com.example.amulet.feature.practices.presentation.session
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,15 +14,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.feature.practices.R
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,27 +49,45 @@ fun PracticeSessionRoute(
             copy(
                 topBar = {
                     TopAppBar(
-                        title = { Text(state.title ?: "Практика") },
+                        title = {
+                            val titleText = state.title ?: stringResource(id = R.string.practice_session_default_title)
+                            Text(titleText)
+                        },
                         navigationIcon = {
                             IconButton(onClick = {
                                 viewModel.handleIntent(PracticeSessionIntent.Stop(completed = false))
                                 onNavigateBack()
                             }) {
                                 Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                    imageVector = Icons.Default.Close,
                                     contentDescription = null,
                                 )
                             }
                         },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
                 },
                 bottomBar = {
+                    // Применяем тот же градиент, что и на основном экране
                     Surface(
-                        tonalElevation = 3.dp,
-                        shadowElevation = 3.dp,
-                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp,
+                        color = Color.Transparent,
+                        modifier = Modifier.background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.background,
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    MaterialTheme.colorScheme.surface
+                                )
+                            )
+                        )
                     ) {
-                        androidx.compose.foundation.layout.Row(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -78,7 +102,12 @@ fun PracticeSessionRoute(
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text(text = if (isActive) "Завершить" else "Начать")
+                                val label = if (isActive) {
+                                    stringResource(id = R.string.practice_session_action_finish)
+                                } else {
+                                    stringResource(id = R.string.practice_session_action_start)
+                                }
+                                Text(text = label)
                             }
                         }
                     }

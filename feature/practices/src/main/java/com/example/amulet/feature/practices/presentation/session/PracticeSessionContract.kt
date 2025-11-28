@@ -17,7 +17,6 @@ data class PracticeSessionState(
     // Данные практики
     val practice: Practice? = null,
     val title: String? = null,
-    val goal: String? = null,
     val type: String? = null,
     val totalDurationSec: Int? = null,
 

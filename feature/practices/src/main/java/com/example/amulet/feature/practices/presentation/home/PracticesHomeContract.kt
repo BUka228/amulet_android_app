@@ -65,6 +65,7 @@ sealed class PracticesHomeIntent {
     data class RescheduleSession(val sessionId: String) : PracticesHomeIntent()
     data class CancelSession(val sessionId: String) : PracticesHomeIntent()
     data class ShowPracticeDetails(val practiceId: String) : PracticesHomeIntent()
+    data class OpenPracticeSession(val practiceId: String) : PracticesHomeIntent()
 }
 
 sealed class PracticesHomeEffect {

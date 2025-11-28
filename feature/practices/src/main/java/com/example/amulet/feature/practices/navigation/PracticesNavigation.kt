@@ -126,7 +126,7 @@ fun NavGraphBuilder.practicesGraph(
                 initialPracticeId = practiceId,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPractice = { id ->
-                    navController.navigateToPracticeDetails(id)
+                    navController.navigateToPracticeSession(id)
                 },
                 onNavigateToCourse = { id ->
                     navController.navigateToCourseDetails(id)
