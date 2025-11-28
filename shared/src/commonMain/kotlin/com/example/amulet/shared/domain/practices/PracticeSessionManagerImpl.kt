@@ -11,7 +11,6 @@ import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeStep
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
-import com.example.amulet.shared.domain.practices.usecase.StartPracticePatternOnDeviceUseCase
 import com.example.amulet.shared.domain.patterns.usecase.ClearCurrentDevicePatternUseCase
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
@@ -37,8 +36,8 @@ class PracticeSessionManagerImpl(
     private val stopSessionUseCase: StopSessionUseCase,
     private val getActiveSessionStreamUseCase: GetActiveSessionStreamUseCase,
     private val getPracticeById: GetPracticeByIdUseCase,
-    private val startPracticePatternOnDevice: StartPracticePatternOnDeviceUseCase,
     private val clearCurrentDevicePattern: ClearCurrentDevicePatternUseCase,
+    private val scriptOrchestrator: PracticeScriptOrchestrator,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val tickerIntervalMs: Long = 1000L
 ) : PracticeSessionManager {
@@ -49,6 +48,8 @@ class PracticeSessionManagerImpl(
         activeSession.flatMapLatest { session ->
             if (session == null) flowOf(null) else buildProgressFlow(session)
         }
+
+    override val scriptStepIndex: Flow<Int?> = scriptOrchestrator.currentStepIndex
 
     override suspend fun startSession(
         practiceId: PracticeId,
@@ -65,7 +66,11 @@ class PracticeSessionManagerImpl(
             source = source,
         )
         result.onSuccess { session ->
-            startPracticePatternOnDevice(session.practiceId, session.intensity)
+            val practice = getPracticeById(session.practiceId).firstOrNull()
+            if (practice != null) {
+                // Весь запуск паттернов (со скриптом или без) делегируем оркестратору.
+                scriptOrchestrator.start(practice, session)
+            }
         }
         result
     }
@@ -74,7 +79,8 @@ class PracticeSessionManagerImpl(
         val session = activeSession.firstOrNull()
         val sessionId = session?.id ?: return@withContext Err(AppError.NotFound)
         val result = stopSessionUseCase(sessionId, completed)
-        // После остановки практики принудительно очищаем амулет.
+        // Останавливаем оркестратор и принудительно очищаем амулет.
+        scriptOrchestrator.stop()
         clearCurrentDevicePattern()
         result
     }

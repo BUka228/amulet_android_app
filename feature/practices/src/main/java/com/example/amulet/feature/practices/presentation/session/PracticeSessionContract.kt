@@ -33,6 +33,9 @@ data class PracticeSessionState(
     val isDeviceOnline: Boolean = false,
     val patternName: String? = null,
 
+    // Скрипт практики
+    val currentStepIndex: Int? = null,
+
     // Финальный блок
     val pendingRating: Int? = null,
     val pendingNote: String? = null,

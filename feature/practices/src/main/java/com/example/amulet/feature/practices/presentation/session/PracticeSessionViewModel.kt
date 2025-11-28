@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -62,25 +63,37 @@ class PracticeSessionViewModel @Inject constructor(
 
     private fun observeSession() {
         viewModelScope.launch {
-            val practiceId = _state.value.practiceId
+            val sessionTripleFlow = combine(
+                practiceSessionManager.activeSession,
+                practiceSessionManager.progress,
+                practiceSessionManager.scriptStepIndex,
+            ) { session, progress, scriptStepIndex ->
+                Triple(session, progress, scriptStepIndex)
+            }
 
-            val practiceFlow = practiceId?.let { getPracticeByIdUseCase(it) }
+            val practiceFlow = sessionTripleFlow.flatMapLatest { triple ->
+                val session = triple.first
+                session?.let { getPracticeByIdUseCase(it.practiceId) }
+                    ?: kotlinx.coroutines.flow.flowOf(null)
+            }
+
             val deviceSessionFlow = observeDeviceSessionStatusUseCase()
             val userPrefsFlow = getUserPreferencesStreamUseCase()
 
             combine(
-                practiceSessionManager.activeSession,
-                practiceSessionManager.progress,
-                practiceFlow ?: kotlinx.coroutines.flow.flowOf(null),
+                sessionTripleFlow,
+                practiceFlow,
                 deviceSessionFlow,
                 userPrefsFlow,
-            ) { session, progress, practice, deviceSession, prefs ->
+            ) { sessionTriple, practice, deviceSession, prefs ->
+                val (session, progress, scriptStepIndex) = sessionTriple
                 val deviceStatus: DeviceSessionStatus = deviceSession
                 _state.update {
                     it.copy(
                         isLoading = false,
                         session = session,
                         progress = progress,
+                        currentStepIndex = scriptStepIndex,
                         practice = practice,
                         title = practice?.title,
                         goal = practice?.goal?.name,

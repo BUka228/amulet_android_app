@@ -46,7 +46,6 @@ import com.example.amulet.shared.domain.practices.usecase.DeletePracticeSchedule
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
-import com.example.amulet.shared.domain.practices.usecase.StartPracticePatternOnDeviceUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
@@ -280,7 +279,6 @@ object KoinBridgeModule {
     @Provides fun provideGetScheduledSessionsForDateRangeUseCase(koin: Koin): GetScheduledSessionsForDateRangeUseCase = koin.get()
     @Provides fun provideStartPracticeUseCase(koin: Koin): StartPracticeUseCase = koin.get()
     @Provides fun provideStopSessionUseCase(koin: Koin): StopSessionUseCase = koin.get()
-    @Provides fun provideStartPracticePatternOnDeviceUseCase(koin: Koin): StartPracticePatternOnDeviceUseCase = koin.get()
     @Provides fun provideGetUserPreferencesStreamUseCase(koin: Koin): GetUserPreferencesStreamUseCase = koin.get()
     @Provides fun provideUpdateUserPreferencesUseCase(koin: Koin): UpdateUserPreferencesUseCase = koin.get()
     @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()

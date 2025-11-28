@@ -23,6 +23,9 @@ interface PracticeSessionManager {
 
     val progress: Flow<PracticeProgress?>
 
+    /** Индекс текущего шага скрипта (если есть), иначе null. */
+    val scriptStepIndex: Flow<Int?>
+
     suspend fun startSession(
         practiceId: PracticeId,
         source: PracticeSessionSource? = PracticeSessionSource.Manual,

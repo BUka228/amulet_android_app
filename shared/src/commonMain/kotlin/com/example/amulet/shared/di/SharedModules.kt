@@ -16,6 +16,8 @@ import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticeSessionManagerImpl
+import com.example.amulet.shared.domain.practices.PracticeScriptOrchestrator
+import com.example.amulet.shared.domain.practices.PracticeScriptOrchestratorImpl
 import com.example.amulet.shared.domain.practices.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import org.koin.core.module.Module
@@ -101,7 +103,6 @@ private val sharedModule = module {
     factory { RefreshPracticesCatalogUseCase(get()) }
     factory { StartPracticeUseCase(get()) }
     factory { StopSessionUseCase(get()) }
-    factory { StartPracticePatternOnDeviceUseCase(get(), get(), get()) }
     factory { GetUserPreferencesStreamUseCase(get()) }
     factory { UpdateUserPreferencesUseCase(get()) }
     factory { GetRecommendationsStreamUseCase(get()) }
@@ -113,6 +114,9 @@ private val sharedModule = module {
     factory { LogMoodSelectionUseCase(get()) }
     factory { GetPracticeScriptUseCase(get()) }
 
+    // Practice script orchestrator
+    factory<PracticeScriptOrchestrator> { PracticeScriptOrchestratorImpl(get(), get()) }
+
     // Practices Manager
     factory<PracticeSessionManager> {
         PracticeSessionManagerImpl(
@@ -120,8 +124,8 @@ private val sharedModule = module {
             stopSessionUseCase = get(),
             getActiveSessionStreamUseCase = get(),
             getPracticeById = get(),
-            startPracticePatternOnDevice = get(),
             clearCurrentDevicePattern = get(),
+            scriptOrchestrator = get(),
         )
     }
 
