@@ -12,6 +12,8 @@ import android.os.Build
 import android.Manifest
 import androidx.core.app.NotificationCompat
 import com.example.amulet.core.foreground.AmuletForegroundOrchestrator
+import com.example.amulet.shared.core.logging.Logger
+import com.example.amulet.shared.domain.practices.PracticeProgress
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeSession
@@ -21,6 +23,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -40,31 +43,38 @@ class PracticeForegroundController @Inject constructor(
 
     fun onCreate(service: Service) {
         this.service = service
+        Logger.d("PracticeForegroundController.onCreate", tag = TAG)
         if (!hasRequiredPermissionsForConnectedDeviceFgs()) {
             // Нет необходимых runtime‑разрешений – не стартуем FGS, чтобы не уронить приложение.
+            Logger.w("Required FGS/Bluetooth permissions are missing, skipping startForeground", tag = TAG)
             return
         }
+        Logger.d("Permissions OK, creating notification channel and starting foreground", tag = TAG)
         createNotificationChannel()
-        val initial = buildPracticeNotification(null)
+        val initial = buildPracticeNotification(session = null, progress = null)
         service.startForeground(NOTIFICATION_ID, initial)
         observeActiveSession()
     }
 
     fun onDestroy() {
+        Logger.d("PracticeForegroundController.onDestroy", tag = TAG)
         scope.cancel()
     }
 
     fun handleIntent(action: String?) {
+        Logger.d("handleIntent(action=$action)", tag = TAG)
         when (action) {
             ACTION_PRACTICE_STOP -> {
                 scope.launch {
                     val session = practiceSessionManager.activeSession.firstOrNull()
                     val sessionId = session?.id ?: return@launch
+                    Logger.d("ACTION_PRACTICE_STOP for sessionId=$sessionId", tag = TAG)
                     practiceSessionManager.stopSession(completed = true)
                     // дальнейшая остановка сервиса произойдёт через observeActiveSession
                 }
             }
             ACTION_PRACTICE_OPEN -> {
+                Logger.d("ACTION_PRACTICE_OPEN", tag = TAG)
                 val launchIntent =
                     service.packageManager.getLaunchIntentForPackage(service.packageName)?.apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -77,30 +87,45 @@ class PracticeForegroundController @Inject constructor(
     }
 
     suspend fun startPractice(practiceId: PracticeId) {
+        Logger.d("startPractice(practiceId=$practiceId)", tag = TAG)
         practiceSessionManager.startSession(practiceId)
     }
 
     suspend fun stopPractice(sessionId: PracticeSessionId, completed: Boolean) {
         val session = practiceSessionManager.activeSession.firstOrNull()
-        if (session?.id != sessionId) return
+        if (session?.id != sessionId) {
+            Logger.w("stopPractice called with mismatched sessionId=$sessionId, active=${session?.id}", tag = TAG)
+            return
+        }
+        Logger.d("stopPractice(sessionId=$sessionId, completed=$completed)", tag = TAG)
         practiceSessionManager.stopSession(completed)
     }
 
     private fun observeActiveSession() {
         scope.launch {
-            practiceSessionManager.activeSession.collect { session ->
-                if (session == null) {
-                    orchestrator.setPracticeActive(false)
-                } else {
-                    orchestrator.setPracticeActive(true)
-                    updateNotificationForSession(session)
+            practiceSessionManager.activeSession
+                .combine(practiceSessionManager.progress) { session, progress ->
+                    session to progress
                 }
-            }
+                .collect { (session, progress) ->
+                    if (session == null) {
+                        Logger.d("activeSession is null -> setPracticeActive(false)", tag = TAG)
+                        orchestrator.setPracticeActive(false)
+                    } else {
+                        Logger.d(
+                            "activeSession updated: id=${session.id}, status=${session.status}, progress=$progress",
+                            tag = TAG,
+                        )
+                        orchestrator.setPracticeActive(true)
+                        updateNotificationForSession(session, progress)
+                    }
+                }
         }
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Logger.d("createNotificationChannel()", tag = TAG)
             val manager = service.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (manager.getNotificationChannel(PRACTICES_CHANNEL_ID) == null) {
                 val channel = NotificationChannel(
@@ -110,12 +135,33 @@ class PracticeForegroundController @Inject constructor(
                 )
                 channel.description = "Foreground service for practice sessions"
                 manager.createNotificationChannel(channel)
+                Logger.d("Notification channel $PRACTICES_CHANNEL_ID created", tag = TAG)
             }
         }
     }
 
-    private fun buildPracticeNotification(session: PracticeSession?): Notification {
-        val title = session?.let { "Практика" } ?: "Практика"
+    private fun buildPracticeNotification(session: PracticeSession?, progress: PracticeProgress?): Notification {
+        val title = "Практика"
+
+        val contentText = if (session != null && progress != null && progress.sessionId == session.id) {
+            val total = progress.totalSec
+            if (total != null) {
+                val remaining = (total - progress.elapsedSec).coerceAtLeast(0)
+                val minutes = remaining / 60
+                val seconds = remaining % 60
+                val timeFormatted = String.format("%02d:%02d", minutes, seconds)
+                "Осталось $timeFormatted"
+            } else {
+                "Идёт практика"
+            }
+        } else {
+            "Идёт практика"
+        }
+
+        Logger.d(
+            "buildPracticeNotification(sessionId=${session?.id}, status=${session?.status}, progress=$progress, contentText=$contentText)",
+            tag = TAG,
+        )
 
         val stopIntent = PendingIntent.getService(
             service,
@@ -133,7 +179,7 @@ class PracticeForegroundController @Inject constructor(
 
         val builder = NotificationCompat.Builder(service, PRACTICES_CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText("Идёт практика")
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
             .setContentIntent(openIntent)
@@ -144,13 +190,20 @@ class PracticeForegroundController @Inject constructor(
         return builder.build()
     }
 
-    private fun updateNotificationForSession(session: PracticeSession) {
-        val notification = buildPracticeNotification(session)
+    private fun updateNotificationForSession(session: PracticeSession, progress: PracticeProgress?) {
+        Logger.d(
+            "updateNotificationForSession(sessionId=${session.id}, status=${session.status}, progress=$progress)",
+            tag = TAG,
+        )
+        val notification = buildPracticeNotification(session, progress)
         service.startForeground(NOTIFICATION_ID, notification)
     }
 
     private fun hasRequiredPermissionsForConnectedDeviceFgs(): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return true
+        if (Build.VERSION.SDK_INT < 34) {
+            Logger.d("SDK < 34, hasRequiredPermissionsForConnectedDeviceFgs=true", tag = TAG)
+            return true
+        }
 
         val hasFgs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             service.checkSelfPermission(Manifest.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE) == PackageManager.PERMISSION_GRANTED
@@ -169,10 +222,16 @@ class PracticeForegroundController @Inject constructor(
             service.checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
         }
 
-        return hasFgs && hasAnyTransport
+        val result = hasFgs && hasAnyTransport
+        Logger.d(
+            "hasRequiredPermissionsForConnectedDeviceFgs: hasFgs=$hasFgs, hasAnyTransport=$hasAnyTransport, result=$result",
+            tag = TAG,
+        )
+        return result
     }
 
     companion object {
+        private const val TAG = "PracticeForegroundController"
         const val PRACTICES_CHANNEL_ID = "amulet_practices_channel"
         const val NOTIFICATION_ID = 1
 

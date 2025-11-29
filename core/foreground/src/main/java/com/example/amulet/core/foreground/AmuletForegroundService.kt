@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.patterns.model.PatternId
@@ -37,36 +38,52 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
 
     override fun onCreate() {
         super.onCreate()
+        Logger.d("AmuletForegroundService.onCreate", tag = TAG)
         orchestrator.attachHost(this)
         practiceController.onCreate(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Logger.d(
+            "onStartCommand action=${intent?.action} flags=$flags startId=$startId",
+            tag = TAG,
+        )
         practiceController.handleIntent(intent?.action)
         return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        Logger.d("AmuletForegroundService.onDestroy", tag = TAG)
         practiceController.onDestroy()
     }
 
     override fun stopService() {
+        Logger.d("stopService() requested, stopping foreground and self", tag = TAG)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
     inner class AmuletControlBinder : Binder(), AmuletControl {
         override suspend fun startPracticeSession(practiceId: PracticeId) {
+            Logger.d("startPracticeSession(practiceId=$practiceId)", tag = TAG)
             practiceController.startPractice(practiceId)
         }
 
         override suspend fun stopPracticeSession(sessionId: PracticeSessionId, completed: Boolean) {
+            Logger.d(
+                "stopPracticeSession(sessionId=$sessionId, completed=$completed)",
+                tag = TAG,
+            )
             practiceController.stopPractice(sessionId, completed)
         }
 
         override suspend fun previewPattern(patternId: PatternId, deviceId: DeviceId?) {
             // TODO: вызов PreviewPatternOnDeviceUseCase через PatternPlaybackService
+            Logger.d(
+                "previewPattern(patternId=$patternId, deviceId=$deviceId)",
+                tag = TAG,
+            )
             val pattern = getPatternByIdUseCase(patternId).firstOrNull() ?: return
             val targetDeviceId = deviceId ?: return
             previewPatternOnDeviceUseCase(pattern.spec, targetDeviceId).firstOrNull()
@@ -76,6 +93,7 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
     }
 
     companion object {
+        private const val TAG = "AmuletForegroundService"
         private const val PRACTICES_CHANNEL_ID = "amulet_practices_channel"
         private const val NOTIFICATION_ID = 1
 
