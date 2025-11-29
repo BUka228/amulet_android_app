@@ -47,6 +47,7 @@ internal fun Project.configureKotlinAndroid(
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             freeCompilerArgs.add("-Xjsr305=strict")
+            freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
         }
     }
 

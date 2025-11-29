@@ -3,7 +3,11 @@ package com.example.amulet.core.database.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.amulet.shared.domain.privacy.model.UserConsents
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @Entity(
     tableName = "users",
     indices = [Index(value = ["updatedAt"])]
@@ -14,7 +18,7 @@ data class UserEntity(
     val avatarUrl: String?,
     val timezone: String?,
     val language: String?,
-    val consentsJson: String,
-    val createdAt: Long?,
-    val updatedAt: Long?
+    val consents: UserConsents?,
+    val createdAt: Instant?,
+    val updatedAt: Instant?
 )

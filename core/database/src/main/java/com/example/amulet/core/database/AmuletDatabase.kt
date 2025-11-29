@@ -3,6 +3,8 @@ package com.example.amulet.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.amulet.core.database.converter.InstantConverters
+import com.example.amulet.core.database.converter.UserConverters
 import com.example.amulet.core.database.dao.DeviceDao
 import com.example.amulet.core.database.dao.FirmwareInfoDao
 import com.example.amulet.core.database.dao.HugDao
@@ -87,10 +89,10 @@ import com.example.amulet.core.database.entity.UserPracticeStatsEntity
         RemoteKeyEntity::class,
         UserMoodEntryEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = true
 )
-@TypeConverters(DatabaseTypeConverters::class)
+@TypeConverters(DatabaseTypeConverters::class, UserConverters::class, InstantConverters::class)
 abstract class AmuletDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao

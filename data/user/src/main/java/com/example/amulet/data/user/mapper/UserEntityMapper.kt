@@ -1,21 +1,15 @@
 package com.example.amulet.data.user.mapper
 
 import com.example.amulet.core.database.entity.UserEntity
-import com.example.amulet.shared.domain.privacy.model.UserConsents
 import com.example.amulet.shared.domain.user.model.User
 import com.example.amulet.shared.domain.user.model.UserId
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 
 @Singleton
 @OptIn(ExperimentalTime::class)
-class UserEntityMapper @Inject constructor(
-    private val json: Json
-) {
+class UserEntityMapper @Inject constructor() {
 
     fun toDomain(entity: UserEntity): User = User(
         id = UserId(entity.id),
@@ -23,18 +17,8 @@ class UserEntityMapper @Inject constructor(
         avatarUrl = entity.avatarUrl,
         timezone = entity.timezone,
         language = entity.language,
-        consents = entity.consentsJson.toConsents(),
-        createdAt = entity.createdAt?.let { Instant.fromEpochMilliseconds(it) },
-        updatedAt = entity.updatedAt?.let { Instant.fromEpochMilliseconds(it) }
+        consents = entity.consents,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt
     )
-
-    private fun String.toConsents(): UserConsents? = runCatching {
-        val map = json.decodeFromString<Map<String, String?>>(this)
-        UserConsents(
-            analytics = map["analytics"]?.toBoolean() ?: false,
-            marketing = map["marketing"]?.toBoolean() ?: false,
-            notifications = map["notifications"]?.toBoolean() ?: false,
-            updatedAt = map["updatedAt"]?.let { Instant.parse(it) }
-        )
-    }.getOrNull()
 }
