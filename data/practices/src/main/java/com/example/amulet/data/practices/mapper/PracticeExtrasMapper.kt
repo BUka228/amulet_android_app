@@ -3,6 +3,7 @@ package com.example.amulet.data.practices.mapper
 import com.example.amulet.core.database.entity.CollectionEntity
 import com.example.amulet.core.database.entity.CollectionItemEntity
 import com.example.amulet.core.database.entity.PlanEntity
+import com.example.amulet.core.database.entity.PracticeScheduleEntity
 import com.example.amulet.core.database.entity.PracticeTagEntity
 import com.example.amulet.core.database.entity.UserBadgeEntity
 import com.example.amulet.core.database.entity.UserMoodEntryEntity
@@ -11,6 +12,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeBadge
 import com.example.amulet.shared.domain.practices.model.PracticeCollection
 import com.example.amulet.shared.domain.practices.model.PracticeCollectionItem
 import com.example.amulet.shared.domain.practices.model.PracticePlan
+import com.example.amulet.shared.domain.practices.model.PracticeSchedule
 import com.example.amulet.shared.domain.practices.model.PracticeStatistics
 import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
@@ -19,6 +21,8 @@ import com.example.amulet.shared.domain.practices.model.MoodEntry
 import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.MoodSource
 import com.example.amulet.shared.domain.user.model.UserId
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
 
 fun PlanEntity.toDomain(): PracticePlan = PracticePlan(
     id = id,
@@ -107,4 +111,30 @@ fun MoodEntry.toEntity(): UserMoodEntryEntity = UserMoodEntryEntity(
     mood = mood.name,
     source = source.name,
     createdAt = createdAt
+)
+
+fun PracticeScheduleEntity.toDomain(json: Json): PracticeSchedule = PracticeSchedule(
+    id = id,
+    userId = userId,
+    practiceId = practiceId,
+    courseId = courseId,
+    daysOfWeek = json.decodeFromString<List<Int>>(daysOfWeekJson),
+    timeOfDay = timeOfDay,
+    reminderEnabled = reminderEnabled,
+    createdAt = createdAt,
+    planId = planId,
+    updatedAt = updatedAt,
+)
+
+fun PracticeSchedule.toEntity(userId: String, json: Json): PracticeScheduleEntity = PracticeScheduleEntity(
+    id = id,
+    userId = userId,
+    practiceId = practiceId,
+    courseId = courseId,
+    planId = planId,
+    daysOfWeekJson = json.encodeToString(json.encodeToJsonElement(daysOfWeek)),
+    timeOfDay = timeOfDay,
+    reminderEnabled = reminderEnabled,
+    createdAt = createdAt,
+    updatedAt = updatedAt ?: System.currentTimeMillis(),
 )

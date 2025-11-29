@@ -5,16 +5,21 @@ import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
 import com.example.amulet.data.practices.seed.PracticeScriptSeedData
+import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.Practice
+import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.example.amulet.shared.domain.practices.model.PracticeCategory
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import com.example.amulet.shared.domain.practices.model.PracticeId
 import com.example.amulet.shared.domain.practices.model.PracticeLevel
-import com.example.amulet.shared.domain.practices.model.PracticeGoal
-import com.example.amulet.shared.domain.practices.model.PracticeSession
-import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.example.amulet.shared.domain.practices.model.PracticeScript
+import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeStep
 import com.example.amulet.shared.domain.practices.model.PracticeStepType
+import com.example.amulet.shared.domain.practices.model.PracticeStepType.BODY_SCAN
+import com.example.amulet.shared.domain.practices.model.PracticeStepType.BREATH_STEP
+import com.example.amulet.shared.domain.practices.model.PracticeStepType.SOUND_SCAPE
+import com.example.amulet.shared.domain.practices.model.PracticeStepType.TEXT_HINT
 import com.example.amulet.shared.domain.practices.model.parsePracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeType
@@ -22,6 +27,10 @@ import com.example.amulet.shared.domain.practices.model.UserPreferences
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.user.model.UserId
 import com.example.amulet.shared.domain.devices.model.DeviceId
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 
 fun PracticeEntity.toDomain(): Practice {
     val tags = try {
@@ -122,8 +131,8 @@ fun PracticeSessionEntity.toDomain(): PracticeSession = PracticeSession(
     intensity = intensity,
     brightness = brightness,
     completed = completed,
-    moodBefore = moodBefore,
-    moodAfter = moodAfter,
+    moodBefore = moodBefore?.let { runCatching { MoodKind.valueOf(it) }.getOrNull() },
+    moodAfter = moodAfter?.let { runCatching { MoodKind.valueOf(it) }.getOrNull() },
     feedbackNote = feedbackNote,
     source = parsePracticeSessionSource(source),
     actualDurationSec = actualDurationSec,
@@ -151,3 +160,52 @@ fun UserPreferencesEntity.toDomain(
     interests = interests,
     preferredDurationsSec = durations
 )
+
+fun UserPreferencesEntity?.toDomain(json: Json): UserPreferences {
+    if (this == null) return UserPreferences()
+
+    val goals = runCatching {
+        json.parseToJsonElement(goalsJson).jsonArray.map { it.jsonPrimitive.content }
+    }.getOrElse { emptyList() }
+
+    val interests = runCatching {
+        json.parseToJsonElement(interestsJson).jsonArray.map { it.jsonPrimitive.content }
+    }.getOrElse { emptyList() }
+
+    val durations = runCatching {
+        json.parseToJsonElement(preferredDurationsJson).jsonArray.mapNotNull { je ->
+            je.jsonPrimitive.content.toIntOrNull()
+        }
+    }.getOrElse { emptyList() }
+
+    val base = toDomain(
+        goals = goals,
+        interests = interests,
+        durations = durations,
+    )
+
+    return base.copy(
+        defaultAudioMode = defaultAudioMode?.let { name ->
+            runCatching { PracticeAudioMode.valueOf(name) }.getOrNull()
+        }
+    )
+}
+
+fun UserPreferences.toEntity(
+    userId: String,
+    json: Json,
+): UserPreferencesEntity {
+    val goalsJson = json.encodeToString(json.encodeToJsonElement(goals))
+    val interestsJson = json.encodeToString(json.encodeToJsonElement(interests))
+    val durationsJson = json.encodeToString(json.encodeToJsonElement(preferredDurationsSec))
+
+    return UserPreferencesEntity(
+        userId = userId,
+        defaultIntensity = defaultIntensity,
+        defaultBrightness = defaultBrightness,
+        goalsJson = goalsJson,
+        interestsJson = interestsJson,
+        preferredDurationsJson = durationsJson,
+        defaultAudioMode = defaultAudioMode?.name,
+    )
+}

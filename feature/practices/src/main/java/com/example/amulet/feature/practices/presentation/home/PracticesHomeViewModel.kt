@@ -14,6 +14,8 @@ import com.example.amulet.shared.domain.courses.usecase.GetCourseProgressStreamU
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
 import com.example.amulet.shared.domain.courses.model.Course
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesStreamUseCase
+import com.example.amulet.shared.domain.practices.model.MoodKind
+import com.example.amulet.shared.domain.practices.model.PracticeGoal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import javax.inject.Inject
@@ -62,6 +64,15 @@ class PracticesHomeViewModel @Inject constructor(
         // Пользователь сам выбирает практику и запускает её с экрана сессии.
     }
 
+    private fun MoodKind.toPracticeGoal(): PracticeGoal? = when (this) {
+        MoodKind.NERVOUS, MoodKind.SAD, MoodKind.ANGRY -> PracticeGoal.ANXIETY
+        MoodKind.SLEEP, MoodKind.TIRED -> PracticeGoal.SLEEP
+        MoodKind.FOCUS -> PracticeGoal.FOCUS
+        MoodKind.RELAX -> PracticeGoal.RELAXATION
+        MoodKind.HAPPY -> PracticeGoal.MOOD
+        MoodKind.NEUTRAL -> null
+    }
+
     private fun updateGreeting() {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val greeting = when (hour) {
@@ -81,7 +92,7 @@ class PracticesHomeViewModel @Inject constructor(
             val moodFlow = state.map { it.selectedMood }.distinctUntilChanged()
 
             val recommendationsFlow = moodFlow.flatMapLatest { mood ->
-                getRecommendationsStreamUseCase(limit = 5, goal = mood.practiceGoal)
+                getRecommendationsStreamUseCase(limit = 5, goal = mood.toPracticeGoal())
             }
             
             val quickRitualsFlow = getPracticesStreamUseCase(
@@ -115,7 +126,7 @@ class PracticesHomeViewModel @Inject constructor(
                 val allPractices = args[6] as List<com.example.amulet.shared.domain.practices.model.Practice>
                 val currentMood = _state.value.selectedMood
 
-                val recommendedCourse = courses.find { it.goal == currentMood.practiceGoal } 
+                val recommendedCourse = courses.find { it.goal == currentMood.toPracticeGoal() } 
                     ?: courses.firstOrNull { it.tags.contains("popular") }
                     ?: courses.firstOrNull()
 
@@ -186,23 +197,14 @@ class PracticesHomeViewModel @Inject constructor(
         }
     }
 
-    private fun onSelectMood(mood: MoodChip) {
+    private fun onSelectMood(mood: MoodKind) {
         _state.update { it.copy(selectedMood = mood) }
     }
 
     private fun onSaveSelectedMood() {
         val currentMood = _state.value.selectedMood
-
-        val moodKind = when (currentMood) {
-            MoodChip.Nervous -> com.example.amulet.shared.domain.practices.model.MoodKind.NERVOUS
-            MoodChip.Sleep -> com.example.amulet.shared.domain.practices.model.MoodKind.SLEEP
-            MoodChip.Focus -> com.example.amulet.shared.domain.practices.model.MoodKind.FOCUS
-            MoodChip.Relax -> com.example.amulet.shared.domain.practices.model.MoodKind.RELAX
-            MoodChip.Neutral -> com.example.amulet.shared.domain.practices.model.MoodKind.NEUTRAL
-        }
-
         viewModelScope.launch {
-            logMoodSelectionUseCase(moodKind)
+            logMoodSelectionUseCase(currentMood)
         }
     }
 

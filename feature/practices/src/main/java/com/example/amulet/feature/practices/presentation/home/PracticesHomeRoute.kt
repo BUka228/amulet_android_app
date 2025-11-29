@@ -72,6 +72,10 @@ import androidx.compose.ui.draw.clip
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.practices.R
+import com.example.amulet.feature.practices.presentation.mood.moodColor
+import com.example.amulet.feature.practices.presentation.mood.moodDescriptionRes
+import com.example.amulet.feature.practices.presentation.mood.moodIcon
+import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -240,7 +244,7 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
                         )
                     }
                 }
-                val saveEnabled = state.selectedMood != MoodChip.Neutral
+                val saveEnabled = state.selectedMood != MoodKind.NEUTRAL
                 IconButton(
                     onClick = { onIntent(PracticesHomeIntent.SaveSelectedMood) },
                     enabled = saveEnabled,
@@ -260,12 +264,12 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
 
             // Horizontal scroll for mood chips
             LazyRow(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(state.availableMoods) { mood ->
-                    val isSelected = state.selectedMood.id == mood.id
+                    val isSelected = state.selectedMood == mood
                     val icon = moodIcon(mood)
                     val color = moodColor(mood)
 
@@ -287,35 +291,6 @@ private fun MoodSection(state: PracticesHomeState, onIntent: (PracticesHomeInten
             }
         }
     }
-}
-
-@Composable
-private fun moodIcon(mood: MoodChip) = when (mood) {
-    MoodChip.Nervous -> Icons.Filled.SentimentDissatisfied
-    MoodChip.Sleep -> Icons.Filled.Bedtime
-    MoodChip.Focus -> Icons.Filled.Bolt
-    MoodChip.Relax -> Icons.Filled.Spa
-    MoodChip.Neutral -> Icons.Filled.SentimentNeutral
-}
-
-@Composable
-private fun moodColor(mood: MoodChip): Color {
-    val colors = MaterialTheme.colorScheme
-    return when (mood) {
-        MoodChip.Nervous -> colors.error
-        MoodChip.Sleep -> colors.primary
-        MoodChip.Focus -> colors.tertiary
-        MoodChip.Relax -> colors.secondary
-        MoodChip.Neutral -> colors.outline
-    }
-}
-
-private fun moodDescriptionRes(mood: MoodChip): Int = when (mood) {
-    MoodChip.Nervous -> R.string.practices_home_mood_nervous_description
-    MoodChip.Sleep -> R.string.practices_home_mood_sleep_description
-    MoodChip.Focus -> R.string.practices_home_mood_focus_description
-    MoodChip.Relax -> R.string.practices_home_mood_relax_description
-    MoodChip.Neutral -> R.string.practices_home_mood_neutral_description
 }
 
 @Composable

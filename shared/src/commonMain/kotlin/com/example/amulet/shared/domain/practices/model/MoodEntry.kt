@@ -23,6 +23,10 @@ enum class MoodKind {
     FOCUS,
     RELAX,
     NEUTRAL,
+    HAPPY,
+    SAD,
+    ANGRY,
+    TIRED,
 }
 
 /**

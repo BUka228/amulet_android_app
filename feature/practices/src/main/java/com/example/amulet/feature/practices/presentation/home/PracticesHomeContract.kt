@@ -10,14 +10,24 @@ import com.example.amulet.shared.domain.courses.model.CourseProgress
 import com.example.amulet.shared.domain.practices.model.PracticeFilter
 import com.example.amulet.shared.domain.practices.model.PracticeType
 import com.example.amulet.shared.domain.practices.model.PracticeGoal
+import com.example.amulet.shared.domain.practices.model.MoodKind
 
 data class PracticesHomeState(
     val isLoading: Boolean = true,
     val error: AppError? = null,
 
     val greeting: String = "",
-    val selectedMood: MoodChip = MoodChip.Neutral,
-    val availableMoods: List<MoodChip> = MoodChip.defaultList(),
+    val selectedMood: MoodKind = MoodKind.NEUTRAL,
+    val availableMoods: List<MoodKind> = listOf(
+        MoodKind.NERVOUS,
+        MoodKind.SLEEP,
+        MoodKind.FOCUS,
+        MoodKind.RELAX,
+        MoodKind.HAPPY,
+        MoodKind.SAD,
+        MoodKind.ANGRY,
+        MoodKind.TIRED,
+    ),
 
     val recommendedPractices: List<Practice> = emptyList(),
     val recommendedCourse: Course? = null,
@@ -47,7 +57,7 @@ data class PracticesHomeState(
 )
 
 sealed class PracticesHomeIntent {
-    data class SelectMood(val mood: MoodChip) : PracticesHomeIntent()
+    data class SelectMood(val mood: MoodKind) : PracticesHomeIntent()
     object SaveSelectedMood : PracticesHomeIntent()
 
     object Refresh : PracticesHomeIntent()
@@ -79,21 +89,4 @@ sealed class PracticesHomeEffect {
     object NavigateToSearch : PracticesHomeEffect()
 
     data class ShowError(val error: AppError) : PracticesHomeEffect()
-}
-
-sealed class MoodChip(
-    open val id: String,
-    open val title: String,
-    open val practiceGoal: PracticeGoal?,
-    open val tags: List<String> = emptyList()
-) {
-    object Nervous : MoodChip("nervous", "Нервничаю", PracticeGoal.STRESS)
-    object Sleep : MoodChip("sleep", "Хочу уснуть", PracticeGoal.SLEEP)
-    object Focus : MoodChip("focus", "Нужна концентрация", PracticeGoal.FOCUS)
-    object Relax : MoodChip("relax", "Просто расслабиться", PracticeGoal.RELAXATION)
-    object Neutral : MoodChip("neutral", "По умолчанию", null)
-
-    companion object {
-        fun defaultList(): List<MoodChip> = listOf(Nervous, Sleep, Focus, Relax)
-    }
 }

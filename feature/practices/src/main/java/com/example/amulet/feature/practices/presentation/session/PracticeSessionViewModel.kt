@@ -6,9 +6,13 @@ import com.example.amulet.core.foreground.PracticeForegroundLauncher
 import com.example.amulet.shared.domain.devices.model.DeviceSessionStatus
 import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
-import com.example.amulet.shared.domain.practices.usecase.CompletePracticeSessionUseCase
+import com.example.amulet.shared.domain.practices.model.MoodKind
+import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
+import com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetUserPreferencesStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdateSessionFeedbackUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdateSessionMoodBeforeUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -31,7 +35,9 @@ class PracticeSessionViewModel @Inject constructor(
     private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase,
     private val getUserPreferencesStreamUseCase: GetUserPreferencesStreamUseCase,
     private val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase,
-    private val completePracticeSessionUseCase: CompletePracticeSessionUseCase,
+    private val updateSessionFeedbackUseCase: UpdateSessionFeedbackUseCase,
+    private val updateSessionMoodBeforeUseCase: UpdateSessionMoodBeforeUseCase,
+    private val getPatternByIdUseCase: GetPatternByIdUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PracticeSessionState())
@@ -57,6 +63,9 @@ class PracticeSessionViewModel @Inject constructor(
             is PracticeSessionIntent.ChangeBrightness -> changeBrightness(intent.level)
             is PracticeSessionIntent.ChangeAudioMode -> changeAudioMode(intent.mode)
             is PracticeSessionIntent.Rate -> rateSession(intent.rating, intent.note)
+            is PracticeSessionIntent.SelectMoodBefore -> selectMoodBefore(intent.mood)
+            is PracticeSessionIntent.SelectMoodAfter -> selectMoodAfter(intent.mood)
+            is PracticeSessionIntent.ChangeFeedbackNote -> changeFeedbackNote(intent.note)
             PracticeSessionIntent.NavigateBack -> emitEffect(PracticeSessionEffect.NavigateBack)
         }
     }
@@ -76,6 +85,15 @@ class PracticeSessionViewModel @Inject constructor(
                     ?: kotlinx.coroutines.flow.flowOf(null)
             }
 
+            val patternFlow = practiceFlow.flatMapLatest { practice ->
+                val patternId = practice?.patternId
+                if (patternId != null) {
+                    getPatternByIdUseCase(patternId)
+                } else {
+                    kotlinx.coroutines.flow.flowOf(null)
+                }
+            }
+
             val deviceSessionFlow = observeDeviceSessionStatusUseCase()
             val userPrefsFlow = getUserPreferencesStreamUseCase()
 
@@ -84,13 +102,19 @@ class PracticeSessionViewModel @Inject constructor(
                 practiceFlow,
                 deviceSessionFlow,
                 userPrefsFlow,
-            ) { sessionAndProgress, practice, deviceSession, prefs ->
+                patternFlow,
+            ) { sessionAndProgress, practice, deviceSession, prefs, pattern ->
                 val (session, progress) = sessionAndProgress
                 val deviceStatus: DeviceSessionStatus = deviceSession
+                val previousState = _state.value
+                val previousAudioMode = previousState.audioMode
+                val previousSession = previousState.session
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        session = session,
+                        // Если из стрима пришёл null, но у нас уже есть завершённая сессия,
+                        // не затираем её, чтобы показать финальный экран.
+                        session = session ?: previousSession,
                         progress = progress,
                         currentStepIndex = progress?.currentStepIndex,
                         practice = practice,
@@ -99,13 +123,25 @@ class PracticeSessionViewModel @Inject constructor(
                         totalDurationSec = progress?.totalSec ?: practice?.durationSec,
                         brightnessLevel = prefs.defaultBrightness,
                         vibrationLevel = prefs.defaultIntensity,
-                        audioMode = session?.audioMode,
+                        audioMode = previousAudioMode ?: prefs.defaultAudioMode ?: session?.audioMode,
                         connectionState = deviceStatus.connection,
                         batteryLevel = deviceStatus.liveStatus?.batteryLevel,
                         isCharging = deviceStatus.liveStatus?.isCharging ?: false,
                         isDeviceOnline = deviceStatus.liveStatus?.isOnline ?: false,
-                        patternName = practice?.patternId?.value,
+                        patternName = pattern?.title,
                     )
+                }
+
+                // Автозавершение практики по достижении конца
+                val totalSec = progress?.totalSec ?: practice?.durationSec
+                if (
+                    session != null &&
+                    session.status == PracticeSessionStatus.ACTIVE &&
+                    totalSec != null &&
+                    progress != null &&
+                    progress.elapsedSec >= totalSec
+                ) {
+                    stop(completed = true)
                 }
             }.collect { }
         }
@@ -129,6 +165,14 @@ class PracticeSessionViewModel @Inject constructor(
             } else {
                 val session = result.component1()
                 _state.update { it.copy(isLoading = false, session = session, error = null) }
+
+                // Если пользователь выбрал настроение до практики, сохраняем его на сессию
+                val moodBefore = _state.value.moodBefore
+                if (session != null && moodBefore != null) {
+                    launch {
+                        updateSessionMoodBeforeUseCase(session.id, moodBefore)
+                    }
+                }
                 practiceForegroundLauncher.ensureServiceStarted()
             }
         }
@@ -141,7 +185,17 @@ class PracticeSessionViewModel @Inject constructor(
             if (error != null) {
                 emitEffect(PracticeSessionEffect.ShowError(error))
             } else {
-                emitEffect(PracticeSessionEffect.NavigateBack)
+                if (!completed) {
+                    _state.update { it.copy(session = null, progress = null, currentStepIndex = null) }
+                    emitEffect(PracticeSessionEffect.NavigateBack)
+                } else {
+                    // При успешном завершении остаёмся на экране,
+                    // чтобы показать финальный блок с вопросом о настроении.
+                    val session = result.component1()
+                    if (session != null) {
+                        _state.update { it.copy(session = session) }
+                    }
+                }
             }
         }
     }
@@ -159,13 +213,45 @@ class PracticeSessionViewModel @Inject constructor(
 
     private fun changeAudioMode(mode: com.example.amulet.shared.domain.practices.model.PracticeAudioMode) {
         _state.update { it.copy(audioMode = mode) }
-        // Актуальный audioMode для сессии будет учитываться при следующем старте.
+        viewModelScope.launch {
+            val current = getUserPreferencesStreamUseCase().firstOrNull()
+            val updated = current?.copy(defaultAudioMode = mode)
+            if (updated != null) {
+                updateUserPreferencesUseCase(updated)
+            }
+        }
+    }
+
+    private fun selectMoodBefore(mood: MoodKind) {
+        _state.update { it.copy(moodBefore = mood) }
+    }
+
+    private fun selectMoodAfter(mood: MoodKind) {
+        _state.update { it.copy(moodAfter = mood) }
+    }
+
+    private fun changeFeedbackNote(note: String) {
+        _state.update { it.copy(pendingNote = note) }
     }
 
     private fun rateSession(rating: Int?, note: String?) {
-        _state.update { it.copy(pendingRating = rating, pendingNote = note) }
+        val currentSessionId = _state.value.session?.id ?: return
+        val currentNote = note ?: _state.value.pendingNote
+        val existingMoodAfter = _state.value.moodAfter
+        val moodAfter = existingMoodAfter ?: when (rating) {
+            1, 2 -> MoodKind.NERVOUS
+            3 -> MoodKind.NEUTRAL
+            4, 5 -> MoodKind.RELAX
+            else -> null
+        }
+        _state.update { it.copy(pendingRating = rating, pendingNote = currentNote, moodAfter = moodAfter) }
         viewModelScope.launch {
-            val result = completePracticeSessionUseCase(rating, note)
+            val result = updateSessionFeedbackUseCase(
+                sessionId = currentSessionId,
+                rating = rating,
+                moodAfter = moodAfter,
+                note = currentNote,
+            )
             val error = result.component2()
             if (error != null) {
                 emitEffect(PracticeSessionEffect.ShowError(error))

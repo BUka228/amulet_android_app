@@ -17,6 +17,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,11 +40,16 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.amulet.core.design.foundation.color.AmuletPalette
 import com.example.amulet.core.design.foundation.theme.AmuletTheme
 import com.example.amulet.feature.practices.R
+import com.example.amulet.feature.practices.presentation.mood.moodColor
+import com.example.amulet.feature.practices.presentation.mood.moodDescriptionRes
+import com.example.amulet.feature.practices.presentation.mood.moodIcon
+import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import kotlinx.coroutines.delay
@@ -56,7 +63,8 @@ fun PracticeSessionScreen(
     onIntent: (PracticeSessionIntent) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    val isCompleted = state.session?.status == PracticeSessionStatus.COMPLETED
+    val sessionStatus = state.session?.status
+    val isCompleted = sessionStatus == PracticeSessionStatus.COMPLETED
 
     BackHandler {
         onIntent(PracticeSessionIntent.Stop(completed = false))
@@ -89,8 +97,12 @@ fun PracticeSessionScreen(
                 Spacer(Modifier.height(20.dp))
                 // Центральная визуализация с круговым прогрессом
                 CenterVisualizationWithProgress(state = state)
-                
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(24.dp))
+
+                if (sessionStatus != PracticeSessionStatus.ACTIVE) {
+                    MoodBeforeBlock(state = state, onIntent = onIntent)
+                    Spacer(Modifier.height(24.dp))
+                }
 
                 // Timeline шагов
                 if (state.practice?.script?.steps?.isNotEmpty() == true) {
@@ -113,6 +125,226 @@ fun PracticeSessionScreen(
                     onPlanTomorrow = null,
                     onNavigateHome = onNavigateBack
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoodAfterBlock(
+    state: PracticeSessionState,
+    onIntent: (PracticeSessionIntent) -> Unit,
+) {
+    val selectedMood = state.moodAfter ?: MoodKind.NEUTRAL
+    val selectedColor = moodColor(selectedMood)
+    val selectedIcon = moodIcon(selectedMood)
+    val selectedDescription = stringResource(id = moodDescriptionRes(selectedMood))
+
+    val availableMoods = listOf(
+        MoodKind.NERVOUS,
+        MoodKind.SLEEP,
+        MoodKind.FOCUS,
+        MoodKind.RELAX,
+        MoodKind.HAPPY,
+        MoodKind.SAD,
+        MoodKind.ANGRY,
+        MoodKind.TIRED,
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp)),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = selectedColor.copy(alpha = 0.16f),
+                            disabledContainerColor = selectedColor.copy(alpha = 0.16f),
+                            contentColor = selectedColor,
+                            disabledContentColor = selectedColor
+                        )
+                    ) {
+                        Icon(
+                            imageVector = selectedIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.practices_home_mood_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = selectedDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(availableMoods) { mood ->
+                    val isSelected = state.moodAfter == mood
+                    val color = moodColor(mood)
+                    IconButton(
+                        onClick = { onIntent(PracticeSessionIntent.SelectMoodAfter(mood)) },
+                        modifier = Modifier.size(48.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = if (isSelected) color.copy(alpha = 0.24f) else color.copy(alpha = 0.08f),
+                            contentColor = color
+                        )
+                    ) {
+                        Icon(
+                            imageVector = moodIcon(mood),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoodBeforeBlock(
+    state: PracticeSessionState,
+    onIntent: (PracticeSessionIntent) -> Unit,
+) {
+    val selectedMood = state.moodBefore ?: MoodKind.NEUTRAL
+    val selectedColor = moodColor(selectedMood)
+    val selectedIcon = moodIcon(selectedMood)
+    val selectedDescription = stringResource(id = moodDescriptionRes(selectedMood))
+
+    val availableMoods = listOf(
+        MoodKind.NERVOUS,
+        MoodKind.SLEEP,
+        MoodKind.FOCUS,
+        MoodKind.RELAX,
+        MoodKind.HAPPY,
+        MoodKind.SAD,
+        MoodKind.ANGRY,
+        MoodKind.TIRED,
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp)),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {},
+                        enabled = false,
+                        modifier = Modifier.size(56.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = selectedColor.copy(alpha = 0.16f),
+                            disabledContainerColor = selectedColor.copy(alpha = 0.16f),
+                            contentColor = selectedColor,
+                            disabledContentColor = selectedColor
+                        )
+                    ) {
+                        Icon(
+                            imageVector = selectedIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.practices_home_mood_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = selectedDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(availableMoods) { mood ->
+                    val isSelected = state.moodBefore == mood
+                    val color = moodColor(mood)
+                    IconButton(
+                        onClick = { onIntent(PracticeSessionIntent.SelectMoodBefore(mood)) },
+                        modifier = Modifier.size(48.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = if (isSelected) color.copy(alpha = 0.24f) else color.copy(alpha = 0.08f),
+                            contentColor = color
+                        )
+                    ) {
+                        Icon(
+                            imageVector = moodIcon(mood),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -492,9 +724,7 @@ private fun AudioModeChip(
         )
     )
 }
-
-
-
+ 
 @Composable
 private fun FinalSessionBlock(
     state: PracticeSessionState,
@@ -502,8 +732,6 @@ private fun FinalSessionBlock(
     onPlanTomorrow: (() -> Unit)?,
     onNavigateHome: () -> Unit,
 ) {
-    // Анимация конфетти
-    ConfettiAnimation()
 
     Column(
         modifier = Modifier
@@ -557,6 +785,11 @@ private fun FinalSessionBlock(
         Spacer(Modifier.height(32.dp))
 
         // Статистика
+        val completedDurationSec = state.session?.actualDurationSec
+            ?: state.session?.durationSec
+            ?: state.totalDurationSec
+            ?: state.progress?.elapsedSec
+            ?: 0
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -575,7 +808,7 @@ private fun FinalSessionBlock(
                 ) {
                     StatItem(
                         icon = Icons.Default.Timer,
-                        value = formatDuration(state.progress?.elapsedSec ?: state.totalDurationSec ?: 0),
+                        value = formatDuration(completedDurationSec),
                         label = stringResource(id = R.string.practice_session_stat_duration)
                     )
                     StatItem(
@@ -589,7 +822,11 @@ private fun FinalSessionBlock(
 
         Spacer(Modifier.height(24.dp))
 
-        // Рейтинг с эмодзи
+        MoodAfterBlock(state = state, onIntent = onIntent)
+
+        Spacer(Modifier.height(24.dp))
+
+        // Рейтинг и короткий отзыв
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -603,148 +840,59 @@ private fun FinalSessionBlock(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(id = R.string.practice_session_rating_title),
+                    text = stringResource(id = R.string.practice_session_rating_header),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+
                 Spacer(Modifier.height(16.dp))
 
-                // Эмодзи рейтинг
-                val currentRating = state.pendingRating ?: 3
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    listOf(
-                        1 to "😢",
-                        2 to "😕",
-                        3 to "😐",
-                        4 to "😊",
-                        5 to "😄"
-                    ).forEach { (rating, emoji) ->
-                        EmojiRatingButton(
-                            emoji = emoji,
-                            selected = currentRating == rating,
+                    val currentRating = state.pendingRating ?: 3
+                    (1..5).forEach { rating ->
+                        IconButton(
                             onClick = {
                                 onIntent(PracticeSessionIntent.Rate(rating, state.pendingNote))
-                            }
-                        )
+                            },
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = if (rating <= currentRating) AmuletTheme.colors.success else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        ) {
+                            Icon(
+                                imageVector = if (rating <= currentRating) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     }
                 }
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = state.pendingNote.orEmpty(),
+                    onValueChange = { onIntent(PracticeSessionIntent.ChangeFeedbackNote(it)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text(
+                            text = stringResource(id = R.string.practice_session_feedback_placeholder),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    maxLines = 3
+                )
             }
         }
 
         Spacer(Modifier.height(32.dp))
-
-        // Кнопки
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onNavigateHome,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AmuletTheme.colors.success
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(id = R.string.practice_session_back_home),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            if (onPlanTomorrow != null) {
-                OutlinedButton(
-                    onClick = { onPlanTomorrow() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarToday,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(id = R.string.practice_session_plan_tomorrow),
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                }
-            }
-        }
     }
 }
 
-@Composable
-private fun ConfettiAnimation() {
-    val confettiPieces = remember {
-        List(30) {
-            ConfettiPiece(
-                x = Random.nextFloat(),
-                initialY = -0.1f - Random.nextFloat() * 0.2f,
-                speed = 0.3f + Random.nextFloat() * 0.4f,
-                color = listOf(
-                    AmuletPalette.Accent,
-                    AmuletPalette.EmotionLove,
-                    AmuletPalette.Secondary,
-                    AmuletPalette.SecondaryLight,
-                    AmuletPalette.ErrorLight,
-                    AmuletPalette.Primary
-                ).random()
-            )
-        }
-    }
-
-    confettiPieces.forEach { piece ->
-        var yPosition by remember { mutableStateOf(piece.initialY) }
-
-        LaunchedEffect(Unit) {
-            while (true) {
-                yPosition += piece.speed * 0.016f
-                if (yPosition > 1.2f) {
-                    yPosition = -0.1f
-                }
-                delay(16)
-            }
-        }
-
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val x = piece.x * size.width
-            val y = yPosition * size.height
-
-            drawCircle(
-                color = piece.color,
-                radius = 6.dp.toPx(),
-                center = Offset(x, y)
-            )
-        }
-    }
-}
-
-private data class ConfettiPiece(
-    val x: Float,
-    val initialY: Float,
-    val speed: Float,
-    val color: Color
-)
 
 @Composable
 private fun StatItem(
@@ -774,43 +922,6 @@ private fun StatItem(
         )
     }
 }
-
-@Composable
-private fun EmojiRatingButton(
-    emoji: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1.2f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "emojiScale"
-    )
-
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .scale(scale)
-            .clip(CircleShape)
-            .background(
-                if (selected) Color.White.copy(alpha = 0.2f) else Color.Transparent
-            )
-            .clickableWithoutRipple { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = emoji,
-            style = MaterialTheme.typography.headlineMedium,
-            fontSize = 32.sp
-        )
-    }
-}
-
-private fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier = this.then(
-    Modifier.pointerInput(Unit) {
-        detectTapGestures { onClick() }
-    }
-)
 
 @Composable
 private fun formatDuration(seconds: Int): String {

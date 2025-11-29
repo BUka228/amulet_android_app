@@ -18,6 +18,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeStatistics
 import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.UserPreferences
 import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
+import com.example.amulet.shared.domain.practices.model.MoodKind
 import kotlinx.coroutines.flow.Flow
 
 interface PracticesRepository {
@@ -65,9 +66,15 @@ interface PracticesRepository {
         completed: Boolean
     ): AppResult<PracticeSession>
 
+    suspend fun updateSessionMoodBefore(
+        sessionId: PracticeSessionId,
+        moodBefore: MoodKind?,
+    ): AppResult<PracticeSession>
+
     suspend fun updateSessionFeedback(
         sessionId: PracticeSessionId,
         rating: Int?,
+        moodAfter: MoodKind?,
         feedbackNote: String?,
     ): AppResult<PracticeSession>
 

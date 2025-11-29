@@ -6,6 +6,10 @@
     <string name="practices_home_mood_focus_description">Нужна концентрация и ясность</string>
     <string name="practices_home_mood_relax_description">Хочу просто расслабиться и выдохнуть</string>
     <string name="practices_home_mood_neutral_description">Выберите, как вы чувствуете себя сейчас</string>
+    <string name="practices_home_mood_happy_description">Feeling happy and inspired</string>
+    <string name="practices_home_mood_sad_description">Feeling sad or low</string>
+    <string name="practices_home_mood_angry_description">Feeling angry or irritated</string>
+    <string name="practices_home_mood_tired_description">Feeling tired, need a break</string>
     <string name="practices_home_recommended_title">Recommended for now</string>
     <string name="practices_home_my_courses_title">Your courses</string>
     <string name="practices_home_today_plan_heading">Today plan</string>
@@ -142,11 +146,14 @@
     <string name="practice_session_stat_duration">Duration</string>
     <string name="practice_session_stat_steps">Steps</string>
     <string name="practice_session_rating_title">How do you feel?</string>
+    <string name="practice_session_rating_header">Rate this practice</string>
     <string name="practice_session_back_home">Back to home</string>
     <string name="practice_session_plan_tomorrow">Plan for tomorrow</string>
     <string name="practice_session_fallback_breathe">Breathe</string>
     <string name="practice_session_duration_minutes_seconds">%1$d min %2$d s</string>
     <string name="practice_session_duration_seconds">%1$d s</string>
+
+    <string name="practice_session_feedback_placeholder">Share a short feedback about the practice (optional)</string>
 
     <string name="practice_session_action_start">Start</string>
     <string name="practice_session_action_finish">Finish</string>

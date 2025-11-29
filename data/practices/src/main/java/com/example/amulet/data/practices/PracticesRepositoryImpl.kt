@@ -4,6 +4,7 @@ import com.example.amulet.data.practices.datasource.LocalPracticesDataSource
 import com.example.amulet.data.practices.datasource.RemotePracticesDataSource
 import com.example.amulet.data.practices.mapper.toDomain
 import com.example.amulet.data.practices.mapper.toDomain as toExtrasDomain
+import com.example.amulet.data.practices.mapper.toEntity
 import com.example.amulet.data.practices.seed.PracticeSeedData
 import com.example.amulet.data.practices.seed.toSeed
 import com.example.amulet.shared.core.AppError
@@ -30,6 +31,8 @@ import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.toStorageString
 import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.practices.model.MoodKind
+import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.onFailure
@@ -87,7 +90,7 @@ class PracticesRepositoryImpl @Inject constructor(
         }
 
     override fun getCategoriesStream(): Flow<List<PracticeCategory>> =
-        local.observeCategories().map { it.map { c -> PracticeCategory(c.id, c.title, c.order) } }
+        local.observeCategories().map { it.map { c -> c.toDomain() } }
 
     override fun getFavoritesStream(): Flow<List<Practice>> =
         combine(local.observePractices(), local.observeFavoriteIds(currentUserId)) { entities, favIds ->
@@ -229,14 +232,28 @@ class PracticesRepositoryImpl @Inject constructor(
         return Ok(updated.toDomain())
     }
 
+    override suspend fun updateSessionMoodBefore(
+        sessionId: PracticeSessionId,
+        moodBefore: MoodKind?,
+    ): AppResult<PracticeSession> {
+        val current = local.getSessionById(sessionId) ?: return Err(AppError.NotFound)
+        val updated = current.copy(
+            moodBefore = moodBefore?.name,
+        )
+        local.upsertSession(updated)
+        return Ok(updated.toDomain())
+    }
+
     override suspend fun updateSessionFeedback(
         sessionId: PracticeSessionId,
         rating: Int?,
+        moodAfter: MoodKind?,
         feedbackNote: String?,
     ): AppResult<PracticeSession> {
         val current = local.getSessionById(sessionId) ?: return Err(AppError.NotFound)
         val updated = current.copy(
             rating = rating,
+            moodAfter = moodAfter?.name,
             feedbackNote = feedbackNote,
         )
         local.upsertSession(updated)
@@ -274,71 +291,23 @@ class PracticesRepositoryImpl @Inject constructor(
 
     override fun getUserPreferencesStream(): Flow<UserPreferences> =
         local.observePreferences(currentUserId).map { e ->
-            val goals = e?.goalsJson?.let { json.parseToJsonElement(it).jsonArray.map { it.jsonPrimitive.content } } ?: emptyList()
-            val interests = e?.interestsJson?.let { json.parseToJsonElement(it).jsonArray.map { it.jsonPrimitive.content } } ?: emptyList()
-            val durations = e?.preferredDurationsJson
-                ?.let { json.parseToJsonElement(it).jsonArray.mapNotNull { je -> je.jsonPrimitive.content.toIntOrNull() } }
-                ?: emptyList()
-            if (e == null) UserPreferences() else UserPreferences(
-                defaultIntensity = e.defaultIntensity,
-                defaultBrightness = e.defaultBrightness,
-                goals = goals,
-                interests = interests,
-                preferredDurationsSec = durations
-            )
+            e.toDomain(json)
         }
 
     override fun getSchedulesStream(): Flow<List<PracticeSchedule>> =
         local.observeSchedules(currentUserId).map { list ->
-            list.map { e ->
-                PracticeSchedule(
-                    id = e.id,
-                    userId = e.userId,
-                    practiceId = e.practiceId,
-                    courseId = e.courseId,
-                    daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
-                    timeOfDay = e.timeOfDay,
-                    reminderEnabled = e.reminderEnabled,
-                    createdAt = e.createdAt,
-                    planId = e.planId,
-                    updatedAt = e.updatedAt
-                )
-            }
+            list.map { e -> e.toDomain(json) }
         }
     
     override fun getScheduleByPracticeId(practiceId: PracticeId): Flow<PracticeSchedule?> =
         local.observeScheduleByPracticeId(currentUserId, practiceId).map { entity ->
-            entity?.let { e ->
-                PracticeSchedule(
-                    id = e.id,
-                    userId = e.userId,
-                    practiceId = e.practiceId,
-                    courseId = e.courseId,
-                    daysOfWeek = json.decodeFromString<List<Int>>(e.daysOfWeekJson),
-                    timeOfDay = e.timeOfDay,
-                    reminderEnabled = e.reminderEnabled,
-                    createdAt = e.createdAt,
-                    planId = e.planId,
-                    updatedAt = e.updatedAt
-                )
-            }
+            entity?.toDomain(json)
         }
 
     override suspend fun upsertSchedule(
         schedule: com.example.amulet.shared.domain.practices.model.PracticeSchedule
     ): AppResult<Unit> {
-        val entity = com.example.amulet.core.database.entity.PracticeScheduleEntity(
-            id = schedule.id,
-            userId = currentUserId,
-            practiceId = schedule.practiceId,
-            courseId = schedule.courseId,
-            planId = schedule.planId,
-            daysOfWeekJson = json.encodeToString(json.encodeToJsonElement(schedule.daysOfWeek)),
-            timeOfDay = schedule.timeOfDay,
-            reminderEnabled = schedule.reminderEnabled,
-            createdAt = schedule.createdAt,
-            updatedAt = schedule.updatedAt ?: System.currentTimeMillis()
-        )
+        val entity = schedule.toEntity(currentUserId, json)
         local.upsertSchedule(entity)
         return Ok(Unit)
     }
@@ -351,19 +320,8 @@ class PracticesRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateUserPreferences(preferences: UserPreferences): AppResult<Unit> {
-        val goalsJson = json.encodeToString(json.encodeToJsonElement(preferences.goals))
-        val interestsJson = json.encodeToString(json.encodeToJsonElement(preferences.interests))
-        val durationsJson = json.encodeToString(json.encodeToJsonElement(preferences.preferredDurationsSec))
-        local.upsertPreferences(
-            com.example.amulet.core.database.entity.UserPreferencesEntity(
-                userId = currentUserId,
-                defaultIntensity = preferences.defaultIntensity,
-                defaultBrightness = preferences.defaultBrightness,
-                goalsJson = goalsJson,
-                interestsJson = interestsJson,
-                preferredDurationsJson = durationsJson
-            )
-        )
+        val entity = preferences.toEntity(currentUserId, json)
+        local.upsertPreferences(entity)
         return Ok(Unit)
     }
 

@@ -41,6 +41,7 @@ class CompletePracticeSessionUseCase(
         repository.updateSessionFeedback(
             sessionId = session.id,
             rating = rating,
+            moodAfter = null,
             feedbackNote = note,
         ).map { }
     }

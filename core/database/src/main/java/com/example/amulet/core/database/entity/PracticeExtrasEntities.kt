@@ -74,7 +74,8 @@ data class UserPreferencesEntity(
     val defaultBrightness: Double?,
     val goalsJson: String,
     val interestsJson: String,
-    val preferredDurationsJson: String
+    val preferredDurationsJson: String,
+    val defaultAudioMode: String?
 )
 
 @Entity(

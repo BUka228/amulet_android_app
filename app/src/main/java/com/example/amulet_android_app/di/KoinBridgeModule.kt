@@ -22,6 +22,8 @@ import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticesRepository
 import com.example.amulet.shared.domain.practices.MoodRepository
 import com.example.amulet.shared.domain.practices.usecase.CompletePracticeSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdateSessionFeedbackUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdateSessionMoodBeforeUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeScriptUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetCategoriesStreamUseCase
@@ -289,8 +291,9 @@ object KoinBridgeModule {
     @Provides fun provideDeleteSchedulesForCourseUseCase(koin: Koin): DeleteSchedulesForCourseUseCase = koin.get()
     @Provides fun provideSkipScheduledSessionUseCase(koin: Koin): SkipScheduledSessionUseCase = koin.get()
     @Provides fun provideLogMoodSelectionUseCase(koin: Koin): LogMoodSelectionUseCase = koin.get()
-    @Provides fun provideCompletePracticeSessionUseCase(koin: Koin): CompletePracticeSessionUseCase = koin.get()
+    @Provides fun provideUpdateSessionFeedbackUseCase(koin: Koin): UpdateSessionFeedbackUseCase = koin.get()
     @Provides fun provideGetPracticeScriptUseCase(koin: Koin): GetPracticeScriptUseCase = koin.get()
+    @Provides fun provideUpdateSessionMoodBeforeUseCase(koin: Koin): UpdateSessionMoodBeforeUseCase = koin.get()
 
     // Practices Manager
     @Provides fun providePracticeSessionManager(koin: Koin): PracticeSessionManager = koin.get()

@@ -113,6 +113,8 @@ private val sharedModule = module {
     factory { SkipScheduledSessionUseCase(get()) }
     factory { LogMoodSelectionUseCase(get()) }
     factory { GetPracticeScriptUseCase(get()) }
+    factory { UpdateSessionFeedbackUseCase(get(), get()) }
+    factory { UpdateSessionMoodBeforeUseCase(get(), get()) }
 
     // Practice script orchestrator
     factory<PracticeScriptOrchestrator> { PracticeScriptOrchestratorImpl(get(), get()) }
