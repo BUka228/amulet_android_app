@@ -13,6 +13,7 @@ data class HugDto(
     val emotion: HugEmotionDto? = null,
     val payload: JsonObject? = null,
     val inReplyToHugId: String? = null,
+    val status: String? = null,
     val deliveredAt: ApiTimestamp? = null,
     val createdAt: ApiTimestamp? = null
 )
@@ -20,7 +21,7 @@ data class HugDto(
 @Serializable
 data class HugEmotionDto(
     val color: String,
-    val patternId: String
+    val patternId: String? = null
 )
 
 @Serializable
@@ -47,4 +48,9 @@ data class HugListResponseDto(
 @Serializable
 data class HugResponseDto(
     val hug: HugDto
+)
+
+@Serializable
+data class HugStatusUpdateRequestDto(
+    val status: String
 )

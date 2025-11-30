@@ -8,7 +8,24 @@ import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.courses.usecase.*
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
+import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
+import com.example.amulet.shared.domain.hugs.ObserveHugsForUserUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairEmotionsUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.hugs.UpdateHugStatusUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairEmotionsUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairQuickRepliesUseCase
+import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
+import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
+import com.example.amulet.shared.domain.hugs.SendQuickReplyByGestureUseCase
+import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
+import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
+import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet.shared.domain.patterns.PatternPlaybackService
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
@@ -42,7 +59,26 @@ private val sharedModule = module {
     factory { ObserveCurrentUserUseCase(get(), get()) }
 
     // Hugs UseCases
-    factory<SendHugUseCase> { DefaultSendHugUseCase(get()) }
+    factory<SendHugUseCase> { DefaultSendHugUseCase(get(), get()) }
+    factory { ObserveHugsForPairUseCase(get()) }
+    factory { ObserveHugsForUserUseCase(get()) }
+    factory { UpdateHugStatusUseCase(get()) }
+    factory { GetHugByIdUseCase(get()) }
+    factory { SyncHugsUseCase(get()) }
+    factory { ExecuteRemoteHugCommandUseCase(get(), get(), get(), get(), get(), get()) }
+    factory { SetHugsDndEnabledUseCase(get(), get()) }
+    factory { SendQuickReplyByGestureUseCase(get(), get()) }
+    factory { GetSecretCodesUseCase(get()) }
+    factory { ObservePairsUseCase(get()) }
+    factory { ObservePairUseCase(get()) }
+    factory { ObservePairEmotionsUseCase(get()) }
+    factory { UpdatePairEmotionsUseCase(get()) }
+    factory { ObservePairQuickRepliesUseCase(get()) }
+    factory { UpdatePairQuickRepliesUseCase(get()) }
+    factory { UpdatePairMemberSettingsUseCase(get()) }
+
+    // Notifications UseCases
+    factory { SyncPushTokenUseCase(get(), get()) }
 
     // Devices UseCases (локальная работа без серверной привязки)
     factory { ObserveDevicesUseCase(get()) }
@@ -75,6 +111,7 @@ private val sharedModule = module {
     factory { GetPatternsStreamUseCase(get()) }
     factory { GetPresetsUseCase(get()) }
     factory { GetPatternByIdUseCase(get()) }
+    factory { EnsurePatternLoadedUseCase(get()) }
     factory { ObserveMyPatternsUseCase(get()) }
     factory { SyncPatternsUseCase(get()) }
     factory { PublishPatternUseCase(get()) }

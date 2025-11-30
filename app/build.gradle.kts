@@ -29,6 +29,7 @@ android {
         buildConfigField("String", "SUPABASE_REST_URL", "\"${prop("SUPABASE_REST_URL", "https://api.amulet.app/v2")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("SUPABASE_ANON_KEY")}\"")
         buildConfigField("String", "TURNSTILE_SITE_KEY", "\"${prop("TURNSTILE_SITE_KEY")}\"")
+        buildConfigField("String", "ONESIGNAL_APP_ID", "\"${prop("ONESIGNAL_APP_ID")}\"")
     }
 
     buildTypes {
@@ -63,6 +64,7 @@ dependencies {
     implementation(project(":core:design"))
     implementation(project(":core:auth"))
     implementation(project(":core:foreground"))
+    implementation(project(":core:notifications"))
     implementation(project(":core:telemetry"))
     implementation(project(":core:supabase"))
     implementation(project(":core:turnstile"))

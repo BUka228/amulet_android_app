@@ -29,11 +29,20 @@ interface HugDao {
     @Query("SELECT * FROM hugs WHERE toUserId = :userId ORDER BY createdAt DESC")
     fun pagingReceived(userId: String): PagingSource<Int, HugEntity>
 
+    @Query("SELECT * FROM hugs WHERE pairId = :pairId ORDER BY createdAt DESC")
+    fun observeByPairId(pairId: String): Flow<List<HugEntity>>
+
+    @Query("SELECT * FROM hugs WHERE fromUserId = :userId OR toUserId = :userId ORDER BY createdAt DESC")
+    fun observeByUserId(userId: String): Flow<List<HugEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: HugEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entities: List<HugEntity>)
+
+    @Query("UPDATE hugs SET status = :status WHERE id = :id")
+    suspend fun updateStatus(id: String, status: String)
 
     @Query("DELETE FROM hugs WHERE id = :id")
     suspend fun deleteById(id: String)

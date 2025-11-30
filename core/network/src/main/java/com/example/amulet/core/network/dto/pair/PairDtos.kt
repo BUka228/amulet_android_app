@@ -44,3 +44,54 @@ data class PairAcceptRequestDto(
 data class PairShareResponseDto(
     val shared: Boolean? = null
 )
+
+@Serializable
+data class PairEmotionDto(
+    val id: String,
+    val pairId: String,
+    val name: String,
+    val colorHex: String,
+    val patternId: String? = null,
+    val order: Int
+)
+
+@Serializable
+data class PairEmotionListResponseDto(
+    val emotions: List<PairEmotionDto> = emptyList()
+)
+
+@Serializable
+data class PairEmotionUpdateRequestDto(
+    val emotions: List<PairEmotionDto>
+)
+
+@Serializable
+data class PairMemberSettingsDto(
+    val muted: Boolean,
+    val quietHoursStartMinutes: Int? = null,
+    val quietHoursEndMinutes: Int? = null,
+    val maxHugsPerHour: Int? = null
+)
+
+@Serializable
+data class PairMemberSettingsUpdateRequestDto(
+    val settings: PairMemberSettingsDto
+)
+
+@Serializable
+data class PairQuickReplyDto(
+    val pairId: String,
+    val userId: String,
+    val gestureType: String,
+    val emotionId: String
+)
+
+@Serializable
+data class PairQuickReplyListResponseDto(
+    val replies: List<PairQuickReplyDto> = emptyList()
+)
+
+@Serializable
+data class PairQuickReplyUpdateRequestDto(
+    val replies: List<PairQuickReplyDto>
+)

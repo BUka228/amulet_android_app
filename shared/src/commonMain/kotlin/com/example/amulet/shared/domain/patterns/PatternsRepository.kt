@@ -82,5 +82,10 @@ interface PatternsRepository {
     ): AppResult<Unit>
 
     suspend fun deleteTags(names: List<String>): AppResult<Unit>
-}
 
+    /**
+     * Гарантировать наличие паттерна локально.
+     * Если паттерна нет в БД, пробуем загрузить его с сервера по id и сохранить.
+     */
+    suspend fun ensurePatternLoaded(id: PatternId): AppResult<Unit>
+}

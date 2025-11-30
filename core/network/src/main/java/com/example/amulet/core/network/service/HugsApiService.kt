@@ -4,6 +4,7 @@ import com.example.amulet.core.network.dto.hug.HugListResponseDto
 import com.example.amulet.core.network.dto.hug.HugResponseDto
 import com.example.amulet.core.network.dto.hug.HugSendRequestDto
 import com.example.amulet.core.network.dto.hug.HugSendResponseDto
+import com.example.amulet.core.network.dto.hug.HugStatusUpdateRequestDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -24,4 +25,10 @@ interface HugsApiService {
 
     @GET("hugs/{hugId}")
     suspend fun getHug(@Path("hugId") hugId: String): HugResponseDto
+
+    @POST("hugs/{hugId}/status")
+    suspend fun updateHugStatus(
+        @Path("hugId") hugId: String,
+        @Body request: HugStatusUpdateRequestDto
+    ): HugResponseDto
 }

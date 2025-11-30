@@ -16,6 +16,7 @@ class AmuletForegroundOrchestrator @Inject constructor() {
     private var host: Host? = null
 
     private var hasActivePractice: Boolean = false
+    private var hasActiveHug: Boolean = false
     // В будущем сюда добавятся флаги hasActiveOta, hasActivePreview и т.д.
 
     fun attachHost(host: Host) {
@@ -27,9 +28,14 @@ class AmuletForegroundOrchestrator @Inject constructor() {
         evaluateStop()
     }
 
+    fun setHugActive(active: Boolean) {
+        hasActiveHug = active
+        evaluateStop()
+    }
+
     private fun evaluateStop() {
-        // Пока учитываем только практики. Позже добавим остальные активности.
-        if (!hasActivePractice) {
+        // Пока учитываем только практики и объятия. Позже добавим остальные активности.
+        if (!hasActivePractice && !hasActiveHug) {
             host?.stopService()
         }
     }

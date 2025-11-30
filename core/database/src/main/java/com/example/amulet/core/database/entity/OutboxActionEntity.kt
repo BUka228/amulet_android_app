@@ -13,6 +13,7 @@ enum class OutboxActionType(val apiEndpoint: String) {
     DEVICE_UNCLAIM("/devices/{id}/unclaim"),
     DEVICE_FIRMWARE_REPORT("/devices/{deviceId}/firmware/report"),
     HUG_SEND("/hugs.send"),
+    HUG_DEVICE_PLAY("local/amulet/play"),
     PAIR_INVITE("/pairs.invite"),
     PAIR_ACCEPT("/pairs.accept"),
     PAIR_BLOCK("/pairs/{pairId}/block"),

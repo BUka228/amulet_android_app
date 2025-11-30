@@ -41,7 +41,12 @@ import androidx.room.PrimaryKey
             value = ["toUserId", "createdAt"],
             orders = [Index.Order.ASC, Index.Order.DESC]
         ),
-        Index(value = ["emotionPatternId"])
+        Index(value = ["emotionPatternId"]),
+        Index(
+            value = ["pairId", "createdAt"],
+            orders = [Index.Order.ASC, Index.Order.DESC]
+        ),
+        Index(value = ["status"]) 
     ]
 )
 data class HugEntity(
@@ -54,5 +59,6 @@ data class HugEntity(
     val payloadJson: String?,
     val inReplyToHugId: String?,
     val deliveredAt: Long?,
+    @ColumnInfo(defaultValue = "SENT") val status: String,
     @ColumnInfo(defaultValue = "0") val createdAt: Long
 )

@@ -8,5 +8,6 @@ android {
 
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":core:notifications"))
     implementation(libs.kotlinx.coroutines.core)
 }

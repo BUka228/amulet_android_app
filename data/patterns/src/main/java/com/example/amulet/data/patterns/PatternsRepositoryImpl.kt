@@ -588,4 +588,43 @@ class PatternsRepositoryImpl @Inject constructor(
             Err(AppError.DatabaseError)
         }
     }
+
+    override suspend fun ensurePatternLoaded(id: PatternId): AppResult<Unit> {
+        return try {
+            // Если паттерн уже есть локально, ничего не делаем.
+            val existing = localDataSource.observeById(id.value).first()
+            if (existing != null) {
+                return Ok(Unit)
+            }
+
+            // Пытаемся получить паттерн с сервера.
+            val remoteResult = remoteDataSource.getPattern(id.value)
+            val dto = remoteResult.component1()
+            if (dto != null) {
+                val tags = dto.tags?.toTagEntities() ?: emptyList()
+                val tagIds = tags.map { it.id }
+                val sharedWith = dto.sharedWith ?: emptyList()
+
+                val entity = dto.toEntity()
+                localDataSource.upsertPatternWithRelations(
+                    pattern = entity,
+                    tags = tags,
+                    tagIds = tagIds,
+                    sharedUserIds = sharedWith
+                )
+                Ok(Unit)
+            } else {
+                val error = remoteResult.component2() ?: AppError.Unknown
+                Logger.e(
+                    "Ошибка загрузки паттерна с сервера: $error",
+                    throwable = Exception(error.toString()),
+                    tag = "PatternsRepositoryImpl"
+                )
+                Err(error)
+            }
+        } catch (e: Exception) {
+            Logger.e("Ошибка ensurePatternLoaded: $e", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.Unknown)
+        }
+    }
 }

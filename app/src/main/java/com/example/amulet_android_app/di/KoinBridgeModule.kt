@@ -15,6 +15,7 @@ import com.example.amulet.shared.domain.devices.repository.OtaRepository
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
+import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
@@ -52,6 +53,7 @@ import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
 import com.example.amulet.shared.domain.courses.CoursesRepository
 import com.example.amulet.shared.domain.courses.usecase.CompleteCourseItemUseCase
 import com.example.amulet.shared.domain.courses.usecase.ContinueCourseUseCase
@@ -143,6 +145,9 @@ object KoinBridgeModule {
     fun provideSendHugUseCase(koin: Koin): SendHugUseCase = koin.get()
 
     @Provides
+    fun provideExecuteRemoteHugCommandUseCase(koin: Koin): ExecuteRemoteHugCommandUseCase = koin.get()
+
+    @Provides
     fun provideSignInUseCase(koin: Koin): SignInUseCase = koin.get()
 
     @Provides
@@ -160,6 +165,10 @@ object KoinBridgeModule {
     // User UseCases
     @Provides
     fun provideObserveCurrentUserUseCase(koin: Koin): ObserveCurrentUserUseCase = koin.get()
+
+    // Notifications UseCases
+    @Provides
+    fun provideSyncPushTokenUseCase(koin: Koin): SyncPushTokenUseCase = koin.get()
 
     // Devices UseCases
     @Provides

@@ -51,5 +51,10 @@ data class PairEntity(
 data class PairMemberEntity(
     val pairId: String,
     val userId: String,
-    val joinedAt: Long
+    val joinedAt: Long,
+    // User-level settings in pair
+    val muted: Boolean = false,
+    val quietHoursStartMinutes: Int? = null,
+    val quietHoursEndMinutes: Int? = null,
+    val maxHugsPerHour: Int? = null
 )
