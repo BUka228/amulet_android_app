@@ -1,9 +1,9 @@
 package com.example.amulet.feature.hugs
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.example.amulet.feature.hugs.presentation.main.HugsRoute
 
 @Composable
 fun HugsScreen() {
-    Text(text = "Hugs")
+    HugsRoute()
 }

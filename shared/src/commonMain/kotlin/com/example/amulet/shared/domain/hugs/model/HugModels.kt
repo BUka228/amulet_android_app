@@ -86,3 +86,9 @@ data class PairQuickReply(
     val gestureType: GestureType,
     val emotionId: String?
 )
+
+data class PairInvite(
+    val inviteId: String,
+    val url: String?
+)
+

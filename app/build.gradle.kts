@@ -83,6 +83,7 @@ dependencies {
     implementation(project(":feature:devices"))
     implementation(project(":feature:patterns"))
     implementation(project(":feature:practices"))
+    implementation(project(":feature:hugs"))
     implementation(project(":feature:onboarding"))
     implementation(libs.koin.android)
     testImplementation(libs.junit)

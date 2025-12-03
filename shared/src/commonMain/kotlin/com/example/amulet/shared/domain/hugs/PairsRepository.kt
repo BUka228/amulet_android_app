@@ -4,12 +4,19 @@ import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.domain.hugs.model.Pair
 import com.example.amulet.shared.domain.hugs.model.PairEmotion
 import com.example.amulet.shared.domain.hugs.model.PairId
+import com.example.amulet.shared.domain.hugs.model.PairInvite
 import com.example.amulet.shared.domain.hugs.model.PairMemberSettings
 import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.user.model.UserId
 import kotlinx.coroutines.flow.Flow
 
 interface PairsRepository {
+
+    suspend fun invitePair(method: String, target: String? = null): AppResult<PairInvite>
+
+    suspend fun acceptPair(inviteId: String): AppResult<Unit>
+
+    suspend fun syncPairs(): AppResult<Unit>
 
     fun observePairs(): Flow<List<Pair>>
 
@@ -27,6 +34,10 @@ interface PairsRepository {
         userId: UserId,
         settings: PairMemberSettings
     ): AppResult<Unit>
+
+    suspend fun blockPair(pairId: PairId): AppResult<Unit>
+
+    suspend fun unblockPair(pairId: PairId): AppResult<Unit>
 
     fun observeQuickReplies(
         pairId: PairId,

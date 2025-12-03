@@ -12,6 +12,7 @@ import com.example.amulet.feature.devices.navigation.devicesGraph
 import com.example.amulet.feature.patterns.navigation.patternsGraph
 import com.example.amulet.feature.practices.navigation.practicesGraph
 import com.example.amulet.feature.practices.navigation.navigateToPracticesHome
+import com.example.amulet.feature.hugs.navigation.hugsGraph
 
 @Composable
 fun AppNavHost(
@@ -57,13 +58,14 @@ fun AppNavHost(
             LibraryPlaceholderScreen()
         }
         
-        composable("hugs/main") {
-            HugsPlaceholderScreen()
-        }
-        
         composable("settings/main") {
             SettingsPlaceholderScreen()
         }
+
+        // Hugs Graph - социальные объятия
+        hugsGraph(
+            navController = navController
+        )
 
         // Auth Graph - экраны входа/регистрации
         authGraph(onAuthSuccess = {

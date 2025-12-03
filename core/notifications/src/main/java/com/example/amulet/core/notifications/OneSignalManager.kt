@@ -29,6 +29,7 @@ class OneSignalManager @Inject constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val playerIdFlow = MutableStateFlow<String?>(null)
+    private var isInitialized: Boolean = false
     private val pushSubscriptionObserver = object : IPushSubscriptionObserver {
         override fun onPushSubscriptionChange(state: PushSubscriptionChangedState) {
             playerIdFlow.value = state.current.id
@@ -39,6 +40,7 @@ class OneSignalManager @Inject constructor(
         if (appId.isBlank()) return
         OneSignal.Debug.logLevel = if (isDebug) LogLevel.VERBOSE else LogLevel.NONE
         OneSignal.initWithContext(application, appId)
+        isInitialized = true
 
         updatePlayerId()
 
@@ -97,6 +99,7 @@ class OneSignalManager @Inject constructor(
     }
 
     fun requestNotificationPermission() {
+        if (!isInitialized) return
         scope.launch {
             runCatching {
                 OneSignal.Notifications.requestPermission(true)
@@ -111,7 +114,7 @@ class OneSignalManager @Inject constructor(
      * userId — доменный/бэкенд-идентификатор пользователя.
      */
     fun login(userId: String) {
-        if (userId.isBlank()) return
+        if (!isInitialized || userId.isBlank()) return
         OneSignal.login(userId)
     }
 
@@ -119,10 +122,12 @@ class OneSignalManager @Inject constructor(
      * Отвязать пользователя от OneSignal (например, при выходе из аккаунта).
      */
     fun logout() {
+        if (!isInitialized) return
         OneSignal.logout()
     }
 
     private fun updatePlayerId() {
+        if (!isInitialized) return
         playerIdFlow.value = OneSignal.User.pushSubscription.id
     }
 }

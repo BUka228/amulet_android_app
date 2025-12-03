@@ -13,11 +13,13 @@ import com.example.amulet.shared.domain.hugs.PairsRepository
 import com.example.amulet.shared.domain.hugs.model.Pair
 import com.example.amulet.shared.domain.hugs.model.PairEmotion
 import com.example.amulet.shared.domain.hugs.model.PairId
+import com.example.amulet.shared.domain.hugs.model.PairInvite
 import com.example.amulet.shared.domain.hugs.model.PairMemberSettings
 import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.fold
+import com.github.michaelbull.result.map
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +30,16 @@ class PairsRepositoryImpl @Inject constructor(
     private val localDataSource: PairsLocalDataSource,
     private val remoteDataSource: PairsRemoteDataSource
 ) : PairsRepository {
+    override suspend fun invitePair(method: String, target: String?): AppResult<PairInvite> =
+        remoteDataSource.invitePair(method, target).map { dto ->
+            PairInvite(inviteId = dto.inviteId, url = dto.url)
+        }
+
+    override suspend fun acceptPair(inviteId: String): AppResult<Unit> =
+        remoteDataSource.acceptPair(inviteId).map { Unit }
+
+    override suspend fun syncPairs(): AppResult<Unit> =
+        remoteDataSource.getPairs().map { Unit }
 
     override fun observePairs(): Flow<List<Pair>> =
         localDataSource.observeAllWithSettings()
@@ -114,6 +126,12 @@ class PairsRepositoryImpl @Inject constructor(
             }
         )
     }
+
+    override suspend fun blockPair(pairId: PairId): AppResult<Unit> =
+        remoteDataSource.blockPair(pairId.value).map { Unit }
+
+    override suspend fun unblockPair(pairId: PairId): AppResult<Unit> =
+        remoteDataSource.unblockPair(pairId.value).map { Unit }
 
     override fun observeQuickReplies(
         pairId: PairId,

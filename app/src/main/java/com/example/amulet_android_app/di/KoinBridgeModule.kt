@@ -14,8 +14,23 @@ import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.example.amulet.shared.domain.devices.repository.OtaRepository
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.HugsRepository
+import com.example.amulet.shared.domain.hugs.PairsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
+import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
+import com.example.amulet.shared.domain.hugs.ObservePairEmotionsUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairEmotionsUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
+import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.InvitePairUseCase
+import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
+import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
+import com.example.amulet.shared.domain.hugs.BlockPairUseCase
+import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
@@ -51,6 +66,7 @@ import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUs
 import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
+import com.example.amulet.shared.domain.notifications.NotificationsRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
@@ -104,12 +120,14 @@ object KoinBridgeModule {
         devicesRepository: DevicesRepository,
         otaRepository: OtaRepository,
         hugsRepository: HugsRepository,
+        pairsRepository: PairsRepository,
         patternsRepository: PatternsRepository,
         practicesRepository: PracticesRepository,
         moodRepository: MoodRepository,
         coursesRepository: CoursesRepository,
         privacyRepository: PrivacyRepository,
-        rulesRepository: RulesRepository
+        rulesRepository: RulesRepository,
+        notificationsRepository: NotificationsRepository,
     ): Koin =
         GlobalContext.getOrNull() ?: startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.DEBUG else Level.NONE)
@@ -122,12 +140,14 @@ object KoinBridgeModule {
                 single<DevicesRepository> { devicesRepository }
                 single<OtaRepository> { otaRepository }
                 single<HugsRepository> { hugsRepository }
+                single<PairsRepository> { pairsRepository }
                 single<PatternsRepository> { patternsRepository }
                 single<PracticesRepository> { practicesRepository }
                 single<MoodRepository> { moodRepository }
                 single<CoursesRepository> { coursesRepository }
                 single<PrivacyRepository> { privacyRepository }
                 single<RulesRepository> { rulesRepository }
+                single<NotificationsRepository> { notificationsRepository }
                 
                 // Initialization UseCase
                 single<SeedLocalDataUseCase> {
@@ -146,6 +166,49 @@ object KoinBridgeModule {
 
     @Provides
     fun provideExecuteRemoteHugCommandUseCase(koin: Koin): ExecuteRemoteHugCommandUseCase = koin.get()
+
+    // Hugs Home screen use cases
+    @Provides
+    fun provideObservePairsUseCase(koin: Koin): ObservePairsUseCase = koin.get()
+
+    @Provides
+    fun provideObserveHugsForPairUseCase(koin: Koin): ObserveHugsForPairUseCase = koin.get()
+
+    @Provides
+    fun provideObservePairQuickRepliesUseCase(koin: Koin): ObservePairQuickRepliesUseCase = koin.get()
+
+    @Provides
+    fun provideSyncHugsUseCase(koin: Koin): SyncHugsUseCase = koin.get()
+
+    @Provides
+    fun provideGetHugByIdUseCase(koin: Koin): GetHugByIdUseCase = koin.get()
+
+    @Provides
+    fun provideInvitePairUseCase(koin: Koin): InvitePairUseCase = koin.get()
+
+    @Provides
+    fun provideAcceptPairUseCase(koin: Koin): AcceptPairUseCase = koin.get()
+
+    @Provides
+    fun provideSyncPairsUseCase(koin: Koin): SyncPairsUseCase = koin.get()
+
+    @Provides
+    fun provideObservePairEmotionsUseCase(koin: Koin): ObservePairEmotionsUseCase = koin.get()
+
+    @Provides
+    fun provideUpdatePairEmotionsUseCase(koin: Koin): UpdatePairEmotionsUseCase = koin.get()
+
+    @Provides
+    fun provideGetSecretCodesUseCase(koin: Koin): GetSecretCodesUseCase = koin.get()
+
+    @Provides
+    fun provideBlockPairUseCase(koin: Koin): BlockPairUseCase = koin.get()
+
+    @Provides
+    fun provideSetHugsDndEnabledUseCase(koin: Koin): SetHugsDndEnabledUseCase = koin.get()
+
+    @Provides
+    fun provideUpdatePairMemberSettingsUseCase(koin: Koin): UpdatePairMemberSettingsUseCase = koin.get()
 
     @Provides
     fun provideSignInUseCase(koin: Koin): SignInUseCase = koin.get()

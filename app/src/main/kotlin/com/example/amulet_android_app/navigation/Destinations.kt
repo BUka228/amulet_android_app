@@ -6,6 +6,8 @@ import com.example.amulet.feature.auth.navigation.AuthGraph
 import com.example.amulet.feature.dashboard.navigation.DashboardGraph
 import com.example.amulet.feature.devices.navigation.DevicesGraph
 import com.example.amulet.feature.devices.navigation.navigateToPairing as navigateToDevicesPairing
+import com.example.amulet.feature.hugs.navigation.HugsGraph
+import com.example.amulet.feature.hugs.navigation.navigateToHugs as navigateToHugsFeature
 import com.example.amulet.feature.patterns.navigation.PatternsGraph
 import com.example.amulet.feature.patterns.navigation.navigateToPatternsList
 
@@ -31,6 +33,10 @@ object DevicesGraphDestination : AppDestination {
 
 object PatternsGraphDestination : AppDestination {
     override val baseRoute: String = PatternsGraph.route
+}
+
+object HugsGraphDestination : AppDestination {
+    override val baseRoute: String = HugsGraph.route
 }
 
 // TODO: Добавить destinations по мере реализации feature модулей
@@ -62,9 +68,7 @@ fun NavController.navigateToLibrary() {
 }
 
 fun NavController.navigateToHugs() {
-    navigate("hugs/main") {
-        launchSingleTop = true
-    }
+    navigateToHugsFeature()
 }
 
 fun NavController.navigateToPatterns() {

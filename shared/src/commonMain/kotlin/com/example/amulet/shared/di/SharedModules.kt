@@ -21,10 +21,14 @@ import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
+import com.example.amulet.shared.domain.hugs.BlockPairUseCase
 import com.example.amulet.shared.domain.hugs.SendQuickReplyByGestureUseCase
 import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.InvitePairUseCase
+import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet.shared.domain.patterns.PatternPlaybackService
@@ -67,6 +71,7 @@ private val sharedModule = module {
     factory { SyncHugsUseCase(get()) }
     factory { ExecuteRemoteHugCommandUseCase(get(), get(), get(), get(), get(), get()) }
     factory { SetHugsDndEnabledUseCase(get(), get()) }
+    factory { BlockPairUseCase(get()) }
     factory { SendQuickReplyByGestureUseCase(get(), get()) }
     factory { GetSecretCodesUseCase(get()) }
     factory { ObservePairsUseCase(get()) }
@@ -76,6 +81,9 @@ private val sharedModule = module {
     factory { ObservePairQuickRepliesUseCase(get()) }
     factory { UpdatePairQuickRepliesUseCase(get()) }
     factory { UpdatePairMemberSettingsUseCase(get()) }
+    factory { InvitePairUseCase(get()) }
+    factory { AcceptPairUseCase(get()) }
+    factory { SyncPairsUseCase(get()) }
 
     // Notifications UseCases
     factory { SyncPushTokenUseCase(get(), get()) }

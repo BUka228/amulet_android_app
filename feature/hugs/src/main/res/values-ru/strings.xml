@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hugs Home Screen (ru) -->
+    <string name="hugs_home_title">Объятия</string>
+    <string name="hugs_home_pair_section_title">Ваша пара</string>
+    <string name="hugs_home_you">Вы</string>
+    <string name="hugs_home_partner_active">Активная пара</string>
+    <string name="hugs_home_partner_pending">Ожидает подтверждения</string>
+    <string name="hugs_home_partner_blocked">Заблокировано</string>
+    <string name="hugs_home_partner_not_configured">Не настроено</string>
+    <string name="hugs_home_partner_title">Партнёр</string>
+    <string name="hugs_home_no_partner_title">Нет пары</string>
+    <string name="hugs_home_pair_active_message">Пара активна, можно отправлять объятия</string>
+    <string name="hugs_home_pair_inactive_message">Пара ещё не настроена. Подключите близкого человека, чтобы обмениваться объятиями.</string>
+    <string name="hugs_home_setup_pair_button">Настроить пару</string>
+    <string name="hugs_home_send_in_progress">Отправка...</string>
+    <string name="hugs_home_send_button">Отправить объятие</string>
+    <string name="hugs_home_quick_actions_history_title">История</string>
+    <string name="hugs_home_quick_actions_history_desc">Последние объятия</string>
+    <string name="hugs_home_quick_actions_emotions_title">Эмоции</string>
+    <string name="hugs_home_quick_actions_emotions_desc">Палитра чувств</string>
+    <string name="hugs_home_quick_actions_codes_title">Коды</string>
+    <string name="hugs_home_quick_actions_codes_desc">Секретные сигналы</string>
+    <string name="hugs_home_recent_hugs_title">Последние объятия</string>
+    <string name="hugs_home_recent_hugs_empty">Здесь появятся последние отправленные и полученные объятия.</string>
+    <string name="hugs_home_status_sent">Отправлено</string>
+    <string name="hugs_home_status_delivered">Доставлено</string>
+    <string name="hugs_home_status_read">Прочитано</string>
+    <string name="hugs_home_status_expired">Просрочено</string>
+
+    <!-- Hugs Settings Screen (ru) -->
+    <string name="hugs_settings_title">Настройки объятий</string>
+    <string name="hugs_settings_work_modes_section_title">Режимы работы</string>
+    <string name="hugs_settings_global_dnd_title">Глобальный DND</string>
+    <string name="hugs_settings_global_dnd_desc">Отключает реакции амулета на входящие объятия</string>
+    <string name="hugs_settings_quiet_hours_title">Тихие часы</string>
+    <string name="hugs_settings_quiet_hours_desc">Интервал, когда амулет не будет вибрировать/светиться</string>
+    <string name="hugs_settings_quiet_hours_start_label">Начало (чч:мм)</string>
+    <string name="hugs_settings_quiet_hours_end_label">Конец (чч:мм)</string>
+    <string name="hugs_settings_limits_section_title">Ограничения</string>
+    <string name="hugs_settings_anti_spam_title">Anti-spam</string>
+    <string name="hugs_settings_anti_spam_desc">Лимит на количество объятий в час</string>
+    <string name="hugs_settings_anti_spam_label">Максимум в час</string>
+    <string name="hugs_settings_pair_section_title">Управление парой</string>
+    <string name="hugs_settings_pair_mute_desc">Можно временно заглушить реакцию на объятия от текущей пары</string>
+    <string name="hugs_settings_pair_muted">Пара заглушена</string>
+    <string name="hugs_settings_pair_active">Пара активна</string>
+    <string name="hugs_settings_disconnect_button">Разорвать связь с парой</string>
+    <string name="hugs_settings_save_in_progress">Сохранение...</string>
+    <string name="hugs_settings_save_button">Сохранить настройки</string>
+    <string name="hugs_settings_disconnect_dialog_title">Разорвать связь с парой?</string>
+    <string name="hugs_settings_disconnect_dialog_message">Пара будет заблокирована. Для восстановления связи потребуется новое приглашение.</string>
+    <string name="hugs_settings_disconnect_confirm">Разорвать</string>
+    <string name="hugs_settings_cancel">Отмена</string>
+
+    <!-- Hug Details Screen (ru) -->
+    <string name="hug_details_title">Детали объятия</string>
+    <string name="hug_details_error_loading">Ошибка загрузки объятия</string>
+    <string name="hug_details_hero_title">Объятие</string>
+    <string name="hug_details_status_label">Статус</string>
+    <string name="hug_details_time_label">Отправлено</string>
+    <string name="hug_details_reply_button">Ответить объятием</string>
+    <string name="hug_details_delete_button">Удалить</string>
+
+    <!-- Hugs Emotions Screen (ru) -->
+    <string name="hugs_emotions_title">Эмоции пары</string>
+    <string name="hugs_emotions_palette_title">Палитра эмоций</string>
+    <string name="hugs_emotions_pattern_prefix">Паттерн: %1$s</string>
+    <string name="hugs_emotions_editor_title">Редактирование эмоции</string>
+    <string name="hugs_emotions_name_label">Название</string>
+    <string name="hugs_emotions_color_label">Цвет (HEX)</string>
+    <string name="hugs_emotions_select_pattern_button">Выбрать паттерн</string>
+    <string name="hugs_emotions_save_button">Сохранить</string>
+    <string name="hugs_emotions_cancel_button">Отмена</string>
+    <string name="hugs_emotions_error_saving">Не удалось сохранить изменения</string>
+
+    <!-- Hugs History Screen (ru) -->
+    <string name="hugs_history_title">История объятий</string>
+    <string name="hugs_history_filters_title">Фильтры</string>
+    <string name="hugs_history_filter_all">Все</string>
+    <string name="hugs_history_filter_sent">Отправленные</string>
+    <string name="hugs_history_filter_received">Полученные</string>
+    <string name="hugs_history_period_all_time">За всё время</string>
+    <string name="hugs_history_period_last_7_days">7 дней</string>
+    <string name="hugs_history_period_last_24_hours">24 часа</string>
+    <string name="hugs_history_emotions_all">Все эмоции</string>
+    <string name="hugs_history_emotion_chip">Эмоция</string>
+    <string name="hugs_history_direction_sent">Вы отправили</string>
+    <string name="hugs_history_direction_received">Вы получили</string>
+    <string name="hugs_history_error_loading">Не удалось загрузить историю</string>
+
+    <!-- Hugs Pairing Screen (ru) -->
+    <string name="hugs_pairing_title">Пара для объятий</string>
+    <string name="hugs_pairing_step_share_link">Поделитесь ссылкой</string>
+    <string name="hugs_pairing_step_waiting_confirmation">Ждём подтверждение</string>
+    <string name="hugs_pairing_step_confirm_invite">Подтвердить приглашение</string>
+    <string name="hugs_pairing_share_hint">Покажите этот код партнёру или отправьте ссылку</string>
+    <string name="hugs_pairing_copy_button">Копировать</string>
+    <string name="hugs_pairing_share_button">Поделиться</string>
+    <string name="hugs_pairing_i_already_sent">Я уже отправил(а) приглашение</string>
+    <string name="hugs_pairing_invitation_sent">Приглашение отправлено</string>
+    <string name="hugs_pairing_waiting_partner">Ждём, пока партнёр примет его</string>
+    <string name="hugs_pairing_cancel_invite">Отменить приглашение</string>
+    <string name="hugs_pairing_default_inviter_name">Ваш близкий</string>
+    <string name="hugs_pairing_invite_title_format">%1$s хочет создать пару</string>
+    <string name="hugs_pairing_invite_description">Вы сможете обмениваться эмоциями и быстрыми сигналами через амулеты.</string>
+    <string name="hugs_pairing_decline">Отклонить</string>
+    <string name="hugs_pairing_accept">Принять</string>
+    <string name="hugs_pairing_error_operation">Не удалось выполнить операцию</string>
+    <string name="hugs_pairing_qr_content_desc">QR-код</string>
+</resources>

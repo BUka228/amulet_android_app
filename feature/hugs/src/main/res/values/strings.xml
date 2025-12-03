@@ -1,0 +1,110 @@
+<resources>
+    <!-- Hugs Home Screen (en) -->
+    <string name="hugs_home_title">Hugs</string>
+    <string name="hugs_home_pair_section_title">Your pair</string>
+    <string name="hugs_home_you">You</string>
+    <string name="hugs_home_partner_active">Active pair</string>
+    <string name="hugs_home_partner_pending">Waiting for confirmation</string>
+    <string name="hugs_home_partner_blocked">Blocked</string>
+    <string name="hugs_home_partner_not_configured">Not configured</string>
+    <string name="hugs_home_partner_title">Partner</string>
+    <string name="hugs_home_no_partner_title">No pair</string>
+    <string name="hugs_home_pair_active_message">Pair is active, you can send hugs</string>
+    <string name="hugs_home_pair_inactive_message">Pair is not configured yet. Connect a loved one to exchange hugs.</string>
+    <string name="hugs_home_setup_pair_button">Set up pair</string>
+    <string name="hugs_home_send_in_progress">Sending...</string>
+    <string name="hugs_home_send_button">Send a hug</string>
+    <string name="hugs_home_quick_actions_history_title">History</string>
+    <string name="hugs_home_quick_actions_history_desc">Recent hugs</string>
+    <string name="hugs_home_quick_actions_emotions_title">Emotions</string>
+    <string name="hugs_home_quick_actions_emotions_desc">Palette of feelings</string>
+    <string name="hugs_home_quick_actions_codes_title">Codes</string>
+    <string name="hugs_home_quick_actions_codes_desc">Secret signals</string>
+    <string name="hugs_home_recent_hugs_title">Recent hugs</string>
+    <string name="hugs_home_recent_hugs_empty">Recent sent and received hugs will appear here.</string>
+    <string name="hugs_home_status_sent">Sent</string>
+    <string name="hugs_home_status_delivered">Delivered</string>
+    <string name="hugs_home_status_read">Read</string>
+    <string name="hugs_home_status_expired">Expired</string>
+
+    <!-- Hugs Settings Screen (en) -->
+    <string name="hugs_settings_title">Hugs settings</string>
+    <string name="hugs_settings_work_modes_section_title">Work modes</string>
+    <string name="hugs_settings_global_dnd_title">Global DND</string>
+    <string name="hugs_settings_global_dnd_desc">Disables amulet reactions to incoming hugs</string>
+    <string name="hugs_settings_quiet_hours_title">Quiet hours</string>
+    <string name="hugs_settings_quiet_hours_desc">Time interval when the amulet will not vibrate or light up</string>
+    <string name="hugs_settings_quiet_hours_start_label">Start (hh:mm)</string>
+    <string name="hugs_settings_quiet_hours_end_label">End (hh:mm)</string>
+    <string name="hugs_settings_limits_section_title">Limits</string>
+    <string name="hugs_settings_anti_spam_title">Anti-spam</string>
+    <string name="hugs_settings_anti_spam_desc">Limit on the number of hugs per hour</string>
+    <string name="hugs_settings_anti_spam_label">Maximum per hour</string>
+    <string name="hugs_settings_pair_section_title">Pair management</string>
+    <string name="hugs_settings_pair_mute_desc">You can temporarily mute reactions to hugs from the current pair</string>
+    <string name="hugs_settings_pair_muted">Pair is muted</string>
+    <string name="hugs_settings_pair_active">Pair is active</string>
+    <string name="hugs_settings_disconnect_button">Disconnect from pair</string>
+    <string name="hugs_settings_save_in_progress">Saving...</string>
+    <string name="hugs_settings_save_button">Save settings</string>
+    <string name="hugs_settings_disconnect_dialog_title">Disconnect from pair?</string>
+    <string name="hugs_settings_disconnect_dialog_message">The pair will be blocked. To restore the connection you will need a new invitation.</string>
+    <string name="hugs_settings_disconnect_confirm">Disconnect</string>
+    <string name="hugs_settings_cancel">Cancel</string>
+
+    <!-- Hug Details Screen (en) -->
+    <string name="hug_details_title">Hug details</string>
+    <string name="hug_details_error_loading">Failed to load hug</string>
+    <string name="hug_details_hero_title">Hug</string>
+    <string name="hug_details_status_label">Status</string>
+    <string name="hug_details_time_label">Sent at</string>
+    <string name="hug_details_reply_button">Reply with a hug</string>
+    <string name="hug_details_delete_button">Delete</string>
+
+    <!-- Hugs Emotions Screen (en) -->
+    <string name="hugs_emotions_title">Pair emotions</string>
+    <string name="hugs_emotions_palette_title">Emotions palette</string>
+    <string name="hugs_emotions_pattern_prefix">Pattern: %1$s</string>
+    <string name="hugs_emotions_editor_title">Edit emotion</string>
+    <string name="hugs_emotions_name_label">Name</string>
+    <string name="hugs_emotions_color_label">Color (HEX)</string>
+    <string name="hugs_emotions_select_pattern_button">Choose pattern</string>
+    <string name="hugs_emotions_save_button">Save</string>
+    <string name="hugs_emotions_cancel_button">Cancel</string>
+    <string name="hugs_emotions_error_saving">Failed to save changes</string>
+
+    <!-- Hugs History Screen (en) -->
+    <string name="hugs_history_title">Hugs history</string>
+    <string name="hugs_history_filters_title">Filters</string>
+    <string name="hugs_history_filter_all">All</string>
+    <string name="hugs_history_filter_sent">Sent</string>
+    <string name="hugs_history_filter_received">Received</string>
+    <string name="hugs_history_period_all_time">All time</string>
+    <string name="hugs_history_period_last_7_days">7 days</string>
+    <string name="hugs_history_period_last_24_hours">24 hours</string>
+    <string name="hugs_history_emotions_all">All emotions</string>
+    <string name="hugs_history_emotion_chip">Emotion</string>
+    <string name="hugs_history_direction_sent">You sent</string>
+    <string name="hugs_history_direction_received">You received</string>
+    <string name="hugs_history_error_loading">Failed to load history</string>
+
+    <!-- Hugs Pairing Screen (en) -->
+    <string name="hugs_pairing_title">Hugs pair</string>
+    <string name="hugs_pairing_step_share_link">Share the link</string>
+    <string name="hugs_pairing_step_waiting_confirmation">Waiting for confirmation</string>
+    <string name="hugs_pairing_step_confirm_invite">Confirm invitation</string>
+    <string name="hugs_pairing_share_hint">Show this code to your partner or send them the link</string>
+    <string name="hugs_pairing_copy_button">Copy</string>
+    <string name="hugs_pairing_share_button">Share</string>
+    <string name="hugs_pairing_i_already_sent">I have already sent the invitation</string>
+    <string name="hugs_pairing_invitation_sent">Invitation sent</string>
+    <string name="hugs_pairing_waiting_partner">Waiting for your partner to accept it</string>
+    <string name="hugs_pairing_cancel_invite">Cancel invitation</string>
+    <string name="hugs_pairing_default_inviter_name">Your loved one</string>
+    <string name="hugs_pairing_invite_title_format">%1$s wants to create a pair</string>
+    <string name="hugs_pairing_invite_description">You will be able to exchange emotions and quick signals via your amulets.</string>
+    <string name="hugs_pairing_decline">Decline</string>
+    <string name="hugs_pairing_accept">Accept</string>
+    <string name="hugs_pairing_error_operation">Failed to complete the operation</string>
+    <string name="hugs_pairing_qr_content_desc">QR code</string>
+</resources>
