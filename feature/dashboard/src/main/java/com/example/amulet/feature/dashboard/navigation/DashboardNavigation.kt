@@ -30,6 +30,7 @@ fun NavGraphBuilder.dashboardGraph(
     onNavigateToLibrary: () -> Unit,
     onNavigateToHugs: () -> Unit,
     onNavigateToPatterns: () -> Unit,
+    onNavigateToPracticeSession: (String) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     navigation(startDestination = DashboardDestination.main, route = DashboardGraph.route) {
@@ -41,6 +42,7 @@ fun NavGraphBuilder.dashboardGraph(
                 onNavigateToLibrary = onNavigateToLibrary,
                 onNavigateToHugs = onNavigateToHugs,
                 onNavigateToPatterns = onNavigateToPatterns,
+                onNavigateToPracticeSession = onNavigateToPracticeSession,
                 onNavigateToSettings = onNavigateToSettings
             )
         }

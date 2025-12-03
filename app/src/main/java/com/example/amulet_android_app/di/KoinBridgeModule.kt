@@ -65,6 +65,7 @@ import com.example.amulet.shared.domain.practices.usecase.DeletePracticeSchedule
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
 import com.example.amulet.shared.domain.practices.usecase.SkipScheduledSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.LogMoodSelectionUseCase
+import com.example.amulet.shared.domain.dashboard.usecase.GetDashboardDailyStatsUseCase
 import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.notifications.NotificationsRepository
@@ -389,6 +390,7 @@ object KoinBridgeModule {
     @Provides fun provideUpdateSessionFeedbackUseCase(koin: Koin): UpdateSessionFeedbackUseCase = koin.get()
     @Provides fun provideGetPracticeScriptUseCase(koin: Koin): GetPracticeScriptUseCase = koin.get()
     @Provides fun provideUpdateSessionMoodBeforeUseCase(koin: Koin): UpdateSessionMoodBeforeUseCase = koin.get()
+    @Provides fun provideGetDashboardDailyStatsUseCase(koin: Koin): GetDashboardDailyStatsUseCase = koin.get()
 
     // Practices Manager
     @Provides fun providePracticeSessionManager(koin: Koin): PracticeSessionManager = koin.get()

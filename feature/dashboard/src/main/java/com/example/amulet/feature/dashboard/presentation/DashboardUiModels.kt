@@ -13,6 +13,8 @@ data class DashboardUiState(
     val devices: List<Device> = emptyList(),
     val connectedDevice: Device? = null,
     val dailyStats: DailyStats = DailyStats(),
+    val quickStartPracticeId: String? = null,
+    val recommendedPracticeId: String? = null,
     val error: AppError? = null
 )
 
@@ -29,7 +31,6 @@ data class DailyStats(
  * UI Events - входящие действия от пользователя
  */
 sealed interface DashboardUiEvent {
-    data object Refresh : DashboardUiEvent
     data class StartPractice(val practiceId: String) : DashboardUiEvent
     data class DeviceClicked(val deviceId: String) : DashboardUiEvent
     data object NavigateToDevicesList : DashboardUiEvent

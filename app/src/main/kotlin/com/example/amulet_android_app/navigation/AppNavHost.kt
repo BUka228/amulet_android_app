@@ -11,8 +11,10 @@ import com.example.amulet.feature.auth.navigation.navigateToAuth
 import com.example.amulet.feature.dashboard.navigation.dashboardGraph
 import com.example.amulet.feature.devices.navigation.devicesGraph
 import com.example.amulet.feature.patterns.navigation.patternsGraph
+import com.example.amulet.feature.patterns.navigation.navigateToPatternEditor
 import com.example.amulet.feature.practices.navigation.practicesGraph
 import com.example.amulet.feature.practices.navigation.navigateToPracticesHome
+import com.example.amulet.feature.practices.navigation.navigateToPracticeSession
 import com.example.amulet.feature.hugs.navigation.hugsGraph
 import com.example.amulet.feature.settings.navigation.settingsGraph
 
@@ -34,7 +36,9 @@ fun AppNavHost(
             onNavigateToPairing = navController::navigateToPairing,
             onNavigateToLibrary = { navController.navigateToPracticesHome() },
             onNavigateToHugs = navController::navigateToHugs,
-            onNavigateToPatterns = navController::navigateToPatterns,
+            // Из быстрого доступа на дашборде сразу открываем редактор паттерна (создание нового)
+            onNavigateToPatterns = { navController.navigateToPatternEditor() },
+            onNavigateToPracticeSession = { practiceId -> navController.navigateToPracticeSession(practiceId) },
             onNavigateToSettings = navController::navigateToSettings
         )
 

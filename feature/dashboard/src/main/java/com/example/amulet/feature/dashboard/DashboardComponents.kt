@@ -311,7 +311,7 @@ fun DeviceStatItem(
 // ===== Быстрый старт =====
 @Composable
 fun QuickStartSection(
-    onStartPractice: (String) -> Unit
+    onStartPractice: () -> Unit
 ) {
     val spacing = AmuletTheme.spacing
 
@@ -369,7 +369,7 @@ fun QuickStartSection(
                     }
                 }
 
-                IconButton(onClick = { onStartPractice("breathing_4_7_8") }) {
+                IconButton(onClick = onStartPractice) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
                         contentDescription = stringResource(R.string.quick_start_button),

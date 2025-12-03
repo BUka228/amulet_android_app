@@ -13,6 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.amulet.feature.dashboard.navigation.navigateToDashboard
+import com.example.amulet.feature.practices.navigation.navigateToPracticesHome
+import com.example.amulet.feature.hugs.navigation.navigateToHugs
+import com.example.amulet.feature.patterns.navigation.navigateToPatternsList
 import com.example.amulet_android_app.R
 import com.example.amulet.core.design.components.navigation.AmuletBottomNavigationBar
 import com.example.amulet.core.design.components.navigation.BottomNavItem
@@ -95,15 +99,12 @@ private fun AppBottomNavigationBar(
         items = getBottomNavItems(),
         selectedRoute = currentRoute,
         onItemSelected = { item ->
-            if (currentRoute != item.route) {
-                navController.navigate(item.route) {
-                    // Очищаем backstack до первого destination в графе
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                    }
-                    launchSingleTop = true
-                    restoreState = true
-                }
+            when (item.route) {
+                "dashboard/main" -> navController.navigateToDashboard(popUpToInclusive = true)
+                "practices/home" -> navController.navigateToPracticesHome(popUpToInclusive = true)
+                "hugs/main" -> navController.navigateToHugs(popUpToInclusive = true)
+                "patterns/list" -> navController.navigateToPatternsList()
+                "settings/main" -> navController.navigateToSettings()
             }
         }
     )

@@ -1,14 +1,34 @@
 package com.example.amulet.feature.dashboard
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +59,7 @@ fun DashboardRoute(
     onNavigateToLibrary: () -> Unit,
     onNavigateToHugs: () -> Unit,
     onNavigateToPatterns: () -> Unit,
+    onNavigateToPracticeSession: (String) -> Unit,
     onNavigateToSettings: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
@@ -64,8 +85,7 @@ fun DashboardRoute(
                     println(effect.message)
                 }
                 is DashboardSideEffect.StartPracticeSession -> {
-                    // TODO: Navigate to practice session screen
-                    println("Navigate to practice session: ${effect.practiceId}")
+                    onNavigateToPracticeSession(effect.practiceId)
                 }
             }
         }
@@ -84,7 +104,6 @@ fun DashboardScreen(
     onEvent: (DashboardUiEvent) -> Unit
 ) {
     val spacing = AmuletTheme.spacing
-    val scrollState = rememberScrollState()
     val scaffoldState = LocalScaffoldState.current
 
     // Устанавливаем TopBar синхронно
@@ -95,7 +114,6 @@ fun DashboardScreen(
                     DashboardTopBar(
                         userName = uiState.userName,
                         onSettingsClick = { onEvent(DashboardUiEvent.NavigateToSettings) },
-                        onRefreshClick = { onEvent(DashboardUiEvent.Refresh) }
                     )
                 },
                 floatingActionButton = {} // Обнуляем FAB
@@ -103,49 +121,64 @@ fun DashboardScreen(
         }
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(horizontal = spacing.md)
-            .padding(bottom = spacing.md),
-        verticalArrangement = Arrangement.spacedBy(spacing.sm)
+            .padding(horizontal = spacing.xs, vertical = spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(spacing.xs)
     ) {
-        Spacer(modifier = Modifier.height(spacing.xs))
-        
-        // Компактная статистика в верхней части
-        CompactStatsRow(
-            stats = uiState.dailyStats
-        )
+        item {
+            Spacer(modifier = Modifier.height(spacing.xs))
+        }
 
-        // Устройства - компактная версия
-        DevicesSection(
-            devices = uiState.devices,
-            connectedDevice = uiState.connectedDevice,
-            onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
-            onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
-            onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
-        )
+        item {
+            // Компактная статистика в верхней части
+            CompactStatsRow(
+                stats = uiState.dailyStats
+            )
+        }
 
-        // Быстрый старт практики - обновленный дизайн
-        QuickStartSection(
-            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-        )
+        item {
+            // Устройства - компактная версия
+            DevicesSection(
+                devices = uiState.devices,
+                connectedDevice = uiState.connectedDevice,
+                onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
+                onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
+                onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }
+            )
+        }
 
-        // Рекомендации на основе данных
-        RecommendationsSection(
-            stats = uiState.dailyStats,
-            onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
-        )
-        
-        // Быстрый доступ к разделам
-        QuickAccessGrid(
-            onNavigateToLibrary = { onEvent(DashboardUiEvent.NavigateToLibrary) },
-            onNavigateToHugs = { onEvent(DashboardUiEvent.NavigateToHugs) },
-            onNavigateToPatterns = { onEvent(DashboardUiEvent.NavigateToPatterns) }
-        )
+        if (uiState.quickStartPracticeId != null) {
+            item {
+                // Быстрый старт практики - обновленный дизайн
+                QuickStartSection(
+                    onStartPractice = { onEvent(DashboardUiEvent.StartPractice(uiState.quickStartPracticeId)) }
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(spacing.sm))
+        item {
+            // Рекомендации на основе данных
+            RecommendationsSection(
+                stats = uiState.dailyStats,
+                recommendedPracticeId = uiState.recommendedPracticeId,
+                onStartPractice = { practiceId -> onEvent(DashboardUiEvent.StartPractice(practiceId)) }
+            )
+        }
+
+        item {
+            // Быстрый доступ к разделам
+            QuickAccessGrid(
+                onNavigateToLibrary = { onEvent(DashboardUiEvent.NavigateToLibrary) },
+                onNavigateToHugs = { onEvent(DashboardUiEvent.NavigateToHugs) },
+                onNavigateToPatterns = { onEvent(DashboardUiEvent.NavigateToPatterns) }
+            )
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(spacing.sm))
+        }
     }
 }
 
@@ -153,10 +186,8 @@ fun DashboardScreen(
 @Composable
 private fun DashboardTopBar(
     userName: String?,
-    onSettingsClick: () -> Unit,
-    onRefreshClick: () -> Unit
+    onSettingsClick: () -> Unit
 ) {
-    val spacing = AmuletTheme.spacing
     
     TopAppBar(
         title = {
@@ -174,12 +205,6 @@ private fun DashboardTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onRefreshClick) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = stringResource(R.string.dashboard_action_refresh)
-                )
-            }
             IconButton(onClick = onSettingsClick) {
                 Icon(
                     imageVector = Icons.Default.Settings,
@@ -278,23 +303,22 @@ private fun CompactStatItem(
 @Composable
 private fun RecommendationsSection(
     stats: DailyStats,
+    recommendedPracticeId: String?,
     onStartPractice: (String) -> Unit
 ) {
     val spacing = AmuletTheme.spacing
     
     // Определяем рекомендацию на основе статистики
     val recommendation = when {
-        stats.practiceMinutes < 5 -> RecommendationData(
-            titleRes = R.string.recommendation_start_day,
-            descriptionRes = R.string.recommendation_start_day_description,
-            practiceId = "breathing_4_7_8",
-            icon = Icons.Default.FavoriteBorder
-        )
-        stats.calmLevel < 60 -> RecommendationData(
+        recommendedPracticeId != null && stats.calmLevel < 60 -> RecommendationData(
             titleRes = R.string.recommendation_restore_calm,
             descriptionRes = R.string.recommendation_restore_calm_description,
-            practiceId = "meditation_calm",
             icon = Icons.Default.Favorite
+        )
+        recommendedPracticeId != null -> RecommendationData(
+            titleRes = R.string.recommendation_start_day,
+            descriptionRes = R.string.recommendation_start_day_description,
+            icon = Icons.Default.FavoriteBorder
         )
         else -> null
     }
@@ -304,15 +328,14 @@ private fun RecommendationsSection(
             elevation = CardElevation.Default,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(spacing.md),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
@@ -341,7 +364,9 @@ private fun RecommendationsSection(
                 
                 AmuletButton(
                     text = stringResource(R.string.recommendation_button_start),
-                    onClick = { onStartPractice(it.practiceId) },
+                    onClick = {
+                        recommendedPracticeId?.let { id -> onStartPractice(id) }
+                    },
                     variant = ButtonVariant.Primary,
                     size = ButtonSize.Small
                 )
@@ -353,6 +378,5 @@ private fun RecommendationsSection(
 private data class RecommendationData(
     val titleRes: Int,
     val descriptionRes: Int,
-    val practiceId: String,
     val icon: ImageVector
 )

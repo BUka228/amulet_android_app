@@ -46,6 +46,7 @@ import com.example.amulet.shared.domain.practices.PracticeScriptOrchestratorImpl
 import com.example.amulet.shared.domain.practices.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet.shared.domain.user.usecase.UpdateUserProfileUseCase
+import com.example.amulet.shared.domain.dashboard.usecase.GetDashboardDailyStatsUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -173,6 +174,7 @@ private val sharedModule = module {
     factory { GetPracticeScriptUseCase(get()) }
     factory { UpdateSessionFeedbackUseCase(get(), get()) }
     factory { UpdateSessionMoodBeforeUseCase(get(), get()) }
+    factory { GetDashboardDailyStatsUseCase(get(), get(), get(), get()) }
 
     // Practice script orchestrator
     factory<PracticeScriptOrchestrator> { PracticeScriptOrchestratorImpl(get(), get()) }
