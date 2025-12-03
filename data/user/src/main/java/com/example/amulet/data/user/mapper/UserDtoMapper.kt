@@ -18,6 +18,7 @@ class UserDtoMapper @Inject constructor() {
         id = UserId(dto.id),
         displayName = dto.displayName,
         avatarUrl = dto.avatarUrl,
+        email = null,
         timezone = dto.timezone,
         language = dto.language,
         consents = dto.toConsents(),

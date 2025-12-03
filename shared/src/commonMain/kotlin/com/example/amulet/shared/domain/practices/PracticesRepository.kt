@@ -16,7 +16,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.PracticeStatistics
 import com.example.amulet.shared.domain.practices.model.PracticeTag
-import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.user.model.UserPreferences
 import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.example.amulet.shared.domain.practices.model.MoodKind
 import kotlinx.coroutines.flow.Flow

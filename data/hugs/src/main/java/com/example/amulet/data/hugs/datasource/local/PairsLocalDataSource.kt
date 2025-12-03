@@ -1,5 +1,6 @@
 package com.example.amulet.data.hugs.datasource.local
 
+import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PairEmotionEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
@@ -30,4 +31,8 @@ interface PairsLocalDataSource {
     fun observeQuickReplies(pairId: String, userId: String): Flow<List<PairQuickReplyEntity>>
 
     suspend fun upsertQuickReplies(entities: List<PairQuickReplyEntity>)
+
+    suspend fun enqueueOutboxAction(action: OutboxActionEntity)
+
+    suspend fun <R> withPairTransaction(block: suspend () -> R): R
 }

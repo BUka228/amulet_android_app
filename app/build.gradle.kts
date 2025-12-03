@@ -85,6 +85,7 @@ dependencies {
     implementation(project(":feature:practices"))
     implementation(project(":feature:hugs"))
     implementation(project(":feature:onboarding"))
+    implementation(project(":feature:settings"))
     implementation(libs.koin.android)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

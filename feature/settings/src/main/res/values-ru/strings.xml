@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Настройки</string>
+
+    <string name="settings_profile_fallback_name">Профиль</string>
+    <string name="settings_profile_section_title">Профиль и аккаунт</string>
+    <string name="settings_profile_row_title">Профиль</string>
+    <string name="settings_profile_name_label">Имя</string>
+    <string name="settings_profile_email_label">Email</string>
+    <string name="settings_profile_email_placeholder">Email не указан</string>
+    <string name="settings_profile_timezone_label">Часовой пояс</string>
+    <string name="settings_profile_language_label">Язык приложения</string>
+    <string name="settings_profile_change_avatar">Изменить аватар</string>
+    <string name="settings_profile_account_section_title">Управление аккаунтом</string>
+    <string name="settings_profile_change_password">Изменить пароль</string>
+    <string name="settings_profile_save_button">Сохранить</string>
+
+    <string name="settings_devices_section_title">Устройство и амулет</string>
+    <string name="settings_devices_row_devices">Устройства</string>
+
+    <string name="settings_practices_section_title">Практики и амулет</string>
+    <string name="settings_practices_default_intensity">Интенсивность по умолчанию</string>
+    <string name="settings_practices_default_brightness">Яркость по умолчанию</string>
+    <string name="settings_practices_default_audio">Аудио по умолчанию</string>
+    <string name="settings_practices_audio_voice">Голос</string>
+    <string name="settings_practices_audio_music">Музыка</string>
+    <string name="settings_practices_audio_silent">Без звука</string>
+    <string name="settings_practices_goals_interests">Цели и интересы</string>
+
+    <string name="settings_hugs_section_title">Объятия и пары</string>
+    <string name="settings_hugs_dnd_title">Не беспокоить в объятиях</string>
+    <string name="settings_hugs_details">Подробные настройки объятий</string>
+
+    <string name="settings_privacy_section_title">Приватность и данные</string>
+    <string name="settings_privacy_analytics">Аналитика</string>
+    <string name="settings_privacy_marketing">Маркетинг</string>
+    <string name="settings_privacy_notifications">Уведомления</string>
+    <string name="settings_privacy_manage">Управление данными и приватностью</string>
+
+    <!-- Экран приватности и данных -->
+    <string name="settings_privacy_analytics_desc">Помогает нам понимать, как вы пользуетесь приложением, чтобы улучшать функции и UX.</string>
+    <string name="settings_privacy_marketing_desc">Позволяет показывать вам персонализированные предложения и новости о продукте.</string>
+    <string name="settings_privacy_notifications_desc">Управляет диагностическими и crash‑уведомлениями и связанной телеметрией.</string>
+
+    <string name="settings_privacy_export_title">Запросить экспорт данных</string>
+    <string name="settings_privacy_export_desc">Мы подготовим экспорт ваших персональных данных и отправим ссылку на email.</string>
+    <string name="settings_privacy_export_button">Запросить экспорт</string>
+
+    <string name="settings_privacy_delete_title">Удалить аккаунт и данные</string>
+    <string name="settings_privacy_delete_desc">Это безвозвратно удалит ваш профиль, историю практик и данные объятий. Отменить действие будет нельзя.</string>
+    <string name="settings_privacy_delete_button">Удалить аккаунт</string>
+
+    <string name="settings_privacy_export_dialog_title">Запросить экспорт данных?</string>
+    <string name="settings_privacy_export_dialog_message">Мы запустим подготовку экспорта ваших данных. Это может занять время. Ссылку вы получите по email.</string>
+    <string name="settings_privacy_export_dialog_confirm">Запросить экспорт</string>
+
+    <string name="settings_privacy_delete_dialog_title">Удалить аккаунт и все данные?</string>
+    <string name="settings_privacy_delete_dialog_message">Ваш профиль, история практик, объятия и все связанные данные будут удалены без возможности восстановления.</string>
+    <string name="settings_privacy_delete_dialog_confirm">Удалить</string>
+
+    <string name="settings_privacy_dialog_cancel">Отмена</string>
+
+    <string name="settings_privacy_consents_saved">Настройки приватности обновлены</string>
+    <string name="settings_privacy_export_requested">Запрос на экспорт данных отправлен</string>
+    <string name="settings_privacy_deletion_requested">Запрос на удаление аккаунта отправлен</string>
+
+    <string name="settings_about_section_title">О приложении</string>
+    <string name="settings_about_row_title">О приложении</string>
+
+    <string name="settings_sign_out">Выйти из аккаунта</string>
+    <string name="settings_sign_out_confirm_title">Выйти из аккаунта?</string>
+    <string name="settings_sign_out_confirm_message">Вы уверены, что хотите выйти из своего аккаунта?</string>
+    <string name="settings_sign_out_confirm_positive">Выйти</string>
+    <string name="settings_sign_out_confirm_negative">Отмена</string>
+</resources>

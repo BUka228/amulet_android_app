@@ -18,6 +18,7 @@ enum class OutboxActionType(val apiEndpoint: String) {
     PAIR_ACCEPT("/pairs.accept"),
     PAIR_BLOCK("/pairs/{pairId}/block"),
     PAIR_UNBLOCK("/pairs/{pairId}/unblock"),
+    PAIR_SETTINGS_UPDATE("/pairs/{pairId}/members/{userId}/settings"),
     PATTERN_CREATE("/patterns"),
     PATTERN_UPDATE("/patterns/{id}"),
     PATTERN_DELETE("/patterns/{id}"),

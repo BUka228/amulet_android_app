@@ -75,7 +75,8 @@ data class UserPreferencesEntity(
     val goalsJson: String,
     val interestsJson: String,
     val preferredDurationsJson: String,
-    val defaultAudioMode: String?
+    val defaultAudioMode: String?,
+    val hugsDndEnabled: Boolean?
 )
 
 @Entity(

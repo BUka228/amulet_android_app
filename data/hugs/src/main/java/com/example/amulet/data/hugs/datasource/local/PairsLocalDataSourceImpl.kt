@@ -1,6 +1,9 @@
 package com.example.amulet.data.hugs.datasource.local
 
+import com.example.amulet.core.database.TransactionRunner
+import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.database.dao.PairDao
+import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PairEmotionEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
@@ -8,7 +11,9 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class PairsLocalDataSourceImpl @Inject constructor(
-    private val pairDao: PairDao
+    private val pairDao: PairDao,
+    private val outboxDao: OutboxActionDao,
+    private val transactionRunner: TransactionRunner,
 ) : PairsLocalDataSource {
 
     override fun observeAllWithSettings(): Flow<List<PairWithMemberSettings>> =
@@ -40,5 +45,13 @@ class PairsLocalDataSourceImpl @Inject constructor(
 
     override suspend fun upsertQuickReplies(entities: List<PairQuickReplyEntity>) {
         pairDao.upsertQuickReplies(entities)
+    }
+
+    override suspend fun enqueueOutboxAction(action: OutboxActionEntity) {
+        outboxDao.upsert(action)
+    }
+
+    override suspend fun <R> withPairTransaction(block: suspend () -> R): R {
+        return transactionRunner.runInTransaction(block)
     }
 }

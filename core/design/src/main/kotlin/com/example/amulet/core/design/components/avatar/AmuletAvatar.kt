@@ -1,5 +1,6 @@
 package com.example.amulet.core.design.components.avatar
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -52,8 +53,13 @@ fun AmuletAvatar(
     ) {
         when {
             !imageUrl.isNullOrBlank() -> {
+                val model: Any = if (imageUrl.startsWith("content://")) {
+                    Uri.parse(imageUrl)
+                } else {
+                    imageUrl
+                }
                 AsyncImage(
-                    model = imageUrl,
+                    model = model,
                     contentDescription = null,
                     modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.Crop

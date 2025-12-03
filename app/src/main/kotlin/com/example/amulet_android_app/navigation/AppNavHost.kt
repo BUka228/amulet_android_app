@@ -7,12 +7,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.amulet.feature.auth.navigation.AuthGraph
 import com.example.amulet.feature.auth.navigation.authGraph
+import com.example.amulet.feature.auth.navigation.navigateToAuth
 import com.example.amulet.feature.dashboard.navigation.dashboardGraph
 import com.example.amulet.feature.devices.navigation.devicesGraph
 import com.example.amulet.feature.patterns.navigation.patternsGraph
 import com.example.amulet.feature.practices.navigation.practicesGraph
 import com.example.amulet.feature.practices.navigation.navigateToPracticesHome
 import com.example.amulet.feature.hugs.navigation.hugsGraph
+import com.example.amulet.feature.settings.navigation.settingsGraph
 
 @Composable
 fun AppNavHost(
@@ -53,18 +55,28 @@ fun AppNavHost(
             onNavigateToPairing = navController::navigateToPairing
         )
 
-        // Placeholder destinations для bottom navigation
+        // Placeholder destination для раздела «Библиотека»
         composable("library/main") {
             LibraryPlaceholderScreen()
-        }
-        
-        composable("settings/main") {
-            SettingsPlaceholderScreen()
         }
 
         // Hugs Graph - социальные объятия
         hugsGraph(
             navController = navController
+        )
+
+        // Settings Graph - общие настройки приложения и аккаунта
+        settingsGraph(
+            navController = navController,
+            onSignedOut = {
+                navController.navigate(AuthGraphDestination.baseRoute) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true
+                }
+            },
+            onChangePassword = {
+                navController.navigateToAuth()
+            },
         )
 
         // Auth Graph - экраны входа/регистрации

@@ -30,7 +30,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeTag
 import com.example.amulet.shared.domain.practices.model.ScheduledSession
 import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.toStorageString
-import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.user.model.UserPreferences
 import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
 import com.github.michaelbull.result.Err

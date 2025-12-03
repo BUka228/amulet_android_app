@@ -30,6 +30,10 @@ import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
 import com.example.amulet.shared.domain.hugs.InvitePairUseCase
 import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
+import com.example.amulet.shared.domain.privacy.usecase.GetUserConsentsUseCase
+import com.example.amulet.shared.domain.privacy.usecase.UpdateUserConsentsUseCase
+import com.example.amulet.shared.domain.privacy.usecase.RequestDataExportUseCase
+import com.example.amulet.shared.domain.privacy.usecase.RequestAccountDeletionUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet.shared.domain.patterns.PatternPlaybackService
 import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
@@ -41,6 +45,7 @@ import com.example.amulet.shared.domain.practices.PracticeScriptOrchestrator
 import com.example.amulet.shared.domain.practices.PracticeScriptOrchestratorImpl
 import com.example.amulet.shared.domain.practices.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.user.usecase.UpdateUserProfileUseCase
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -61,6 +66,7 @@ private val sharedModule = module {
     
     // User UseCases
     factory { ObserveCurrentUserUseCase(get(), get()) }
+    factory { UpdateUserProfileUseCase(get()) }
 
     // Hugs UseCases
     factory<SendHugUseCase> { DefaultSendHugUseCase(get(), get()) }
@@ -87,6 +93,12 @@ private val sharedModule = module {
 
     // Notifications UseCases
     factory { SyncPushTokenUseCase(get(), get()) }
+
+    // Privacy UseCases
+    factory { GetUserConsentsUseCase(get()) }
+    factory { UpdateUserConsentsUseCase(get()) }
+    factory { RequestDataExportUseCase(get()) }
+    factory { RequestAccountDeletionUseCase(get()) }
 
     // Devices UseCases (локальная работа без серверной привязки)
     factory { ObserveDevicesUseCase(get()) }
@@ -150,6 +162,7 @@ private val sharedModule = module {
     factory { StopSessionUseCase(get()) }
     factory { GetUserPreferencesStreamUseCase(get()) }
     factory { UpdateUserPreferencesUseCase(get()) }
+    factory { UpdatePracticeDefaultsUseCase(get(), get()) }
     factory { GetRecommendationsStreamUseCase(get()) }
     factory { UpsertPracticeScheduleUseCase(get()) }
     factory { GetScheduleByPracticeIdUseCase(get()) }

@@ -59,6 +59,7 @@ import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUse
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpdatePracticeDefaultsUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeletePracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeleteSchedulesForCourseUseCase
@@ -69,7 +70,12 @@ import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.notifications.NotificationsRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.user.usecase.UpdateUserProfileUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
+import com.example.amulet.shared.domain.privacy.usecase.GetUserConsentsUseCase
+import com.example.amulet.shared.domain.privacy.usecase.UpdateUserConsentsUseCase
+import com.example.amulet.shared.domain.privacy.usecase.RequestDataExportUseCase
+import com.example.amulet.shared.domain.privacy.usecase.RequestAccountDeletionUseCase
 import com.example.amulet.shared.domain.courses.CoursesRepository
 import com.example.amulet.shared.domain.courses.usecase.CompleteCourseItemUseCase
 import com.example.amulet.shared.domain.courses.usecase.ContinueCourseUseCase
@@ -229,9 +235,25 @@ object KoinBridgeModule {
     @Provides
     fun provideObserveCurrentUserUseCase(koin: Koin): ObserveCurrentUserUseCase = koin.get()
 
+    @Provides
+    fun provideUpdateUserProfileUseCase(koin: Koin): UpdateUserProfileUseCase = koin.get()
+
     // Notifications UseCases
     @Provides
     fun provideSyncPushTokenUseCase(koin: Koin): SyncPushTokenUseCase = koin.get()
+
+    // Privacy UseCases
+    @Provides
+    fun provideGetUserConsentsUseCase(koin: Koin): GetUserConsentsUseCase = koin.get()
+
+    @Provides
+    fun provideUpdateUserConsentsUseCase(koin: Koin): UpdateUserConsentsUseCase = koin.get()
+
+    @Provides
+    fun provideRequestDataExportUseCase(koin: Koin): RequestDataExportUseCase = koin.get()
+
+    @Provides
+    fun provideRequestAccountDeletionUseCase(koin: Koin): RequestAccountDeletionUseCase = koin.get()
 
     // Devices UseCases
     @Provides
@@ -355,6 +377,7 @@ object KoinBridgeModule {
     @Provides fun provideStopSessionUseCase(koin: Koin): StopSessionUseCase = koin.get()
     @Provides fun provideGetUserPreferencesStreamUseCase(koin: Koin): GetUserPreferencesStreamUseCase = koin.get()
     @Provides fun provideUpdateUserPreferencesUseCase(koin: Koin): UpdateUserPreferencesUseCase = koin.get()
+    @Provides fun provideUpdatePracticeDefaultsUseCase(koin: Koin): UpdatePracticeDefaultsUseCase = koin.get()
     @Provides fun provideGetRecommendationsStreamUseCase(koin: Koin): GetRecommendationsStreamUseCase = koin.get()
     @Provides fun provideRefreshPracticesCatalogUseCase(koin: Koin): RefreshPracticesCatalogUseCase = koin.get()
     @Provides fun provideUpsertPracticeScheduleUseCase(koin: Koin): UpsertPracticeScheduleUseCase = koin.get()

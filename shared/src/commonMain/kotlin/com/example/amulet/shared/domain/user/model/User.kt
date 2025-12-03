@@ -9,6 +9,7 @@ data class User(
     val id: UserId,
     val displayName: String? = null,
     val avatarUrl: String? = null,
+    val email: String? = null,
     val timezone: String? = null,
     val language: String? = null,
     val consents: UserConsents? = null,

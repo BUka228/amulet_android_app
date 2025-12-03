@@ -1,6 +1,7 @@
 package com.example.amulet.feature.hugs.presentation.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -45,12 +47,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.components.avatar.AmuletAvatar
+import com.example.amulet.core.design.components.avatar.AvatarSize
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.hugs.R
 import com.example.amulet.shared.domain.hugs.model.Hug
 import com.example.amulet.shared.domain.hugs.model.HugStatus
 import com.example.amulet.shared.domain.hugs.model.PairStatus
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -180,15 +185,34 @@ private fun PairHeaderSection(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 PairMemberCard(
                     title = state.currentUser?.displayName ?: stringResource(R.string.hugs_home_you),
                     subtitle = stringResource(R.string.hugs_home_you),
                     highlight = true,
+                    avatarUrl = state.currentUser?.avatarUrl,
                     modifier = Modifier.weight(1f)
                 )
+
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            shape = CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
 
                 val partnerSubtitle = when (pair?.status) {
                     PairStatus.ACTIVE -> stringResource(R.string.hugs_home_partner_active)
@@ -201,6 +225,7 @@ private fun PairHeaderSection(
                     title = if (hasPair) stringResource(R.string.hugs_home_partner_title) else stringResource(R.string.hugs_home_no_partner_title),
                     subtitle = partnerSubtitle,
                     highlight = hasPair,
+                    avatarUrl = null,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -249,31 +274,41 @@ private fun PairHeaderSection(
 private fun QuickActionsSection(
     onIntent: (HugsHomeIntent) -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ActionCard(
-            title = stringResource(R.string.hugs_home_quick_actions_history_title),
-            description = stringResource(R.string.hugs_home_quick_actions_history_desc),
-            icon = Icons.Filled.History,
-            onClick = { onIntent(HugsHomeIntent.OpenHistory) },
-            modifier = Modifier.weight(1f)
-        )
-        ActionCard(
-            title = stringResource(R.string.hugs_home_quick_actions_emotions_title),
-            description = stringResource(R.string.hugs_home_quick_actions_emotions_desc),
-            icon = Icons.Filled.Favorite,
-            onClick = { onIntent(HugsHomeIntent.OpenEmotions) },
-            modifier = Modifier.weight(1f)
-        )
-        ActionCard(
-            title = stringResource(R.string.hugs_home_quick_actions_codes_title),
-            description = stringResource(R.string.hugs_home_quick_actions_codes_desc),
-            icon = Icons.Filled.Settings,
-            onClick = { onIntent(HugsHomeIntent.OpenSecretCodes) },
-            modifier = Modifier.weight(1f)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ActionCard(
+                title = stringResource(R.string.hugs_home_quick_actions_history_title),
+                description = stringResource(R.string.hugs_home_quick_actions_history_desc),
+                icon = Icons.Filled.History,
+                onClick = { onIntent(HugsHomeIntent.OpenHistory) },
+                modifier = Modifier.weight(1f)
+            )
+            ActionCard(
+                title = stringResource(R.string.hugs_home_quick_actions_emotions_title),
+                description = stringResource(R.string.hugs_home_quick_actions_emotions_desc),
+                icon = Icons.Filled.Favorite,
+                onClick = { onIntent(HugsHomeIntent.OpenEmotions) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            ActionCard(
+                title = stringResource(R.string.hugs_home_quick_actions_codes_title),
+                description = stringResource(R.string.hugs_home_quick_actions_codes_desc),
+                icon = Icons.Filled.Settings,
+                onClick = { onIntent(HugsHomeIntent.OpenSecretCodes) },
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 
@@ -374,8 +409,13 @@ private fun RecentHugItem(hug: Hug) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(12.dp),
+            )
             .padding(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -414,6 +454,7 @@ private fun PairMemberCard(
     title: String,
     subtitle: String,
     highlight: Boolean,
+    avatarUrl: String?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -421,22 +462,31 @@ private fun PairMemberCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(
-                    if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    else MaterialTheme.colorScheme.surfaceVariant
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = title.trim().take(1).uppercase(),
-                style = MaterialTheme.typography.headlineSmall,
-                color = if (highlight) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant
+        if (avatarUrl != null && avatarUrl.isNotBlank()) {
+            AmuletAvatar(
+                imageUrl = avatarUrl,
+                initials = title.trim().takeIf { it.isNotBlank() },
+                size = if (highlight) AvatarSize.ExtraLarge else AvatarSize.Medium,
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(if (highlight) 72.dp else 56.dp)
+                    .clip(CircleShape)
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape,
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
 
         Column(
@@ -465,7 +515,7 @@ private fun parseEmotionColor(hex: String?): Color {
     if (hex.isNullOrBlank()) return Color.Gray
     return try {
         val clean = hex.removePrefix("#")
-        val r = clean.substring(0, 2).toInt(16)
+        val r = clean.take(2).toInt(16)
         val g = clean.substring(2, 4).toInt(16)
         val b = clean.substring(4, 6).toInt(16)
         Color(r, g, b)
@@ -476,7 +526,7 @@ private fun parseEmotionColor(hex: String?): Color {
 
 private fun formatHugDateTime(hug: Hug): String {
     val dt = hug.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
-    val day = dt.date.dayOfMonth.toString().padStart(2, '0')
+    val day = dt.date.day.toString().padStart(2, '0')
     val month = (dt.date.month.ordinal + 1).toString().padStart(2, '0')
     val hour = dt.hour.toString().padStart(2, '0')
     val minute = dt.minute.toString().padStart(2, '0')

@@ -69,17 +69,43 @@ class HugsSettingsViewModel @Inject constructor(
                 .collect { (user, pair, extra) ->
                     val (globalDnd, memberSettings) = extra
                     _state.update { current ->
+                        val shouldApplyMemberSettings = current.isLoading
+
                         current.copy(
                             isLoading = false,
                             currentUser = user,
                             activePair = pair,
                             globalDndEnabled = globalDnd,
-                            isMuted = memberSettings?.muted ?: false,
-                            quietHoursStartMinutes = memberSettings?.quietHoursStartMinutes,
-                            quietHoursEndMinutes = memberSettings?.quietHoursEndMinutes,
-                            quietHoursStartText = memberSettings?.quietHoursStartMinutes?.let { minutesToText(it) } ?: "",
-                            quietHoursEndText = memberSettings?.quietHoursEndMinutes?.let { minutesToText(it) } ?: "",
-                            maxHugsPerHourText = memberSettings?.maxHugsPerHour?.toString() ?: "",
+                            isMuted = if (shouldApplyMemberSettings) {
+                                memberSettings?.muted ?: false
+                            } else {
+                                current.isMuted
+                            },
+                            quietHoursStartMinutes = if (shouldApplyMemberSettings) {
+                                memberSettings?.quietHoursStartMinutes
+                            } else {
+                                current.quietHoursStartMinutes
+                            },
+                            quietHoursEndMinutes = if (shouldApplyMemberSettings) {
+                                memberSettings?.quietHoursEndMinutes
+                            } else {
+                                current.quietHoursEndMinutes
+                            },
+                            quietHoursStartText = if (shouldApplyMemberSettings) {
+                                memberSettings?.quietHoursStartMinutes?.let { minutesToText(it) } ?: ""
+                            } else {
+                                current.quietHoursStartText
+                            },
+                            quietHoursEndText = if (shouldApplyMemberSettings) {
+                                memberSettings?.quietHoursEndMinutes?.let { minutesToText(it) } ?: ""
+                            } else {
+                                current.quietHoursEndText
+                            },
+                            maxHugsPerHourText = if (shouldApplyMemberSettings) {
+                                memberSettings?.maxHugsPerHour?.toString() ?: ""
+                            } else {
+                                current.maxHugsPerHourText
+                            },
                         )
                     }
                 }
@@ -90,10 +116,18 @@ class HugsSettingsViewModel @Inject constructor(
         when (intent) {
             HugsSettingsIntent.Refresh -> observeData()
             is HugsSettingsIntent.ToggleGlobalDnd -> toggleGlobalDnd(intent.enabled)
-            is HugsSettingsIntent.ChangeQuietStartText -> _state.update { it.copy(quietHoursStartText = intent.value) }
-            is HugsSettingsIntent.ChangeQuietEndText -> _state.update { it.copy(quietHoursEndText = intent.value) }
-            is HugsSettingsIntent.ChangeMaxHugsPerHour -> _state.update { it.copy(maxHugsPerHourText = intent.value.filter { ch -> ch.isDigit() }) }
-            is HugsSettingsIntent.ToggleMuted -> _state.update { it.copy(isMuted = intent.enabled) }
+            is HugsSettingsIntent.ChangeQuietStartText -> {
+                _state.update { it.copy(quietHoursStartText = intent.value) }
+            }
+            is HugsSettingsIntent.ChangeQuietEndText -> {
+                _state.update { it.copy(quietHoursEndText = intent.value) }
+            }
+            is HugsSettingsIntent.ChangeMaxHugsPerHour -> {
+                _state.update { it.copy(maxHugsPerHourText = intent.value.filter { ch -> ch.isDigit() }) }
+            }
+            is HugsSettingsIntent.ToggleMuted -> {
+                _state.update { it.copy(isMuted = intent.enabled) }
+            }
             HugsSettingsIntent.SavePairSettings -> savePairSettings()
             HugsSettingsIntent.DisconnectPair -> disconnectPair()
         }

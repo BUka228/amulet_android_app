@@ -23,7 +23,7 @@ import com.example.amulet.shared.domain.practices.model.PracticeStepType.TEXT_HI
 import com.example.amulet.shared.domain.practices.model.parsePracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeType
-import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.user.model.UserPreferences
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.user.model.UserId
 import com.example.amulet.shared.domain.devices.model.DeviceId
@@ -158,7 +158,8 @@ fun UserPreferencesEntity.toDomain(
     defaultBrightness = defaultBrightness,
     goals = goals,
     interests = interests,
-    preferredDurationsSec = durations
+    preferredDurationsSec = durations,
+    hugsDndEnabled = hugsDndEnabled ?: false
 )
 
 fun UserPreferencesEntity?.toDomain(json: Json): UserPreferences {
@@ -207,5 +208,6 @@ fun UserPreferences.toEntity(
         interestsJson = interestsJson,
         preferredDurationsJson = durationsJson,
         defaultAudioMode = defaultAudioMode?.name,
+        hugsDndEnabled = hugsDndEnabled,
     )
 }

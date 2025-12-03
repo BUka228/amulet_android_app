@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "b9066f4a675376190a6eb0b0ea274aed",
+    "identityHash": "dcea40974a05556a10127396c27629c9",
     "entities": [
       {
         "tableName": "users",
@@ -1573,7 +1573,7 @@
       },
       {
         "tableName": "user_preferences",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `defaultIntensity` REAL, `defaultBrightness` REAL, `goalsJson` TEXT NOT NULL, `interestsJson` TEXT NOT NULL, `preferredDurationsJson` TEXT NOT NULL, `defaultAudioMode` TEXT, PRIMARY KEY(`userId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`userId` TEXT NOT NULL, `defaultIntensity` REAL, `defaultBrightness` REAL, `goalsJson` TEXT NOT NULL, `interestsJson` TEXT NOT NULL, `preferredDurationsJson` TEXT NOT NULL, `defaultAudioMode` TEXT, `hugsDndEnabled` INTEGER, PRIMARY KEY(`userId`))",
         "fields": [
           {
             "fieldPath": "userId",
@@ -1613,6 +1613,11 @@
             "fieldPath": "defaultAudioMode",
             "columnName": "defaultAudioMode",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hugsDndEnabled",
+            "columnName": "hugsDndEnabled",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -3046,7 +3051,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b9066f4a675376190a6eb0b0ea274aed')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dcea40974a05556a10127396c27629c9')"
     ]
   }
 }

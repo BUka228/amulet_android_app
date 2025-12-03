@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.DoNotDisturb
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LinkOff
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.VolumeOff
@@ -25,10 +26,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -36,8 +39,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -52,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.components.card.AmuletCard
+import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.hugs.R
 
@@ -82,21 +88,25 @@ fun HugsSettingsRoute(
                         colors = TopAppBarDefaults.topAppBarColors()
                     )
                 },
-                floatingActionButton = {},
+                floatingActionButton = {
+                    if (state.activePair != null) {
+                        FloatingActionButton(
+                            onClick = {
+                                if (!state.isSaving) {
+                                    viewModel.onIntent(HugsSettingsIntent.SavePairSettings)
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = stringResource(R.string.hugs_settings_save_button),
+                            )
+                        }
+                    }
+                },
                 snackbarHost = {
                     SnackbarHost(hostState = snackbarHostState)
                 },
-                bottomBar = {
-                    Button(
-                        onClick = { viewModel.onIntent(HugsSettingsIntent.SavePairSettings) },
-                        enabled = !state.isSaving,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Text(text = if (state.isSaving) stringResource(R.string.hugs_settings_save_in_progress) else stringResource(R.string.hugs_settings_save_button))
-                    }
-                }
             )
         }
     }
@@ -120,12 +130,30 @@ fun HugsSettingsRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HugsSettingsScreen(
     state: HugsSettingsState,
     onIntent: (HugsSettingsIntent) -> Unit,
 ) {
     var showDisconnectDialog by remember { mutableStateOf(false) }
+    var showStartTimePickerDialog by remember { mutableStateOf(false) }
+    var showEndTimePickerDialog by remember { mutableStateOf(false) }
+
+    val startInitialMinutes = state.quietHoursStartMinutes ?: (22 * 60)
+    val endInitialMinutes = state.quietHoursEndMinutes ?: (7 * 60)
+
+    val startTimePickerState = rememberTimePickerState(
+        initialHour = startInitialMinutes / 60,
+        initialMinute = startInitialMinutes % 60,
+        is24Hour = true,
+    )
+
+    val endTimePickerState = rememberTimePickerState(
+        initialHour = endInitialMinutes / 60,
+        initialMinute = endInitialMinutes % 60,
+        is24Hour = true,
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -213,32 +241,38 @@ private fun HugsSettingsScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedTextField(
-                                value = state.quietHoursStartText,
-                                onValueChange = { onIntent(HugsSettingsIntent.ChangeQuietStartText(it)) },
-                                label = { Text(stringResource(R.string.hugs_settings_quiet_hours_start_label)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Schedule,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
+                            OutlinedButton(
+                                onClick = { showStartTimePickerDialog = true },
                                 modifier = Modifier.weight(1f)
-                            )
-                            OutlinedTextField(
-                                value = state.quietHoursEndText,
-                                onValueChange = { onIntent(HugsSettingsIntent.ChangeQuietEndText(it)) },
-                                label = { Text(stringResource(R.string.hugs_settings_quiet_hours_end_label)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Schedule,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Schedule,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = state.quietHoursStartText.ifBlank { "--:--" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = { showEndTimePickerDialog = true },
                                 modifier = Modifier.weight(1f)
-                            )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Schedule,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = state.quietHoursEndText.ifBlank { "--:--" },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
                         }
                     }
                 }
@@ -281,10 +315,10 @@ private fun HugsSettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        OutlinedTextField(
+                        AmuletTextField(
                             value = state.maxHugsPerHourText,
                             onValueChange = { onIntent(HugsSettingsIntent.ChangeMaxHugsPerHour(it)) },
-                            label = { Text(stringResource(R.string.hugs_settings_anti_spam_label)) },
+                            label = stringResource(R.string.hugs_settings_anti_spam_label),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -413,6 +447,62 @@ private fun HugsSettingsScreen(
             dismissButton = {
                 TextButton(onClick = { showDisconnectDialog = false }) {
                     Text(text = stringResource(R.string.hugs_settings_cancel))
+                }
+            }
+        )
+    }
+
+    if (showStartTimePickerDialog) {
+        AlertDialog(
+            onDismissRequest = { showStartTimePickerDialog = false },
+            title = { Text(text = stringResource(R.string.hugs_settings_quiet_hours_start_label)) },
+            text = {
+                TimePicker(state = startTimePickerState)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showStartTimePickerDialog = false
+                        val hour = startTimePickerState.hour
+                        val minute = startTimePickerState.minute
+                        val text = "%02d:%02d".format(hour, minute)
+                        onIntent(HugsSettingsIntent.ChangeQuietStartText(text))
+                    }
+                ) {
+                    Text(text = stringResource(id = android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartTimePickerDialog = false }) {
+                    Text(text = stringResource(id = android.R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showEndTimePickerDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndTimePickerDialog = false },
+            title = { Text(text = stringResource(R.string.hugs_settings_quiet_hours_end_label)) },
+            text = {
+                TimePicker(state = endTimePickerState)
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showEndTimePickerDialog = false
+                        val hour = endTimePickerState.hour
+                        val minute = endTimePickerState.minute
+                        val text = "%02d:%02d".format(hour, minute)
+                        onIntent(HugsSettingsIntent.ChangeQuietEndText(text))
+                    }
+                ) {
+                    Text(text = stringResource(id = android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndTimePickerDialog = false }) {
+                    Text(text = stringResource(id = android.R.string.cancel))
                 }
             }
         )

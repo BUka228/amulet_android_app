@@ -1,7 +1,7 @@
 package com.example.amulet.shared.domain.hugs
 
 import com.example.amulet.shared.core.AppResult
-import com.example.amulet.shared.domain.practices.model.UserPreferences
+import com.example.amulet.shared.domain.user.model.UserPreferences
 import com.example.amulet.shared.domain.practices.usecase.GetUserPreferencesStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
 import kotlinx.coroutines.flow.first
