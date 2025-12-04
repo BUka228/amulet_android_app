@@ -12,12 +12,12 @@ import com.example.amulet.shared.domain.devices.model.ChaseDirection
  * Преобразование команды в строку протокола BLE.
  */
 fun AmuletCommand.toCommandString(): String = when (this) {
-    is AmuletCommand.Breathing -> "BREATHING:${color.toHex()}:${durationMs}ms"
-    is AmuletCommand.Pulse -> "PULSE:${color.toHex()}:${intervalMs}ms:$repeats"
-    is AmuletCommand.Chase -> "CHASE:${color.toHex()}:${direction.toCode()}:$speedMs"
-    is AmuletCommand.Fill -> "FILL:${color.toHex()}:$durationMs"
-    is AmuletCommand.Spinner -> "SPINNER:${colors.joinToString(",") { it.toHex() }}:$speedMs"
-    is AmuletCommand.Progress -> "PROGRESS:${color.toHex()}:$activeLeds"
+    is AmuletCommand.Breathing -> "BREATHING:${color.toHex().removePrefix("#")}:${durationMs}ms"
+    is AmuletCommand.Pulse -> "PULSE:${color.toHex().removePrefix("#")}:${intervalMs}ms:$repeats"
+    is AmuletCommand.Chase -> "CHASE:${color.toHex().removePrefix("#")}:${direction.toCode()}:$speedMs"
+    is AmuletCommand.Fill -> "FILL:${color.toHex().removePrefix("#")}:$durationMs"
+    is AmuletCommand.Spinner -> "SPINNER:${colors.joinToString(",") { it.toHex().removePrefix("#") }}:$speedMs"
+    is AmuletCommand.Progress -> "PROGRESS:${color.toHex().removePrefix("#")}:$activeLeds"
     is AmuletCommand.SetRing -> "SET_RING:${colors.joinToString(":") { it.toHex() }}"
     is AmuletCommand.SetLed -> "SET_LED:$index:${color.toHex()}"
     is AmuletCommand.ClearAll -> "CLEAR_ALL"

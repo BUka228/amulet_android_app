@@ -418,7 +418,7 @@ fun PairingScreen(
             onDismissRequest = { },
             title = { Text("Подключение") },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
                     Text(state.connectionProgress ?: "Подключение...")

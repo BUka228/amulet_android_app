@@ -10,6 +10,7 @@ import com.example.amulet.core.ble.scanner.BleScanner
 import com.example.amulet.core.ble.scanner.ScannedDevice
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -28,6 +29,7 @@ class DevicesBleDataSourceImpl @Inject constructor(
     override fun scanForDevices(
         timeoutMs: Long
     ): Flow<List<ScannedDevice>> {
+        Logger.d("scanForDevices: timeoutMs=${'$'}timeoutMs", tag = TAG)
         return bleScanner.scanForAmulets(timeoutMs)
     }
     
@@ -36,9 +38,12 @@ class DevicesBleDataSourceImpl @Inject constructor(
         autoReconnect: Boolean
     ): AppResult<Unit> {
         return try {
+            Logger.d("DevicesBleDataSourceImpl.connect: start deviceAddress=${'$'}deviceAddress autoReconnect=${'$'}autoReconnect", tag = TAG)
             bleManager.connect(deviceAddress, autoReconnect)
+            Logger.d("DevicesBleDataSourceImpl.connect: success deviceAddress=${'$'}deviceAddress", tag = TAG)
             Ok(Unit)
         } catch (e: Exception) {
+            Logger.e("DevicesBleDataSourceImpl.connect: exception for ${'$'}deviceAddress: ${'$'}e", tag = TAG)
             Err(mapBleException(e))
         }
     }
@@ -96,5 +101,9 @@ class DevicesBleDataSourceImpl @Inject constructor(
             
             else -> AppError.Unknown
         }
+    }
+    
+    companion object {
+        private const val TAG = "DevicesBleDataSource"
     }
 }

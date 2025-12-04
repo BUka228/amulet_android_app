@@ -2,6 +2,7 @@ package com.example.amulet.feature.devices.presentation.pairing
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.usecase.AddDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ConnectToDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.ScanForDevicesUseCase
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -93,67 +95,81 @@ class PairingViewModel @Inject constructor(
     private fun connectAndAddDevice(deviceName: String) {
         val device = _state.value.selectedDevice ?: return
         
+        Logger.d("connectAndAddDevice: start for ${'$'}{device.bleAddress}", tag = TAG)
         _state.update { it.copy(
             isConnecting = true,
             connectionProgress = "Подключение...",
             error = null
         ) }
         
+        connectionJob?.cancel()
         connectionJob = viewModelScope.launch {
-            // Шаг 1: Подключаемся по BLE
-            var connected = false
+            // Шаг 1: Подключаемся по BLE и сразу реагируем на Connected/Failed
             val hardwareVersion = 100 // Получим из DeviceStatus после подключения
+            Logger.d("connectAndAddDevice: launching connection for ${'$'}{device.bleAddress}", tag = TAG)
             
-            connectToDeviceUseCase(device.bleAddress)
-                .catch { error ->
-                    _state.update { it.copy(
-                        isConnecting = false,
-                        connectionProgress = null,
-                        error = com.example.amulet.shared.core.AppError.BleError.ConnectionFailed
-                    ) }
-                }
-                .collect { state ->
+            val connectionFlow = connectToDeviceUseCase(device.bleAddress)
+            val firstState = try {
+                connectionFlow.first { state ->
                     when (state) {
                         is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connecting -> {
+                            Logger.d("connectAndAddDevice: state=Connecting", tag = TAG)
                             _state.update { it.copy(connectionProgress = "Подключение...") }
+                            false
                         }
-                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected -> {
-                            connected = true
-                            _state.update { it.copy(connectionProgress = "Сохранение...") }
-                        }
-                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Failed -> {
+                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected -> true
+                        is com.example.amulet.shared.domain.devices.model.BleConnectionState.Failed -> true
+                        else -> false
+                    }
+                }
+            } catch (e: Throwable) {
+                Logger.e("connectAndAddDevice: exception during connection flow: ${'$'}e", tag = TAG)
+                _state.update { it.copy(
+                    isConnecting = false,
+                    connectionProgress = null,
+                    error = com.example.amulet.shared.core.AppError.BleError.ConnectionFailed
+                ) }
+                return@launch
+            }
+            
+            Logger.d("connectAndAddDevice: firstState=${'$'}firstState", tag = TAG)
+            when (firstState) {
+                is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected -> {
+                    // Шаг 2: Добавляем в БД сразу после успешного подключения
+                    _state.update { it.copy(connectionProgress = "Сохранение...") }
+                    Logger.d("connectAndAddDevice: adding device to DB", tag = TAG)
+                    addDeviceUseCase(
+                        bleAddress = device.bleAddress,
+                        name = deviceName.ifBlank { device.deviceName },
+                        hardwareVersion = hardwareVersion
+                    )
+                        .onSuccess { addedDevice ->
+                            Logger.d("connectAndAddDevice: device added successfully id=${'$'}{addedDevice.id.value}", tag = TAG)
                             _state.update { it.copy(
                                 isConnecting = false,
                                 connectionProgress = null,
-                                error = state.error
+                                addedDevice = addedDevice
+                            ) }
+                            _sideEffects.emit(PairingSideEffect.DeviceAdded(addedDevice))
+                        }
+                        .onFailure { error ->
+                            Logger.e("connectAndAddDevice: addDeviceUseCase failed: ${'$'}error", tag = TAG)
+                            _state.update { it.copy(
+                                isConnecting = false,
+                                connectionProgress = null,
+                                error = error
                             ) }
                         }
-                        else -> { /* Игнорируем другие состояния */ }
-                    }
                 }
-            
-            // Шаг 2: Добавляем в БД
-            if (connected) {
-                addDeviceUseCase(
-                    bleAddress = device.bleAddress,
-                    name = deviceName.ifBlank { device.deviceName },
-                    hardwareVersion = hardwareVersion
-                )
-                    .onSuccess { addedDevice ->
-                        _state.update { it.copy(
-                            isConnecting = false,
-                            connectionProgress = null,
-                            addedDevice = addedDevice
-                        ) }
-                        _sideEffects.emit(PairingSideEffect.DeviceAdded(addedDevice))
-                    }
-                    .onFailure { error ->
-                        _state.update { it.copy(
-                            isConnecting = false,
-                            connectionProgress = null,
-                            error = error
-                        ) }
-                    }
+                is com.example.amulet.shared.domain.devices.model.BleConnectionState.Failed -> {
+                    Logger.e("connectAndAddDevice: connection failed: ${'$'}{firstState.error}", tag = TAG)
+                    _state.update { it.copy(
+                        isConnecting = false,
+                        connectionProgress = null,
+                        error = firstState.error
+                    ) }
+                }
+                else -> { /* Игнорируем другие состояния */ }
             }
         }
     }
@@ -182,5 +198,9 @@ class PairingViewModel @Inject constructor(
         super.onCleared()
         stopScanning()
         connectionJob?.cancel()
+    }
+    
+    companion object {
+        private const val TAG = "PairingViewModel"
     }
 }

@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -98,12 +100,16 @@ class AmuletBleManagerImpl @Inject constructor(
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     
+    private val commandResultChannel = Channel<BleResult>(capacity = Channel.BUFFERED)
+    
     // Характеристики GATT
     private var txCharacteristic: BluetoothGattCharacteristic? = null
     private var rxCharacteristic: BluetoothGattCharacteristic? = null
     private var batteryCharacteristic: BluetoothGattCharacteristic? = null
     private var deviceInfoCharacteristic: BluetoothGattCharacteristic? = null
     private var deviceStatusCharacteristic: BluetoothGattCharacteristic? = null
+    private var otaCharacteristic: BluetoothGattCharacteristic? = null
+    private var animationCharacteristic: BluetoothGattCharacteristic? = null
     
     @SuppressLint("MissingPermission")
     override suspend fun connect(deviceAddress: String, autoReconnect: Boolean) {
@@ -119,18 +125,15 @@ class AmuletBleManagerImpl @Inject constructor(
         try {
             val device = bluetoothAdapter.getRemoteDevice(deviceAddress)
             
-            suspendCancellableCoroutine<Unit> { continuation ->
-                bluetoothGatt = device.connectGatt(
-                    context,
-                    autoReconnect,
-                    createGattCallback(continuation),
-                    BluetoothDevice.TRANSPORT_LE
-                )
-                
-                continuation.invokeOnCancellation {
-                    bluetoothGatt?.disconnect()
-                }
-            }
+            // Закрываем предыдущий GATT, если был
+            bluetoothGatt?.close()
+            
+            bluetoothGatt = device.connectGatt(
+                context,
+                autoReconnect,
+                createGattCallback(),
+                BluetoothDevice.TRANSPORT_LE
+            )
         } catch (e: Exception) {
             _connectionState.value = ConnectionState.Failed(e)
             throw e
@@ -156,25 +159,35 @@ class AmuletBleManagerImpl @Inject constructor(
     @SuppressLint("MissingPermission")
     private suspend fun sendCommandInternal(command: AmuletCommand): BleResult {
         val gatt = bluetoothGatt ?: throw IllegalStateException("Not connected")
-        val characteristic = txCharacteristic ?: throw IllegalStateException("TX characteristic not found")
-        
         val commandString = command.toCommandString()
+        
+        val characteristic = when {
+            commandString.startsWith("START_OTA") ||
+                commandString.startsWith("OTA_CHUNK") ||
+                commandString.startsWith("OTA_COMMIT") -> otaCharacteristic
+            commandString.startsWith("BEGIN_PLAN") ||
+                commandString.startsWith("ADD_COMMAND") ||
+                commandString.startsWith("COMMIT_PLAN") ||
+                commandString.startsWith("ROLLBACK_PLAN") -> animationCharacteristic
+            else -> txCharacteristic
+        } ?: throw IllegalStateException("Required GATT characteristic not found for command: $commandString")
+        
         val commandBytes = commandString.toByteArray(Charsets.UTF_8)
         
-        return withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
-            suspendCancellableCoroutine { continuation ->
-                characteristic.value = commandBytes
-                characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                
-                val success = gatt.writeCharacteristic(characteristic)
-                
-                if (success) {
-                    // Ждем ответа через callback
-                    continuation.resume(BleResult.Success)
-                } else {
-                    continuation.resume(BleResult.Error("WRITE_FAILED", "Failed to write command"))
-                }
+        characteristic.value = commandBytes
+        characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        
+        val writeSuccess = gatt.writeCharacteristic(characteristic)
+        if (!writeSuccess) {
+            return BleResult.Error("WRITE_FAILED", "Failed to write command")
+        }
+        
+        return try {
+            withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
+                commandResultChannel.receive()
             }
+        } catch (e: Exception) {
+            BleResult.Error("TIMEOUT", e.message ?: "Timeout waiting for command response")
         }
     }
     
@@ -278,8 +291,30 @@ class AmuletBleManagerImpl @Inject constructor(
     override suspend fun getProtocolVersion(): String? {
         return try {
             sendCommandInternal(AmuletCommand.GetProtocolVersion)
-            // Версия возвращается через уведомление
-            null // TODO: Ожидать ответ через notifications flow
+            
+            var version: String? = null
+            
+            withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
+                _notifications.first { message ->
+                    when {
+                        message.startsWith("NOTIFY:PROTOCOL_VERSION:") -> {
+                            version = message.substringAfter("NOTIFY:PROTOCOL_VERSION:")
+                            true
+                        }
+                        message.startsWith("OK:GET_PROTOCOL_VERSION") -> {
+                            version = message.substringAfter("OK:GET_PROTOCOL_VERSION:")
+                            true
+                        }
+                        message.startsWith("ERROR:GET_PROTOCOL_VERSION") -> {
+                            version = null
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            }
+            
+            version
         } catch (e: Exception) {
             null
         }
@@ -330,11 +365,14 @@ class AmuletBleManagerImpl @Inject constructor(
                 val amuletService = gatt.getService(GattConstants.AMULET_DEVICE_SERVICE_UUID)
                 deviceInfoCharacteristic = amuletService?.getCharacteristic(GattConstants.AMULET_DEVICE_INFO_CHARACTERISTIC_UUID)
                 deviceStatusCharacteristic = amuletService?.getCharacteristic(GattConstants.AMULET_DEVICE_STATUS_CHARACTERISTIC_UUID)
+                otaCharacteristic = amuletService?.getCharacteristic(GattConstants.AMULET_OTA_CHARACTERISTIC_UUID)
+                animationCharacteristic = amuletService?.getCharacteristic(GattConstants.AMULET_ANIMATION_CHARACTERISTIC_UUID)
                 
                 // Включить уведомления
                 rxCharacteristic?.let { enableNotifications(gatt, it) }
                 batteryCharacteristic?.let { enableNotifications(gatt, it) }
                 deviceStatusCharacteristic?.let { enableNotifications(gatt, it) }
+                animationCharacteristic?.let { enableNotifications(gatt, it) }
                 
                 _connectionState.value = ConnectionState.ServicesDiscovered
                 flowControlManager.reset()
@@ -366,6 +404,10 @@ class AmuletBleManagerImpl @Inject constructor(
                     val statusData = characteristic.value.toString(Charsets.UTF_8)
                     parseDeviceStatus(statusData)
                 }
+                GattConstants.AMULET_ANIMATION_CHARACTERISTIC_UUID -> {
+                    val message = characteristic.value.toString(Charsets.UTF_8)
+                    handleNotification(message)
+                }
             }
         }
         
@@ -384,6 +426,15 @@ class AmuletBleManagerImpl @Inject constructor(
             // Обработка Flow Control состояний
             if (message.startsWith("STATE:")) {
                 flowControlManager.handleDeviceState(message)
+            }
+            
+            if (message.startsWith("OK:")) {
+                commandResultChannel.trySend(BleResult.Success)
+            } else if (message.startsWith("ERROR:")) {
+                val parts = message.split(":", limit = 4)
+                val code = parts.getOrNull(2) ?: "UNKNOWN_ERROR"
+                val errorMessage = parts.getOrNull(3) ?: "Device reported error"
+                commandResultChannel.trySend(BleResult.Error(code, errorMessage))
             }
             
             // Отправка уведомления в общий поток

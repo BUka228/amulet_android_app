@@ -7,6 +7,7 @@ import com.example.amulet.data.devices.mapper.toDevice
 import com.example.amulet.data.devices.mapper.toDeviceEntity
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.core.auth.UserSessionProvider
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -144,17 +145,18 @@ class DevicesRepositoryImpl @Inject constructor(
     
     override fun connectToDevice(bleAddress: String): Flow<BleConnectionState> {
         return kotlinx.coroutines.flow.flow {
-            // Запускаем подключение
-            bleDataSource.connect(bleAddress)
-                .onFailure { error ->
-                    emit(BleConnectionState.Failed(error))
-                    return@flow
-                }
+            Logger.d("connectToDevice: start for ${'$'}bleAddress", tag = TAG)
+            emit(BleConnectionState.Connecting)
             
-            // Наблюдаем за состоянием подключения
-            bleDataSource.observeConnectionState().collect { state ->
-                emit(bleMapper.mapConnectionState(state))
+            val result = bleDataSource.connect(bleAddress)
+            val error = result.component2()
+            if (error != null) {
+                Logger.e("connectToDevice: connect failed for ${'$'}bleAddress with error=${'$'}error", tag = TAG)
+                emit(BleConnectionState.Failed(error))
+                return@flow
             }
+            Logger.d("connectToDevice: connect succeeded for ${'$'}bleAddress", tag = TAG)
+            emit(BleConnectionState.Connected)
         }
     }
     
@@ -185,5 +187,9 @@ class DevicesRepositoryImpl @Inject constructor(
             hardwareVersion = hardwareVersion
         )
         return bleDataSource.uploadAnimation(blePlan).map { it.percent }
+    }
+    
+    companion object {
+        private const val TAG = "DevicesRepository"
     }
 }
