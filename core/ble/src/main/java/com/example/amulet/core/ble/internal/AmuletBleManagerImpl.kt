@@ -208,10 +208,13 @@ class AmuletBleManagerImpl @Inject constructor(
         
         val commandBytes = commandString.toByteArray(Charsets.UTF_8)
         
-        // Подбираем тип записи: для Nordic UART и похожих характеристик обычно используется WRITE_NO_RESPONSE
+        // Для настроечных команд (яркость/вибро) надёжнее всегда писать с подтверждением
+        val forceWriteWithResponse = commandName == "SET_BRIGHTNESS" || commandName == "SET_VIB_STRENGTH"
+        
+        // Подбираем тип записи: по умолчанию WRITE_NO_RESPONSE, но для forceWriteWithResponse — WRITE_DEFAULT
         val supportsWriteNoResponse =
             (characteristic.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
-        val writeType = if (supportsWriteNoResponse) {
+        val writeType = if (!forceWriteWithResponse && supportsWriteNoResponse) {
             BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE
         } else {
             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
@@ -647,7 +650,13 @@ class AmuletBleManagerImpl @Inject constructor(
             if (message.startsWith("OK:")) {
                 val okCommandName = message.removePrefix("OK:").substringBefore(":")
                 val expected = pendingCommandName
-                if (expected == null || expected == okCommandName) {
+                if (expected == null) {
+                    // Никто не ждёт результата — это спонтанный OK (например, от PLAY_LAST/CLEAR_ALL), не трогаем канал
+                    Logger.d(
+                        "handleNotification: OK with no pending command, commandName=$okCommandName message='$message'",
+                        tag = TAG
+                    )
+                } else if (expected == okCommandName) {
                     Logger.d(
                         "handleNotification: OK matched for commandName=$okCommandName expected=$expected message='$message'",
                         tag = TAG
