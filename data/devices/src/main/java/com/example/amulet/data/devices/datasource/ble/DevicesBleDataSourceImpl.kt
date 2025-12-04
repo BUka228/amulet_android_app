@@ -85,6 +85,26 @@ class DevicesBleDataSourceImpl @Inject constructor(
     /**
      * Маппинг BLE исключений в типизированные ошибки AppError.
      */
+    override suspend fun sendCommand(command: AmuletCommand): AppResult<Unit> {
+        return try {
+            Logger.d("DevicesBleDataSourceImpl.sendCommand: command=$command", tag = TAG)
+            when (val result = bleManager.sendCommand(command)) {
+                is BleResult.Success -> Ok(Unit)
+                is BleResult.Error -> {
+                    val error: AppError = if (result.code == "TIMEOUT") {
+                        AppError.BleError.CommandTimeout(result.message)
+                    } else {
+                        AppError.BleError.WriteFailed
+                    }
+                    Err(error)
+                }
+            }
+        } catch (e: Exception) {
+            Logger.e("DevicesBleDataSourceImpl.sendCommand: exception: $e", tag = TAG)
+            Err(mapBleException(e))
+        }
+    }
+
     private fun mapBleException(e: Exception): AppError {
         return when {
             e.message?.contains("not found", ignoreCase = true) == true ->

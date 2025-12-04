@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.feature.devices.R
 import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceStatus
@@ -23,7 +24,7 @@ fun DeviceCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    AmuletCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)

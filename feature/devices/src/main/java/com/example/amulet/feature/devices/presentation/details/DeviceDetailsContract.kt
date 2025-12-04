@@ -14,7 +14,8 @@ data class DeviceDetailsState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val isDeleting: Boolean = false,
-    val error: AppError? = null
+    val error: AppError? = null,
+    val isDeviceOnline: Boolean = false,
 )
 
 sealed interface DeviceDetailsEvent {
@@ -24,6 +25,8 @@ sealed interface DeviceDetailsEvent {
     data object UnclaimDevice : DeviceDetailsEvent
     data object NavigateToOta : DeviceDetailsEvent
     data object DismissError : DeviceDetailsEvent
+    data class SaveSettings(val name: String) : DeviceDetailsEvent
+    data object Reconnect : DeviceDetailsEvent
 }
 
 sealed interface DeviceDetailsSideEffect {

@@ -29,6 +29,11 @@ interface DevicesRepository {
     suspend fun getDevice(deviceId: DeviceId): AppResult<Device>
     
     /**
+     * Получить последнее подключенное устройство текущего пользователя.
+     */
+    suspend fun getLastConnectedDevice(): Device?
+    
+    /**
      * Добавить новое устройство в локальную БД.
      * 
      * @param bleAddress BLE MAC адрес устройства
@@ -57,6 +62,22 @@ interface DevicesRepository {
         haptics: Double? = null,
         gestures: Map<String, String>? = null
     ): AppResult<Device>
+    
+    /**
+     * Применить яркость устройства на физическом амулете через BLE.
+     */
+    suspend fun applyBrightnessToDevice(
+        deviceId: DeviceId,
+        brightness: Double
+    ): AppResult<Unit>
+    
+    /**
+     * Применить силу вибрации устройства на физическом амулете через BLE.
+     */
+    suspend fun applyHapticsToDevice(
+        deviceId: DeviceId,
+        haptics: Double
+    ): AppResult<Unit>
     
     // ========== BLE сканирование и подключение ==========
     

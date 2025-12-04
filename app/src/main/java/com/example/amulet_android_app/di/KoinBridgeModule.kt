@@ -290,6 +290,15 @@ object KoinBridgeModule {
     @Provides
     fun provideUpdateDeviceSettingsUseCase(koin: Koin): UpdateDeviceSettingsUseCase = koin.get()
 
+    @Provides
+    fun provideApplyDeviceBrightnessUseCase(koin: Koin): ApplyDeviceBrightnessUseCase = koin.get()
+
+    @Provides
+    fun provideApplyDeviceHapticsUseCase(koin: Koin): ApplyDeviceHapticsUseCase = koin.get()
+
+    @Provides
+    fun provideAutoConnectLastDeviceUseCase(koin: Koin): AutoConnectLastDeviceUseCase = koin.get()
+
     // OTA UseCases
     @Provides
     fun provideCheckFirmwareUpdateUseCase(koin: Koin): CheckFirmwareUpdateUseCase = koin.get()

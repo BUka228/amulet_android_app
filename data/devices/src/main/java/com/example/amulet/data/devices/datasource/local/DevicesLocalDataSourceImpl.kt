@@ -24,6 +24,10 @@ class DevicesLocalDataSourceImpl @Inject constructor(
         return deviceDao.getByBleAddress(bleAddress, ownerId)
     }
     
+    override suspend fun getLastConnectedDeviceByOwner(ownerId: String): DeviceEntity? {
+        return deviceDao.getLastConnectedForOwner(ownerId)
+    }
+    
     override suspend fun upsertDevice(device: DeviceEntity) {
         deviceDao.upsert(device)
     }

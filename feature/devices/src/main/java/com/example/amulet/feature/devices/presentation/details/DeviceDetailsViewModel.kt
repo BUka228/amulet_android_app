@@ -8,6 +8,10 @@ import com.example.amulet.shared.domain.devices.usecase.CheckFirmwareUpdateUseCa
 import com.example.amulet.shared.domain.devices.usecase.GetDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.RemoveDeviceUseCase
 import com.example.amulet.shared.domain.devices.usecase.UpdateDeviceSettingsUseCase
+import com.example.amulet.shared.domain.devices.usecase.ApplyDeviceBrightnessUseCase
+import com.example.amulet.shared.domain.devices.usecase.ApplyDeviceHapticsUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
+import com.example.amulet.shared.domain.devices.usecase.ConnectToDeviceUseCase
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +25,11 @@ class DeviceDetailsViewModel @Inject constructor(
     private val getDeviceUseCase: GetDeviceUseCase,
     private val updateDeviceSettingsUseCase: UpdateDeviceSettingsUseCase,
     private val removeDeviceUseCase: RemoveDeviceUseCase,
-    private val checkFirmwareUpdateUseCase: CheckFirmwareUpdateUseCase
+    private val checkFirmwareUpdateUseCase: CheckFirmwareUpdateUseCase,
+    private val applyDeviceBrightnessUseCase: ApplyDeviceBrightnessUseCase,
+    private val applyDeviceHapticsUseCase: ApplyDeviceHapticsUseCase,
+    private val connectToDeviceUseCase: ConnectToDeviceUseCase,
+    private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase,
 ) : ViewModel() {
 
     private val deviceId: String = checkNotNull(savedStateHandle["deviceId"])
@@ -35,6 +43,21 @@ class DeviceDetailsViewModel @Inject constructor(
     init {
         loadDevice()
         checkFirmwareUpdate()
+        observeDeviceSession()
+    }
+
+    private fun observeDeviceSession() {
+        viewModelScope.launch {
+            observeDeviceSessionStatusUseCase().collect { sessionStatus ->
+                val isOnline = sessionStatus.connection is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected ||
+                    (sessionStatus.liveStatus?.isOnline == true)
+                _uiState.update { state ->
+                    state.copy(
+                        isDeviceOnline = isOnline
+                    )
+                }
+            }
+        }
     }
 
     fun handleEvent(event: DeviceDetailsEvent) {
@@ -51,6 +74,16 @@ class DeviceDetailsViewModel @Inject constructor(
             is DeviceDetailsEvent.DismissError -> {
                 _uiState.update { it.copy(error = null) }
             }
+            is DeviceDetailsEvent.SaveSettings -> saveSettings(event.name)
+            is DeviceDetailsEvent.Reconnect -> reconnect()
+        }
+    }
+
+    private fun reconnect() {
+        val currentDevice = _uiState.value.device ?: return
+        viewModelScope.launch {
+            // Просто триггерим use case; состояние подключения UI читает через ObserveDeviceSessionStatusUseCase
+            connectToDeviceUseCase(currentDevice.bleAddress).first()
         }
     }
 
@@ -145,6 +178,47 @@ class DeviceDetailsViewModel @Inject constructor(
                     _uiState.update { it.copy(device = updatedDevice) }
                 }
                 .onFailure { /* Игнорируем ошибку для плавности UI */ }
+        }
+    }
+
+    private fun saveSettings(name: String) {
+        val currentDevice = _uiState.value.device ?: return
+        val brightness = currentDevice.settings.brightness
+        val haptics = currentDevice.settings.haptics
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, error = null) }
+            // Сначала сохраняем все настройки в БД
+            updateDeviceSettingsUseCase(
+                deviceId = currentDevice.id,
+                name = name,
+                brightness = brightness,
+                haptics = haptics
+            )
+                .onSuccess { updatedDevice ->
+                    _uiState.update { it.copy(device = updatedDevice) }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isSaving = false,
+                            error = error
+                        )
+                    }
+                    return@launch
+                }
+        
+            // Затем отправляем яркость и вибрацию на устройство
+            val applyBrightnessResult = applyDeviceBrightnessUseCase(currentDevice.id, brightness)
+            val applyHapticsResult = applyDeviceHapticsUseCase(currentDevice.id, haptics)
+        
+            val applyError = applyBrightnessResult.component2() ?: applyHapticsResult.component2()
+            _uiState.update {
+                it.copy(
+                    isSaving = false,
+                    error = applyError
+                )
+            }
         }
     }
 

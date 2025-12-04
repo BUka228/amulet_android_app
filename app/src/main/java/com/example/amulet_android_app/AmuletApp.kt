@@ -6,6 +6,7 @@ import com.example.amulet.core.notifications.OneSignalUserBindingManager
 import com.example.amulet.core.notifications.PushTokenSyncManager
 import com.example.amulet.core.telemetry.logging.TelemetryInitializer
 import com.example.amulet.shared.domain.initialization.DataInitializer
+import com.example.amulet.shared.domain.devices.usecase.AutoConnectLastDeviceUseCase
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,9 @@ class AmuletApp : Application() {
     @Inject
     lateinit var oneSignalUserBindingManager: OneSignalUserBindingManager
 
+    @Inject
+    lateinit var autoConnectLastDeviceUseCase: AutoConnectLastDeviceUseCase
+
     override fun onCreate() {
         super.onCreate()
 
@@ -42,6 +46,7 @@ class AmuletApp : Application() {
         // Запускаем инициализацию данных при старте приложения
         CoroutineScope(Dispatchers.IO).launch {
             dataInitializer.initializeIfNeeded()
+            autoConnectLastDeviceUseCase()
         }
     }
 }

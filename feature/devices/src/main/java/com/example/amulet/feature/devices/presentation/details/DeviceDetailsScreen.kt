@@ -5,9 +5,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Abc
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.SideEffect
@@ -17,6 +19,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.components.card.AmuletCard
+import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.components.DeviceStatusChip
@@ -60,8 +64,9 @@ fun DeviceDetailsScreen(
 ) {
     val scaffoldState = LocalScaffoldState.current
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var deviceName by remember(state.device?.id) { mutableStateOf(state.device?.name ?: "") }
 
-    // Устанавливаем только topBar, FAB обнуляем
+    // Устанавливаем topBar и FAB
     SideEffect {
         scaffoldState.updateConfig {
             copy(
@@ -74,13 +79,27 @@ fun DeviceDetailsScreen(
                             }
                         },
                         actions = {
+                            IconButton(onClick = { onEvent(DeviceDetailsEvent.Reconnect) }) {
+                                Icon(Icons.Default.Refresh, contentDescription = null)
+                            }
                             IconButton(onClick = { showDeleteDialog = true }) {
                                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.device_details_delete_button))
                             }
                         }
                     )
                 },
-                floatingActionButton = {} // Обнуляем FAB
+                floatingActionButton = {
+                    if (!state.isLoading && state.device != null) {
+                        ExtendedFloatingActionButton(
+                            onClick = {
+                                // Используем текущее имя из текстового поля
+                                onEvent(DeviceDetailsEvent.SaveSettings(deviceName))
+                            }
+                        ) {
+                            Text(stringResource(id = R.string.device_details_save_button))
+                        }
+                    }
+                }
             )
         }
     }
@@ -98,11 +117,11 @@ fun DeviceDetailsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                     // Основная информация
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    AmuletCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -111,13 +130,6 @@ fun DeviceDetailsScreen(
                                 text = stringResource(R.string.device_details_info_title),
                                 style = MaterialTheme.typography.titleMedium
                             )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(stringResource(R.string.device_details_serial_label))
-                            }
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -133,18 +145,20 @@ fun DeviceDetailsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(stringResource(R.string.device_details_status_label))
-                                DeviceStatusChip(status = device.status)
+                                val statusForChip = if (state.isDeviceOnline) {
+                                    com.example.amulet.shared.domain.devices.model.DeviceStatus.ONLINE
+                                } else {
+                                    device.status
+                                }
+                                DeviceStatusChip(status = statusForChip)
                             }
                         }
                     }
 
                     // OTA обновление
                     state.firmwareUpdate?.takeIf { it.updateAvailable }?.let { update ->
-                        Card(
+                        AmuletCard(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -176,7 +190,7 @@ fun DeviceDetailsScreen(
                     }
 
                     // Настройки
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    AmuletCard(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -187,22 +201,14 @@ fun DeviceDetailsScreen(
                             )
 
                             // Имя устройства
-                            var deviceName by remember(device.name) { mutableStateOf(device.name ?: "") }
-                            OutlinedTextField(
+                            AmuletTextField(
                                 value = deviceName,
                                 onValueChange = { deviceName = it },
-                                label = { Text(stringResource(R.string.device_details_name_label)) },
+                                label =stringResource(R.string.device_details_name_label),
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                trailingIcon = {
-                                    if (deviceName != device.name) {
-                                        TextButton(
-                                            onClick = { onEvent(DeviceDetailsEvent.UpdateName(deviceName)) }
-                                        ) {
-                                            Text(stringResource(R.string.device_details_save_button))
-                                        }
-                                    }
-                                }
+                                trailingIcon = Icons.Default.Abc
+
                             )
 
                             // Яркость

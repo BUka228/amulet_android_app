@@ -113,6 +113,9 @@ private val sharedModule = module {
     factory { ObserveConnectedDeviceStatusUseCase(get()) }
     factory { ObserveDeviceSessionStatusUseCase(get(), get()) }
     factory { UpdateDeviceSettingsUseCase(get()) }
+    factory { ApplyDeviceBrightnessUseCase(get()) }
+    factory { ApplyDeviceHapticsUseCase(get()) }
+    factory { AutoConnectLastDeviceUseCase(get()) }
 
     // OTA UseCases
     factory { CheckFirmwareUpdateUseCase(get()) }

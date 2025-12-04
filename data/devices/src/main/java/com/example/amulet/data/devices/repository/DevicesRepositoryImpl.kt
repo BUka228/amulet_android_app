@@ -19,11 +19,13 @@ import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.DeviceSettings
 import com.example.amulet.shared.domain.devices.model.ScannedAmulet
 import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
+import com.example.amulet.shared.domain.devices.model.AmuletCommand
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.example.amulet.core.ble.model.AnimationPlan
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
+import kotlin.math.roundToInt
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -65,6 +67,14 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun getLastConnectedDevice(): Device? {
+        return try {
+            localDataSource.getLastConnectedDeviceByOwner(currentUserId)?.toDevice()
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
     override suspend fun addDevice(
         bleAddress: String,
         name: String,
@@ -87,7 +97,7 @@ class DevicesRepositoryImpl @Inject constructor(
                 batteryLevel = null,
                 status = com.example.amulet.shared.domain.devices.model.DeviceStatus.OFFLINE,
                 addedAt = System.currentTimeMillis(),
-                lastConnectedAt = null,
+                lastConnectedAt = System.currentTimeMillis(),
                 settings = DeviceSettings()
             )
             
@@ -137,6 +147,42 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun applyBrightnessToDevice(
+        deviceId: DeviceId,
+        brightness: Double
+    ): AppResult<Unit> {
+        return try {
+            val entity = localDataSource.getDeviceById(deviceId.value)
+                ?: return Err(AppError.NotFound)
+            val level = (brightness * 255.0).roundToInt().coerceIn(0, 255)
+            val command = AmuletCommand.Custom(
+                command = "SET_BRIGHTNESS",
+                parameters = listOf(level.toString())
+            )
+            bleDataSource.sendCommand(command)
+        } catch (e: Exception) {
+            Err(AppError.Unknown)
+        }
+    }
+    
+    override suspend fun applyHapticsToDevice(
+        deviceId: DeviceId,
+        haptics: Double
+    ): AppResult<Unit> {
+        return try {
+            val entity = localDataSource.getDeviceById(deviceId.value)
+                ?: return Err(AppError.NotFound)
+            val strength = (haptics * 255.0).roundToInt().coerceIn(0, 255)
+            val command = AmuletCommand.Custom(
+                command = "SET_VIB_STRENGTH",
+                parameters = listOf(strength.toString())
+            )
+            bleDataSource.sendCommand(command)
+        } catch (e: Exception) {
+            Err(AppError.Unknown)
+        }
+    }
+    
     override fun scanForDevices(timeoutMs: Long): Flow<List<ScannedAmulet>> {
         return bleDataSource.scanForDevices(timeoutMs).map { scannedDevices ->
             scannedDevices.map { bleMapper.mapScannedDevice(it) }
@@ -154,6 +200,18 @@ class DevicesRepositoryImpl @Inject constructor(
                 Logger.e("connectToDevice: connect failed for ${'$'}bleAddress with error=${'$'}error", tag = TAG)
                 emit(BleConnectionState.Failed(error))
                 return@flow
+            }
+            try {
+                val entity = localDataSource.getDeviceByBleAddress(bleAddress, currentUserId)
+                if (entity != null) {
+                    val updated = entity.copy(
+                        status = com.example.amulet.core.database.entity.DeviceStatus.ONLINE,
+                        lastConnectedAt = System.currentTimeMillis(),
+                    )
+                    localDataSource.upsertDevice(updated)
+                }
+            } catch (e: Exception) {
+                Logger.e("connectToDevice: failed to update lastConnectedAt for ${'$'}bleAddress: ${'$'}e", tag = TAG)
             }
             Logger.d("connectToDevice: connect succeeded for ${'$'}bleAddress", tag = TAG)
             emit(BleConnectionState.Connected)

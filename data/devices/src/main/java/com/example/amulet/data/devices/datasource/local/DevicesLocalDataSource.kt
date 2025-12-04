@@ -25,6 +25,11 @@ interface DevicesLocalDataSource {
     suspend fun getDeviceByBleAddress(bleAddress: String, ownerId: String): DeviceEntity?
     
     /**
+     * Получить последнее подключенное устройство владельца.
+     */
+    suspend fun getLastConnectedDeviceByOwner(ownerId: String): DeviceEntity?
+    
+    /**
      * Сохранить или обновить устройство.
      */
     suspend fun upsertDevice(device: DeviceEntity)

@@ -19,6 +19,9 @@ interface DeviceDao {
     @Query("SELECT * FROM devices WHERE bleAddress = :bleAddress AND ownerId = :ownerId LIMIT 1")
     suspend fun getByBleAddress(bleAddress: String, ownerId: String): DeviceEntity?
 
+    @Query("SELECT * FROM devices WHERE ownerId = :ownerId AND lastConnectedAt IS NOT NULL ORDER BY lastConnectedAt DESC LIMIT 1")
+    suspend fun getLastConnectedForOwner(ownerId: String): DeviceEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(device: DeviceEntity)
 
