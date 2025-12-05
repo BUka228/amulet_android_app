@@ -124,7 +124,7 @@ fun DashboardScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = spacing.xs, vertical = spacing.xs),
+            .padding(horizontal = spacing.xs),
         verticalArrangement = Arrangement.spacedBy(spacing.xs)
     ) {
         item {
@@ -143,6 +143,7 @@ fun DashboardScreen(
             DevicesSection(
                 devices = uiState.devices,
                 connectedDevice = uiState.connectedDevice,
+                connectedBatteryLevel = uiState.connectedBatteryLevel,
                 onDeviceClick = { deviceId -> onEvent(DashboardUiEvent.DeviceClicked(deviceId)) },
                 onNavigateToPairing = { onEvent(DashboardUiEvent.NavigateToPairing) },
                 onNavigateToDevicesList = { onEvent(DashboardUiEvent.NavigateToDevicesList) }

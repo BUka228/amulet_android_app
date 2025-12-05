@@ -173,4 +173,33 @@
     <string name="common_cancel">Отмена</string>
     <string name="common_ok">ОК</string>
     <string name="common_back">Назад</string>
+
+    <!-- Pairing scanning & BLE permissions (local pairing screen) -->
+    <string name="pairing_add_device_title">Добавить устройство</string>
+    <string name="pairing_back">Назад</string>
+    <string name="pairing_stop_scanning">Остановить сканирование</string>
+    <string name="pairing_start_scanning">Начать сканирование</string>
+    <string name="pairing_nfc_hint_card">Приложите устройство к телефону для быстрого подключения через NFC</string>
+    <string name="pairing_found_count">Найдено: %d</string>
+    <string name="pairing_found_devices_title">Найденные устройства</string>
+    <string name="pairing_error_dismiss">Закрыть</string>
+    <string name="pairing_device_name_dialog_title">Имя устройства</string>
+    <string name="pairing_device_name_dialog_message">Введите имя для устройства %1$s</string>
+    <string name="pairing_device_name_label">Имя</string>
+    <string name="pairing_device_add_button">Добавить</string>
+    <string name="pairing_cancel">Отмена</string>
+    <string name="pairing_connecting_title">Подключение</string>
+    <string name="pairing_connecting_default_message">Подключение…</string>
+    <string name="pairing_signal_excellent">Отлично</string>
+    <string name="pairing_signal_good">Хорошо</string>
+    <string name="pairing_signal_fair">Средне</string>
+    <string name="pairing_signal_weak">Слабо</string>
+    <string name="pairing_search_title">Поиск устройств</string>
+    <string name="pairing_search_hint">Убедитесь, что устройство Amulet включено и находится рядом</string>
+    <string name="pairing_no_devices_title">Устройства не найдены</string>
+    <string name="pairing_no_devices_hint">Нажмите на иконку обновления в верхнем правом углу для повторного сканирования</string>
+    <string name="pairing_ble_permissions_title">Требуются разрешения Bluetooth</string>
+    <string name="pairing_ble_permissions_rationale">Для поиска и подключения к устройству Amulet необходим доступ к Bluetooth</string>
+    <string name="pairing_ble_permissions_message">Приложению нужен доступ к Bluetooth для поиска ближайших устройств Amulet</string>
+    <string name="pairing_ble_permissions_button">Предоставить доступ</string>
 </resources>

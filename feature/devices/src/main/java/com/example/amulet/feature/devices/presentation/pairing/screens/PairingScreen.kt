@@ -20,12 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
+import com.example.amulet.feature.devices.R
 import com.example.amulet.feature.devices.presentation.pairing.PairingEvent
 import com.example.amulet.feature.devices.presentation.pairing.PairingSideEffect
 import com.example.amulet.feature.devices.presentation.pairing.PairingViewModel
@@ -95,10 +97,13 @@ fun PairingScreen(
             copy(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Добавить устройство") },
+                        title = { Text(stringResource(R.string.pairing_add_device_title)) },
                         navigationIcon = {
                             IconButton(onClick = { viewModel.onEvent(PairingEvent.NavigateBack) }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.common_back)
+                                )
                             }
                         },
                         actions = {
@@ -126,13 +131,13 @@ fun PairingScreen(
                                     )
                                     Icon(
                                         Icons.Default.BluetoothSearching,
-                                        contentDescription = "Остановить сканирование",
+                                        contentDescription = stringResource(R.string.pairing_stop_scanning),
                                         modifier = Modifier.rotate(rotation)
                                     )
                                 } else {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
-                                        contentDescription = "Начать сканирование"
+                                        contentDescription = stringResource(R.string.pairing_start_scanning)
                                     )
                                 }
                             }
@@ -205,7 +210,7 @@ fun PairingScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "Приложите устройство к телефону для быстрого подключения через NFC",
+                        text = stringResource(R.string.pairing_nfc_hint_card),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -250,7 +255,7 @@ fun PairingScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "Найдено: ${state.foundDevices.size}",
+                        text = stringResource(R.string.pairing_found_count, state.foundDevices.size),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -267,7 +272,7 @@ fun PairingScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Найденные устройства",
+                text = stringResource(R.string.pairing_found_devices_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -363,13 +368,13 @@ fun PairingScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            error.toString(),
+                            text = error.toString(),
                             modifier = Modifier.weight(1f),
                             color = MaterialTheme.colorScheme.onErrorContainer,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(onClick = { viewModel.onEvent(PairingEvent.DismissError) }) {
-                            Text("Закрыть")
+                            Text(stringResource(R.string.pairing_error_dismiss))
                         }
                     }
                 }
@@ -381,15 +386,20 @@ fun PairingScreen(
     if (showNameDialog && state.selectedDevice != null) {
         AlertDialog(
             onDismissRequest = { showNameDialog = false },
-            title = { Text("Имя устройства") },
+            title = { Text(stringResource(R.string.pairing_device_name_dialog_title)) },
             text = {
                 Column {
-                    Text("Введите имя для устройства ${state.selectedDevice?.deviceName ?: "Amulet"}")
+                    Text(
+                        text = stringResource(
+                            R.string.pairing_device_name_dialog_message,
+                            state.selectedDevice?.deviceName ?: stringResource(R.string.device_details_default_name)
+                        )
+                    )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = deviceName,
                         onValueChange = { deviceName = it },
-                        label = { Text("Имя") },
+                        label = { Text(stringResource(R.string.pairing_device_name_label)) },
                         singleLine = true
                     )
                 }
@@ -401,12 +411,12 @@ fun PairingScreen(
                         showNameDialog = false
                     }
                 ) {
-                    Text("Добавить")
+                    Text(stringResource(R.string.pairing_device_add_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showNameDialog = false }) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -416,17 +426,17 @@ fun PairingScreen(
     if (state.isConnecting) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("Подключение") },
+            title = { Text(stringResource(R.string.pairing_connecting_title)) },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
-                    Text(state.connectionProgress ?: "Подключение...")
+                    Text(state.connectionProgress ?: stringResource(R.string.pairing_connecting_default_message))
                 }
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.onEvent(PairingEvent.CancelConnection) }) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -487,11 +497,11 @@ private fun SignalIndicator(strength: SignalStrength) {
     }
     
     Text(
-        when (strength) {
-            SignalStrength.EXCELLENT -> "Отлично"
-            SignalStrength.GOOD -> "Хорошо"
-            SignalStrength.FAIR -> "Средне"
-            SignalStrength.WEAK -> "Слабо"
+        text = when (strength) {
+            SignalStrength.EXCELLENT -> stringResource(R.string.pairing_signal_excellent)
+            SignalStrength.GOOD -> stringResource(R.string.pairing_signal_good)
+            SignalStrength.FAIR -> stringResource(R.string.pairing_signal_fair)
+            SignalStrength.WEAK -> stringResource(R.string.pairing_signal_weak)
         },
         style = MaterialTheme.typography.bodySmall,
         color = color
@@ -517,13 +527,13 @@ private fun EmptyDevicesState(isScanning: Boolean) {
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                "Поиск устройств",
+                text = stringResource(R.string.pairing_search_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Убедитесь, что устройство Amulet включено и находится рядом",
+                text = stringResource(R.string.pairing_search_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -538,13 +548,13 @@ private fun EmptyDevicesState(isScanning: Boolean) {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "Устройства не найдены",
+                text = stringResource(R.string.pairing_no_devices_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Нажмите на иконку обновления в верхнем правом углу для повторного сканирования",
+                text = stringResource(R.string.pairing_no_devices_hint),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -576,17 +586,17 @@ private fun PermissionsRationaleCard(
         )
         
         Text(
-            "Требуются разрешения Bluetooth",
+            text = stringResource(R.string.pairing_ble_permissions_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         
         Text(
-            if (shouldShowRationale) {
-                "Для поиска и подключения к устройству Amulet необходим доступ к Bluetooth"
+            text = if (shouldShowRationale) {
+                stringResource(R.string.pairing_ble_permissions_rationale)
             } else {
-                "Приложению нужен доступ к Bluetooth для поиска ближайших устройств Amulet"
+                stringResource(R.string.pairing_ble_permissions_message)
             },
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
@@ -597,7 +607,7 @@ private fun PermissionsRationaleCard(
             onClick = onRequestPermissions,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Предоставить доступ")
+            Text(stringResource(R.string.pairing_ble_permissions_button))
         }
     }
 }

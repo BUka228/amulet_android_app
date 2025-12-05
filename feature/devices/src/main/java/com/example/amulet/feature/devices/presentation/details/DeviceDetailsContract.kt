@@ -16,6 +16,7 @@ data class DeviceDetailsState(
     val isDeleting: Boolean = false,
     val error: AppError? = null,
     val isDeviceOnline: Boolean = false,
+    val batteryLevel: Int? = null,
 )
 
 sealed interface DeviceDetailsEvent {

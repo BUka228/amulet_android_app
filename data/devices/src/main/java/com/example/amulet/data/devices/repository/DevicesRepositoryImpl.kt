@@ -230,7 +230,12 @@ class DevicesRepositoryImpl @Inject constructor(
     
     override fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?> {
         return bleDataSource.observeDeviceStatus().map { status ->
-            status?.let { bleMapper.mapDeviceStatus(it) }
+            Logger.d("observeConnectedDeviceStatus: raw bleStatus=$status", tag = TAG)
+            status?.let {
+                val mapped = bleMapper.mapDeviceStatus(it)
+                Logger.d("observeConnectedDeviceStatus: mapped liveStatus=$mapped", tag = TAG)
+                mapped
+            }
         }
     }
 

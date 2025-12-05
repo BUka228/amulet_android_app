@@ -104,6 +104,7 @@
     <string name="device_details_info_title">Information</string>
     <string name="device_details_serial_label">Serial Number:</string>
     <string name="device_details_firmware_label">Firmware Version:</string>
+    <string name="device_details_battery_label">Battery:</string>
     <string name="device_details_status_label">Status:</string>
     <string name="device_details_delete_button">Delete</string>
     
@@ -174,4 +175,33 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_ok">OK</string>
     <string name="common_back">Back</string>
+    
+    <!-- Pairing scanning & BLE permissions (local pairing screen) -->
+    <string name="pairing_add_device_title">Add Device</string>
+    <string name="pairing_back">Back</string>
+    <string name="pairing_stop_scanning">Stop scanning</string>
+    <string name="pairing_start_scanning">Start scanning</string>
+    <string name="pairing_nfc_hint_card">Tap the device to your phone for quick NFC pairing</string>
+    <string name="pairing_found_count">Found: %d</string>
+    <string name="pairing_found_devices_title">Found devices</string>
+    <string name="pairing_error_dismiss">Close</string>
+    <string name="pairing_device_name_dialog_title">Device name</string>
+    <string name="pairing_device_name_dialog_message">Enter a name for device %1$s</string>
+    <string name="pairing_device_name_label">Name</string>
+    <string name="pairing_device_add_button">Add</string>
+    <string name="pairing_cancel">Cancel</string>
+    <string name="pairing_connecting_title">Connecting</string>
+    <string name="pairing_connecting_default_message">Connecting…</string>
+    <string name="pairing_signal_excellent">Excellent</string>
+    <string name="pairing_signal_good">Good</string>
+    <string name="pairing_signal_fair">Fair</string>
+    <string name="pairing_signal_weak">Weak</string>
+    <string name="pairing_search_title">Searching for devices</string>
+    <string name="pairing_search_hint">Make sure your Amulet device is turned on and nearby</string>
+    <string name="pairing_no_devices_title">No devices found</string>
+    <string name="pairing_no_devices_hint">Tap the refresh icon in the top right corner to rescan</string>
+    <string name="pairing_ble_permissions_title">Bluetooth permissions required</string>
+    <string name="pairing_ble_permissions_rationale">Bluetooth access is required to discover and connect to your Amulet device</string>
+    <string name="pairing_ble_permissions_message">The app needs Bluetooth access to search for nearby Amulet devices</string>
+    <string name="pairing_ble_permissions_button">Grant access</string>
 </resources>

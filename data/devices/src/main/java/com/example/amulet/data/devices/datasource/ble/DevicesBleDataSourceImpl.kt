@@ -16,6 +16,8 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 /**
@@ -40,6 +42,13 @@ class DevicesBleDataSourceImpl @Inject constructor(
         return try {
             Logger.d("DevicesBleDataSourceImpl.connect: start deviceAddress=${'$'}deviceAddress autoReconnect=${'$'}autoReconnect", tag = TAG)
             bleManager.connect(deviceAddress, autoReconnect)
+            try {
+                Logger.d("DevicesBleDataSourceImpl.connect: performing soft handshake after connect (with small delay)", tag = TAG)
+                delay(2000)
+                bleManager.getProtocolVersion()
+            } catch (e: Exception) {
+                Logger.d("DevicesBleDataSourceImpl.connect: soft handshake failed, ignoring: ${'$'}e", tag = TAG)
+            }
             Logger.d("DevicesBleDataSourceImpl.connect: success deviceAddress=${'$'}deviceAddress", tag = TAG)
             Ok(Unit)
         } catch (e: Exception) {
@@ -62,11 +71,15 @@ class DevicesBleDataSourceImpl @Inject constructor(
     }
     
     override fun observeBatteryLevel(): Flow<Int> {
-        return bleManager.batteryLevel
+        return bleManager.batteryLevel.onEach { level ->
+            Logger.d("observeBatteryLevel: level=$level", tag = TAG)
+        }
     }
     
     override fun observeDeviceStatus(): Flow<DeviceStatus?> {
-        return bleManager.deviceStatus
+        return bleManager.deviceStatus.onEach { status ->
+            Logger.d("observeDeviceStatus: from bleManager status=$status", tag = TAG)
+        }
     }
     
     override suspend fun getProtocolVersion(): AppResult<String?> {

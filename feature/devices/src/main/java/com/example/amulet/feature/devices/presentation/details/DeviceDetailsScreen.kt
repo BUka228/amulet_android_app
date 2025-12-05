@@ -139,6 +139,19 @@ fun DeviceDetailsScreen(
                                 Text(device.firmwareVersion, style = MaterialTheme.typography.bodyMedium)
                             }
 
+                            val batteryToShow: Int? = state.batteryLevel
+                                ?: device.batteryLevel?.toInt()
+
+                            batteryToShow?.let { level ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(stringResource(R.string.device_details_battery_label))
+                                    Text("${level}%", style = MaterialTheme.typography.bodyMedium)
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,

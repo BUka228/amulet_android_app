@@ -79,7 +79,7 @@
     <string name="practice_details_safety">Безопасность</string>
     <string name="practice_details_pattern_auto">Паттерн будет выбран автоматически</string>
     <string name="practice_details_add_to_plan">В план</string>
-    <string name="practice_details_start">Начать практику</string>
+    <string name="practice_details_start">Начать</string>
     <string name="practice_details_open_pattern">Открыть паттерн</string>
     <string name="practice_details_amulet_connected">Амулет подключён</string>
     <string name="practice_details_amulet_connecting">Подключаем амулет…</string>

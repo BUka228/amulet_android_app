@@ -53,7 +53,8 @@ class DeviceDetailsViewModel @Inject constructor(
                     (sessionStatus.liveStatus?.isOnline == true)
                 _uiState.update { state ->
                     state.copy(
-                        isDeviceOnline = isOnline
+                        isDeviceOnline = isOnline,
+                        batteryLevel = sessionStatus.liveStatus?.batteryLevel
                     )
                 }
             }

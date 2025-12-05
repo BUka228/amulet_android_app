@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
@@ -53,6 +54,33 @@ class PracticeSessionViewModel @Inject constructor(
     fun setPracticeIdIfEmpty(id: String) {
         if (_state.value.practiceId == null) {
             _state.update { it.copy(practiceId = id) }
+
+            viewModelScope.launch {
+                val practice = getPracticeByIdUseCase(id).filterNotNull().firstOrNull()
+                if (practice != null) {
+                    _state.update { current ->
+                        if (current.practice != null) {
+                            current
+                        } else {
+                            current.copy(
+                                practice = practice,
+                                title = practice.title,
+                            )
+                        }
+                    }
+
+                    val patternId = practice.patternId
+                    if (patternId != null) {
+                        val pattern = getPatternByIdUseCase(patternId).filterNotNull().firstOrNull()
+                        if (pattern != null) {
+                            _state.update { current ->
+                                if (current.patternName != null) current
+                                else current.copy(patternName = pattern.title)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -109,18 +137,24 @@ class PracticeSessionViewModel @Inject constructor(
                 val previousState = _state.value
                 val previousAudioMode = previousState.audioMode
                 val previousSession = previousState.session
+                val effectivePractice = practice ?: previousState.practice
+                val effectiveTitle = practice?.title ?: previousState.title
+                val effectiveType = practice?.type?.name ?: previousState.type
+                val effectiveTotalDurationSec =
+                    progress?.totalSec ?: practice?.durationSec ?: previousState.totalDurationSec
+
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        // Если из стрима пришёл null, но у нас уже есть завершённая сессия,
+                        // Если из стрима пришёл null, но у нас уже есть завершённая сессию,
                         // не затираем её, чтобы показать финальный экран.
                         session = session ?: previousSession,
                         progress = progress,
                         currentStepIndex = progress?.currentStepIndex,
-                        practice = practice,
-                        title = practice?.title,
-                        type = practice?.type?.name,
-                        totalDurationSec = progress?.totalSec ?: practice?.durationSec,
+                        practice = effectivePractice,
+                        title = effectiveTitle,
+                        type = effectiveType,
+                        totalDurationSec = effectiveTotalDurationSec,
                         brightnessLevel = prefs.defaultBrightness,
                         vibrationLevel = prefs.defaultIntensity,
                         audioMode = previousAudioMode ?: prefs.defaultAudioMode ?: session?.audioMode,
@@ -128,7 +162,7 @@ class PracticeSessionViewModel @Inject constructor(
                         batteryLevel = deviceStatus.liveStatus?.batteryLevel,
                         isCharging = deviceStatus.liveStatus?.isCharging ?: false,
                         isDeviceOnline = deviceStatus.liveStatus?.isOnline ?: false,
-                        patternName = pattern?.title,
+                        patternName = pattern?.title ?: previousState.patternName,
                     )
                 }
 

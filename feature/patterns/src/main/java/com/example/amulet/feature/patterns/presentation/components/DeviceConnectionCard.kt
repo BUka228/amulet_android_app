@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.amulet.feature.patterns.R
 import com.example.amulet.shared.domain.devices.model.Device
+import com.example.amulet.shared.domain.devices.model.DeviceStatus
 
 /**
  * Карточка с информацией о подключенном устройстве
@@ -24,6 +25,8 @@ fun DeviceConnectionCard(
     onSendToDevice: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isConnected = device.status == DeviceStatus.ONLINE
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -50,7 +53,11 @@ fun DeviceConnectionCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = stringResource(R.string.pattern_preview_device_connected),
+                        text = if (isConnected) {
+                            stringResource(R.string.pattern_preview_device_connected)
+                        } else {
+                            stringResource(R.string.pattern_preview_device_disconnected)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -142,7 +149,11 @@ fun DeviceConnectionCard(
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Text(
-                            text = "Status: ${device.status.name}",
+                            text = if (isConnected) {
+                                stringResource(R.string.pattern_preview_device_connected)
+                            } else {
+                                stringResource(R.string.pattern_preview_device_disconnected)
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )

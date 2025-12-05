@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.dashboard.usecase.GetDashboardDailyStatsUseCase
 import com.example.amulet.shared.domain.devices.model.BleConnectionState
-import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
@@ -31,11 +31,11 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val observeDevicesUseCase: ObserveDevicesUseCase,
-    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase,
     private val observeCurrentUserUseCase: ObserveCurrentUserUseCase,
     private val getDashboardDailyStatsUseCase: GetDashboardDailyStatsUseCase,
     private val getSessionsHistoryStreamUseCase: GetSessionsHistoryStreamUseCase,
     private val getRecommendationsStreamUseCase: GetRecommendationsStreamUseCase,
+    private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -46,8 +46,7 @@ class DashboardViewModel @Inject constructor(
 
     init {
         observeDashboardStats()
-        observeDevices()
-        observeConnectionState()
+        observeDevicesAndSession()
         observeCurrentUser()
         observeQuickStartPractice()
     }
@@ -70,12 +69,30 @@ class DashboardViewModel @Inject constructor(
             DashboardUiEvent.ErrorConsumed -> _uiState.update { it.copy(error = null) }
         }
     }
-    
-    private fun observeDevices() {
-        observeDevicesUseCase()
-            .onEach { devices ->
-                _uiState.update { it.copy(devices = devices) }
-                Logger.d("Devices updated: ${devices.size}", TAG)
+
+    private fun observeDevicesAndSession() {
+        combine(
+            observeDevicesUseCase(),
+            observeDeviceSessionStatusUseCase(),
+        ) { devices, sessionStatus ->
+            Pair(devices, sessionStatus)
+        }
+            .onEach { (devices, sessionStatus) ->
+                val isConnected = sessionStatus.connection is BleConnectionState.Connected
+                val connectedDevice = if (isConnected) devices.firstOrNull() else null
+
+                _uiState.update { state ->
+                    state.copy(
+                        devices = devices,
+                        connectedDevice = connectedDevice,
+                        connectedBatteryLevel = sessionStatus.liveStatus?.batteryLevel
+                    )
+                }
+
+                Logger.d(
+                    "Dashboard: devices=${'$'}{devices.size}, connection=${'$'}{sessionStatus.connection}, battery=${'$'}{sessionStatus.liveStatus?.batteryLevel}",
+                    TAG
+                )
             }
             .launchIn(viewModelScope)
     }
@@ -102,19 +119,7 @@ class DashboardViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
     }
-    
-    private fun observeConnectionState() {
-        observeConnectionStateUseCase()
-            .onEach { connectionStatus ->
-                val connectedDevice = if (connectionStatus is BleConnectionState.Connected) {
-                    _uiState.value.devices.firstOrNull()
-                } else null
-                _uiState.update { it.copy(connectedDevice = connectedDevice) }
-                Logger.d("Connection status: $connectionStatus", TAG)
-            }
-            .launchIn(viewModelScope)
-    }
-    
+
     private fun observeCurrentUser() {
         observeCurrentUserUseCase()
             .onEach { user ->

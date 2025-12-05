@@ -1,7 +1,9 @@
 package com.example.amulet.feature.devices.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.BatteryStd
@@ -11,9 +13,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.amulet.core.design.components.card.AmuletCard
+import com.example.amulet.core.design.foundation.color.AmuletPalette
 import com.example.amulet.feature.devices.R
 import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceStatus
@@ -72,22 +76,28 @@ fun DeviceCard(
 
 @Composable
 fun DeviceStatusChip(status: DeviceStatus) {
-    val (text, color) = when (status) {
-        DeviceStatus.ONLINE -> stringResource(R.string.devices_list_status_online) to MaterialTheme.colorScheme.primary
-        DeviceStatus.OFFLINE -> stringResource(R.string.devices_list_status_offline) to MaterialTheme.colorScheme.error
-        DeviceStatus.CHARGING -> stringResource(R.string.devices_list_status_charging) to MaterialTheme.colorScheme.tertiary
-        DeviceStatus.UNKNOWN -> stringResource(R.string.devices_list_status_unknown) to MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val isConnected = status == DeviceStatus.ONLINE
 
-    Surface(
-        color = color.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.small
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isConnected) {
+                        AmuletPalette.Success
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+        )
         Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            text = if (isConnected) "Подключено" else "Не подключено",
             style = MaterialTheme.typography.labelSmall,
-            color = color
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

@@ -351,6 +351,7 @@ private fun MoodBeforeBlock(
 }
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ControlsCard(
     state: PracticeSessionState,
@@ -423,7 +424,7 @@ private fun ControlsCard(
                     Spacer(Modifier.height(8.dp))
                     
                     val currentMode = state.audioMode ?: PracticeAudioMode.GUIDE
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {

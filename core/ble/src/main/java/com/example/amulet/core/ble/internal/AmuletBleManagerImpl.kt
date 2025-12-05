@@ -440,6 +440,7 @@ class AmuletBleManagerImpl @Inject constructor(
     private fun createGattCallback(
         continuation: CancellableContinuation<Unit>? = null
     ) = object : BluetoothGattCallback() {
+        private var connectContinuationCompleted: Boolean = false
         
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             Logger.d(
@@ -449,11 +450,20 @@ class AmuletBleManagerImpl @Inject constructor(
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     _connectionState.value = ConnectionState.Connected
+                    if (!connectContinuationCompleted && continuation != null) {
+                        connectContinuationCompleted = true
+                        continuation.resume(Unit)
+                    }
                     gatt.requestMtu(GattConstants.PREFERRED_MTU)
-                    gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     _connectionState.value = ConnectionState.Disconnected
+                    if (!connectContinuationCompleted && continuation != null) {
+                        connectContinuationCompleted = true
+                        val exception = Exception("Disconnected while connecting")
+                        Logger.e("onConnectionStateChange: disconnected before connect completed", exception, tag = TAG)
+                        continuation.resumeWithException(exception)
+                    }
                     
                     if (autoReconnect && currentDeviceAddress != null) {
                         scope.launch {
@@ -526,7 +536,6 @@ class AmuletBleManagerImpl @Inject constructor(
                     Logger.d("onServicesDiscovered: no descriptors to configure, marking ServicesDiscovered immediately", tag = TAG)
                     _connectionState.value = ConnectionState.ServicesDiscovered
                     flowControlManager.reset()
-                    continuation?.resume(Unit)
                 } else {
                     Logger.d(
                         "onServicesDiscovered: pendingNotificationDescriptors=$pendingNotificationDescriptors, starting descriptor queue",
@@ -538,7 +547,6 @@ class AmuletBleManagerImpl @Inject constructor(
                 val exception = Exception("Service discovery failed")
                 Logger.e("onServicesDiscovered: failed with status=$status", exception, tag = TAG)
                 _connectionState.value = ConnectionState.Failed(exception)
-                continuation?.resumeWithException(exception)
             }
         }
         
@@ -571,7 +579,6 @@ class AmuletBleManagerImpl @Inject constructor(
                 Logger.d("onDescriptorWrite: all notification descriptors configured, marking ServicesDiscovered", tag = TAG)
                 _connectionState.value = ConnectionState.ServicesDiscovered
                 flowControlManager.reset()
-                continuation?.resume(Unit)
             } else {
                 Logger.d(
                     "onDescriptorWrite: pendingNotificationDescriptors=$pendingNotificationDescriptors, writing next descriptor", 
@@ -596,6 +603,20 @@ class AmuletBleManagerImpl @Inject constructor(
                     Logger.d("onCharacteristicChanged: batteryLevel=$level", tag = TAG)
                     scope.launch {
                         _batteryLevel.emit(level)
+                        val previous = _deviceStatus.value
+                        val updated = previous?.copy(
+                            batteryLevel = level,
+                            isOnline = true,
+                            lastSeen = System.currentTimeMillis()
+                        ) ?: DeviceStatus(
+                            firmwareVersion = "",
+                            hardwareVersion = 0,
+                            batteryLevel = level,
+                            isCharging = false,
+                            isOnline = true,
+                            lastSeen = System.currentTimeMillis()
+                        )
+                        _deviceStatus.value = updated
                     }
                 }
                 GattConstants.AMULET_DEVICE_STATUS_CHARACTERISTIC_UUID -> {
@@ -704,6 +725,7 @@ class AmuletBleManagerImpl @Inject constructor(
                 lastSeen = System.currentTimeMillis()
             )
             
+            Logger.d("parseDeviceStatus: parsed status=$status from '$statusData'", tag = TAG)
             _deviceStatus.value = status
         } catch (e: Exception) {
             Logger.e("parseDeviceStatus: failed for '$statusData'", e, tag = TAG)

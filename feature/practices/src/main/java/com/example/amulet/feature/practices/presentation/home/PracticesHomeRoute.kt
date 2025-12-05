@@ -166,7 +166,7 @@ private fun PracticesHomeScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(top = 8.dp, start = 8.dp, end = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item { MoodSection(state = state, onIntent = onIntent) }

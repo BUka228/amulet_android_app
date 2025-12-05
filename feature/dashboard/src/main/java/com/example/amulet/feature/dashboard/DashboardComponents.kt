@@ -36,6 +36,7 @@ import com.example.amulet.core.design.foundation.theme.AmuletTheme
 fun DevicesSection(
     devices: List<com.example.amulet.shared.domain.devices.model.Device>,
     connectedDevice: com.example.amulet.shared.domain.devices.model.Device?,
+    connectedBatteryLevel: Int?,
     onDeviceClick: (String) -> Unit,
     onNavigateToPairing: () -> Unit,
     onNavigateToDevicesList: () -> Unit
@@ -77,6 +78,7 @@ fun DevicesSection(
                 ConnectedDeviceCard(
                     device = device,
                     isConnected = device == connectedDevice,
+                    connectedBatteryLevel = if (device == connectedDevice) connectedBatteryLevel else null,
                     onClick = { onDeviceClick(device.id.value) }
                 )
             }
@@ -145,6 +147,7 @@ private fun EmptyDevicesCard(
 private fun ConnectedDeviceCard(
     device: com.example.amulet.shared.domain.devices.model.Device,
     isConnected: Boolean,
+    connectedBatteryLevel: Int?,
     onClick: () -> Unit
 ) {
     val spacing = AmuletTheme.spacing
@@ -191,7 +194,7 @@ private fun ConnectedDeviceCard(
                                 .background(if (isConnected) AmuletPalette.Success else MaterialTheme.colorScheme.onSurfaceVariant)
                         )
                         Text(
-                            text = if (isConnected) "Подключено" else device.status.name,
+                            text = if (isConnected) "Подключено" else "Не подключено",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -199,7 +202,13 @@ private fun ConnectedDeviceCard(
                 }
             }
 
-            device.batteryLevel?.let { battery ->
+            val batteryToShow: Int? = when {
+                isConnected && connectedBatteryLevel != null -> connectedBatteryLevel
+                device.batteryLevel != null -> device.batteryLevel?.toInt()
+                else -> null
+            }
+
+            batteryToShow?.let { battery ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -215,7 +224,7 @@ private fun ConnectedDeviceCard(
                         }
                     )
                     Text(
-                        text = "${battery.toInt()}%",
+                        text = "${battery}%",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium
                     )
