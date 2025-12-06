@@ -1,22 +1,38 @@
 package com.example.amulet.feature.patterns.presentation.components
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.shared.domain.patterns.model.MixMode
+import com.example.amulet.shared.domain.patterns.model.PatternSpec
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
+import com.example.amulet.shared.domain.patterns.model.TargetGroup
+import com.example.amulet.shared.domain.patterns.model.TargetLed
+import com.example.amulet.shared.domain.patterns.model.TargetRing
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.coroutines.isActive
 
 /**
  * 2D аватар амулета с 8 LED диодами, расположенными по кругу.
@@ -31,317 +47,194 @@ fun AmuletAvatar2D(
     ledRadius: Dp = 16.dp
 ) {
     val ledCount = 8
-    
-    // Состояние анимации для каждого LED
-    var ledColors by remember { mutableStateOf(List(ledCount) { Color.Gray.copy(alpha = 0.2f) }) }
-    var currentElementIndex by remember { mutableStateOf(0) }
-    var elementProgress by remember { mutableStateOf(0f) }
-    
-    // Анимация паттерна
-    LaunchedEffect(spec, isPlaying) {
-        if (spec == null || !isPlaying || spec.elements.isEmpty()) {
-            // Сброс в неактивное состояние
-            ledColors = List(ledCount) { Color.Gray.copy(alpha = 0.2f) }
-            currentElementIndex = 0
-            elementProgress = 0f
+    val timeline = spec?.timeline
+    val duration = timeline?.durationMs?.coerceAtLeast(1) ?: 1
+    val loop = spec?.loop ?: false
+
+    val progress = remember { Animatable(0f) }
+    val ambient = rememberInfiniteTransition(label = "avatar-ambient")
+    val haloAlpha = ambient.animateFloat(
+        initialValue = 0.22f,
+        targetValue = 0.55f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "halo-alpha"
+    )
+    val orbitAngle = ambient.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 16000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "orbit-angle"
+    )
+    val pulse = ambient.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    // Анимация таймлайна через Animatable + tween, чтобы избежать рывков от ручного таймера
+    LaunchedEffect(timeline, isPlaying, loop) {
+        if (timeline == null || !isPlaying || timeline.tracks.isEmpty()) {
+            progress.snapTo(0f)
             return@LaunchedEffect
         }
-        
-        val startTime = System.currentTimeMillis()
-        
-        while (isPlaying) {
-            val elapsed = System.currentTimeMillis() - startTime
-            
-            // Вычисляем текущий элемент и прогресс
-            var totalDuration = 0L
-            var foundElement = false
-            
-            for (i in spec.elements.indices) {
-                val element = spec.elements[i]
-                val elementDuration = getElementDuration(element)
-                
-                if (elapsed < totalDuration + elementDuration) {
-                    currentElementIndex = i
-                    elementProgress = ((elapsed - totalDuration).toFloat() / elementDuration).coerceIn(0f, 1f)
-                    foundElement = true
-                    break
-                }
-                
-                totalDuration += elementDuration
+
+        if (loop) {
+            while (isActive) {
+                progress.snapTo(0f)
+                progress.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = duration, easing = LinearEasing)
+                )
             }
-            
-            // Если паттерн закончился
-            if (!foundElement) {
-                if (spec.loop) {
-                    // Перезапуск с начала
-                    val loopElapsed = elapsed % totalDuration
-                    totalDuration = 0L
-                    for (i in spec.elements.indices) {
-                        val element = spec.elements[i]
-                        val elementDuration = getElementDuration(element)
-                        
-                        if (loopElapsed < totalDuration + elementDuration) {
-                            currentElementIndex = i
-                            elementProgress = ((loopElapsed - totalDuration).toFloat() / elementDuration).coerceIn(0f, 1f)
-                            break
-                        }
-                        
-                        totalDuration += elementDuration
-                    }
-                } else {
-                    // Остановка
-                    ledColors = List(ledCount) { Color.Gray.copy(alpha = 0.2f) }
-                    break
-                }
-            }
-            
-            // Обновляем цвета LED на основе текущего элемента
-            val currentElement = spec.elements.getOrNull(currentElementIndex)
-            if (currentElement != null) {
-                ledColors = calculateLedColors(currentElement, elementProgress, ledCount)
-            }
-            
-            kotlinx.coroutines.delay(16) // ~60 FPS
+        } else {
+            progress.snapTo(0f)
+            progress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = duration, easing = LinearEasing)
+            )
         }
     }
-    
+
+    val ledColors: List<Color> = if (timeline != null && isPlaying && timeline.tracks.isNotEmpty()) {
+        val tMs = (progress.value * duration).coerceIn(0f, duration.toFloat())
+        computeTimelineRing(timeline, tMs)
+    } else {
+        List(ledCount) { Color(0xFF1F2937).copy(alpha = 0.28f) }
+    }
+
     Canvas(modifier = modifier.size(size)) {
         val canvasSize = this.size
         val center = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
-        val ringRadius = (canvasSize.minDimension / 2f) * 0.7f
+        val ringRadius = (canvasSize.minDimension / 2f) * 0.68f
         val ledRadiusPx = ledRadius.toPx()
-        
+        val baseRadius = canvasSize.minDimension / 2f
+        val haloBrush = Brush.radialGradient(
+            colors = listOf(Color(0xFF0B1021), Color(0xFF0F172A), Color(0xFF0B1021)),
+            center = center,
+            radius = baseRadius
+        )
+        val ringBrush = Brush.sweepGradient(
+            colors = listOf(
+                Color(0xFF5EEAD4),
+                Color(0xFF60A5FA),
+                Color(0xFFA78BFA),
+                Color(0xFF5EEAD4)
+            ),
+            center = center
+        )
+
+        drawCircle(brush = haloBrush, radius = baseRadius, center = center, alpha = 0.9f)
+        drawCircle(
+            color = Color.White.copy(alpha = haloAlpha.value),
+            radius = baseRadius * 0.82f,
+            center = center,
+            style = Stroke(width = baseRadius * 0.02f)
+        )
+        rotate(degrees = orbitAngle.value, pivot = center) {
+            drawArc(
+                brush = ringBrush,
+                startAngle = -110f,
+                sweepAngle = 160f,
+                useCenter = false,
+                style = Stroke(width = baseRadius * 0.06f, cap = StrokeCap.Round),
+                alpha = 0.9f
+            )
+        }
+        drawArc(
+            color = Color.White.copy(alpha = 0.35f),
+            startAngle = -90f,
+            sweepAngle = 360f * progress.value,
+            useCenter = false,
+            style = Stroke(width = baseRadius * 0.04f, cap = StrokeCap.Round)
+        )
+
         // Рисуем каждый LED
         for (i in 0 until ledCount) {
             val angle = (i * 2 * PI / ledCount) - (PI / 2) // Начинаем сверху
             val ledX = center.x + (ringRadius * cos(angle)).toFloat()
             val ledY = center.y + (ringRadius * sin(angle)).toFloat()
             
-            val ledColor = ledColors.getOrNull(i) ?: Color.Gray.copy(alpha = 0.2f)
-            
-            // Рисуем glow effect
-            if (ledColor.alpha > 0.3f) {
-                drawIntoCanvas { canvas ->
-                    val paint = Paint().apply {
-                        color = ledColor.copy(alpha = 0.3f)
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                            asFrameworkPaint().apply {
-                                setShadowLayer(
-                                    ledRadiusPx * 1.5f,
-                                    0f,
-                                    0f,
-                                    ledColor.copy(alpha = 0.6f).toArgb()
-                                )
-                            }
-                        }
-                    }
-                    canvas.drawCircle(
-                        Offset(ledX, ledY),
-                        ledRadiusPx * 1.3f,
-                        paint
-                    )
-                }
-            }
-            
-            // Рисуем LED
+            val ledColor = ledColors.getOrNull(i) ?: Color(0xFF1F2937).copy(alpha = 0.28f)
+            val auraRadius = ledRadiusPx * (1.6f + (pulse.value - 1f))
+
             drawCircle(
-                color = ledColor,
-                radius = ledRadiusPx,
+                brush = Brush.radialGradient(
+                    colors = listOf(ledColor.copy(alpha = 0.0f), ledColor.copy(alpha = 0.08f), ledColor.copy(alpha = 0.4f)),
+                    center = Offset(ledX, ledY),
+                    radius = auraRadius * 1.3f
+                ),
+                radius = auraRadius * 1.3f,
                 center = Offset(ledX, ledY)
             )
-        }
-    }
-}
 
-/**
- * Вычисляет длительность элемента в миллисекундах
- */
-private fun getElementDuration(element: PatternElement): Long {
-    return when (element) {
-        is PatternElementBreathing -> element.durationMs.toLong()
-        is PatternElementChase -> element.speedMs.toLong() * 8L // Полный круг
-        is PatternElementFill -> element.durationMs.toLong()
-        is PatternElementPulse -> element.speed.toLong() * element.repeats.toLong()
-        is PatternElementProgress -> 1000L // Статичный, показываем 1 секунду
-        is PatternElementSequence -> {
-            element.steps.sumOf { step ->
-                when (step) {
-                    is SequenceStep.LedAction -> step.durationMs.toLong()
-                    is SequenceStep.DelayAction -> step.durationMs.toLong()
-                }
-            }
-        }
-        is PatternElementSpinner -> element.speedMs.toLong() * 8L // Полный оборот
-        is PatternElementTimeline -> element.durationMs.toLong()
-    }
-}
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(ledColor.copy(alpha = 0.15f), ledColor.copy(alpha = 0.8f)),
+                    center = Offset(ledX, ledY),
+                    radius = ledRadiusPx * 1.15f
+                ),
+                radius = ledRadiusPx * 1.15f,
+                center = Offset(ledX, ledY)
+            )
 
-/**
- * Вычисляет цвета LED для текущего элемента и прогресса
- */
-private fun calculateLedColors(
-    element: PatternElement,
-    progress: Float,
-    ledCount: Int
-): List<Color> {
-    return when (element) {
-        is PatternElementBreathing -> {
-            // Плавное затухание и появление всех LED
-            val alpha = if (progress < 0.5f) {
-                progress * 2f // Fade in
-            } else {
-                2f - (progress * 2f) // Fade out
-            }
-            val color = parseColor(element.color).copy(alpha = alpha)
-            List(ledCount) { color }
-        }
-        
-        is PatternElementPulse -> {
-            // Быстрая вспышка - повторяющиеся пульсы
-            val pulseProgress = (progress * element.repeats) % 1f
-            val alpha = if (pulseProgress < 0.3f) {
-                1f
-            } else {
-                (1f - ((pulseProgress - 0.3f) / 0.7f)).coerceIn(0f, 1f)
-            }
-            val color = parseColor(element.color).copy(alpha = alpha)
-            List(ledCount) { color }
-        }
-        
-        is PatternElementChase -> {
-            // Бегущие огни
-            val position = (progress * ledCount).toInt()
-            List(ledCount) { i ->
-                val distance = minOf(
-                    kotlin.math.abs(i - position),
-                    kotlin.math.abs(i - position + ledCount),
-                    kotlin.math.abs(i - position - ledCount)
-                )
-                
-                if (distance == 0) {
-                    parseColor(element.color)
-                } else if (distance == 1) {
-                    parseColor(element.color).copy(alpha = 0.5f)
-                } else {
-                    Color.Gray.copy(alpha = 0.2f)
-                }
-            }
-        }
-        
-        is PatternElementFill -> {
-            // Последовательное заполнение
-            val activeLeds = (progress * ledCount).toInt()
-            List(ledCount) { i ->
-                if (i < activeLeds) {
-                    parseColor(element.color)
-                } else if (i == activeLeds) {
-                    val partialProgress = (progress * ledCount) - activeLeds
-                    parseColor(element.color).copy(alpha = partialProgress)
-                } else {
-                    Color.Gray.copy(alpha = 0.2f)
-                }
-            }
-        }
-        
-        is PatternElementSpinner -> {
-            // Вращающийся двухцветный эффект
-            val rotation = (progress * ledCount).toInt()
-            List(ledCount) { i ->
-                val adjustedIndex = (i + rotation) % ledCount
-                if (adjustedIndex < ledCount / 2) {
-                    parseColor(element.colors.getOrNull(0) ?: "#FFFFFF")
-                } else {
-                    parseColor(element.colors.getOrNull(1) ?: "#000000")
-                }
-            }
-        }
-        
-        is PatternElementProgress -> {
-            // Статичный индикатор прогресса
-            List(ledCount) { i ->
-                if (i < element.activeLeds) {
-                    parseColor(element.color)
-                } else {
-                    Color.Gray.copy(alpha = 0.2f)
-                }
-            }
-        }
-        
-        is PatternElementSequence -> {
-            // Пользовательская последовательность
-            var elapsed = 0L
-            val totalDuration = element.steps.sumOf { step ->
-                when (step) {
-                    is SequenceStep.LedAction -> step.durationMs.toLong()
-                    is SequenceStep.DelayAction -> step.durationMs.toLong()
-                }
-            }
-            val targetTime = (progress * totalDuration).toLong()
-            
-            // Создаем массив цветов для всех LED
-            val colors = MutableList(ledCount) { Color.Gray.copy(alpha = 0.2f) }
-            
-            for (step in element.steps) {
-                val stepDuration = when (step) {
-                    is SequenceStep.LedAction -> step.durationMs.toLong()
-                    is SequenceStep.DelayAction -> step.durationMs.toLong()
-                }
-                
-                if (targetTime < elapsed + stepDuration) {
-                    // Применяем текущий шаг
-                    when (step) {
-                        is SequenceStep.LedAction -> {
-                            if (step.ledIndex in 0 until ledCount) {
-                                colors[step.ledIndex] = parseColor(step.color)
-                            }
-                        }
-                        is SequenceStep.DelayAction -> {
-                            // Пауза - оставляем текущие цвета
-                        }
-                    }
-                    return colors
-                }
-                elapsed += stepDuration
-            }
-            
-            // Fallback
-            colors
-        }
-        is PatternElementTimeline -> {
-            val t = (progress * element.durationMs).toInt().coerceIn(0, element.durationMs)
-            computeTimelineRing(element, t)
+            drawCircle(
+                color = ledColor.copy(alpha = 0.95f),
+                radius = ledRadiusPx * 0.9f,
+                center = Offset(ledX, ledY)
+            )
+
+            drawCircle(
+                color = Color.White.copy(alpha = 0.28f * ledColor.alpha),
+                radius = ledRadiusPx * 0.28f,
+                center = Offset(ledX - ledRadiusPx * 0.25f, ledY - ledRadiusPx * 0.25f)
+            )
         }
     }
 }
 
 private data class Contribution(val priority: Int, val mixMode: MixMode, val color: Color)
 
-private fun computeTimelineRing(element: PatternElementTimeline, t: Int): List<Color> {
+private fun computeTimelineRing(timeline: PatternTimeline, tMs: Float): List<Color> {
     val leds = 8
     val contributions = Array(leds) { mutableListOf<Contribution>() }
 
-    element.tracks.forEach { track ->
-        val clip = track.clips.firstOrNull { c -> t >= c.startMs && t < c.startMs + c.durationMs }
-        if (clip != null) {
-            val base = parseColor(clip.color)
-            val rel = (t - clip.startMs).coerceAtLeast(0)
-            val fadeInLin = if (clip.fadeInMs > 0) (rel.toFloat() / clip.fadeInMs).coerceIn(0f, 1f) else 1f
-            val fadeIn = applyEasing(clip.easing, fadeInLin)
-            val relOut = (clip.startMs + clip.durationMs - t).coerceAtLeast(0)
-            val fadeOutLin = if (clip.fadeOutMs > 0) (relOut.toFloat() / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
-            val fadeOut = applyEasing(clip.easing, fadeOutLin)
-            val factor = minOf(fadeIn, fadeOut)
-            val col = base.copy(alpha = factor)
-            when (val target = track.target) {
-                is TargetLed -> if (target.index in 0 until leds) contributions[target.index].add(Contribution(track.priority, track.mixMode, col))
-                is TargetGroup -> target.indices.forEach { idx -> if (idx in 0 until leds) contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
-                is TargetRing -> (0 until leds).forEach { idx -> contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
+    timeline.tracks.forEach { track ->
+        track.clips.forEach { clip ->
+            val start = clip.startMs.toFloat()
+            val end = start + clip.durationMs
+            if (tMs >= start && tMs <= end) {
+                val base = parseColor(clip.color)
+                val rel = (tMs - start).coerceAtLeast(0f)
+                val fadeInLin = if (clip.fadeInMs > 0) (rel / clip.fadeInMs).coerceIn(0f, 1f) else 1f
+                val fadeIn = applyEasing(clip.easing, fadeInLin)
+                val relOut = (end - tMs).coerceAtLeast(0f)
+                val fadeOutLin = if (clip.fadeOutMs > 0) (relOut / clip.fadeOutMs).coerceIn(0f, 1f) else 1f
+                val fadeOut = applyEasing(clip.easing, fadeOutLin)
+                val factor = (fadeIn * fadeOut).coerceIn(0f, 1f)
+                if (factor > 0f) {
+                    val col = scaleColorIntensity(base, factor)
+                    when (val target = track.target) {
+                        is TargetLed -> if (target.index in 0 until leds) contributions[target.index].add(Contribution(track.priority, track.mixMode, col))
+                        is TargetGroup -> target.indices.forEach { idx -> if (idx in 0 until leds) contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
+                        is TargetRing -> (0 until leds).forEach { idx -> contributions[idx].add(Contribution(track.priority, track.mixMode, col)) }
+                    }
+                }
             }
         }
     }
 
     return contributions.map { list ->
-        if (list.isEmpty()) Color.Gray.copy(alpha = 0.2f) else mixColors(list)
+        if (list.isEmpty()) Color(0f, 0f, 0f, 0.05f) else mixColors(list)
     }
 }
 
@@ -350,11 +243,26 @@ private fun mixColors(items: List<Contribution>): Color {
     var acc = Color(0f, 0f, 0f, 0f)
     for (c in sorted) {
         acc = when (c.mixMode) {
-            MixMode.OVERRIDE -> c.color
+            // OVERRIDE: более высокий приоритетный клип накладывается поверх нижележащего
+            // с учётом альфы (fade-in/out), чтобы получить плавный кросс-фейд, а не резкий скачок.
+            MixMode.OVERRIDE -> compositeOver(acc, c.color)
             MixMode.ADDITIVE -> addColor(acc, c.color)
         }
     }
     return acc.copy(alpha = acc.alpha.coerceIn(0f, 1f))
+}
+
+private fun compositeOver(dst: Color, src: Color): Color {
+    val srcA = src.alpha.coerceIn(0f, 1f)
+    val dstA = dst.alpha.coerceIn(0f, 1f)
+    val outA = srcA + dstA * (1f - srcA)
+    if (outA <= 0f) return Color(0f, 0f, 0f, 0f)
+
+    val outR = (src.red * srcA + dst.red * dstA * (1f - srcA)) / outA
+    val outG = (src.green * srcA + dst.green * dstA * (1f - srcA)) / outA
+    val outB = (src.blue * srcA + dst.blue * dstA * (1f - srcA)) / outA
+
+    return Color(outR, outG, outB, outA)
 }
 
 private fun addColor(a: Color, b: Color): Color {
@@ -365,6 +273,16 @@ private fun addColor(a: Color, b: Color): Color {
     val rb = (ab + bb).coerceAtMost(255)
     val ra = (a.alpha + b.alpha).coerceIn(0f, 1f)
     return Color(rr, rg, rb).copy(alpha = ra)
+}
+
+private fun scaleColorIntensity(color: Color, factor: Float): Color {
+    val f = factor.coerceIn(0f, 1f)
+    return Color(
+        red = color.red * f,
+        green = color.green * f,
+        blue = color.blue * f,
+        alpha = color.alpha * f
+    )
 }
 
 /**

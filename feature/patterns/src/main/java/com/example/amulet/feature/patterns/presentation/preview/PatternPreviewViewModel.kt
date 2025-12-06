@@ -3,16 +3,23 @@ package com.example.amulet.feature.patterns.presentation.preview
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.domain.devices.model.DeviceId
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import com.example.amulet.shared.domain.patterns.PreviewCache
 import com.example.amulet.shared.domain.patterns.model.PatternId
-import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase
 import com.example.amulet.shared.domain.patterns.usecase.PreviewPatternOnDeviceUseCase
 import com.example.amulet.shared.domain.patterns.usecase.PreviewProgress
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -126,14 +133,32 @@ class PatternPreviewViewModel @Inject constructor(
 
     private fun sendToDevice() {
         val currentState = _uiState.value
-        val spec = currentState.spec ?: return
-        val device = currentState.selectedDevice ?: return
+        Logger.d("sendToDevice: currentState=$currentState", tag = TAG)
+
+        val spec = currentState.spec
+        if (spec == null) {
+            Logger.d("sendToDevice: spec is null, aborting", tag = TAG)
+            return
+        }
+
+        val device = currentState.selectedDevice
+        if (device == null) {
+            Logger.d("sendToDevice: selectedDevice is null, aborting", tag = TAG)
+            return
+        }
+
+        Logger.d(
+            "sendToDevice: starting preview for deviceId=${device.id.value}, patternType=${spec.type}",
+            tag = TAG
+        )
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSendingToDevice = true) }
-            
+            Logger.d("sendToDevice: isSendingToDevice set to true", tag = TAG)
+
             previewPatternOnDeviceUseCase(spec, device.id)
                 .collect { progress ->
+                    Logger.d("sendToDevice: progress=$progress", tag = TAG)
                     when (progress) {
                         is PreviewProgress.Compiling -> {
                             _uiState.update { it.copy(progress = progress) }
@@ -149,6 +174,7 @@ class PatternPreviewViewModel @Inject constructor(
                                     isSendingToDevice = false
                                 ) 
                             }
+                            Logger.d("sendToDevice: pattern successfully sent and playing on device", tag = TAG)
                             _sideEffect.emit(PatternPreviewSideEffect.ShowSnackbar("Паттерн отправлен на устройство"))
                         }
                         is PreviewProgress.Failed -> {
@@ -159,6 +185,7 @@ class PatternPreviewViewModel @Inject constructor(
                                     progress = null
                                 )
                             }
+                            Logger.d("sendToDevice: failed with cause=${progress.cause}", tag = TAG)
                             progress.cause?.let { error ->
                                 _sideEffect.emit(PatternPreviewSideEffect.ShowSnackbar("Ошибка: ${error.message}"))
                             }
@@ -170,5 +197,9 @@ class PatternPreviewViewModel @Inject constructor(
 
     private fun dismissError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    private companion object {
+        private const val TAG = "PatternPreviewViewModel"
     }
 }

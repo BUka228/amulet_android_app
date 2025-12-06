@@ -1,25 +1,58 @@
 package com.example.amulet.feature.patterns.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.SettingsInputComponent
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.components.card.CardElevation
 import com.example.amulet.feature.patterns.R
-import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.shared.domain.patterns.model.Pattern
+import com.example.amulet.shared.domain.patterns.model.PatternKind
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -151,7 +184,7 @@ fun PatternCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Название и количество элементов
+                // Название и метка длительности
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -161,13 +194,13 @@ fun PatternCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    
+                    val durationText = if (pattern.spec.loop) {
+                        stringResource(R.string.pattern_preview_looped)
+                    } else {
+                        formatDuration(pattern.spec.timeline.durationMs.toLong())
+                    }
                     Text(
-                        text = pluralStringResource(
-                            R.plurals.pattern_elements_count,
-                            pattern.spec.elements.size,
-                            pattern.spec.elements.size
-                        ),
+                        text = durationText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -222,7 +255,7 @@ fun PatternCard(
 
                 // Длительность (если не зациклен)
                 if (!pattern.spec.loop) {
-                    val totalDuration = calculateTotalDuration(pattern)
+                    val totalDuration = pattern.spec.timeline.durationMs.toLong()
                     Row {
                         Icon(
                             imageVector = Icons.Default.Timer,
@@ -281,30 +314,6 @@ fun PatternCard(
     }
 }
 
-/**
- * Вычисляет общую длительность паттерна в миллисекундах
- */
-private fun calculateTotalDuration(pattern: Pattern): Long {
-    return pattern.spec.elements.fold(0L) { acc, element ->
-        acc + when (element) {
-            is PatternElementBreathing -> element.durationMs.toLong()
-            is PatternElementChase -> element.speedMs.toLong() * 8L
-            is PatternElementFill -> element.durationMs.toLong()
-            is PatternElementPulse -> element.speed.toLong() * element.repeats.toLong()
-            is PatternElementProgress -> 1000L
-            is PatternElementSequence -> {
-                element.steps.fold(0L) { sAcc, step ->
-                    sAcc + when (step) {
-                        is SequenceStep.LedAction -> step.durationMs.toLong()
-                        is SequenceStep.DelayAction -> step.durationMs.toLong()
-                    }
-                }
-            }
-            is PatternElementSpinner -> element.speedMs.toLong() * 8L
-            is PatternElementTimeline -> element.durationMs.toLong()
-        }
-    }
-}
 
 /**
  * Форматирует длительность в читаемый вид

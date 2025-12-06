@@ -5,6 +5,7 @@ import com.example.amulet.core.ble.model.DeviceStatus
 import com.example.amulet.core.ble.model.AnimationPlan
 import com.example.amulet.core.ble.model.UploadProgress
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
+import com.example.amulet.shared.domain.devices.model.NotificationType
 import com.example.amulet.core.ble.scanner.ScannedDevice
 import com.example.amulet.shared.core.AppResult
 import kotlinx.coroutines.flow.Flow
@@ -73,4 +74,9 @@ interface DevicesBleDataSource {
      * Отправить произвольную команду на устройство.
      */
     suspend fun sendCommand(command: AmuletCommand): AppResult<Unit>
+
+    /**
+     * Подписаться на сырые BLE уведомления (NOTIFY:...).
+     */
+    fun observeNotifications(type: NotificationType? = null): Flow<String>
 }

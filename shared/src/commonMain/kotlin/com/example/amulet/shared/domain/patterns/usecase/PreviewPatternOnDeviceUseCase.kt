@@ -20,19 +20,26 @@ class PreviewPatternOnDeviceUseCase(
         spec: PatternSpec,
         deviceId: DeviceId
     ): Flow<PreviewProgress> = flow {
-        Logger.d("Начало предпросмотра паттерна на устройстве: ${spec.type}, deviceId: $deviceId", "PreviewPatternOnDeviceUseCase")
+        Logger.d(
+            "invoke: start preview specType=${spec.type} deviceId=$deviceId",
+            tag = TAG
+        )
         emit(PreviewProgress.Compiling)
         try {
             // Через сервис воспроизведения паттернов
-            playbackService.playOnDevice(spec, deviceId)
+            val result = playbackService.playOnDevice(spec, deviceId)
+            result
                 .onSuccess {
+                    Logger.d("invoke: playbackService.playOnDevice success", tag = TAG)
                     emit(PreviewProgress.Playing)
-                    Logger.d("Предпросмотр начат", "PreviewPatternOnDeviceUseCase")
+                    Logger.d("invoke: PreviewProgress.Playing emitted", tag = TAG)
                 }
                 .onFailure { error ->
+                    Logger.d("invoke: playbackService.playOnDevice failure error=$error", tag = TAG)
                     emit(PreviewProgress.Failed(Exception("Pattern playback failed: $error")))
                 }
         } catch (e: Exception) {
+            Logger.d("invoke: exception $e", tag = TAG)
             emit(PreviewProgress.Failed(e))
         }
     }
@@ -47,3 +54,5 @@ sealed interface PreviewProgress {
     data object Playing : PreviewProgress
     data class Failed(val cause: Throwable?) : PreviewProgress
 }
+
+private const val TAG = "PreviewPatternOnDeviceUseCase"

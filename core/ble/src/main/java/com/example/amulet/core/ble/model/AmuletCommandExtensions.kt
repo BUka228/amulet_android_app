@@ -1,7 +1,6 @@
 package com.example.amulet.core.ble.model
 
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
-import com.example.amulet.shared.domain.devices.model.ChaseDirection
 
 /**
  * Extension функции для преобразования доменных команд в BLE протокол.
@@ -12,12 +11,6 @@ import com.example.amulet.shared.domain.devices.model.ChaseDirection
  * Преобразование команды в строку протокола BLE.
  */
 fun AmuletCommand.toCommandString(): String = when (this) {
-    is AmuletCommand.Breathing -> "BREATHING:${color.toHex().removePrefix("#")}:${durationMs}ms"
-    is AmuletCommand.Pulse -> "PULSE:${color.toHex().removePrefix("#")}:${intervalMs}ms:$repeats"
-    is AmuletCommand.Chase -> "CHASE:${color.toHex().removePrefix("#")}:${direction.toCode()}:$speedMs"
-    is AmuletCommand.Fill -> "FILL:${color.toHex().removePrefix("#")}:$durationMs"
-    is AmuletCommand.Spinner -> "SPINNER:${colors.joinToString(",") { it.toHex().removePrefix("#") }}:$speedMs"
-    is AmuletCommand.Progress -> "PROGRESS:${color.toHex().removePrefix("#")}:$activeLeds"
     is AmuletCommand.SetRing -> "SET_RING:${colors.joinToString(":") { it.toHex() }}"
     is AmuletCommand.SetLed -> "SET_LED:$index:${color.toHex()}"
     is AmuletCommand.ClearAll -> "CLEAR_ALL"
@@ -26,13 +19,5 @@ fun AmuletCommand.toCommandString(): String = when (this) {
     is AmuletCommand.SetWifiCred -> "SET_WIFI_CRED:$ssidBase64:$passwordBase64"
     is AmuletCommand.WifiOtaStart -> "WIFI_OTA_START:$url:$version:$checksum"
     is AmuletCommand.GetProtocolVersion -> "GET_PROTOCOL_VERSION"
-    is AmuletCommand.Custom -> if (parameters.isEmpty()) command else "$command:${parameters.joinToString(":")}"
-}
-
-/**
- * Преобразование направления в код протокола.
- */
-private fun ChaseDirection.toCode(): String = when (this) {
-    ChaseDirection.CLOCKWISE -> "CW"
-    ChaseDirection.COUNTER_CLOCKWISE -> "CCW"
+    is AmuletCommand.Custom -> if (parameters.isEmpty()) command else "$command:${parameters.joinToString(":")}" 
 }

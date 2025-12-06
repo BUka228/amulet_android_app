@@ -61,54 +61,69 @@ bleManager.connectionState.collect { state ->
 ### Отправка команд
 
 ```kotlin
-// Простая анимация дыхания
-val command = AmuletCommand.Breathing(
-    color = Rgb(0, 255, 0),
-    durationMs = 8000
-)
-val result = bleManager.sendCommand(command)
-
-// Пульсация
+// Установить цвета всего кольца (8 диодов)
 bleManager.sendCommand(
-    AmuletCommand.Pulse(
-        color = Rgb(255, 0, 0),
-        intervalMs = 500,
-        repeats = 10
+    AmuletCommand.SetRing(
+        colors = listOf(
+            Rgb(255, 0, 0),
+            Rgb(255, 127, 0),
+            Rgb(255, 255, 0),
+            Rgb(0, 255, 0),
+            Rgb(0, 0, 255),
+            Rgb(75, 0, 130),
+            Rgb(148, 0, 211),
+            Rgb(255, 255, 255)
+        )
     )
 )
 
-// Встроенная анимация
+// Включить один конкретный диод
+bleManager.sendCommand(
+    AmuletCommand.SetLed(index = 0, color = Rgb(255, 0, 255))
+)
+
+// Запуск встроенной анимации по идентификатору прошивки
 bleManager.sendCommand(
     AmuletCommand.Play("breath_square")
 )
 ```
 
-### Загрузка анимации
+### Загрузка анимации (бинарный таймлайн)
+
+Как правило, приложение не формирует `AnimationPlan` напрямую, а использует доменный пайплайн
+`PatternSpec -> PatternTimeline -> DeviceTimelineSegment -> DeviceAnimationPlan -> AnimationPlan`.
+
+Для отладки можно сформировать бинарный payload вручную:
 
 ```kotlin
+// Пример: один SegmentLinearRgbV2 на всё кольцо
+val segment = DeviceTimelineSegment(
+    targetMask = 0xFF,              // все 8 диодов
+    priority = 0,
+    mixMode = MixMode.OVERRIDE,
+    startMs = 0,
+    durationMs = 1000,
+    fadeInMs = 0,
+    fadeOutMs = 0,
+    easingIn = Easing.LINEAR,
+    easingOut = Easing.LINEAR,
+    color = Rgb(255, 0, 255)
+)
+
+val payload = segment.toByteArray()
+
 val plan = AnimationPlan(
     id = "custom_animation_001",
-    commands = listOf(
-        AmuletCommand.SetLed(0, Rgb(255, 0, 255)),
-        AmuletCommand.Delay(150),
-        AmuletCommand.SetLed(0, Rgb(0, 0, 0)),
-        AmuletCommand.Delay(100)
-    ),
-    estimatedDurationMs = 1000,
+    payload = payload,
+    totalDurationMs = 1000,
     hardwareVersion = 200
 )
 
 bleManager.uploadAnimation(plan).collect { progress ->
     when (progress.state) {
-        UploadState.Uploading -> {
-            println("Progress: ${progress.percent}%")
-        }
-        UploadState.Completed -> {
-            println("Animation uploaded!")
-        }
-        is UploadState.Failed -> {
-            println("Error: ${progress.state.cause}")
-        }
+        UploadState.Uploading -> println("Progress: ${progress.percent}%")
+        UploadState.Completed -> println("Animation uploaded!")
+        is UploadState.Failed -> println("Error: ${progress.state.cause}")
     }
 }
 ```

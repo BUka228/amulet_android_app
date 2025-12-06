@@ -40,5 +40,6 @@ object GattConstants {
     const val CONNECTION_TIMEOUT_MS = 15_000L
     const val COMMAND_TIMEOUT_MS = 10_000L
     const val OTA_CHUNK_TIMEOUT_MS = 30_000L
+    const val ANIMATION_TIMEOUT_MS = 60_000L
     const val DISCOVERY_TIMEOUT_MS = 10_000L
 }

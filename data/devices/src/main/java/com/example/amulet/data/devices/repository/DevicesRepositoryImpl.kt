@@ -18,8 +18,9 @@ import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.DeviceSettings
 import com.example.amulet.shared.domain.devices.model.ScannedAmulet
-import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
+import com.example.amulet.shared.domain.devices.model.NotificationType
+import com.example.amulet.shared.domain.devices.model.DeviceAnimationPlan
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.example.amulet.core.ble.model.AnimationPlan
 import kotlinx.coroutines.flow.Flow
@@ -239,17 +240,47 @@ class DevicesRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun uploadCommandPlan(
-        plan: AmuletCommandPlan,
+    override fun uploadTimelinePlan(
+        plan: DeviceAnimationPlan,
         hardwareVersion: Int
     ): Flow<Int> {
+        Logger.d(
+            "uploadTimelinePlan: start hardwareVersion=$hardwareVersion segments=${plan.segments.size} duration=${plan.totalDurationMs}",
+            tag = TAG
+        )
+
+        // Конкатенация сегментов в единый бинарный payload для BLE.
+        val totalSize = plan.segments.sumOf { it.size }
+        val payload = ByteArray(totalSize)
+        var offset = 0
+        plan.segments.forEach { segmentBytes ->
+            segmentBytes.copyInto(
+                destination = payload,
+                destinationOffset = offset
+            )
+            offset += segmentBytes.size
+        }
+
         val blePlan = AnimationPlan(
-            id = "preview-${System.currentTimeMillis()}",
-            commands = plan.commands,
-            estimatedDurationMs = plan.estimatedDurationMs,
+            id = plan.id,
+            payload = payload,
+            totalDurationMs = plan.totalDurationMs,
             hardwareVersion = hardwareVersion
         )
-        return bleDataSource.uploadAnimation(blePlan).map { it.percent }
+
+        return bleDataSource.uploadAnimation(blePlan)
+            .map { progress ->
+                Logger.d("uploadTimelinePlan: progress=$progress", tag = TAG)
+                progress.percent
+            }
+    }
+
+    override suspend fun sendCommand(command: AmuletCommand): AppResult<Unit> {
+        return bleDataSource.sendCommand(command)
+    }
+
+    override fun observeNotifications(type: NotificationType?): Flow<String> {
+        return bleDataSource.observeNotifications(type)
     }
     
     companion object {

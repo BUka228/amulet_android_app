@@ -90,8 +90,8 @@ amulet://pair?serial=AMU-200-XYZ-001&token=eyJ...&hw=200&name=My+Amulet
 
 **Формат:** `COMMAND:PARAMETERS`
 
-**Примечание о производительности:**
-Текущий строковый формат идеален для отладки и v1.0, но может быть избыточным для "секретных кодов" с множественными командами. Для будущих оптимизаций (v2.0+) предусмотрен бинарный формат команд (см. раздел "Эволюция протокола").
+**Примечание о формате v2.0:**
+Протокол v2.0 использует гибридный подход: строковые управляющие команды (подключение, статус, OTA, `PLAY`, базовые настройки) и бинарный формат анимационных сегментов, инкапсулированный в base64‑payload внутри специальных команд загрузки планов. Первая версия протокола (чисто строковая передача кадров анимации) считается устаревшей и не используется.
 
 **Примеры команд:**
 
@@ -189,8 +189,8 @@ amulet://pair?serial=AMU-200-XYZ-001&token=eyJ...&hw=200&name=My+Amulet
     ```
     GET_PROTOCOL_VERSION
     ```
-    - Возвращает поддерживаемую версию протокола: `v1.0` или `v2.0`
-    - **Назначение**: Определение возможностей устройства для выбора оптимального формата команд
+    - Возвращает текущую версию протокола: `v2.0`
+    - **Назначение**: Диагностика и проверка, что устройство работает на ожидаемой версии протокола (v2.0)
 
 #### OTA команды
 
@@ -220,11 +220,11 @@ amulet://pair?serial=AMU-200-XYZ-001&token=eyJ...&hw=200&name=My+Amulet
    OTA_COMMIT
    ```
 
-#### Команды анимации и хранения практик
+#### Команды анимации и хранения практик (v2.0)
 
-На уровне BLE протокола все практики (паттерны) обрабатываются единообразно:
+В протоколе v2.0 **все практики (паттерны) описываются единым таймлайном**, который на стороне устройства представлен как набор бинарных сегментов. На BLE‑уровне это выглядит как «план анимации», загружаемый и запускаемый по `pattern_id`.
 
-- загрузка/обновление практики выполняется через связку `BEGIN_PLAN` / `ADD_COMMAND` / `COMMIT_PLAN` с указанием `pattern_id`;
+- загрузка/обновление практики выполняется через связку `BEGIN_PLAN` / `ADD_SEGMENTS` / `COMMIT_PLAN` с указанием `pattern_id`;
 - запуск практики выполняется через `PLAY:pattern_id` и всегда отталкивается от энергонезависимого хранилища устройства.
 
 Устройство хранит **до 10 практик** во внутренней NVS‑памяти. Идентификатор практики:
@@ -236,47 +236,98 @@ amulet://pair?serial=AMU-200-XYZ-001&token=eyJ...&hw=200&name=My+Amulet
 наиболее давно использованная практика автоматически вытесняется (LRU).
 Если практика приходит с уже существующим `pattern_id`, она **перезаписывает** предыдущую версию.
 
-##### Загрузка/обновление практики (PLAN_)
+##### Бинарный формат таймлайна (Timeline Segment v2)
 
-18. **Начать план анимации:**
+Таймлайн практики на устройстве представлен как набор **сегментов**. Каждый сегмент описывает, как во времени меняется интенсивность/цвет для конкретной группы светодиодов (или вибро‑канала).
+
+Базовый формат сегмента v2.0 (младший байт первым, little‑endian):
+
+```text
+struct SegmentLinearRgbV2 {
+    uint8  opcode;        // Тип сегмента: 0x01 = LINEAR_RGB
+    uint8  targetMask;    // Битовая маска: биты 0-7 = светодиоды 0-7, бит 7/8+ — доп. каналы (вибро и т.п.)
+    uint8  priority;      // Приоритет дорожки (меньше = раньше применяется)
+    uint8  mixMode;       // 0 = OVERRIDE, 1 = ADDITIVE
+    uint32 startMs;       // Время начала сегмента (мс с начала практики)
+    uint32 durationMs;    // Длительность сегмента (мс)
+    uint16 fadeInMs;      // Время разгона яркости с 0 до полной (мс)
+    uint16 fadeOutMs;     // Время затухания с полной яркости до 0 (мс)
+    uint8  easingIn;      // Тип кривой для fade-in (0 = LINEAR)
+    uint8  easingOut;     // Тип кривой для fade-out (0 = LINEAR)
+    uint8  red;           // Базовый цвет сегмента (0-255)
+    uint8  green;         // Базовый цвет сегмента (0-255)
+    uint8  blue;          // Базовый цвет сегмента (0-255)
+}
+```
+
+Сегменты одного таймлайна просто конкатенируются подряд в бинарном потоке. Устройство само:
+
+- сортирует сегменты по `startMs`/`priority`;
+- на каждом тике своего таймера (например, 10–20 мс) вычисляет вклад всех активных сегментов для каждого светодиода;
+- применяет `fadeInMs`/`fadeOutMs` и `easing*` для плавных переходов.
+
+##### Загрузка/обновление практики (PLAN)
+
+18. **Начать план анимации (заголовок таймлайна):**
+
    ```
-   BEGIN_PLAN:unique_id
+   BEGIN_PLAN:pattern_id:total_duration_ms
    ```
 
-20. **Добавить команду в план (с ожиданием подтверждения):**
-   ```
-   ADD_COMMAND:1:BREATHING:00FF00:5000ms
-   ```
-   - `1` - порядковый номер команды
-   - Остальное - команда
-   - **ВАЖНО:** Отправляется только после получения `STATE:READY_FOR_DATA`
+   - `pattern_id` — строковый ID практики (до 64 символов);
+   - `total_duration_ms` — ожидаемая общая длительность практики (для таймаутов и UX).
 
-4. **Зафиксировать план и сохранить практику:**
-   ```
-   COMMIT_PLAN:unique_id
-   ```
-   - При успешной фиксации все команды плана сохраняются как практика с ID `unique_id`
-   - Если практика с таким ID уже существует — она перезаписывается
-   - Если все 10 слотов заняты и ID новый — вытесняется практика с наименее недавним использованием (LRU)
+19. **Отправка сегментов таймлайна (в чанках, с Flow Control):**
 
-5. **Отменить план:**
+   Бинарные сегменты кодируются в Base64 и передаются кусками через управляющую команду:
+
    ```
-   ROLLBACK_PLAN:unique_id
+   ADD_SEGMENTS:pattern_id:chunk_index:base64_payload
    ```
+
+   - `pattern_id` — тот же ID, что и в `BEGIN_PLAN`;
+   - `chunk_index` — порядковый номер чанка (1..N), используется для отладки и повторных попыток;
+   - `base64_payload` — Base64‑строка, внутри которой содержится последовательность `SegmentLinearRgbV2` (без доп. заголовков).
+
+   **ВАЖНО:** каждый чанк отправляется **только после** получения от устройства `STATE:READY_FOR_DATA`. При ошибках устройство может прислать `STATE:ERROR` и клиент обязан либо повторить текущий чанк, либо прервать загрузку (`ROLLBACK_PLAN`).
+
+20. **Зафиксировать план и сохранить практику:**
+
+   ```
+   COMMIT_PLAN:pattern_id
+   ```
+
+   - При успешной фиксации все ранее полученные сегменты таймлайна сохраняются как практика с ID `pattern_id` во внутреннем хранилище устройства;
+   - Устройство может дополнительно проверять целостность данных (контрольная сумма, количество сегментов) и выдавать `ERROR:COMMIT_PLAN:...` при несоответствиях.
+
+21. **Отменить план:**
+
+   ```
+   ROLLBACK_PLAN:pattern_id
+   ```
+
+   - Удаляет временное состояние плана, если загрузка была прервана до `COMMIT_PLAN`.
 
 ##### Запуск практики (PLAY)
 
 1. **Воспроизведение практики по ID:**
+
    ```
    PLAY:pattern_id
    ```
-   - `pattern_id` — строковый ID (до 64 символов), под которым практика была загружена через `BEGIN_PLAN/ADD_COMMAND/COMMIT_PLAN`
-   - Устройство ищет практику в энергонезависимом хранилище и запускает её как план анимации
-   - При каждом успешном запуске обновляется признак «последней использованной практики» (используется для жестов и LRU)
 
-> Примечание по обратной совместимости: устройства могут иметь предзаполненные
-> практики с ID вроде `breath_square`, `pulse_red`, `chase_blue`, `spinner_rainbow`.
-> Для клиента это обычные практики: они могут быть перезаписаны/обновлены тем же `pattern_id`.
+   - `pattern_id` — строковый ID (до 64 символов), под которым практика была загружена через `BEGIN_PLAN/ADD_SEGMENTS/COMMIT_PLAN`;
+   - устройство ищет практику в энергонезависимом хранилище и запускает её таймлайн;
+   - при каждом успешном запуске обновляется признак «последней использованной практики» (используется для жестов и LRU);
+   - устройство может отправить уведомления `NOTIFY:PATTERN:STARTED:pattern_id` и `NOTIFY:ANIMATION:COMPLETE:pattern_id` для синхронизации с приложением.
+
+##### Рекомендации по формированию планов анимации (v2.0)
+
+- **Разрешение по времени.** Таймлайн описывается в миллисекундах, но реальное разрешение таймера устройства ограничено (обычно 10–20 мс). Не имеет смысла создавать сегменты короче 20 мс — они могут быть слиты или квантизированы прошивкой.
+- **Плавность переходов.** Для дыхания и fade‑эффектов рекомендуется использовать `fadeInMs`/`fadeOutMs` с длительностью не менее 300–500 мс. Плавность обеспечивается прошивкой, а не искусственной дискретизацией на клиенте.
+- **Приоритеты и смешивание.** Для независимых дорожек (фон + поверх иконка/код) используйте разные `priority` и корректный `mixMode` (`OVERRIDE` для «жёсткой маски», `ADDITIVE` для подсветки).
+- **Ограничение размера плана.** Рекомендуется держать общее число сегментов в пределах сотен, а не тысяч. Одна хорошо спроектированная практика обычно укладывается в 50–200 сегментов.
+- **Инвариантность клиента.** Клиент формирует только таймлайн (сегменты). Квантование по тикам и оптимизация кадров выполняются **внутри устройства**, что гарантирует одинаковую анимацию для приложения и амулета.
 
 #### Команды управления Wi-Fi и OTA
 
@@ -536,38 +587,6 @@ sealed interface ConnectionState {
 
 ```kotlin
 sealed interface AmuletCommand {
-    data class Breathing(
-        val color: Rgb,
-        val durationMs: Int
-    ) : AmuletCommand
-    
-    data class Pulse(
-        val color: Rgb,
-        val intervalMs: Int,
-        val repeats: Int
-    ) : AmuletCommand
-    
-    data class Chase(
-        val color: Rgb,
-        val direction: ChaseDirection,
-        val speedMs: Int
-    ) : AmuletCommand
-    
-    data class Fill(
-        val color: Rgb,
-        val durationMs: Int
-    ) : AmuletCommand
-    
-    data class Spinner(
-        val colors: List<Rgb>,
-        val speedMs: Int
-    ) : AmuletCommand
-    
-    data class Progress(
-        val color: Rgb,
-        val activeLeds: Int
-    ) : AmuletCommand
-    
     data class SetRing(
         val colors: List<Rgb>
     ) : AmuletCommand
@@ -602,10 +621,6 @@ sealed interface AmuletCommand {
         val command: String,
         val parameters: Map<String, String>
     ) : AmuletCommand
-}
-
-enum class ChaseDirection {
-    CLOCKWISE, COUNTER_CLOCKWISE
 }
 
 data class Rgb(
@@ -655,8 +670,8 @@ data class DeviceStatus(
 ```kotlin
 data class AnimationPlan(
     val id: String,
-    val commands: List<AmuletCommand>,
-    val estimatedDurationMs: Long,
+    val payload: ByteArray,      // конкатенация SegmentLinearRgbV2
+    val totalDurationMs: Long,   // ожидаемая длительность таймлайна (для таймаутов)
     val hardwareVersion: Int
 )
 ```
@@ -770,12 +785,6 @@ class CommandTimeoutPolicy {
     
     fun getTimeoutForCommand(command: AmuletCommand): Long {
         return when (command) {
-            is AmuletCommand.Breathing -> DEFAULT_TIMEOUT_MS
-            is AmuletCommand.Pulse -> DEFAULT_TIMEOUT_MS
-            is AmuletCommand.Chase -> DEFAULT_TIMEOUT_MS
-            is AmuletCommand.Fill -> DEFAULT_TIMEOUT_MS
-            is AmuletCommand.Spinner -> DEFAULT_TIMEOUT_MS
-            is AmuletCommand.Progress -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.SetRing -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.SetLed -> DEFAULT_TIMEOUT_MS
             is AmuletCommand.ClearAll -> DEFAULT_TIMEOUT_MS
@@ -828,8 +837,11 @@ class RetryPolicy {
             } catch (e: Exception) {
                 lastException = e
                 if (attempt < maxRetries - 1) {
+                    delay = minOf(
+                        delay * 2.0,
+                        MAX_DELAY_MS
+                    )
                     delay(delay)
-                    delay = minOf(delay * 2, MAX_DELAY_MS)
                 }
             }
         }
@@ -887,96 +899,159 @@ val spinnerCommand = AmuletCommand.Play("spinner_rainbow")
 bleManager.sendCommand(spinnerCommand)
 ```
 
-#### Последовательность команд для "секретного кода"
+#### Последовательность и таймлайн практик на уровне протокола v2.0
 
-**Поддержка PatternElementSequence:**
+Высокоуровневые доменные сущности (`PatternElementSequence`, `PatternElementTimeline` и др.) **не отображаются напрямую** в BLE‑команды. Вместо этого компилятор паттернов на стороне клиента всегда преобразует их в единый **канонический таймлайн**, который далее сериализуется в набор сегментов `SegmentLinearRgbV2`.
 
-Новый тип элемента `PatternElementSequence` обеспечивает эффективную передачу дискретных последовательностей команд. Компилятор паттернов преобразует `SequenceStep` элементы напрямую в BLE-команды:
+Это означает, что на уровне протокола v2.0 нет отдельных команд вида `SET_LED`/`DELAY` для описания сложных паттернов или "секретных кодов". Всё сводится к последовательности сегментов с явным `startMs`/`durationMs` и параметрами fade/easing.
 
-- `LedAction` → `SET_LED:index:color` + `DELAY:duration`
-- `DelayAction` → `DELAY:duration`
+**Пример "секретного кода" "Я скучаю" на таймлайне:**
 
-**Пример "секретного кода" "Я скучаю" (двойная пульсация верхнего диода, потом одинарная нижнего):**
+- два коротких сегмента для верхнего диода (LED0) с пурпурным цветом и быстрыми fade‑in/fade‑out;
+- пауза;
+- один сегмент для нижнего диода (LED4) с жёлтым цветом.
 
-```
-BEGIN_PLAN:secret_code_001
-STATE:READY_FOR_DATA
-ADD_COMMAND:1:SET_LED:0:#FF00FF
-STATE:READY_FOR_DATA
-ADD_COMMAND:2:DELAY:150
-STATE:READY_FOR_DATA
-ADD_COMMAND:3:SET_LED:0:#000000
-STATE:READY_FOR_DATA
-ADD_COMMAND:4:DELAY:100
-STATE:READY_FOR_DATA
-ADD_COMMAND:5:SET_LED:0:#FF00FF
-STATE:READY_FOR_DATA
-ADD_COMMAND:6:DELAY:150
-STATE:READY_FOR_DATA
-ADD_COMMAND:7:SET_LED:0:#000000
-STATE:READY_FOR_DATA
-ADD_COMMAND:8:DELAY:400
-STATE:READY_FOR_DATA
-ADD_COMMAND:9:SET_LED:4:#FFFF00
-STATE:READY_FOR_DATA
-ADD_COMMAND:10:DELAY:200
-STATE:READY_FOR_DATA
-ADD_COMMAND:11:SET_LED:4:#000000
-STATE:READY_FOR_DATA
-COMMIT_PLAN:secret_code_001
-```
+На BLE‑уровне это будет выглядеть как несколько `SegmentLinearRgbV2` с разными `startMs`, `targetMask` и `color`, упакованных в один или несколько `ADD_SEGMENTS` чанков. Конкретные `SequenceStep` и `TimelineTrack` остаются внутренними деталями доменной модели и не влияют на протокол.
 
-**Преимущества PatternElementSequence:**
-- **Эффективность**: Прямое соответствие между `SequenceStep` и BLE-командами
-- **Компактность**: Минимальный JSON для описания последовательностей
-- **Производительность**: Быстрая загрузка и выполнение "секретных кодов"
-- **Читаемость**: Понятная структура для отладки и модификации
-- **Масштабируемость**: Готовность к будущим оптимизациям (бинарный формат v2.0+)
+**Преимущества такого подхода:**
 
-#### Нелинейный таймлайн (PatternElementTimeline)
+- **Унификация**: любые типы паттернов (дыхание, пульсация, бегущие огни, "секретные коды") описываются одним и тем же набором сегментов.
+- **Плавность**: устройство само квантует таймлайн по своему таймеру, обеспечивая стабильные fade‑эффекты без дерготни.
+- **Простота прошивки**: прошивка работает только с сегментами и не должна знать о высокоуровневых паттернах.
+- **Совпадение с приложением**: превью в приложении использует тот же таймлайн, что и прошивка, поэтому анимация выглядит одинаково.
 
-`PatternElementTimeline` описывает параллельные дорожки с клипами (start/duration, color, fadeIn/fadeOut) и конфликт‑правилом «приоритет дорожек/режим смешивания».
+#### Энд‑ту‑энд пример: от паттерна до BLE команд v2.0
 
-Правила компиляции в BLE‑команды (v1 строковый протокол):
+Далее приведён полный путь от доменного описания паттерна до конкретных BLE‑команд протокола v2.0.
 
-1) Квантование по времени: весь таймлайн дискретизируется с шагом `tickMs` (по умолчанию 100ms).
-2) На каждом тике вычисляется целевое состояние кольца (8 цветов) с учётом всех активных клипов:
-   - Для каждого LED собираются вклады дорожек, активных в момент времени t.
-   - Вклады сортируются по `priority` (возрастание) и сводятся по `mixMode`:
-     - `OVERRIDE` — полностью замещает предыдущий цвет.
-     - `ADDITIVE` — по компонентам RGB суммирует с насыщением до 255 (fadeIn/fadeOut применяется как множитель интенсивности).
-3) Генерация команд:
-   - Если изменился 1–2 диода относительно предыдущего состояния — отправляются `SET_LED:index:#RRGGBB` на каждый изменённый диод.
-   - Если изменилось 3+ диодов — отправляется `SET_RING:#C0:#C1:#C2:#C3:#C4:#C5:#C6:#C7` (8 цветов подряд).
-   - Между тиками всегда стоит `DELAY:tickMs` (последний тик может быть укорочен, если `durationMs` не кратен `tickMs`).
-4) Оптимизации: пропускаются команды, если состояние кольца не изменилось; последовательные `DELAY` объединяются.
+##### 1. Доменная модель паттерна (упрощённое дыхание)
 
-Пример: две дорожки — LED0 (красный блип 0–300ms, затем 600–900ms) и LED4 (зелёный 1200–1800ms), `tick=100ms`:
+Пример: паттерн «медленное зелёное дыхание» на всём кольце, 8 секунд, плавный разгон и затухание.
 
-```
-BEGIN_PLAN:timeline_001
-STATE:READY_FOR_DATA
-ADD_COMMAND:1:SET_LED:0:#FF0000
-STATE:READY_FOR_DATA
-ADD_COMMAND:2:DELAY:100
-...
-ADD_COMMAND:n:SET_LED:0:#000000
-STATE:READY_FOR_DATA
-ADD_COMMAND:n+1:DELAY:300
-...
-ADD_COMMAND:m:SET_LED:4:#00FF00
-STATE:READY_FOR_DATA
-ADD_COMMAND:m+1:DELAY:600
-STATE:READY_FOR_DATA
-ADD_COMMAND:m+2:SET_LED:4:#000000
-STATE:READY_FOR_DATA
-COMMIT_PLAN:timeline_001
+```kotlin
+// Упрощённый DSL/модель в домене (Kotlin, shared/):
+val patternId = "breath_slow_green"
+
+val timeline = PatternTimeline(
+    durationMs = 8000,
+    tracks = listOf(
+        TimelineTrack(
+            target = TimelineTarget.Ring, // все 8 LED
+            priority = 0,
+            mixMode = MixMode.OVERRIDE,
+            clips = listOf(
+                TimelineClip(
+                    startMs = 0,
+                    durationMs = 8000,
+                    color = "#00FF00", // зелёный
+                    fadeInMs = 3000,
+                    fadeOutMs = 3000,
+                    easing = Easing.LINEAR
+                )
+            )
+        )
+    )
+)
 ```
 
-Примечания:
-- Fade‑параметры реализуются линейным масштабированием цвета внутри клипа по `fadeInMs`/`fadeOutMs`.
-- Таймлайн не требует дополнительных BLE команд — он транслируется в уже существующие `SET_LED`/`SET_RING`/`DELAY` и загружается через `BEGIN_PLAN`/`ADD_COMMAND`/`COMMIT_PLAN`.
-- Рекомендуется подбирать `tickMs` для баланса плавности/размера плана (меньший tick → больше команд).
+Компилятор паттернов преобразует такой `PatternTimeline` в один или несколько сегментов `SegmentLinearRgbV2`. В данном простом случае это будет **один сегмент** на всё кольцо.
+
+##### 2. Соответствующий SegmentLinearRgbV2
+
+Логическое наполнение сегмента:
+
+- `opcode = 0x01` (LINEAR_RGB);
+- `targetMask = 0xFF` (все 8 диодов активны);
+- `priority = 0` (фон);
+- `mixMode = 0` (OVERRIDE);
+- `startMs = 0`;
+- `durationMs = 8000`;
+- `fadeInMs = 3000`;
+- `fadeOutMs = 3000`;
+- `easingIn = 0` (LINEAR);
+- `easingOut = 0` (LINEAR);
+- `red = 0`, `green = 255`, `blue = 0`.
+
+В байтах (little‑endian, комментарии справа):
+
+```text
+01          // opcode = 0x01 (LINEAR_RGB)
+FF          // targetMask = 0xFF (LED0-7)
+00          // priority = 0
+00          // mixMode = 0 (OVERRIDE)
+00 00 00 00 // startMs = 0
+40 1F 00 00 // durationMs = 8000 (0x00001F40)
+B8 0B       // fadeInMs = 3000 (0x0BB8)
+B8 0B       // fadeOutMs = 3000 (0x0BB8)
+00          // easingIn = 0 (LINEAR)
+00          // easingOut = 0 (LINEAR)
+00          // red = 0
+FF          // green = 255
+00          // blue = 0
+```
+
+Итого длина сегмента: 1 + 1 + 1 + 1 + 4 + 4 + 2 + 2 + 1 + 1 + 1 + 1 + 1 = 21 байт.
+
+##### 3. Base64‑payload для ADD_SEGMENTS
+
+Сегмент (21 байт) кодируется в Base64. Для краткости приведём условный пример строки:
+
+```text
+// Пример. Реальное значение будет рассчитано компилятором:
+base64_payload = "Af8AAB8fA7gLuAAAAAD//wA="
+```
+
+На практике компилятор формирует бинарный `ByteArray` и кодирует его стандартными средствами (`Base64` на Android/Kotlin).
+
+##### 4. Полная последовательность BLE‑команд для загрузки и запуска
+
+1. Клиент (мобильное приложение) убеждается, что устройство на v2.0:
+
+   ```
+   GET_PROTOCOL_VERSION
+   ```
+
+   Ожидаемый ответ (по UART/notification):
+
+   ```
+   OK:GET_PROTOCOL_VERSION:v2.0
+   ```
+
+2. Загрузка плана анимации:
+
+   ```
+   // 1) Начало плана
+   BEGIN_PLAN:breath_slow_green:8000
+   // Ответы устройства:
+   OK:BEGIN_PLAN
+   STATE:READY_FOR_DATA
+
+   // 2) Отправка сегмента (все 21 байт внутри одного чанка)
+   ADD_SEGMENTS:breath_slow_green:1:Af8AAB8fA7gLuAAAAAD//wA=
+   // Ответы устройства:
+   STATE:PROCESSING
+   OK:ADD_SEGMENTS:1
+   STATE:READY_FOR_DATA
+
+   // 3) Фиксация плана
+   COMMIT_PLAN:breath_slow_green
+   // Ответы устройства:
+   OK:COMMIT_PLAN
+   ```
+
+3. Запуск практики и нотификации:
+
+   ```
+   // Команда запуска
+   PLAY:breath_slow_green
+
+   // Уведомления от устройства:
+   NOTIFY:PATTERN:STARTED:breath_slow_green
+   ... (устройство выполняет таймлайн, плавно дыша зелёным светом ~8 секунд) ...
+   NOTIFY:ANIMATION:COMPLETE:breath_slow_green
+   ```
+
+Таким образом, один доменный таймлайн с дыханием транслируется в один `SegmentLinearRgbV2`, один `ADD_SEGMENTS` чанк и минимальный набор управляющих команд. Визуально анимация на устройстве будет совпадать с превью в приложении, так как обе стороны используют одну и ту же модель таймлайна.
 
 ### Интеграция с архитектурой
 
@@ -1006,7 +1081,7 @@ interface AmuletRepository {
     suspend fun startWifiOta(
         ssid: String, 
         password: String, 
-        url: String, 
+        firmwareUrl: String, 
         version: String, 
         checksum: String
     ): Flow<OtaProgress>
@@ -1101,9 +1176,8 @@ class StartWifiOtaUseCase @Inject constructor(
     }
 }
 ```
-```
 
-#### Диаграмма архитектуры
+### Диаграмма архитектуры
 
 ```mermaid
 graph TB
@@ -1466,9 +1540,9 @@ data class SecureCommand(
 3. **Надежность** - автоматические повторы, таймауты и обработка ошибок
 4. **Гибкость** - поддержка как простых команд, так и сложных анимаций
 5. **Безопасность** - комплексная защита от всех известных угроз BLE
-6. **Критически важно: Flow Control** - механизм управления потоком данных предотвращает переполнение буфера устройства и потерю данных при OTA-обновлениях и загрузке анимаций
-7. **Точное управление светодиодами** - команды `SET_LED` и `DELAY` для создания сложных анимаций и "секретных кодов"
-8. **Временной контроль** - возможность создания пауз и синхронизации анимаций
+6. **Критически важно: Flow Control** - механизм управления потоком данных предотвращает переполнение буфера устройства и потерю данных при OTA-обновлениях и загрузке анимационных сегментов таймлайна
+7. **Унифицированный таймлайн** - единая модель сегментов (`SegmentLinearRgbV2`) для всех типов анимаций, включая "секретные коды" и дыхательные практики
+8. **Временной контроль** - точное управление паузами и фазами практики за счёт явных `startMs`/`durationMs` в сегментах и уведомлений об окончании анимации
 9. **Wi-Fi OTA обновления** - команды `SET_WIFI_CRED` и `WIFI_OTA_START` для автономных обновлений прошивки
 10. **Комплексная безопасность** - многоуровневая защита от MITM, replay-атак и несанкционированного доступа
 
@@ -1481,12 +1555,12 @@ data class SecureCommand(
 
 ### Возможности для сложных анимаций:
 
-- **Индивидуальное управление светодиодами** через `SET_LED:index:color`
-- **Точные временные паузы** через `DELAY:duration_ms`
-- **Эффективная загрузка анимаций** через механизм `PLAN_` команд
-- **Реализация "секретных кодов"** — сложные последовательности с точным временным контролем
-- **PatternElementSequence поддержка** — специализированный тип элемента для дискретных последовательностей команд с прямой трансляцией в BLE-команды
-- **Оптимизация производительности** — готовность к бинарному формату v2.0+ для сокращения трафика на 60-70%
+- **Индивидуальное управление светодиодами** реализуется через сегменты с нужной маской `targetMask`
+- **Точные временные паузы** достигаются за счёт разнесения `startMs`/`durationMs` сегментов и внутреннего таймера устройства
+- **Эффективная загрузка анимаций** через механизм `BEGIN_PLAN/ADD_SEGMENTS/COMMIT_PLAN`
+- **Реализация "секретных кодов"** — набор коротких сегментов с разными `startMs` и LED‑масками
+- **Единый формат таймлайна** — все высокоуровневые элементы паттернов компилируются в один и тот же набор бинарных сегментов
+- **Оптимизация производительности** — бинарный формат v2.0 сокращает трафик по сравнению с покадровой передачей на 60–70%
 
 ### Wi-Fi OTA возможности:
 
@@ -1654,28 +1728,25 @@ GET_PROTOCOL_VERSION → "v1.0" | "v2.0"
 
 ### Реализация в архитектуре
 
-**PatternCompiler обновления:**
+**PatternCompiler / DeviceTimelineCompiler:**
 ```kotlin
 interface PatternCompiler {
-    fun compile(spec: PatternSpec, hardwareVersion: Int, firmwareVersion: String): DeviceCommandPlan
-    fun compileBinary(spec: PatternSpec, hardwareVersion: Int, firmwareVersion: String): BinaryCommandPlan
+    fun compile(spec: PatternSpec): PatternTimeline
 }
 
-data class BinaryCommandPlan(
-    val commands: List<BinaryCommand>,
-    val estimatedDurationMs: Long,
-    val totalSizeBytes: Int
-)
-```
-
-**BleCommandEncoder обновления:**
-```kotlin
-interface BleCommandEncoder {
-    fun encode(plan: DeviceCommandPlan, mtu: Int): List<ByteArray>
-    fun encodeBinary(plan: BinaryCommandPlan, mtu: Int): List<ByteArray>
-    fun supportsBinaryFormat(deviceVersion: String): Boolean
+interface DeviceTimelineCompiler {
+    fun compile(
+        timeline: PatternTimeline,
+        hardwareVersion: Int,
+        firmwareVersion: String,
+        intensity: Double = 1.0
+    ): List<DeviceTimelineSegment>
 }
 ```
+
+На стороне BLE‑слоя список `DeviceTimelineSegment` сериализуется в бинарные сегменты
+`SegmentLinearRgbV2`, конкатенируется в `AnimationPlan.payload` и отправляется как
+`BEGIN_PLAN / ADD_SEGMENTS / COMMIT_PLAN`.
 
 ### Заключение
 

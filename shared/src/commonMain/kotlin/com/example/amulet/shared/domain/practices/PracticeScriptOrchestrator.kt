@@ -7,6 +7,8 @@ import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeSession
 import com.example.amulet.shared.domain.practices.model.PracticeStep
 import com.example.amulet.shared.domain.practices.model.PracticeStepType
+import com.github.michaelbull.result.onFailure
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * Оркестратор исполнения PracticeScript: шаг за шагом меняет паттерн на амулете.
@@ -91,6 +94,19 @@ class PracticeScriptOrchestratorImpl(
 
             if (steps.isEmpty()) return@launch
 
+            val intensity = session.intensity ?: 1.0
+
+            // Предзагрузка всех паттернов сценария
+            val patternIdsToPreload = steps.mapNotNull { it.patternId?.let(::PatternId) }
+                .ifEmpty { practice.patternId?.let { listOf(it) } ?: emptyList() }
+            patternPlaybackService.preloadPatterns(patternIdsToPreload, intensity)
+                .onFailure {
+                    // Если не удалось загрузить, останавливаемся
+                    _currentStepIndex.value = null
+                    currentSessionId = null
+                    return@launch
+                }
+
             val startTime = session.startedAt
             val now = System.currentTimeMillis()
             // Сколько времени уже прошло от начала сессии (в мс)
@@ -117,8 +133,8 @@ class PracticeScriptOrchestratorImpl(
                     if (stepPatternId != null) {
                         val pattern = getPatternByIdUseCase(stepPatternId).firstOrNull()
                         if (pattern != null) {
-                            val intensity = session.intensity ?: 1.0
-                            patternPlaybackService.playOnConnectedDevice(pattern.spec, intensity)
+                            val playResult = patternPlaybackService.playAndAwaitStart(stepPatternId)
+                            playResult.onFailure { return@launch }
                         }
                     }
 
@@ -130,8 +146,21 @@ class PracticeScriptOrchestratorImpl(
                     val currentElapsed = currentNow - startTime
                     val exactRemaining = stepEndTimeMs - currentElapsed
                     
-                    if (exactRemaining > 0) {
-                        delay(exactRemaining)
+                    val waitMs = exactRemaining.coerceAtLeast(0)
+
+                    // Ждём либо NOTIFY:ANIMATION:COMPLETE, либо таймаут по длительности шага
+                    if (waitMs > 0) {
+                        val completionFlow = patternPlaybackService.observeAnimationComplete(stepPatternId)
+                        try {
+                            withTimeout(waitMs) {
+                                completionFlow.firstOrNull()
+                            }
+                        } catch (_: CancellationException) {
+                            return@launch
+                        } catch (_: Exception) {
+                            // если не дождались уведомления, просто идём дальше по таймеру
+                            delay(waitMs)
+                        }
                     }
                 } else {
                     // Этот шаг уже прошел. Пропускаем.

@@ -3,65 +3,58 @@ package com.example.amulet.feature.patterns.presentation.editor.editors
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onSizeChanged
-import kotlinx.coroutines.delay
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.Slider
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.amulet.feature.patterns.R
-import com.example.amulet.shared.domain.patterns.model.*
-import com.example.amulet.core.design.components.textfield.AmuletTextField
 import androidx.core.graphics.toColorInt
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.components.textfield.AmuletTextField
+import com.example.amulet.feature.patterns.R
 import com.example.amulet.feature.patterns.presentation.components.AdvancedColorPickerSheet
-import com.example.amulet.feature.patterns.presentation.editor.editors.TimelineEditorViewModel
-import com.example.amulet.feature.patterns.presentation.editor.editors.TimelineAction
-import com.example.amulet.feature.patterns.presentation.editor.editors.Tool
+import com.example.amulet.shared.domain.patterns.model.Easing
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
+import kotlinx.coroutines.delay
 
 private enum class DurationUnit { MS, S }
 
@@ -69,11 +62,12 @@ private enum class DurationUnit { MS, S }
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 @Composable
 fun TimelineEditor(
-    element: PatternElementTimeline,
-    onUpdate: (PatternElement) -> Unit
+    timeline: PatternTimeline,
+    tickMs: Int,
+    onUpdate: (PatternTimeline) -> Unit
 ) {
     val vm: TimelineEditorViewModel = hiltViewModel()
-    LaunchedEffect(element) { vm.initialize(element, onUpdate) }
+    LaunchedEffect(timeline, tickMs) { vm.initialize(timeline, tickMs, onUpdate) }
     val sNullable by vm.state.collectAsStateWithLifecycle()
     val s = sNullable ?: return
     val ledsCount = s.ledsCount
@@ -104,7 +98,9 @@ fun TimelineEditor(
     val autoEnabled = s.autoEnabled
     val showAdvanced = s.showAdvanced
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val scrollState = rememberScrollState()
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.verticalScroll(scrollState)) {
         // Toolbar: tools, palette, undo/redo
         Row(
             modifier = Modifier.fillMaxWidth(),

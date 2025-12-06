@@ -36,8 +36,8 @@ import com.example.amulet.shared.domain.privacy.usecase.RequestDataExportUseCase
 import com.example.amulet.shared.domain.privacy.usecase.RequestAccountDeletionUseCase
 import com.example.amulet.shared.domain.initialization.usecase.SeedLocalDataUseCase
 import com.example.amulet.shared.domain.patterns.PatternPlaybackService
-import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
-import com.example.amulet.shared.domain.patterns.compiler.PatternCompilerImpl
+import com.example.amulet.shared.domain.patterns.compiler.DeviceTimelineCompiler
+import com.example.amulet.shared.domain.patterns.compiler.DeviceTimelineCompilerImpl
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticeSessionManagerImpl
@@ -123,9 +123,9 @@ private val sharedModule = module {
     factory { StartWifiOtaUpdateUseCase(get()) }
     factory { CancelOtaUpdateUseCase(get()) }
     
-    // Patterns Compiler / Playback
-    single<PatternCompiler> { PatternCompilerImpl() }
-    single { PatternPlaybackService(get(), get(), get()) }
+    // Patterns playback (PatternTimeline -> DeviceTimelineSegment -> DeviceAnimationPlan)
+    single<DeviceTimelineCompiler> { DeviceTimelineCompilerImpl() }
+    single { PatternPlaybackService(get(), get(), get(), get()) }
     
     // Patterns UseCases
     factory { PatternValidator() }
@@ -189,7 +189,6 @@ private val sharedModule = module {
             stopSessionUseCase = get(),
             getActiveSessionStreamUseCase = get(),
             getPracticeById = get(),
-            clearCurrentDevicePattern = get(),
             scriptOrchestrator = get(),
         )
     }

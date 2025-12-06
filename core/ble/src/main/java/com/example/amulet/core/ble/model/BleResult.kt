@@ -1,7 +1,5 @@
 package com.example.amulet.core.ble.model
 
-import com.example.amulet.shared.domain.devices.model.AmuletCommand
-
 /**
  * Результат выполнения BLE операции.
  */
@@ -50,12 +48,13 @@ sealed interface OtaState {
 }
 
 /**
- * План анимации для загрузки на устройство.
+ * План анимации для загрузки на устройство (бинарный таймлайн).
+ * payload содержит конкатенацию SegmentLinearRgbV2.
  */
 data class AnimationPlan(
     val id: String,
-    val commands: List<AmuletCommand>,
-    val estimatedDurationMs: Long,
+    val payload: ByteArray,
+    val totalDurationMs: Long,
     val hardwareVersion: Int
 )
 

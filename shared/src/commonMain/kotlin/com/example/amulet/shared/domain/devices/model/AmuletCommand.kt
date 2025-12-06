@@ -7,40 +7,7 @@ package com.example.amulet.shared.domain.devices.model
  */
 sealed interface AmuletCommand {
     
-    // Базовые анимации
-    data class Breathing(
-        val color: Rgb,
-        val durationMs: Int
-    ) : AmuletCommand
-    
-    data class Pulse(
-        val color: Rgb,
-        val intervalMs: Int,
-        val repeats: Int
-    ) : AmuletCommand
-    
-    data class Chase(
-        val color: Rgb,
-        val direction: ChaseDirection,
-        val speedMs: Int
-    ) : AmuletCommand
-    
-    data class Fill(
-        val color: Rgb,
-        val durationMs: Int
-    ) : AmuletCommand
-    
-    data class Spinner(
-        val colors: List<Rgb>,
-        val speedMs: Int
-    ) : AmuletCommand
-    
-    data class Progress(
-        val color: Rgb,
-        val activeLeds: Int // 0-8
-    ) : AmuletCommand
-    
-    // Управление светодиодами
+    // Управление светодиодами (низкоуровневые команды)
     data class SetRing(
         val colors: List<Rgb> // 8 элементов
     ) : AmuletCommand
@@ -56,7 +23,7 @@ sealed interface AmuletCommand {
         val durationMs: Int
     ) : AmuletCommand
     
-    // Встроенные анимации
+    // Встроенные анимации (идентификатор паттерна на устройстве)
     data class Play(
         val patternId: String
     ) : AmuletCommand
@@ -81,11 +48,6 @@ sealed interface AmuletCommand {
         val command: String,
         val parameters: List<String> = emptyList()
     ) : AmuletCommand
-}
-
-enum class ChaseDirection {
-    CLOCKWISE,
-    COUNTER_CLOCKWISE
 }
 
 data class Rgb(

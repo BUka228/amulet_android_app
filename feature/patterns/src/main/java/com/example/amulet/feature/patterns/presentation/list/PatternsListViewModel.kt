@@ -4,12 +4,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.model.PatternKind
-import com.example.amulet.shared.domain.patterns.usecase.*
+import com.example.amulet.shared.domain.patterns.usecase.DeletePatternUseCase
+import com.example.amulet.shared.domain.patterns.usecase.GetPatternsStreamUseCase
 import com.example.amulet.shared.domain.patterns.usecase.GetPresetsUseCase
+import com.example.amulet.shared.domain.patterns.usecase.ObserveMyPatternsUseCase
+import com.example.amulet.shared.domain.patterns.usecase.SyncPatternsUseCase
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

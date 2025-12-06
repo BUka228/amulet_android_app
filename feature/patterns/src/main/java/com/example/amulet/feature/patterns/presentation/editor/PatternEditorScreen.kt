@@ -1,11 +1,11 @@
 package com.example.amulet.feature.patterns.presentation.editor
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,34 +15,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.components.textfield.AmuletTextField
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.patterns.R
-import com.example.amulet.feature.patterns.presentation.components.PatternElementEditor
-import com.example.amulet.feature.patterns.presentation.components.PatternElementPickerDialog
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternData
 import com.example.amulet.feature.patterns.presentation.components.PublishPatternDialog
-import androidx.compose.material.icons.automirrored.filled.Send
-import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import kotlinx.coroutines.flow.collectLatest
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material3.ExperimentalMaterial3Api
 
 @Composable
 fun PatternEditorRoute(
     viewModel: PatternEditorViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onNavigateToPreview: (com.example.amulet.shared.domain.patterns.model.PatternSpec) -> Unit,
-    onNavigateToElementEditor: (Int) -> Unit
+    onNavigateToTimelineEditor: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    var showElementPicker by remember { mutableStateOf(false) }
+
     var showDiscardDialog by remember { mutableStateOf(false) }
     var showPublishDialog by remember { mutableStateOf(false) }
 
@@ -66,9 +57,6 @@ fun PatternEditorRoute(
                 is PatternEditorSideEffect.ShowPublishDialog -> {
                     showPublishDialog = true
                 }
-                is PatternEditorSideEffect.ShowElementPicker -> {
-                    showElementPicker = true
-                }
             }
         }
     }
@@ -77,13 +65,11 @@ fun PatternEditorRoute(
         state = uiState,
         onEvent = viewModel::handleEvent,
         snackbarHostState = snackbarHostState,
-        showElementPicker = showElementPicker,
-        onDismissElementPicker = { showElementPicker = false },
         showDiscardDialog = showDiscardDialog,
         onDismissDiscardDialog = { showDiscardDialog = false },
         showPublishDialog = showPublishDialog,
         onDismissPublishDialog = { showPublishDialog = false },
-        onNavigateToElementEditor = onNavigateToElementEditor
+        onOpenTimelineEditor = onNavigateToTimelineEditor,
     )
 }
 
@@ -95,13 +81,11 @@ fun PatternEditorScreen(
     state: PatternEditorState,
     onEvent: (PatternEditorEvent) -> Unit,
     snackbarHostState: SnackbarHostState,
-    showElementPicker: Boolean,
-    onDismissElementPicker: () -> Unit,
     showDiscardDialog: Boolean,
     onDismissDiscardDialog: () -> Unit,
     showPublishDialog: Boolean,
     onDismissPublishDialog: () -> Unit,
-    onNavigateToElementEditor: (Int) -> Unit
+    onOpenTimelineEditor: () -> Unit,
 ) {
     val scaffoldState = LocalScaffoldState.current
 
@@ -136,17 +120,6 @@ fun PatternEditorScreen(
                 TextButton(onClick = { showAddTagDialog = false }) {
                     Text(stringResource(R.string.dialog_add_tag_cancel))
                 }
-            }
-        )
-    }
-
-    // Element Picker Dialog
-    if (showElementPicker) {
-        PatternElementPickerDialog(
-            onDismiss = onDismissElementPicker,
-            onElementTypeSelected = { elementType ->
-                onEvent(PatternEditorEvent.AddElement(elementType.createDefaultElement()))
-                onDismissElementPicker()
             }
         )
     }
@@ -478,74 +451,58 @@ fun PatternEditorScreen(
                 }
             }
 
-            // Заголовок элементов
-            item(key = "elements_header") {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        stringResource(R.string.pattern_editor_elements_header) + ": ${state.elements.size}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    IconButton(
-                        onClick = { onEvent(PatternEditorEvent.ShowElementPicker) },
+            // Таймлайн
+            item(key = "timeline") {
+                val timeline = state.timeline
+                if (timeline != null) {
+                    AmuletCard(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(
-                            Icons.Default.Add, 
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.pattern_element_timeline),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                IconButton(onClick = onOpenTimelineEditor) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = stringResource(R.string.pattern_editor_element_expand)
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
-            }
-
-            // Elements list
-            if (state.elements.isEmpty()) {
-                item(key = "empty_elements") {
-                    EmptyElementsState(
-                        onAddElement = { onEvent(PatternEditorEvent.ShowElementPicker) }
-                    )
-                }
-            } else {
-                itemsIndexed(
-                    items = state.elements,
-                    key = { index, element -> "$index-${element.hashCode()}" }
-                ) { index, element ->
-                    PatternElementEditor(
-                        element = element,
-                        index = index,
-                        onUpdate = { onEvent(PatternEditorEvent.UpdateElement(index, it)) },
-                        onRemove = { onEvent(PatternEditorEvent.RemoveElement(index)) },
-                        onMoveUp = if (index > 0) {
-                            { onEvent(PatternEditorEvent.MoveElement(index, index - 1)) }
-                        } else null,
-                        onMoveDown = if (index < state.elements.size - 1) {
-                            { onEvent(PatternEditorEvent.MoveElement(index, index + 1)) }
-                        } else null,
-                        onAddElement = { elementType ->
-                            onEvent(PatternEditorEvent.AddElement(elementType.createDefaultElement()))
-                        },
-                        onOpenEditor = { onNavigateToElementEditor(index) },
-                        modifier = Modifier.animateItem(
-                            fadeInSpec = tween(
-                                durationMillis = 300,
-                                easing = FastOutSlowInEasing
-                            ),
-                            fadeOutSpec = tween(
-                                durationMillis = 200,
-                                easing = FastOutSlowInEasing
-                            ),
-                            placementSpec = tween(
-                                durationMillis = 300,
-                                easing = FastOutSlowInEasing
+                } else {
+                    AmuletCard(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = stringResource(R.string.pattern_element_timeline),
+                                style = MaterialTheme.typography.titleMedium
                             )
-                        )
-                    )
+                            Text(
+                                text = stringResource(R.string.empty_elements_title),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             }
 
@@ -625,53 +582,6 @@ fun PatternEditorScreen(
                         Text(stringResource(R.string.bottom_sheet_tags_close))
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyElementsState(
-    onAddElement: () -> Unit
-) {
-    AmuletCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                Icons.Default.Info,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                stringResource(R.string.empty_elements_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                stringResource(R.string.empty_elements_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(alignment = Alignment.CenterHorizontally)
-            )
-            Button(
-                onClick = onAddElement,
-                modifier = Modifier.fillMaxWidth(0.8f)
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.pattern_editor_add_element))
             }
         }
     }

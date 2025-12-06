@@ -1,21 +1,20 @@
 package com.example.amulet.feature.patterns.presentation.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.feature.patterns.R
-import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.shared.domain.patterns.model.Pattern
+import com.example.amulet.shared.domain.patterns.model.PatternKind
 
 /**
  * Карточка с информацией о паттерне
@@ -79,17 +78,6 @@ fun PatternInfoCard(
                     )
                 )
                 
-                // Количество элементов
-                MetadataRow(
-                    icon = Icons.Default.Layers,
-                    label = stringResource(R.string.pattern_editor_elements_header),
-                    value = pluralStringResource(
-                        R.plurals.pattern_elements_count,
-                        pattern.spec.elements.size,
-                        pattern.spec.elements.size
-                    )
-                )
-                
                 // Зацикливание
                 MetadataRow(
                     icon = Icons.Default.Repeat,
@@ -103,7 +91,7 @@ fun PatternInfoCard(
                 
                 // Длительность (если не зациклен)
                 if (!pattern.spec.loop) {
-                    val totalDuration = calculateTotalDuration(pattern)
+                    val totalDuration = pattern.spec.timeline.durationMs.toLong()
                     MetadataRow(
                         icon = Icons.Default.Timer,
                         label = stringResource(R.string.pattern_preview_duration),
@@ -246,31 +234,6 @@ private fun MetadataRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
-    }
-}
-
-/**
- * Вычисляет общую длительность паттерна в миллисекундах
- */
-private fun calculateTotalDuration(pattern: Pattern): Long {
-    return pattern.spec.elements.fold(0L) { acc, element ->
-        acc + when (element) {
-            is PatternElementBreathing -> element.durationMs.toLong()
-            is PatternElementChase -> element.speedMs.toLong() * 8L
-            is PatternElementFill -> element.durationMs.toLong()
-            is PatternElementPulse -> element.speed.toLong() * element.repeats.toLong()
-            is PatternElementProgress -> 1000L
-            is PatternElementSequence -> {
-                element.steps.fold(0L) { sAcc, step ->
-                    sAcc + when (step) {
-                        is SequenceStep.LedAction -> step.durationMs.toLong()
-                        is SequenceStep.DelayAction -> step.durationMs.toLong()
-                    }
-                }
-            }
-            is PatternElementSpinner -> element.speedMs.toLong() * 8L
-            is PatternElementTimeline -> element.durationMs.toLong()
-        }
     }
 }
 

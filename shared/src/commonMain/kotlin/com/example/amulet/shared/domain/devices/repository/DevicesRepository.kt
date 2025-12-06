@@ -6,7 +6,9 @@ import com.example.amulet.shared.domain.devices.model.Device
 import com.example.amulet.shared.domain.devices.model.DeviceId
 import com.example.amulet.shared.domain.devices.model.DeviceLiveStatus
 import com.example.amulet.shared.domain.devices.model.ScannedAmulet
-import com.example.amulet.shared.domain.devices.model.AmuletCommandPlan
+import com.example.amulet.shared.domain.devices.model.DeviceAnimationPlan
+import com.example.amulet.shared.domain.devices.model.AmuletCommand
+import com.example.amulet.shared.domain.devices.model.NotificationType
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -118,10 +120,20 @@ interface DevicesRepository {
     fun observeConnectedDeviceStatus(): Flow<DeviceLiveStatus?>
 
     /**
-     * Загрузить план команд на устройство и вернуть поток прогресса (в процентах 0..100).
+     * Загрузить бинарный таймлайн (DeviceAnimationPlan) на устройство и вернуть поток прогресса (0..100).
      */
-    fun uploadCommandPlan(
-        plan: AmuletCommandPlan,
+    fun uploadTimelinePlan(
+        plan: DeviceAnimationPlan,
         hardwareVersion: Int
     ): Flow<Int>
+
+    /**
+     * Отправить одиночную команду на текущее подключенное устройство.
+     */
+    suspend fun sendCommand(command: AmuletCommand): AppResult<Unit>
+
+    /**
+     * Подписаться на сырые BLE уведомления (NOTIFY:...).
+     */
+    fun observeNotifications(type: NotificationType? = null): Flow<String>
 }

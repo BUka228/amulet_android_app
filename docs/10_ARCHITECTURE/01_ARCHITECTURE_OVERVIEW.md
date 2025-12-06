@@ -328,34 +328,8 @@ OpenAPI определяет богатую модель `PatternSpec`/`PatternE
 - **Читаемость**: Понятная структура для UI и отладки
 
 - Размещение:
-  - Ядро преобразования (pure function) — в `:shared` (KMP): `PatternSpec` → `DeviceCommandPlan` (абстрактное представление последовательности команд, не привязанное к BLE/HTTP). Это обеспечивает переиспользование на iOS.
-  - Транспортный адаптер — в `:core:ble`: `DeviceCommandPlan` → `ByteArray`/`List<ByteArray>` с учётом MTU/PHY, чанкинга, CRC/Checksum, префиксов сервиса/характеристик.
-- Контракты:
-```kotlin
-// :shared
-interface PatternCompiler {
-    fun compile(spec: PatternSpec, hardwareVersion: Int, firmwareVersion: String): DeviceCommandPlan
-    // Трансляция сложных пространственных анимаций (Chase, Wave) в последовательности команд для 8-диодного кольца
-    // Оркестрация последовательного выполнения команд для поддержки SEQUENTIAL режима ("секретные коды") путем генерации команд с задержками
-    // Специализированная обработка PatternElementSequence для эффективной компиляции дискретных последовательностей
-}
-
-data class DeviceCommandPlan(
-    val commands: List<DeviceCommand>,
-    val estimatedDurationMs: Long
-)
-
-sealed interface DeviceCommand {
-    data class Breathing(val color: Rgb, val durationMs: Int) : DeviceCommand
-    data class Pulse(val color: Rgb, val speed: Int, val repeats: Int) : DeviceCommand
-    // ... другие высокоуровневые команды
-}
-
-// :core:ble
-interface BleCommandEncoder {
-    fun encode(plan: DeviceCommandPlan, mtu: Int): List<ByteArray>
-}
-```
+  - Ядро преобразования (pure function) — в `:shared` (KMP): `PatternSpec` → `PatternTimeline` → `List<DeviceTimelineSegment>`.
+  - Транспортный адаптер — в `:core:ble`: `DeviceTimelineSegment` → бинарные сегменты `SegmentLinearRgbV2` → `AnimationPlan(payload)` с учётом MTU/чанкинга.
 
 - Правила компиляции:
   - Учитывать `hardwareVersion` (100 — кольцо 8 LED, 200 — кольцо 8 LED): деградация/апгрейд эффектов.
@@ -364,8 +338,8 @@ interface BleCommandEncoder {
   - Валидация и фолбэки для неподдерживаемых `PatternElement`.
   - **Специальная обработка `PatternElementSequence`**: Прямая трансляция `SequenceStep` в BLE-команды `SET_LED` и `DELAY` без промежуточных преобразований, обеспечивая максимальную эффективность для "секретных кодов".
 - Отладка и тестирование:
-  - Snapshot‑тесты компилятора (входной `PatternSpec` → стабильный `DeviceCommandPlan`).
-  - Golden‑тесты кодировщика BLE (план → bytes) и проверка MTU‑чанкинга.
+  - Snapshot‑тесты компилятора (входной `PatternSpec` → стабильный `PatternTimeline` / `List<DeviceTimelineSegment>`).
+  - Golden‑тесты сериализатора таймлайна устройства в бинарные сегменты (`SegmentLinearRgbV2`) и проверка MTU‑чанкинга.
   - Превью в UI использует тот же компилятор для консистентности визуализации и реального вывода.
 
 **Версионирование команд:**
@@ -378,10 +352,10 @@ interface BleCommandEncoder {
 
 **Атомарность и транзакции:**
 
-- Проблема: разрыв соединения во время отправки `DeviceCommandPlan` из N команд может оставить устройство в промежуточном состоянии.
-- Решение — транзакционная отправка:
-  - `BleCommandEncoder` оборачивает план в транзакцию: `BEGIN_TRANSACTION` → команды → `COMMIT_TRANSACTION` (или `ROLLBACK` при ошибке).
-  - Прошивка буферизует команды до `COMMIT`; при разрыве до `COMMIT` — автоматический откат.
+- Проблема: разрыв соединения во время отправки большого бинарного плана (множество сегментов таймлайна) может оставить устройство в промежуточном состоянии.
+- Решение — транзакционная отправка на уровне протокола:
+  - `BEGIN_PLAN` → чанки `ADD_SEGMENTS` → `COMMIT_PLAN` (или `ROLLBACK_PLAN` при ошибке).
+  - Прошивка буферизует сегменты до `COMMIT_PLAN`; при разрыве до `COMMIT_PLAN` — автоматический откат.
   - Таймаут транзакции: если `COMMIT` не пришёл в течение T, прошивка откатывает изменения.
 - Альтернатива — чанкинг с подтверждениями:
   - Разбивка большого плана на чанки, подтверждение каждого чанка устройством.
@@ -412,8 +386,8 @@ sealed interface UploadState {
 }
 
 interface BleCommandEncoder {
-    fun encode(plan: DeviceCommandPlan, mtu: Int): List<ByteArray>
-    fun upload(plan: DeviceCommandPlan, mtu: Int): Flow<UploadProgress>
+    fun encode(plan: PatternTimeline, mtu: Int): List<ByteArray>
+    fun upload(plan: PatternTimeline, mtu: Int): Flow<UploadProgress>
 }
 ```
 
@@ -840,7 +814,7 @@ sealed interface AppError {
 - Offline‑first: Room как источник истины для кэшируемых данных; стратегии «stale‑while‑revalidate», курсоры (`nextCursor`) для пагинации.
 - Гибридные каналы устройства: BLE для команд реального времени, HTTPS для долгоживущих операций и синхронизаций, FCM для пуш‑сигналов.
 - OTA: проверка `/ota/firmware/latest` с `hardware` и `currentFirmware`, последующий отчёт `/devices/{deviceId}/firmware/report`.
-- Конструктор анимаций: модели паттернов совместимы со схемами `/components/schemas/Pattern*`; адаптация по `hardwareVersion` (100/200). Компилятор `PatternSpec → DeviceCommandPlan` расположен в `:shared`; кодировщик wire‑формата и MTU‑чанкинг в `:core:ble`.
+- Конструктор анимаций: модели паттернов совместимы со схемами `/components/schemas/Pattern*`; адаптация по `hardwareVersion` (100/200). Компилятор `PatternSpec → PatternTimeline/DeviceTimelineSegment` расположен в `:shared`; бинарный формат и MTU‑чанкинг реализованы в `:core:ble` через `AnimationPlan(payload)`.
 - Телеметрия: батч‑отправка `/telemetry/events` с бэкофом; частичная устойчивость при офлайне через локальные очереди.
 - Приватность: единый поток удаления/экспорта аккаунта через `/privacy/*`; UI предоставляет понятные статусы и сроки готовности.
 - Feature Toggles и удалённая конфигурация: `:core:config` оборачивает Firebase Remote Config; значения по умолчанию зашиты в приложение; UseCase’ы зависят от интерфейса `ConfigRepository`.

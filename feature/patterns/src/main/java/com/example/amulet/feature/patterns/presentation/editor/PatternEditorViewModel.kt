@@ -3,7 +3,13 @@ package com.example.amulet.feature.patterns.presentation.editor
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.shared.domain.patterns.model.PatternDraft
+import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.model.PatternKind
+import com.example.amulet.shared.domain.patterns.model.PatternSpec
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
+import com.example.amulet.shared.domain.patterns.model.PatternUpdate
+import com.example.amulet.shared.domain.patterns.model.PublishMetadata
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
@@ -27,7 +33,13 @@ class PatternEditorViewModel @Inject constructor(
 
     private val patternId: String? = savedStateHandle.get<String>("patternId")
 
-    private val _uiState = MutableStateFlow(PatternEditorState(patternId = patternId))
+    private val _uiState = MutableStateFlow(
+        PatternEditorState(
+            patternId = patternId,
+            timeline = DEFAULT_TIMELINE,
+            spec = defaultSpec(DEFAULT_TIMELINE)
+        )
+    )
     val uiState: StateFlow<PatternEditorState> = _uiState.asStateFlow()
 
     private val _sideEffect = MutableSharedFlow<PatternEditorSideEffect>()
@@ -43,12 +55,6 @@ class PatternEditorViewModel @Inject constructor(
                 _uiState.update { it.copy(availableTags = tags.sorted()) }
             }
         }
-        // Автоматически обновляем spec при изменении элементов
-        viewModelScope.launch {
-            _uiState.map { it.elements }.distinctUntilChanged().collect {
-                updateSpec()
-            }
-        }
     }
 
     fun handleEvent(event: PatternEditorEvent) {
@@ -61,12 +67,7 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.TogglePlayPause -> togglePlayPause()
             is PatternEditorEvent.ToggleLoop -> toggleLoop()
             is PatternEditorEvent.RestartPreview -> restartPreview()
-            is PatternEditorEvent.ShowElementPicker -> showElementPicker()
-            is PatternEditorEvent.AddElement -> addElement(event.element)
-            is PatternEditorEvent.UpdateElement -> updateElement(event.index, event.element)
-            is PatternEditorEvent.RemoveElement -> removeElement(event.index)
-            is PatternEditorEvent.MoveElement -> moveElement(event.from, event.to)
-            is PatternEditorEvent.SelectElement -> selectElement(event.index)
+            is PatternEditorEvent.UpdateTimeline -> updateTimeline(event.timeline)
             is PatternEditorEvent.SavePattern -> savePattern()
             is PatternEditorEvent.PublishPattern -> publishPattern()
             is PatternEditorEvent.ConfirmPublish -> confirmPublish(event.data)
@@ -93,6 +94,7 @@ class PatternEditorViewModel @Inject constructor(
             getPatternByIdUseCase(PatternId(patternId))
                 .collect { pattern ->
                     pattern?.let {
+                        val tl = it.spec.timeline
                         _uiState.update { state ->
                             state.copy(
                                 pattern = it,
@@ -101,14 +103,13 @@ class PatternEditorViewModel @Inject constructor(
                                 kind = it.kind,
                                 hardwareVersion = it.hardwareVersion,
                                 loop = it.spec.loop,
-                                elements = it.spec.elements,
+                                timeline = tl,
                                 isLoading = false,
                                 isEditing = true,
                                 spec = it.spec,
                                 selectedTags = it.tags.toSet()
                             )
                         }
-                        updateSpec()
                     } ?: run {
                         _uiState.update { it.copy(isLoading = false) }
                     }
@@ -231,68 +232,14 @@ class PatternEditorViewModel @Inject constructor(
         }
     }
 
-    private fun showElementPicker() {
-        viewModelScope.launch {
-            _sideEffect.emit(PatternEditorSideEffect.ShowElementPicker)
-        }
-    }
-
-    private fun addElement(element: PatternElement) {
+    private fun updateTimeline(timeline: PatternTimeline) {
         _uiState.update {
             it.copy(
-                elements = it.elements + element,
+                timeline = timeline,
                 hasUnsavedChanges = true
             )
         }
         updateSpec()
-    }
-
-    private fun updateElement(index: Int, element: PatternElement) {
-        _uiState.update {
-            val updatedElements = it.elements.toMutableList()
-            if (index in updatedElements.indices) {
-                updatedElements[index] = element
-            }
-            it.copy(
-                elements = updatedElements,
-                hasUnsavedChanges = true
-            )
-        }
-        updateSpec()
-    }
-
-    private fun removeElement(index: Int) {
-        _uiState.update {
-            val updatedElements = it.elements.toMutableList()
-            if (index in updatedElements.indices) {
-                updatedElements.removeAt(index)
-            }
-            it.copy(
-                elements = updatedElements,
-                selectedElementIndex = null,
-                hasUnsavedChanges = true
-            )
-        }
-        updateSpec()
-    }
-
-    private fun moveElement(from: Int, to: Int) {
-        _uiState.update {
-            val updatedElements = it.elements.toMutableList()
-            if (from in updatedElements.indices && to in updatedElements.indices) {
-                val element = updatedElements.removeAt(from)
-                updatedElements.add(to, element)
-            }
-            it.copy(
-                elements = updatedElements,
-                hasUnsavedChanges = true
-            )
-        }
-        updateSpec()
-    }
-
-    private fun selectElement(index: Int?) {
-        _uiState.update { it.copy(selectedElementIndex = index) }
     }
 
     private fun savePattern() {
@@ -308,12 +255,13 @@ class PatternEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, validationErrors = emptyMap()) }
 
+            val timeline = currentState.timeline ?: DEFAULT_TIMELINE
             val spec = PatternSpec(
                 type = "custom",
                 hardwareVersion = currentState.hardwareVersion,
                 durationMs = null,
                 loop = currentState.loop,
-                elements = currentState.elements
+                timeline = timeline
             )
 
             if (currentState.isEditing && currentState.pattern != null) {
@@ -420,16 +368,15 @@ class PatternEditorViewModel @Inject constructor(
 
     private fun updateSpec() {
         val currentState = _uiState.value
-        val spec = if (currentState.elements.isNotEmpty()) {
+        val timeline = currentState.timeline
+        val spec = timeline?.let {
             PatternSpec(
                 type = "custom",
                 hardwareVersion = currentState.hardwareVersion,
                 durationMs = null,
                 loop = currentState.loop,
-                elements = currentState.elements
+                timeline = it
             )
-        } else {
-            null
         }
         _uiState.update { it.copy(spec = spec) }
     }
@@ -469,5 +416,20 @@ class PatternEditorViewModel @Inject constructor(
 
     private fun dismissError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    private companion object {
+        val DEFAULT_TIMELINE = PatternTimeline(
+            durationMs = 3000,
+            tracks = emptyList()
+        )
+
+        fun defaultSpec(timeline: PatternTimeline) = PatternSpec(
+            type = "custom",
+            hardwareVersion = 100,
+            durationMs = null,
+            loop = false,
+            timeline = timeline
+        )
     }
 }

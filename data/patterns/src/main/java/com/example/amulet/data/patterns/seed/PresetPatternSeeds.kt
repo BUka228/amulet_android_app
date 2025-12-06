@@ -1,15 +1,10 @@
 package com.example.amulet.data.patterns.seed
 
 import com.example.amulet.shared.domain.patterns.model.Pattern
-import com.example.amulet.shared.domain.patterns.model.PatternElementBreathing
-import com.example.amulet.shared.domain.patterns.model.PatternElementChase
-import com.example.amulet.shared.domain.patterns.model.PatternElementFill
-import com.example.amulet.shared.domain.patterns.model.PatternElementPulse
-import com.example.amulet.shared.domain.patterns.model.PatternElementSpinner
-import com.example.amulet.shared.domain.patterns.model.PatternElementTimeline
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
 import com.example.amulet.shared.domain.patterns.model.ReviewStatus
 import com.example.amulet.shared.domain.patterns.model.TargetGroup
 import com.example.amulet.shared.domain.patterns.model.TargetRing
@@ -178,12 +173,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 3_000,
                 loop = true,
-                elements = listOf(
-                    // Короткая серия вспышек по всему кольцу
-                    PatternElementPulse(
-                        color = "#FFFFFF",
-                        speed = 200,
-                        repeats = 4
+                timeline = PatternTimeline(
+                    durationMs = 3_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                // Приближённая модель: сплошное белое свечение
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 3_000,
+                                    color = "#FFFFFF"
+                                )
+                            )
+                        )
                     )
                 )
             ),
@@ -212,23 +215,21 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 25 * 60_000,
                 loop = true,
-                elements = listOf(
-                    // Спокойное устойчивое свечение для фокуса
-                    PatternElementTimeline(
-                        durationMs = 60_000,
-                        tickMs = 500,
-                        tracks = listOf(
-                            TimelineTrack(
-                                target = TargetRing,
-                                priority = 0,
-                                clips = listOf(
-                                    TimelineClip(
-                                        startMs = 0,
-                                        durationMs = 60_000,
-                                        color = "#1565C0", // насыщенный синий
-                                        fadeInMs = 3_000,
-                                        fadeOutMs = 3_000
-                                    )
+                timeline = PatternTimeline(
+                    // Один цикл свечения, сама практика может повторять его по loop
+                    durationMs = 60_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            priority = 0,
+                            clips = listOf(
+                                // Спокойное устойчивое свечение для фокуса
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 60_000,
+                                    color = "#1565C0", // насыщенный синий
+                                    fadeInMs = 3_000,
+                                    fadeOutMs = 3_000
                                 )
                             )
                         )
@@ -260,16 +261,25 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 10_000,
                 loop = true,
-                elements = listOf(
-                    // Динамичные цветные эффекты для праздника
-                    PatternElementSpinner(
-                        colors = listOf("#FFEB3B", "#FF4081"),
-                        speedMs = 150
-                    ),
-                    PatternElementChase(
-                        color = "#FFFFFF",
-                        direction = com.example.amulet.shared.domain.patterns.model.ChaseDirection.CLOCKWISE,
-                        speedMs = 120
+                timeline = PatternTimeline(
+                    durationMs = 10_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                // Приближённая модель: смена двух праздничных цветов
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 5_000,
+                                    color = "#FFEB3B"
+                                ),
+                                TimelineClip(
+                                    startMs = 5_000,
+                                    durationMs = 5_000,
+                                    color = "#FF4081"
+                                )
+                            )
+                        )
                     )
                 )
             ),
@@ -298,23 +308,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 30_000,
                 loop = true,
-                elements = listOf(
-                    // Длительное мягкое свечение под настроение
-                    PatternElementTimeline(
-                        durationMs = 30_000,
-                        tickMs = 500,
-                        tracks = listOf(
-                            TimelineTrack(
-                                target = TargetRing,
-                                priority = 0,
-                                clips = listOf(
-                                    TimelineClip(
-                                        startMs = 0,
-                                        durationMs = 30_000,
-                                        color = "#03A9F4",
-                                        fadeInMs = 2_000,
-                                        fadeOutMs = 2_000
-                                    )
+                timeline = PatternTimeline(
+                    durationMs = 30_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            priority = 0,
+                            clips = listOf(
+                                // Длительное мягкое свечение под настроение
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 30_000,
+                                    color = "#03A9F4",
+                                    fadeInMs = 2_000,
+                                    fadeOutMs = 2_000
                                 )
                             )
                         )
@@ -346,23 +353,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 15 * 60_000,
                 loop = false,
-                elements = listOf(
-                    // Медленный «закат» — плавное угасание
-                    PatternElementTimeline(
-                        durationMs = 60_000,
-                        tickMs = 500,
-                        tracks = listOf(
-                            TimelineTrack(
-                                target = TargetRing,
-                                priority = 0,
-                                clips = listOf(
-                                    TimelineClip(
-                                        startMs = 0,
-                                        durationMs = 60_000,
-                                        color = "#FFB74D",
-                                        fadeInMs = 5_000,
-                                        fadeOutMs = 20_000
-                                    )
+                timeline = PatternTimeline(
+                    durationMs = 60_000,
+                    tracks = listOf(
+                        // Медленный «закат» — плавное угасание
+                        TimelineTrack(
+                            target = TargetRing,
+                            priority = 0,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 60_000,
+                                    color = "#FFB74D",
+                                    fadeInMs = 5_000,
+                                    fadeOutMs = 20_000
                                 )
                             )
                         )
@@ -394,23 +398,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 60_000,
                 loop = true,
-                elements = listOf(
-                    // Быстрая вспышка по завершении минуты
-                    PatternElementTimeline(
-                        durationMs = 60_000,
-                        tickMs = 500,
-                        tracks = listOf(
-                            TimelineTrack(
-                                target = TargetRing,
-                                priority = 0,
-                                clips = listOf(
-                                    TimelineClip(
-                                        startMs = 55_000,
-                                        durationMs = 5_000,
-                                        color = "#FF5252",
-                                        fadeInMs = 500,
-                                        fadeOutMs = 1_000
-                                    )
+                timeline = PatternTimeline(
+                    durationMs = 60_000,
+                    tracks = listOf(
+                        // Быстрая вспышка по завершении минуты
+                        TimelineTrack(
+                            target = TargetRing,
+                            priority = 0,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 55_000,
+                                    durationMs = 5_000,
+                                    color = "#FF5252",
+                                    fadeInMs = 500,
+                                    fadeOutMs = 1_000
                                 )
                             )
                         )
@@ -442,12 +443,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 5_000,
                 loop = true,
-                elements = listOf(
-                    // Короткий социальный «пинг»
-                    PatternElementPulse(
-                        color = "#FF4081",
-                        speed = 180,
-                        repeats = 6
+                timeline = PatternTimeline(
+                    durationMs = 5_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                // Приближённая модель: розовое свечение на весь интервал
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 5_000,
+                                    color = "#FF4081"
+                                )
+                            )
+                        )
                     )
                 )
             ),
@@ -476,11 +485,20 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 10_000,
                 loop = true,
-                elements = listOf(
-                    // Мягкая пульсация, напоминающая о действии
-                    PatternElementBreathing(
-                        color = "#4CAF50",
-                        durationMs = 4_000
+                timeline = PatternTimeline(
+                    durationMs = 10_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                // Приближённая модель мягкой пульсации
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 10_000,
+                                    color = "#4CAF50"
+                                )
+                            )
+                        )
                     )
                 )
             ),
@@ -509,30 +527,27 @@ object PresetPatternSeeds {
                 hardwareVersion = HARDWARE_VERSION,
                 durationMs = 20_000,
                 loop = true,
-                elements = listOf(
-                    // Плавно меняющиеся цвета для творческого потока
-                    PatternElementTimeline(
-                        durationMs = 20_000,
-                        tickMs = 250,
-                        tracks = listOf(
-                            TimelineTrack(
-                                target = TargetRing,
-                                priority = 0,
-                                clips = listOf(
-                                    TimelineClip(
-                                        startMs = 0,
-                                        durationMs = 10_000,
-                                        color = "#7E57C2",
-                                        fadeInMs = 1_000,
-                                        fadeOutMs = 1_000
-                                    ),
-                                    TimelineClip(
-                                        startMs = 10_000,
-                                        durationMs = 10_000,
-                                        color = "#26C6DA",
-                                        fadeInMs = 1_000,
-                                        fadeOutMs = 1_000
-                                    )
+                timeline = PatternTimeline(
+                    durationMs = 20_000,
+                    tracks = listOf(
+                        // Плавно меняющиеся цвета для творческого потока
+                        TimelineTrack(
+                            target = TargetRing,
+                            priority = 0,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 10_000,
+                                    color = "#7E57C2",
+                                    fadeInMs = 1_000,
+                                    fadeOutMs = 1_000
+                                ),
+                                TimelineClip(
+                                    startMs = 10_000,
+                                    durationMs = 10_000,
+                                    color = "#26C6DA",
+                                    fadeInMs = 1_000,
+                                    fadeOutMs = 1_000
                                 )
                             )
                         )

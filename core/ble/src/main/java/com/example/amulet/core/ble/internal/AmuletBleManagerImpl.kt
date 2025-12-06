@@ -24,6 +24,7 @@ import com.example.amulet.core.ble.model.UploadState
 import com.example.amulet.core.ble.model.toCommandString
 import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
+import com.example.amulet.shared.domain.devices.model.NotificationType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.launch
@@ -180,7 +182,10 @@ class AmuletBleManagerImpl @Inject constructor(
     }
     
     @SuppressLint("MissingPermission")
-    private suspend fun sendCommandInternal(command: AmuletCommand): BleResult {
+    private suspend fun sendCommandInternal(
+        command: AmuletCommand,
+        timeoutMs: Long = GattConstants.COMMAND_TIMEOUT_MS
+    ): BleResult {
         val gatt = bluetoothGatt ?: run {
             Logger.e("sendCommandInternal: Not connected, command=${command.toCommandString()}", null, tag = TAG)
             throw IllegalStateException("Not connected")
@@ -198,6 +203,7 @@ class AmuletBleManagerImpl @Inject constructor(
                 commandString.startsWith("OTA_COMMIT") -> otaCharacteristic
             commandString.startsWith("BEGIN_PLAN") ||
                 commandString.startsWith("ADD_COMMAND") ||
+                commandString.startsWith("ADD_SEGMENTS") ||
                 commandString.startsWith("COMMIT_PLAN") ||
                 commandString.startsWith("ROLLBACK_PLAN") -> animationCharacteristic
             else -> txCharacteristic
@@ -237,7 +243,7 @@ class AmuletBleManagerImpl @Inject constructor(
         }
         
         return try {
-            withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
+            withTimeout(timeoutMs) {
                 commandResultChannel.receive()
             }.also {
                 Logger.d("sendCommandInternal: result=$it for command='$commandString'", tag = TAG)
@@ -252,35 +258,56 @@ class AmuletBleManagerImpl @Inject constructor(
     }
     
     override fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress> = flow {
-        Logger.d("uploadAnimation: planId=${plan.id} commands=${plan.commands.size}", tag = TAG)
-        emit(UploadProgress(plan.commands.size, 0, UploadState.Preparing))
-        
+        val totalBytes = plan.payload.size
+        val totalChunks = if (totalBytes == 0) 0 else ((totalBytes + GattConstants.CHUNK_SIZE - 1) / GattConstants.CHUNK_SIZE)
+
+        Logger.d("uploadAnimation: planId=${plan.id} payloadBytes=$totalBytes totalChunks=$totalChunks", tag = TAG)
+        emit(UploadProgress(totalChunks, 0, UploadState.Preparing))
+
         try {
-            // BEGIN_PLAN
-            sendCommandInternal(AmuletCommand.Custom("BEGIN_PLAN", listOf(plan.id)))
+            // BEGIN_PLAN:pattern_id:total_duration_ms
+            sendCommandInternal(
+                AmuletCommand.Custom(
+                    command = "BEGIN_PLAN",
+                    parameters = listOf(plan.id, plan.totalDurationMs.toString())
+                )
+            )
             flowControlManager.waitForReady()
-            
-            emit(UploadProgress(plan.commands.size, 0, UploadState.Uploading))
-            
-            // ADD_COMMAND для каждой команды
-            plan.commands.forEachIndexed { index, command ->
-                flowControlManager.executeWithFlowControl {
-                    val addCommandStr = "ADD_COMMAND:${index + 1}:${command.toCommandString()}"
-                    sendCommandInternal(AmuletCommand.Custom(addCommandStr))
+
+            emit(UploadProgress(totalChunks, 0, UploadState.Uploading))
+
+            val chunks = if (totalBytes == 0) emptyList() else plan.payload.chunked(GattConstants.CHUNK_SIZE)
+            chunks.forEachIndexed { index, chunk ->
+                flowControlManager.executeWithFlowControl(GattConstants.COMMAND_TIMEOUT_MS) {
+                    val base64 = chunk.toBase64()
+                    val addSegmentsCommand = AmuletCommand.Custom(
+                        command = "ADD_SEGMENTS",
+                        parameters = listOf(plan.id, (index + 1).toString(), base64)
+                    )
+                    sendCommandInternal(addSegmentsCommand)
                 }
-                
-                emit(UploadProgress(plan.commands.size, index + 1, UploadState.Uploading))
+
+                emit(UploadProgress(totalChunks, index + 1, UploadState.Uploading))
             }
-            
+
             // COMMIT_PLAN
-            emit(UploadProgress(plan.commands.size, plan.commands.size, UploadState.Committing))
-            sendCommandInternal(AmuletCommand.Custom("COMMIT_PLAN", listOf(plan.id)))
-            
-            emit(UploadProgress(plan.commands.size, plan.commands.size, UploadState.Completed))
-            
+            emit(UploadProgress(totalChunks, totalChunks, UploadState.Committing))
+            val commitTimeoutMs = (plan.totalDurationMs + GattConstants.COMMAND_TIMEOUT_MS)
+                .coerceAtMost(GattConstants.ANIMATION_TIMEOUT_MS)
+            Logger.d(
+                "uploadAnimation: COMMIT_PLAN with timeoutMs=$commitTimeoutMs totalDurationMs=${plan.totalDurationMs}",
+                tag = TAG
+            )
+            sendCommandInternal(
+                AmuletCommand.Custom("COMMIT_PLAN", listOf(plan.id)),
+                timeoutMs = commitTimeoutMs
+            )
+
+            emit(UploadProgress(totalChunks, totalChunks, UploadState.Completed))
+
         } catch (e: Exception) {
             Logger.e("uploadAnimation: failed for planId=${plan.id}", e, tag = TAG)
-            emit(UploadProgress(plan.commands.size, 0, UploadState.Failed(e)))
+            emit(UploadProgress(totalChunks, 0, UploadState.Failed(e)))
         }
     }
     
@@ -395,7 +422,20 @@ class AmuletBleManagerImpl @Inject constructor(
         }
     }
     
-    override fun observeNotifications(): Flow<String> = _notifications.asSharedFlow()
+    override fun observeNotifications(type: NotificationType?): Flow<String> {
+        if (type == null) return _notifications.asSharedFlow()
+        return _notifications.asSharedFlow().filter { message ->
+            when (type) {
+                NotificationType.BATTERY -> message.startsWith("NOTIFY:BATTERY:")
+                NotificationType.STATUS -> message.startsWith("NOTIFY:STATUS:")
+                NotificationType.OTA -> message.startsWith("NOTIFY:OTA:")
+                NotificationType.WIFI_OTA -> message.startsWith("NOTIFY:WIFI_OTA:")
+                NotificationType.PATTERN -> message.startsWith("NOTIFY:PATTERN:")
+                NotificationType.ANIMATION -> message.startsWith("NOTIFY:ANIMATION:")
+                NotificationType.CUSTOM -> message.startsWith("NOTIFY:")
+            }
+        }
+    }
     
     @SuppressLint("MissingPermission")
     private suspend fun ensureServicesDiscovered(gatt: BluetoothGatt) {
@@ -701,6 +741,18 @@ class AmuletBleManagerImpl @Inject constructor(
                 )
                 pendingCommandName = null
                 commandResultChannel.trySend(BleResult.Error(code, errorMessage))
+            }
+
+            // Нотификации о запуске/завершении анимации
+            when {
+                message.startsWith("NOTIFY:PATTERN:STARTED:") -> {
+                    val patternId = message.substringAfter("NOTIFY:PATTERN:STARTED:")
+                    Logger.d("handleNotification: pattern started id=$patternId", tag = TAG)
+                }
+                message.startsWith("NOTIFY:ANIMATION:COMPLETE:") -> {
+                    val patternId = message.substringAfter("NOTIFY:ANIMATION:COMPLETE:")
+                    Logger.d("handleNotification: animation complete id=$patternId", tag = TAG)
+                }
             }
             
             // Отправка уведомления в общий поток

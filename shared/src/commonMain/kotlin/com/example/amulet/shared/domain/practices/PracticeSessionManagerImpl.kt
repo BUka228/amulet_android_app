@@ -11,7 +11,6 @@ import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeStep
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
-import com.example.amulet.shared.domain.patterns.usecase.ClearCurrentDevicePatternUseCase
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.github.michaelbull.result.Err
@@ -41,7 +40,6 @@ class PracticeSessionManagerImpl(
     private val stopSessionUseCase: StopSessionUseCase,
     private val getActiveSessionStreamUseCase: GetActiveSessionStreamUseCase,
     private val getPracticeById: GetPracticeByIdUseCase,
-    private val clearCurrentDevicePattern: ClearCurrentDevicePatternUseCase,
     private val scriptOrchestrator: PracticeScriptOrchestrator,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val tickerIntervalMs: Long = 1000L
@@ -111,7 +109,7 @@ class PracticeSessionManagerImpl(
         session: PracticeSession,
         practice: Practice
     ): Flow<PracticeProgress?> = flow {
-        val scriptSteps = practice.script?.steps.orEmpty()
+        val scriptSteps = practice.script?.steps?.sortedBy { it.order }.orEmpty()
         val totalSteps = scriptSteps.size
         val totalDurationSec = session.durationSec ?: practice.durationSec
 
@@ -125,16 +123,28 @@ class PracticeSessionManagerImpl(
                 else -> 0
             }
 
-            val currentStepInfo = computeCurrentStep(scriptSteps, elapsed)
+            val orchestratorIndex = scriptOrchestrator.currentStepIndex.value
+
+            val effectiveIndex: Int?
+            val effectiveStep: PracticeStep?
+
+            if (orchestratorIndex != null && orchestratorIndex in scriptSteps.indices) {
+                effectiveIndex = orchestratorIndex
+                effectiveStep = scriptSteps[orchestratorIndex]
+            } else {
+                val fallback = computeCurrentStep(scriptSteps, elapsed)
+                effectiveIndex = fallback?.first
+                effectiveStep = fallback?.second
+            }
 
             emit(
                 PracticeProgress(
                     sessionId = session.id,
                     elapsedSec = elapsed,
                     totalSec = totalDurationSec,
-                    currentStepIndex = currentStepInfo?.first,
+                    currentStepIndex = effectiveIndex,
                     totalSteps = totalSteps,
-                    currentStep = currentStepInfo?.second
+                    currentStep = effectiveStep
                 )
             )
 

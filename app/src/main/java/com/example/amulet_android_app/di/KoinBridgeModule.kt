@@ -32,7 +32,6 @@ import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.patterns.PatternsRepository
-import com.example.amulet.shared.domain.patterns.compiler.PatternCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticesRepository
@@ -311,10 +310,6 @@ object KoinBridgeModule {
 
     @Provides
     fun provideCancelOtaUpdateUseCase(koin: Koin): CancelOtaUpdateUseCase = koin.get()
-    
-    // Patterns Compiler
-    @Provides
-    fun providePatternCompiler(koin: Koin): PatternCompiler = koin.get()
     
     // Patterns UseCases
     @Provides

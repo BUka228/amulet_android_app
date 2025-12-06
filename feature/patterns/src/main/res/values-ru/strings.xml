@@ -49,6 +49,7 @@
     <string name="pattern_editor_kind_label">Тип паттерна</string>
     <string name="pattern_editor_loop_label">Зациклить</string>
     <string name="pattern_editor_loop_description">Повторять паттерн непрерывно</string>
+    <string name="pattern_editor_tags_label">Теги</string>
     
     <!-- Pattern Elements -->
     <string name="pattern_editor_elements_header">Элементы паттерна</string>
@@ -115,11 +116,13 @@
     <string name="pattern_preview_pause">Пауза</string>
     <string name="pattern_preview_restart">Перезапустить</string>
     <string name="pattern_preview_loop">Зациклить</string>
+    <string name="pattern_preview_looped">Зациклен</string>
     <string name="pattern_preview_send_to_device">Отправить на устройство</string>
     <string name="pattern_preview_device_connected">Подключено</string>
     <string name="pattern_preview_device_disconnected">Отключено</string>
     <string name="pattern_preview_device_battery">Батарея: %d%%</string>
     <string name="pattern_preview_device_signal">Сигнал: %s</string>
+    <string name="pattern_preview_device_label">Устройство:</string>
     <string name="pattern_preview_signal_excellent">Отлично</string>
     <string name="pattern_preview_signal_good">Хорошо</string>
     <string name="pattern_preview_signal_fair">Средне</string>
@@ -167,6 +170,16 @@
     <string name="dialog_delete_pattern_message">Это действие нельзя отменить</string>
     <string name="dialog_delete_pattern_confirm">Удалить</string>
     <string name="dialog_delete_pattern_cancel">Отмена</string>
+
+    <!-- Диалоги управления тегами -->
+    <string name="dialog_add_tag_title">Добавить тег</string>
+    <string name="dialog_add_tag_label">Тег</string>
+    <string name="dialog_add_tag_confirm">Добавить</string>
+    <string name="dialog_add_tag_cancel">Отмена</string>
+    <string name="dialog_delete_tags_title">Удалить теги?</string>
+    <string name="dialog_delete_tags_message">Удалить %1$d выбранных тегов?</string>
+    <string name="dialog_delete_tags_confirm">Удалить</string>
+    <string name="dialog_delete_tags_cancel">Отмена</string>
     
     <string name="dialog_delete_element_title">Удалить элемент?</string>
     <string name="dialog_delete_element_message">Этот элемент будет удалён из паттерна</string>
@@ -286,6 +299,8 @@
     <string name="cd_pause_pattern">Приостановить паттерн</string>
     <string name="cd_restart_pattern">Перезапустить паттерн</string>
     <string name="cd_send_to_device">Отправить паттерн на устройство</string>
+    <string name="cd_add_tag">Добавить тег</string>
+    <string name="cd_delete_selected_tags">Удалить выбранные теги</string>
     <string name="cd_edit_pattern">Редактировать паттерн</string>
     <string name="cd_share_pattern">Поделиться паттерном</string>
     <string name="cd_navigate_back">Назад</string>
@@ -303,6 +318,11 @@
     <string name="cd_pattern_type_filter">Фильтр по типу паттерна</string>
     <string name="cd_expand_preview">Развернуть превью</string>
     <string name="cd_collapse_preview">Свернуть превью</string>
+
+    <!-- Нижний лист с тегами -->
+    <string name="bottom_sheet_tags_title">Все теги</string>
+    <string name="bottom_sheet_tags_search_label">Поиск тегов</string>
+    <string name="bottom_sheet_tags_close">Закрыть</string>
     
     <!-- Time Formats -->
     <string name="time_format_ms">%d мс</string>

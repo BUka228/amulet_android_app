@@ -5,10 +5,28 @@ import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.core.network.dto.pattern.PatternDto
 import com.example.amulet.core.network.dto.pattern.PatternSpecDto
+import com.example.amulet.core.network.dto.pattern.PatternTimelineDto
+import com.example.amulet.core.network.dto.pattern.TimelineTrackDto
+import com.example.amulet.core.network.dto.pattern.TimelineClipDto
+import com.example.amulet.core.network.dto.pattern.TimelineTargetDto
+import com.example.amulet.core.network.dto.pattern.TargetLedDto
+import com.example.amulet.core.network.dto.pattern.TargetGroupDto
+import com.example.amulet.core.network.dto.pattern.TargetRingDto
+import com.example.amulet.core.network.dto.pattern.MixModeDto
+import com.example.amulet.core.network.dto.pattern.EasingDto
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
+import com.example.amulet.shared.domain.patterns.model.TimelineTrack
+import com.example.amulet.shared.domain.patterns.model.TimelineClip
+import com.example.amulet.shared.domain.patterns.model.TimelineTarget
+import com.example.amulet.shared.domain.patterns.model.TargetLed
+import com.example.amulet.shared.domain.patterns.model.TargetGroup
+import com.example.amulet.shared.domain.patterns.model.TargetRing
+import com.example.amulet.shared.domain.patterns.model.MixMode
+import com.example.amulet.shared.domain.patterns.model.Easing
 import com.example.amulet.shared.domain.patterns.model.ReviewStatus
 import com.example.amulet.shared.domain.user.model.UserId
 import kotlinx.serialization.encodeToString
@@ -95,10 +113,92 @@ fun PatternSpecDto.toDomain(): PatternSpec {
     return PatternSpec(
         type = type,
         hardwareVersion = hardwareVersion,
-        durationMs = duration,
+        durationMs = duration ?: timeline.durationMs,
         loop = loop ?: false,
-        elements = emptyList() // Элементы маппятся отдельно при необходимости
+        timeline = timeline.toDomain()
     )
+}
+
+private fun PatternTimelineDto.toDomain(): PatternTimeline = PatternTimeline(
+    durationMs = durationMs,
+    tracks = tracks.map { it.toDomain() }
+)
+
+private fun TimelineTrackDto.toDomain(): TimelineTrack = TimelineTrack(
+    target = target.toDomain(),
+    priority = priority,
+    mixMode = mixMode.toDomain(),
+    clips = clips.map { it.toDomain() }
+)
+
+private fun TimelineClipDto.toDomain(): TimelineClip = TimelineClip(
+    startMs = startMs,
+    durationMs = durationMs,
+    color = color,
+    fadeInMs = fadeInMs,
+    fadeOutMs = fadeOutMs,
+    easing = easing.toDomain()
+)
+
+private fun TimelineTargetDto.toDomain(): TimelineTarget = when (this) {
+    is TargetLedDto -> TargetLed(index)
+    is TargetGroupDto -> TargetGroup(indices)
+    is TargetRingDto -> TargetRing
+}
+
+private fun MixModeDto.toDomain(): MixMode = when (this) {
+    MixModeDto.OVERRIDE -> MixMode.OVERRIDE
+    MixModeDto.ADDITIVE -> MixMode.ADDITIVE
+}
+
+private fun EasingDto.toDomain(): Easing = when (this) {
+    EasingDto.LINEAR -> Easing.LINEAR
+}
+
+// ===== Domain -> DTO =====
+
+fun PatternSpec.toDto(): PatternSpecDto = PatternSpecDto(
+    type = type,
+    hardwareVersion = hardwareVersion,
+    duration = durationMs,
+    loop = loop,
+    timeline = timeline.toDto()
+)
+
+private fun PatternTimeline.toDto(): PatternTimelineDto = PatternTimelineDto(
+    durationMs = durationMs,
+    tracks = tracks.map { it.toDto() }
+)
+
+private fun TimelineTrack.toDto(): TimelineTrackDto = TimelineTrackDto(
+    target = target.toDto(),
+    priority = priority,
+    mixMode = mixMode.toDto(),
+    clips = clips.map { it.toDto() }
+)
+
+private fun TimelineClip.toDto(): TimelineClipDto = TimelineClipDto(
+    startMs = startMs,
+    durationMs = durationMs,
+    color = color,
+    fadeInMs = fadeInMs,
+    fadeOutMs = fadeOutMs,
+    easing = easing.toDto()
+)
+
+private fun TimelineTarget.toDto(): TimelineTargetDto = when (this) {
+    is TargetLed -> TargetLedDto(index)
+    is TargetGroup -> TargetGroupDto(indices)
+    is TargetRing -> TargetRingDto
+}
+
+private fun MixMode.toDto(): MixModeDto = when (this) {
+    MixMode.OVERRIDE -> MixModeDto.OVERRIDE
+    MixMode.ADDITIVE -> MixModeDto.ADDITIVE
+}
+
+private fun Easing.toDto(): EasingDto = when (this) {
+    Easing.LINEAR -> EasingDto.LINEAR
 }
 
 // ===== Dto -> Entity =====

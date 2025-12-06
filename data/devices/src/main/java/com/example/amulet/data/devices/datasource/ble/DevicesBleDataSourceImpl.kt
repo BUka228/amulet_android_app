@@ -12,6 +12,7 @@ import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.AmuletCommand
+import com.example.amulet.shared.domain.devices.model.NotificationType
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.Flow
@@ -91,8 +92,19 @@ class DevicesBleDataSourceImpl @Inject constructor(
         }
     }
 
+    override fun observeNotifications(type: NotificationType?): Flow<String> {
+        return bleManager.observeNotifications(type)
+    }
+
     override fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress> {
+        Logger.d(
+            "uploadAnimation: planId=${plan.id} payloadBytes=${plan.payload.size} duration=${plan.totalDurationMs}",
+            tag = TAG
+        )
         return bleManager.uploadAnimation(plan)
+            .onEach { progress ->
+                Logger.d("uploadAnimation: progress=$progress", tag = TAG)
+            }
     }
     
     /**

@@ -91,131 +91,51 @@ data class PatternSpecDto(
     val hardwareVersion: Int,
     val duration: Int? = null,
     val loop: Boolean? = null,
-    val elements: List<PatternElementDto> = emptyList()
+    val timeline: PatternTimelineDto
+)
+
+@Serializable
+data class PatternTimelineDto(
+    val durationMs: Int,
+    val tracks: List<TimelineTrackDto>
+)
+
+@Serializable
+data class TimelineTrackDto(
+    val target: TimelineTargetDto,
+    val priority: Int = 0,
+    val mixMode: MixModeDto = MixModeDto.OVERRIDE,
+    val clips: List<TimelineClipDto>
 )
 
 @Serializable
 @JsonClassDiscriminator("type")
-sealed class PatternElementDto {
-    abstract val startTime: Int
-    abstract val duration: Int
-    abstract val intensity: Double?
-    abstract val speed: Double?
-}
-
-@Serializable
-@SerialName("gradient")
-data class PatternElementGradientDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: GradientParamsDto
-) : PatternElementDto()
-
-@Serializable
-data class GradientParamsDto(
-    val colors: List<String>,
-    val direction: String? = null,
-    val leds: List<Int>? = null
-)
-
-@Serializable
-@SerialName("pulse")
-data class PatternElementPulseDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: ColorParamsDto
-) : PatternElementDto()
-
-@Serializable
-data class ColorParamsDto(
-    val color: String
-)
-
-@Serializable
-@SerialName("breathing")
-data class PatternElementBreathingDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: ColorParamsDto
-) : PatternElementDto()
-
-@Serializable
-@SerialName("chase")
-data class PatternElementChaseDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: ChaseParamsDto
-) : PatternElementDto()
-
-@Serializable
-data class ChaseParamsDto(
-    val color: String,
-    val leds: List<Int>? = null
-)
-
-@Serializable
-@SerialName("color")
-data class PatternElementColorDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: ColorParamsDto
-) : PatternElementDto()
-
-@Serializable
-@SerialName("custom")
-data class PatternElementCustomDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: CustomParamsDto
-) : PatternElementDto()
-
-@Serializable
-data class CustomParamsDto(
-    val color: String? = null,
-    val colors: List<String>? = null
-)
-
-@Serializable
-@SerialName("sequence")
-data class PatternElementSequenceDto(
-    override val startTime: Int,
-    override val duration: Int,
-    override val intensity: Double? = null,
-    override val speed: Double? = null,
-    val params: SequenceParamsDto
-) : PatternElementDto()
-
-@Serializable
-data class SequenceParamsDto(
-    val steps: List<SequenceStepDto>
-)
-
-@Serializable
-@JsonClassDiscriminator("type")
-sealed class SequenceStepDto
+sealed class TimelineTargetDto
 
 @Serializable
 @SerialName("led")
-data class LedActionDto(
-    val ledIndex: Int,
-    val color: String,
-    val durationMs: Int
-) : SequenceStepDto()
+data class TargetLedDto(val index: Int) : TimelineTargetDto()
 
 @Serializable
-@SerialName("delay")
-data class DelayActionDto(
-    val durationMs: Int
-) : SequenceStepDto()
+@SerialName("group")
+data class TargetGroupDto(val indices: List<Int>) : TimelineTargetDto()
+
+@Serializable
+@SerialName("ring")
+object TargetRingDto : TimelineTargetDto()
+
+@Serializable
+data class TimelineClipDto(
+    val startMs: Int,
+    val durationMs: Int,
+    val color: String,
+    val fadeInMs: Int = 0,
+    val fadeOutMs: Int = 0,
+    val easing: EasingDto = EasingDto.LINEAR
+)
+
+@Serializable
+enum class MixModeDto { OVERRIDE, ADDITIVE }
+
+@Serializable
+enum class EasingDto { LINEAR }

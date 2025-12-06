@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Спецификация паттерна.
- * Содержит последовательность элементов анимации и параметры воспроизведения.
+ * Описывает анимацию через единый канонический таймлайн.
  */
 @Serializable
 data class PatternSpec(
@@ -12,5 +12,5 @@ data class PatternSpec(
     val hardwareVersion: Int,
     val durationMs: Int? = null,
     val loop: Boolean = false,
-    val elements: List<PatternElement> = emptyList()
+    val timeline: PatternTimeline
 )

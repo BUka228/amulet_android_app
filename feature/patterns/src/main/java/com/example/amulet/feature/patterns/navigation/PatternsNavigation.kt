@@ -1,12 +1,6 @@
 package com.example.amulet.feature.patterns.navigation
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -16,7 +10,6 @@ import androidx.navigation.navigation
 import com.example.amulet.feature.patterns.presentation.editor.PatternEditorRoute
 import com.example.amulet.feature.patterns.presentation.editor.PatternElementEditorRoute
 import com.example.amulet.feature.patterns.presentation.editor.PatternEditorViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.amulet.feature.patterns.presentation.list.PatternsListRoute
 import com.example.amulet.feature.patterns.presentation.preview.PatternPreviewRoute
 import com.example.amulet.shared.domain.patterns.PreviewCache
@@ -31,7 +24,7 @@ object PatternsDestination {
     const val list: String = "patterns/list"
     const val editor: String = "patterns/editor?patternId={patternId}"
     const val preview: String = "patterns/preview/{patternId}"
-    const val elementEditor: String = "patterns/editor/element/{index}"
+    const val editorTimeline: String = "patterns/editor/timeline"
 }
 
 fun NavController.navigateToPatternsList(popUpToInclusive: Boolean = false) {
@@ -64,12 +57,6 @@ fun NavController.navigateToPatternPreview(spec: PatternSpec) {
     val key = UUID.randomUUID().toString()
     PreviewCache.put(key, spec)
     navigate("patterns/preview?key=$key") {
-        launchSingleTop = true
-    }
-}
-
-fun NavController.navigateToPatternElementEditor(index: Int) {
-    navigate("patterns/editor/element/$index") {
         launchSingleTop = true
     }
 }
@@ -111,7 +98,21 @@ fun NavGraphBuilder.patternsGraph(
             PatternEditorRoute(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToPreview = navController::navigateToPatternPreview,
-                onNavigateToElementEditor = { index -> navController.navigateToPatternElementEditor(index) }
+                onNavigateToTimelineEditor = {
+                    navController.navigate(PatternsDestination.editorTimeline)
+                }
+            )
+        }
+
+        // Полноэкранный редактор таймлайна
+        composable(
+            route = PatternsDestination.editorTimeline,
+        ) {
+            val parentEntry = navController.getBackStackEntry(PatternsDestination.editor)
+            val vm: PatternEditorViewModel = hiltViewModel(parentEntry)
+            PatternElementEditorRoute(
+                viewModel = vm,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -138,25 +139,6 @@ fun NavGraphBuilder.patternsGraph(
                 onNavigateToEditor = {
                     patternId?.let { navController.navigateToPatternEditor(it) }
                 }
-            )
-        }
-
-        // Экран редактирования отдельного элемента
-        composable(
-            route = PatternsDestination.elementEditor,
-            arguments = listOf(
-                navArgument("index") { type = NavType.IntType }
-            )
-        ) { backStackEntry ->
-            val index = backStackEntry.arguments?.getInt("index") ?: 0
-            val parentEntry = remember(backStackEntry) {
-                navController.getBackStackEntry(PatternsDestination.editor)
-            }
-            val vm: PatternEditorViewModel = hiltViewModel(parentEntry)
-            PatternElementEditorRoute(
-                index = index,
-                viewModel = vm,
-                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

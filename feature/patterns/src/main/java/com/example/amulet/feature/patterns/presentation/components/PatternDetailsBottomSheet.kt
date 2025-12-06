@@ -1,20 +1,26 @@
 package com.example.amulet.feature.patterns.presentation.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.amulet.feature.patterns.R
-import com.example.amulet.shared.domain.patterns.model.*
+import com.example.amulet.shared.domain.patterns.model.Pattern
+import com.example.amulet.shared.domain.patterns.model.PatternKind
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -137,15 +143,11 @@ fun PatternDetailsBottomSheet(
                         value = pattern.spec.type
                     )
                     
-                    // Количество элементов
+                    // Таймлайн
                     MetadataRow(
                         icon = Icons.Default.Layers,
-                        label = stringResource(R.string.pattern_editor_elements_header),
-                        value = pluralStringResource(
-                            R.plurals.pattern_elements_count,
-                            pattern.spec.elements.size,
-                            pattern.spec.elements.size
-                        )
+                        label = stringResource(R.string.pattern_element_timeline),
+                        value = formatDurationText(pattern.spec.timeline.durationMs.toLong())
                     )
                     
                     // Зацикливание
@@ -159,39 +161,7 @@ fun PatternDetailsBottomSheet(
                         }
                     )
                     
-                    // Длительность (если не зациклен)
-                    if (!pattern.spec.loop) {
-                        val totalDuration = calculatePatternDuration(pattern)
-                        MetadataRow(
-                            icon = Icons.Default.Timer,
-                            label = stringResource(R.string.pattern_preview_duration),
-                            value = formatPatternDuration(totalDuration)
-                        )
-                    }
-                    
-                    // Статус модерации
-                    pattern.reviewStatus?.let { status ->
-                        MetadataRow(
-                            icon = Icons.Default.Verified,
-                            label = stringResource(R.string.pattern_details_review_status_label),
-                            value = when (status) {
-                                ReviewStatus.PENDING -> "Pending"
-                                ReviewStatus.APPROVED -> "Approved"
-                                ReviewStatus.REJECTED -> "Rejected"
-                            }
-                        )
-                    }
-                    
-                    // Количество использований
-                    pattern.usageCount?.let { count ->
-                        MetadataRow(
-                            icon = Icons.Default.PlayArrow,
-                            label = stringResource(R.string.pattern_details_usage_count_label),
-                            value = count.toString()
-                        )
-                    }
-                    
-                    // Даты создания и обновления
+                    // Даты
                     pattern.createdAt?.let { timestamp ->
                         MetadataRow(
                             icon = Icons.Default.Schedule,
@@ -207,6 +177,18 @@ fun PatternDetailsBottomSheet(
                             value = formatTimestamp(timestamp)
                         )
                     }
+                    
+                    // Таймлайн длительность
+                    Text(
+                        text = stringResource(R.string.pattern_element_timeline),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    MetadataRow(
+                        icon = Icons.Default.Timer,
+                        label = stringResource(R.string.pattern_preview_duration),
+                        value = formatDurationText(pattern.spec.timeline.durationMs.toLong())
+                    )
                 }
                 
                 // Теги
@@ -230,25 +212,6 @@ fun PatternDetailsBottomSheet(
                     }
                 }
                 
-                // Элементы паттерна
-                if (pattern.spec.elements.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.pattern_details_elements_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        pattern.spec.elements.forEachIndexed { index, element ->
-                            ElementSummaryCard(
-                                element = element,
-                                index = index + 1
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -290,65 +253,20 @@ private fun MetadataRow(
     }
 }
 
-@Composable
-private fun ElementSummaryCard(
-    element: PatternElement,
-    index: Int
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = index.toString(),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            Icon(
-                imageVector = when (element) {
-                    is PatternElementBreathing -> Icons.Default.Air
-                    is PatternElementPulse -> Icons.Default.FlashOn
-                    is PatternElementChase -> Icons.Default.RotateRight
-                    is PatternElementFill -> Icons.Default.LinearScale
-                    is PatternElementSpinner -> Icons.Default.Refresh
-                    is PatternElementProgress -> Icons.Default.BarChart
-                    is PatternElementSequence -> Icons.Default.List
-                    is PatternElementTimeline -> Icons.Default.Timeline
-                },
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            
-            Text(
-                text = when (element) {
-                    is PatternElementBreathing -> stringResource(R.string.pattern_element_breathing)
-                    is PatternElementPulse -> stringResource(R.string.pattern_element_pulse)
-                    is PatternElementChase -> stringResource(R.string.pattern_element_chase)
-                    is PatternElementFill -> stringResource(R.string.pattern_element_fill)
-                    is PatternElementSpinner -> stringResource(R.string.pattern_element_spinner)
-                    is PatternElementProgress -> stringResource(R.string.pattern_element_progress)
-                    is PatternElementSequence -> stringResource(R.string.pattern_element_sequence)
-                    is PatternElementTimeline -> stringResource(R.string.pattern_element_timeline)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
 private fun formatTimestamp(timestamp: Long): String {
     val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
     return formatter.format(Date(timestamp))
 }
+
+@Composable
+private fun formatDurationText(durationMs: Long): String {
+    return when {
+        durationMs < 1000 -> stringResource(R.string.time_format_ms, durationMs.toInt())
+        durationMs < 60000 -> stringResource(R.string.time_format_seconds, durationMs / 1000f)
+        else -> {
+            val minutes = (durationMs / 60000).toInt()
+            stringResource(R.string.time_format_minutes, minutes)
+        }
+    }
+}
+

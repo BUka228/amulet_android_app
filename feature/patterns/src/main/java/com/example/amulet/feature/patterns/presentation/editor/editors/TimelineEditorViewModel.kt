@@ -5,12 +5,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.amulet.shared.domain.patterns.model.Easing
+import com.example.amulet.shared.domain.patterns.model.MixMode
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
+import com.example.amulet.shared.domain.patterns.model.TargetGroup
+import com.example.amulet.shared.domain.patterns.model.TargetLed
+import com.example.amulet.shared.domain.patterns.model.TargetRing
+import com.example.amulet.shared.domain.patterns.model.TimelineClip
+import com.example.amulet.shared.domain.patterns.model.TimelineTrack
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import com.example.amulet.shared.domain.patterns.model.*
+import javax.inject.Inject
 
 @Immutable
 data class TimelineEditorState(
@@ -74,7 +81,7 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
     private val _state: MutableStateFlow<TimelineEditorState?> = MutableStateFlow(null)
     val state: StateFlow<TimelineEditorState?> get() = _state.asStateFlow()
 
-    private var onUpdateCallback: ((PatternElement) -> Unit)? = null
+    private var onUpdateCallback: ((PatternTimeline) -> Unit)? = null
     private var initialized by mutableStateOf(false)
 
     private val undoStack = ArrayDeque<Array<Array<String?>>>()
@@ -83,16 +90,16 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
     private var isPainting by mutableStateOf(false)
     private var strokePushed by mutableStateOf(false)
 
-    fun initialize(element: PatternElementTimeline, onUpdate: (PatternElement) -> Unit) {
+    fun initialize(timeline: PatternTimeline, tickMs: Int, onUpdate: (PatternTimeline) -> Unit) {
         if (initialized) return
         onUpdateCallback = onUpdate
         val ledsCount = 8
-        val duration = element.durationMs
-        val tick = element.tickMs
+        val duration = timeline.durationMs
+        val tick = tickMs
         val ticksCount = (duration / tick).coerceAtLeast(1)
 
         val grid = Array(ledsCount) { arrayOfNulls<String>(ticksCount) }
-        element.tracks.forEach { track ->
+        timeline.tracks.forEach { track ->
             val indices: List<Int> = when (val t = track.target) {
                 is TargetLed -> listOf(t.index)
                 is TargetGroup -> t.indices
@@ -111,7 +118,7 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
         val fadeIn = Array(ledsCount) { arrayOfNulls<Int>(ticksCount) }
         val fadeOut = Array(ledsCount) { arrayOfNulls<Int>(ticksCount) }
         val easing = Array(ledsCount) { arrayOfNulls<Easing>(ticksCount) }
-        element.tracks.forEach { track ->
+        timeline.tracks.forEach { track ->
             val indices: List<Int> = when (val t = track.target) {
                 is TargetLed -> listOf(t.index)
                 is TargetGroup -> t.indices
@@ -129,7 +136,7 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
             }
         }
         val initialColors = MutableList(ledsCount) { idx ->
-            val color = element.tracks
+            val color = timeline.tracks
                 .firstOrNull { it.target is TargetLed && (it.target as TargetLed).index == idx }
                 ?.clips?.firstOrNull()?.color
             color ?: "#FFFFFF"
@@ -138,17 +145,17 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
         val selectedTick = 0
         val currentColor = grid.getOrNull(selectedLed)?.getOrNull(selectedTick) ?: initialColors[selectedLed]
         _state.value = TimelineEditorState(
-                durationMs = duration,
-                tickMs = tick,
-                gridColors = grid,
-                fadeInGrid = fadeIn,
-                fadeOutGrid = fadeOut,
-                easingGrid = easing,
-                ledColors = initialColors,
-                selectedLed = selectedLed,
-                selectedTick = selectedTick,
-                currentColor = currentColor,
-            )
+            durationMs = duration,
+            tickMs = tick,
+            gridColors = grid,
+            fadeInGrid = fadeIn,
+            fadeOutGrid = fadeOut,
+            easingGrid = easing,
+            ledColors = initialColors,
+            selectedLed = 0,
+            selectedTick = selectedTick,
+            currentColor = currentColor,
+        )
         initialized = true
     }
 
@@ -348,9 +355,8 @@ class TimelineEditorViewModel @Inject constructor() : ViewModel() {
     private fun applyAndUpdate() {
         val s = state.value ?: return
         onUpdateCallback?.invoke(
-            PatternElementTimeline(
+            PatternTimeline(
                 durationMs = s.durationMs,
-                tickMs = s.tickMs,
                 tracks = rebuildTracks()
             )
         )

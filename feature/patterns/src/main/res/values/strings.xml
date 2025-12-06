@@ -50,6 +50,7 @@
     <string name="pattern_editor_kind_label">Pattern Type</string>
     <string name="pattern_editor_loop_label">Loop</string>
     <string name="pattern_editor_loop_description">Repeat pattern continuously</string>
+    <string name="pattern_editor_tags_label">Tags</string>
     
     <!-- Pattern Elements -->
     <string name="pattern_editor_elements_header">Pattern Elements</string>
@@ -154,11 +155,13 @@
     <string name="pattern_preview_pause">Pause</string>
     <string name="pattern_preview_restart">Restart</string>
     <string name="pattern_preview_loop">Loop</string>
+    <string name="pattern_preview_looped">Looped</string>
     <string name="pattern_preview_send_to_device">Send to Device</string>
     <string name="pattern_preview_device_connected">Connected</string>
     <string name="pattern_preview_device_disconnected">Disconnected</string>
     <string name="pattern_preview_device_battery">Battery: %d%%</string>
     <string name="pattern_preview_device_signal">Signal: %s</string>
+    <string name="pattern_preview_device_label">Device:</string>
     <string name="pattern_preview_signal_excellent">Excellent</string>
     <string name="pattern_preview_signal_good">Good</string>
     <string name="pattern_preview_signal_fair">Fair</string>
@@ -202,6 +205,16 @@
     <string name="dialog_discard_changes_save">Save</string>
     <string name="dialog_discard_changes_discard">Don\'t save</string>
     <string name="dialog_discard_changes_cancel">Cancel</string>
+
+    <!-- Tag management dialogs -->
+    <string name="dialog_add_tag_title">Add tag</string>
+    <string name="dialog_add_tag_label">Tag</string>
+    <string name="dialog_add_tag_confirm">Add</string>
+    <string name="dialog_add_tag_cancel">Cancel</string>
+    <string name="dialog_delete_tags_title">Delete tags?</string>
+    <string name="dialog_delete_tags_message">Delete %1$d selected tags?</string>
+    <string name="dialog_delete_tags_confirm">Delete</string>
+    <string name="dialog_delete_tags_cancel">Cancel</string>
     
     <string name="dialog_publish_pattern_title">Publish pattern</string>
     <string name="dialog_publish_pattern_public_title">Public Title</string>
@@ -299,6 +312,8 @@
     <string name="cd_pause_pattern">Pause pattern</string>
     <string name="cd_restart_pattern">Restart pattern</string>
     <string name="cd_send_to_device">Send pattern to Device</string>
+    <string name="cd_add_tag">Add tag</string>
+    <string name="cd_delete_selected_tags">Delete selected tags</string>
     <string name="cd_edit_pattern">Edit pattern</string>
     <string name="cd_share_pattern">Share pattern</string>
     <string name="cd_navigate_back">Back</string>
@@ -316,6 +331,11 @@
     <string name="cd_pattern_type_filter">Filter by pattern type</string>
     <string name="cd_expand_preview">Expand preview</string>
     <string name="cd_collapse_preview">Collapse preview</string>
+
+    <!-- Tags bottom sheet -->
+    <string name="bottom_sheet_tags_title">All tags</string>
+    <string name="bottom_sheet_tags_search_label">Search tags</string>
+    <string name="bottom_sheet_tags_close">Close</string>
     
     <!-- Time Formats -->
     <string name="time_format_ms">%d ms</string>
@@ -337,27 +357,7 @@
         <item quantity="one">%d download</item>
         <item quantity="other">%d downloads</item>
     </plurals>
-    <!-- Tags -->
-    <string name="pattern_editor_tags_label">Теги</string>
-    <string name="cd_add_tag">Добавить тег</string>
-    <string name="cd_delete_selected_tags">Удалить выбранные теги</string>
 
-    <!-- Add Tag Dialog -->
-    <string name="dialog_add_tag_title">Новый тег</string>
-    <string name="dialog_add_tag_label">Название тега</string>
-    <string name="dialog_add_tag_confirm">Добавить</string>
-    <string name="dialog_add_tag_cancel">Отмена</string>
-
-    <!-- Delete Tags Dialog -->
-    <string name="dialog_delete_tags_title">Удалить выбранные теги?</string>
-    <string name="dialog_delete_tags_message">Будут удалены %1$d тег(ов) из базы данных. Действие необратимо.</string>
-    <string name="dialog_delete_tags_confirm">Удалить</string>
-    <string name="dialog_delete_tags_cancel">Отмена</string>
-
-    <!-- Bottom sheet: all tags -->
-    <string name="bottom_sheet_tags_title">Все теги</string>
-    <string name="bottom_sheet_tags_search_label">Поиск тегов</string>
-    <string name="bottom_sheet_tags_close">Close</string>
 
     <!-- Timeline Editor (additional) -->
     <string name="timeline_palette">Palette</string>

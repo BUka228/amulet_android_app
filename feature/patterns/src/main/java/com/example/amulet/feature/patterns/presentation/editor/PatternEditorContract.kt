@@ -2,9 +2,9 @@ package com.example.amulet.feature.patterns.presentation.editor
 
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.patterns.model.Pattern
-import com.example.amulet.shared.domain.patterns.model.PatternElement
 import com.example.amulet.shared.domain.patterns.model.PatternKind
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
+import com.example.amulet.shared.domain.patterns.model.PatternTimeline
 
 /**
  * Контракт для экрана редактора паттернов.
@@ -18,8 +18,8 @@ data class PatternEditorState(
     val kind: PatternKind = PatternKind.LIGHT,
     val hardwareVersion: Int = 100,
     val loop: Boolean = false,
-    val elements: List<PatternElement> = emptyList(),
-    val selectedElementIndex: Int? = null,
+    val timeline: PatternTimeline? = null,
+    val timelineTickMs: Int = 100,
     val isEditing: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
@@ -48,12 +48,7 @@ sealed interface PatternEditorEvent {
     data object TogglePlayPause : PatternEditorEvent
     data object ToggleLoop: PatternEditorEvent
     data object RestartPreview : PatternEditorEvent
-    data object ShowElementPicker : PatternEditorEvent
-    data class AddElement(val element: PatternElement) : PatternEditorEvent
-    data class UpdateElement(val index: Int, val element: PatternElement) : PatternEditorEvent
-    data class RemoveElement(val index: Int) : PatternEditorEvent
-    data class MoveElement(val from: Int, val to: Int) : PatternEditorEvent
-    data class SelectElement(val index: Int?) : PatternEditorEvent
+    data class UpdateTimeline(val timeline: PatternTimeline) : PatternEditorEvent
     data object SavePattern : PatternEditorEvent
     data object PublishPattern : PatternEditorEvent
     data class ConfirmPublish(val data: com.example.amulet.feature.patterns.presentation.components.PublishPatternData) : PatternEditorEvent
@@ -77,5 +72,4 @@ sealed interface PatternEditorSideEffect {
     data class NavigateToPreview(val spec: PatternSpec) : PatternEditorSideEffect
     data object ShowDiscardConfirmation : PatternEditorSideEffect
     data object ShowPublishDialog : PatternEditorSideEffect
-    data object ShowElementPicker : PatternEditorSideEffect
 }
