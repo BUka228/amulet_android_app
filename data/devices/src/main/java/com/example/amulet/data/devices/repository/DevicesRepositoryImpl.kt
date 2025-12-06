@@ -261,6 +261,11 @@ class DevicesRepositoryImpl @Inject constructor(
             offset += segmentBytes.size
         }
 
+        Logger.d(
+            "uploadTimelinePlan: payloadSize=${payload.size} payloadSizeMod21=${payload.size % 21}",
+            tag = TAG
+        )
+
         val blePlan = AnimationPlan(
             id = plan.id,
             payload = payload,

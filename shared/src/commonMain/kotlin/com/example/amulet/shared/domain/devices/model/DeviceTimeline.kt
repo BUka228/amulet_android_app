@@ -22,7 +22,12 @@ data class DeviceTimelineSegment(
 ) {
     fun toByteArray(): ByteArray {
         // Строго по SegmentLinearRgbV2 (little-endian)
-        val result = ByteArray(19)
+        // Структура: 1 (opcode) + 1 (targetMask) + 1 (priority) + 1 (mixMode)
+        //          + 4 (startMs) + 4 (durationMs)
+        //          + 2 (fadeInMs) + 2 (fadeOutMs)
+        //          + 1 (easingIn) + 1 (easingOut)
+        //          + 3 (RGB) = 21 байт
+        val result = ByteArray(21)
         var i = 0
 
         // opcode = 0x01 (LINEAR_RGB)

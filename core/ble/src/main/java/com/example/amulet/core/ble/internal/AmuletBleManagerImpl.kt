@@ -42,6 +42,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -259,7 +261,7 @@ class AmuletBleManagerImpl @Inject constructor(
     
     override fun uploadAnimation(plan: AnimationPlan): Flow<UploadProgress> = flow {
         val totalBytes = plan.payload.size
-        val totalChunks = if (totalBytes == 0) 0 else ((totalBytes + GattConstants.CHUNK_SIZE - 1) / GattConstants.CHUNK_SIZE)
+        val totalChunks = if (totalBytes == 0) 0 else ((totalBytes + GattConstants.ANIMATION_PAYLOAD_CHUNK_SIZE - 1) / GattConstants.ANIMATION_PAYLOAD_CHUNK_SIZE)
 
         Logger.d("uploadAnimation: planId=${plan.id} payloadBytes=$totalBytes totalChunks=$totalChunks", tag = TAG)
         emit(UploadProgress(totalChunks, 0, UploadState.Preparing))
@@ -276,7 +278,7 @@ class AmuletBleManagerImpl @Inject constructor(
 
             emit(UploadProgress(totalChunks, 0, UploadState.Uploading))
 
-            val chunks = if (totalBytes == 0) emptyList() else plan.payload.chunked(GattConstants.CHUNK_SIZE)
+            val chunks = if (totalBytes == 0) emptyList() else plan.payload.chunked(GattConstants.ANIMATION_PAYLOAD_CHUNK_SIZE)
             chunks.forEachIndexed { index, chunk ->
                 flowControlManager.executeWithFlowControl(GattConstants.COMMAND_TIMEOUT_MS) {
                     val base64 = chunk.toBase64()
@@ -387,33 +389,50 @@ class AmuletBleManagerImpl @Inject constructor(
         }
     }
     
-    override suspend fun getProtocolVersion(): String? {
-        return try {
+    override suspend fun getProtocolVersion(): String? = coroutineScope {
+        try {
             Logger.d("getProtocolVersion: sending request", tag = TAG)
-            sendCommandInternal(AmuletCommand.GetProtocolVersion)
-            
+
             var version: String? = null
-            
-            withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
-                _notifications.first { message ->
-                    when {
-                        message.startsWith("NOTIFY:PROTOCOL_VERSION:") -> {
-                            version = message.substringAfter("NOTIFY:PROTOCOL_VERSION:")
-                            true
+
+            val waitJob = async {
+                withTimeout(GattConstants.COMMAND_TIMEOUT_MS) {
+                    _notifications.first { message ->
+                        when {
+                            message.startsWith("NOTIFY:PROTOCOL_VERSION:") -> {
+                                version = message.substringAfter("NOTIFY:PROTOCOL_VERSION:")
+                                true
+                            }
+                            // Поддержка формата OK:GET_PROTOCOL_VERSION[:vX.Y]
+                            message.startsWith("OK:GET_PROTOCOL_VERSION") -> {
+                                val suffix = message.substringAfter(
+                                    delimiter = "OK:GET_PROTOCOL_VERSION:",
+                                    missingDelimiterValue = ""
+                                )
+                                if (suffix.isNotEmpty()) {
+                                    version = suffix
+                                }
+                                true
+                            }
+                            // Текущая прошивка отправляет версию отдельной строкой вида "v2.0"
+                            message.startsWith("v") && message.getOrNull(1)?.isDigit() == true -> {
+                                version = message
+                                true
+                            }
+                            message.startsWith("ERROR:GET_PROTOCOL_VERSION") -> {
+                                version = null
+                                true
+                            }
+                            else -> false
                         }
-                        message.startsWith("OK:GET_PROTOCOL_VERSION") -> {
-                            version = message.substringAfter("OK:GET_PROTOCOL_VERSION:")
-                            true
-                        }
-                        message.startsWith("ERROR:GET_PROTOCOL_VERSION") -> {
-                            version = null
-                            true
-                        }
-                        else -> false
                     }
                 }
             }
-            
+
+            sendCommandInternal(AmuletCommand.GetProtocolVersion)
+
+            waitJob.await()
+
             Logger.d("getProtocolVersion: result=$version", tag = TAG)
             version
         } catch (e: Exception) {

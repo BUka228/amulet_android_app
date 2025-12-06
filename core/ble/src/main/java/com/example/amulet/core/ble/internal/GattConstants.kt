@@ -35,6 +35,7 @@ object GattConstants {
     // Размеры пакетов
     const val MAX_ATTRIBUTE_LENGTH = 512 // Максимальная длина атрибута
     const val CHUNK_SIZE = 256 // Размер чанка для OTA передачи
+    const val ANIMATION_PAYLOAD_CHUNK_SIZE = 150
     
     // Таймауты
     const val CONNECTION_TIMEOUT_MS = 15_000L
