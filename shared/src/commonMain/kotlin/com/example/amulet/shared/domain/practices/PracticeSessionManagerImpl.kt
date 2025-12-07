@@ -15,6 +15,7 @@ import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.UploadPracticeScriptToDeviceUseCase
 import com.example.amulet.shared.domain.practices.usecase.PlayPracticeScriptOnDeviceUseCase
+import com.example.amulet.shared.domain.practices.usecase.HasPracticeScriptOnDeviceUseCase
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.onSuccess
 import com.github.michaelbull.result.onFailure
@@ -49,6 +50,7 @@ class PracticeSessionManagerImpl(
     private val patternPlaybackService: PatternPlaybackService,
     private val uploadPracticeScriptToDevice: UploadPracticeScriptToDeviceUseCase,
     private val playPracticeScriptOnDevice: PlayPracticeScriptOnDeviceUseCase,
+    private val hasPracticeScriptOnDevice: HasPracticeScriptOnDeviceUseCase,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val tickerIntervalMs: Long = 1000L
 ) : PracticeSessionManager {
@@ -100,26 +102,35 @@ class PracticeSessionManagerImpl(
                     )
                 }
 
-                val uploadStart = System.currentTimeMillis()
-                Logger.d(
-                    "startSession: uploading practice script practiceId=${'$'}{practice.id}",
-                    tag = TAG
-                )
-                val uploadResult = uploadPracticeScriptToDevice(practice)
-                uploadResult.onFailure { error ->
-                    val duration = System.currentTimeMillis() - uploadStart
+                val hasScriptOnDevice = hasPracticeScriptOnDevice(practice.id)
+                if (hasScriptOnDevice) {
                     Logger.d(
-                        "startSession: upload practice script FAILED practiceId=${'$'}{practice.id} durationMs=$duration error=$error",
+                        "startSession: practice script already exists on device practiceId=${'$'}{practice.id}, skipping upload",
                         tag = TAG
                     )
-                    return@withContext Err(error)
+                    shouldPlayPracticeScript = true
+                } else {
+                    val uploadStart = System.currentTimeMillis()
+                    Logger.d(
+                        "startSession: uploading practice script practiceId=${'$'}{practice.id}",
+                        tag = TAG
+                    )
+                    val uploadResult = uploadPracticeScriptToDevice(practice)
+                    uploadResult.onFailure { error ->
+                        val duration = System.currentTimeMillis() - uploadStart
+                        Logger.d(
+                            "startSession: upload practice script FAILED practiceId=${'$'}{practice.id} durationMs=$duration error=$error",
+                            tag = TAG
+                        )
+                        return@withContext Err(error)
+                    }
+                    val uploadDuration = System.currentTimeMillis() - uploadStart
+                    Logger.d(
+                        "startSession: upload practice script SUCCESS practiceId=${'$'}{practice.id} durationMs=$uploadDuration",
+                        tag = TAG
+                    )
+                    shouldPlayPracticeScript = true
                 }
-                val uploadDuration = System.currentTimeMillis() - uploadStart
-                Logger.d(
-                    "startSession: upload practice script SUCCESS practiceId=${'$'}{practice.id} durationMs=$uploadDuration",
-                    tag = TAG
-                )
-                shouldPlayPracticeScript = true
             } else {
                 val patternIdsToPreload = practice.patternId?.let { listOf(it) } ?: emptyList()
                 val uniquePatternIdsToPreload = patternIdsToPreload.distinct()

@@ -178,6 +178,7 @@ private val sharedModule = module {
     factory { GetDashboardDailyStatsUseCase(get(), get(), get(), get()) }
     factory { UploadPracticeScriptToDeviceUseCase(get()) }
     factory { PlayPracticeScriptOnDeviceUseCase(get()) }
+    factory { HasPracticeScriptOnDeviceUseCase(get()) }
 
     // Practices Manager
     factory<PracticeSessionManager> {
@@ -189,6 +190,7 @@ private val sharedModule = module {
             patternPlaybackService = get(),
             uploadPracticeScriptToDevice = get(),
             playPracticeScriptOnDevice = get(),
+            hasPracticeScriptOnDevice = get(),
         )
     }
 
