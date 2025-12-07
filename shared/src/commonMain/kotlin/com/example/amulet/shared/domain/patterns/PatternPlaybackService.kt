@@ -163,28 +163,33 @@ class PatternPlaybackService(
         val status = awaitConnectedDeviceStatus()
             ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
-        val uniqueIds = patternIds.distinct()
-        for (patternId in uniqueIds) {
-            val pattern = getPatternById(patternId).firstOrNull() ?: continue
-            val timeline = pattern.spec.timeline
-            val segments = deviceTimelineCompiler.compile(
-                timeline = timeline,
-                hardwareVersion = status.hardwareVersion,
-                firmwareVersion = status.firmwareVersion,
-                intensity = intensity
-            )
-            val plan = DeviceAnimationPlan(
-                id = pattern.id.value,
-                totalDurationMs = timeline.durationMs.toLong(),
-                segments = segments.map { it.toByteArray() },
-            )
-            Logger.d(
-                "preloadPatterns: uploading plan id=${plan.id} segments=${plan.segments.size} duration=${plan.totalDurationMs}",
-                tag = TAG
-            )
-            devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
+        return@withContext try {
+            val uniqueIds = patternIds.distinct()
+            for (patternId in uniqueIds) {
+                val pattern = getPatternById(patternId).firstOrNull() ?: continue
+                val timeline = pattern.spec.timeline
+                val segments = deviceTimelineCompiler.compile(
+                    timeline = timeline,
+                    hardwareVersion = status.hardwareVersion,
+                    firmwareVersion = status.firmwareVersion,
+                    intensity = intensity
+                )
+                val plan = DeviceAnimationPlan(
+                    id = pattern.id.value,
+                    totalDurationMs = timeline.durationMs.toLong(),
+                    segments = segments.map { it.toByteArray() },
+                )
+                Logger.d(
+                    "preloadPatterns: uploading plan id=${plan.id} segments=${plan.segments.size} duration=${plan.totalDurationMs}",
+                    tag = TAG
+                )
+                devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
+            }
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.d("preloadPatterns: exception $e", tag = TAG)
+            Err(AppError.Unknown)
         }
-        Ok(Unit)
     }
 
     /**
@@ -199,48 +204,53 @@ class PatternPlaybackService(
         val status = awaitConnectedDeviceStatus()
             ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
-        val hasPlanOnDevice = try {
-            val result = devicesRepository.sendCommand(
-                AmuletCommand.HasPlan(patternId = planId)
-            )
-            var exists = false
-            result.fold(
-                success = { exists = true },
-                failure = { }
-            )
-            exists
-        } catch (e: Exception) {
-            Logger.d("preloadTimelinePlan: HAS_PLAN command failed, fallback to upload error=${'$'}e", tag = TAG)
-            false
-        }
+        return@withContext try {
+            val hasPlanOnDevice = try {
+                val result = devicesRepository.sendCommand(
+                    AmuletCommand.HasPlan(patternId = planId)
+                )
+                var exists = false
+                result.fold(
+                    success = { exists = true },
+                    failure = { }
+                )
+                exists
+            } catch (e: Exception) {
+                Logger.d("preloadTimelinePlan: HAS_PLAN command failed, fallback to upload error=${'$'}e", tag = TAG)
+                false
+            }
 
-        if (hasPlanOnDevice) {
+            if (hasPlanOnDevice) {
+                Logger.d(
+                    "preloadTimelinePlan: plan already exists on device, skipping upload id=${'$'}planId",
+                    tag = TAG
+                )
+                return@withContext Ok(Unit)
+            }
+
+            val timeline = spec.timeline
+            val segments = deviceTimelineCompiler.compile(
+                timeline = timeline,
+                hardwareVersion = status.hardwareVersion,
+                firmwareVersion = status.firmwareVersion,
+                intensity = intensity
+            )
+            val totalDurationMs = (spec.durationMs ?: timeline.durationMs).toLong()
+            val plan = DeviceAnimationPlan(
+                id = planId,
+                totalDurationMs = totalDurationMs,
+                segments = segments.map { it.toByteArray() },
+            )
             Logger.d(
-                "preloadTimelinePlan: plan already exists on device, skipping upload id=${'$'}planId",
+                "preloadTimelinePlan: uploading plan id=${'$'}planId segments=${'$'}{plan.segments.size} duration=${'$'}{plan.totalDurationMs}",
                 tag = TAG
             )
-            return@withContext Ok(Unit)
+            devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.d("preloadTimelinePlan: exception $e", tag = TAG)
+            Err(AppError.Unknown)
         }
-
-        val timeline = spec.timeline
-        val segments = deviceTimelineCompiler.compile(
-            timeline = timeline,
-            hardwareVersion = status.hardwareVersion,
-            firmwareVersion = status.firmwareVersion,
-            intensity = intensity
-        )
-        val totalDurationMs = (spec.durationMs ?: timeline.durationMs).toLong()
-        val plan = DeviceAnimationPlan(
-            id = planId,
-            totalDurationMs = totalDurationMs,
-            segments = segments.map { it.toByteArray() },
-        )
-        Logger.d(
-            "preloadTimelinePlan: uploading plan id=${'$'}planId segments=${'$'}{plan.segments.size} duration=${'$'}{plan.totalDurationMs}",
-            tag = TAG
-        )
-        devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
-        Ok(Unit)
     }
 
     /**

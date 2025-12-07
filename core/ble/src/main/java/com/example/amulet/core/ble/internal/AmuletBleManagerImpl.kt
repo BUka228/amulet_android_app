@@ -266,7 +266,7 @@ class AmuletBleManagerImpl @Inject constructor(
         Logger.d("uploadAnimation: planId=${plan.id} payloadBytes=$totalBytes totalChunks=$totalChunks", tag = TAG)
         emit(UploadProgress(totalChunks, 0, UploadState.Preparing))
 
-        try {
+        suspend fun uploadOnce(): BleResult {
             // BEGIN_PLAN:pattern_id:total_duration_ms
             val beginPlanParameters = buildList {
                 add(plan.id)
@@ -307,12 +307,38 @@ class AmuletBleManagerImpl @Inject constructor(
                 "uploadAnimation: COMMIT_PLAN with timeoutMs=$commitTimeoutMs totalDurationMs=${plan.totalDurationMs}",
                 tag = TAG
             )
-            sendCommandInternal(
+            return sendCommandInternal(
                 AmuletCommand.Custom("COMMIT_PLAN", listOf(plan.id)),
                 timeoutMs = commitTimeoutMs
             )
+        }
 
-            emit(UploadProgress(totalChunks, totalChunks, UploadState.Completed))
+        try {
+            val firstResult = uploadOnce()
+            val finalResult = if (firstResult is BleResult.Error) {
+                Logger.w(
+                    "uploadAnimation: COMMIT_PLAN failed on first attempt for planId=${plan.id}, result=$firstResult, retrying once",
+                    null,
+                    tag = TAG
+                )
+                val secondResult = uploadOnce()
+                if (secondResult is BleResult.Error) {
+                    Logger.e(
+                        "uploadAnimation: COMMIT_PLAN failed on retry for planId=${plan.id}, result=$secondResult",
+                        null,
+                        tag = TAG
+                    )
+                    emit(UploadProgress(totalChunks, 0, UploadState.Failed(Exception("COMMIT_PLAN failed: $secondResult"))))
+                    return@flow
+                }
+                secondResult
+            } else {
+                firstResult
+            }
+
+            if (finalResult is BleResult.Success) {
+                emit(UploadProgress(totalChunks, totalChunks, UploadState.Completed))
+            }
 
         } catch (e: Exception) {
             Logger.e("uploadAnimation: failed for planId=${plan.id}", e, tag = TAG)

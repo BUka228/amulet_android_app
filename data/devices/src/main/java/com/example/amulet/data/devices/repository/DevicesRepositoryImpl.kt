@@ -23,6 +23,7 @@ import com.example.amulet.shared.domain.devices.model.NotificationType
 import com.example.amulet.shared.domain.devices.model.DeviceAnimationPlan
 import com.example.amulet.shared.domain.devices.repository.DevicesRepository
 import com.example.amulet.core.ble.model.AnimationPlan
+import com.example.amulet.core.ble.model.UploadState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
@@ -277,6 +278,10 @@ class DevicesRepositoryImpl @Inject constructor(
         return bleDataSource.uploadAnimation(blePlan)
             .map { progress ->
                 Logger.d("uploadTimelinePlan: progress=$progress", tag = TAG)
+                if (progress.state is UploadState.Failed) {
+                    val cause = (progress.state as UploadState.Failed).cause
+                    throw cause ?: IllegalStateException("Animation upload failed for planId=${plan.id}")
+                }
                 progress.percent
             }
     }
