@@ -320,6 +320,8 @@ fun DeviceStatItem(
 // ===== Быстрый старт =====
 @Composable
 fun QuickStartSection(
+    title: String?,
+    subtitle: String?,
     onStartPractice: () -> Unit
 ) {
     val spacing = AmuletTheme.spacing
@@ -344,6 +346,9 @@ fun QuickStartSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val primaryTitle = title ?: stringResource(R.string.quick_start_breathing_title)
+                val primarySubtitle = subtitle?.takeWhile { it != '.' } ?: stringResource(R.string.quick_start_breathing_subtitle)
+
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
@@ -366,12 +371,12 @@ fun QuickStartSection(
                     
                     Column {
                         Text(
-                            text = stringResource(R.string.quick_start_breathing_title),
+                            text = primaryTitle,
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = stringResource(R.string.quick_start_breathing_subtitle),
+                            text = primarySubtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

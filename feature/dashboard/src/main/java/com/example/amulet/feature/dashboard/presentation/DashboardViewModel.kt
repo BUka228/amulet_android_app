@@ -7,10 +7,12 @@ import com.example.amulet.shared.domain.dashboard.usecase.GetDashboardDailyStats
 import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
-import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
-import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetRecommendationsStreamUseCase
+import com.example.amulet.shared.domain.practices.usecase.GetSessionsHistoryStreamUseCase
+import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -36,6 +38,7 @@ class DashboardViewModel @Inject constructor(
     private val getSessionsHistoryStreamUseCase: GetSessionsHistoryStreamUseCase,
     private val getRecommendationsStreamUseCase: GetRecommendationsStreamUseCase,
     private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase,
+    private val getPracticeByIdUseCase: GetPracticeByIdUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -43,6 +46,8 @@ class DashboardViewModel @Inject constructor(
 
     private val _sideEffects = MutableSharedFlow<DashboardSideEffect>()
     val sideEffects: SharedFlow<DashboardSideEffect> = _sideEffects.asSharedFlow()
+
+    private var quickStartPracticeJob: Job? = null
 
     init {
         observeDashboardStats()
@@ -109,12 +114,36 @@ class DashboardViewModel @Inject constructor(
         }
             .onEach { (recentPracticeId, recommendedPracticeId) ->
                 val quickStartId = recentPracticeId ?: recommendedPracticeId
+
                 _uiState.update {
                     it.copy(
                         quickStartPracticeId = quickStartId,
                         recommendedPracticeId = recommendedPracticeId
                     )
                 }
+
+                quickStartPracticeJob?.cancel()
+                if (quickStartId != null) {
+                    quickStartPracticeJob = viewModelScope.launch {
+                        getPracticeByIdUseCase(quickStartId).collect { practice ->
+                            _uiState.update {
+                                it.copy(
+                                    quickStartPracticeTitle = practice?.title,
+                                    quickStartPracticeSubtitle = practice?.description
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    quickStartPracticeJob = null
+                    _uiState.update {
+                        it.copy(
+                            quickStartPracticeTitle = null,
+                            quickStartPracticeSubtitle = null
+                        )
+                    }
+                }
+
                 Logger.d("Quick start practice updated: recent=$recentPracticeId, recommended=$recommendedPracticeId", TAG)
             }
             .launchIn(viewModelScope)

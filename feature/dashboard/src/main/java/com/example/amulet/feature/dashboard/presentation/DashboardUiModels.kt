@@ -15,6 +15,8 @@ data class DashboardUiState(
     val connectedBatteryLevel: Int? = null,
     val dailyStats: DailyStats = DailyStats(),
     val quickStartPracticeId: String? = null,
+    val quickStartPracticeTitle: String? = null,
+    val quickStartPracticeSubtitle: String? = null,
     val recommendedPracticeId: String? = null,
     val error: AppError? = null
 )

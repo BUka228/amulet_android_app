@@ -154,6 +154,8 @@ fun DashboardScreen(
             item {
                 // Быстрый старт практики - обновленный дизайн
                 QuickStartSection(
+                    title = uiState.quickStartPracticeTitle,
+                    subtitle = uiState.quickStartPracticeSubtitle,
                     onStartPractice = { onEvent(DashboardUiEvent.StartPractice(uiState.quickStartPracticeId)) }
                 )
             }
