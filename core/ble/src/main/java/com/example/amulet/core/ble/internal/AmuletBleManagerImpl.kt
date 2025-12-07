@@ -698,6 +698,47 @@ class AmuletBleManagerImpl @Inject constructor(
             }
         }
         
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            Logger.d(
+                "onCharacteristicRead: char=${characteristic.uuid} status=$status",
+                tag = TAG
+            )
+            if (status != BluetoothGatt.GATT_SUCCESS) return
+
+            when (characteristic.uuid) {
+                GattConstants.BATTERY_LEVEL_CHARACTERISTIC_UUID -> {
+                    val level = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
+                    Logger.d("onCharacteristicRead: batteryLevel=$level", tag = TAG)
+                    scope.launch {
+                        _batteryLevel.emit(level)
+                        val previous = _deviceStatus.value
+                        val updated = previous?.copy(
+                            batteryLevel = level,
+                            isOnline = true,
+                            lastSeen = System.currentTimeMillis()
+                        ) ?: DeviceStatus(
+                            firmwareVersion = "",
+                            hardwareVersion = 0,
+                            batteryLevel = level,
+                            isCharging = false,
+                            isOnline = true,
+                            lastSeen = System.currentTimeMillis()
+                        )
+                        _deviceStatus.value = updated
+                    }
+                }
+                GattConstants.AMULET_DEVICE_STATUS_CHARACTERISTIC_UUID -> {
+                    val statusData = characteristic.value.toString(Charsets.UTF_8)
+                    Logger.d("onCharacteristicRead: deviceStatus='$statusData'", tag = TAG)
+                    parseDeviceStatus(statusData)
+                }
+            }
+        }
+        
         @SuppressLint("MissingPermission")
         private fun enableNotifications(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             Logger.d("enableNotifications: characteristic=${characteristic.uuid}", tag = TAG)
@@ -732,6 +773,9 @@ class AmuletBleManagerImpl @Inject constructor(
             // Обработка Flow Control состояний
             if (message.startsWith("STATE:")) {
                 flowControlManager.handleDeviceState(message)
+                if (message == "STATE:READY_FOR_DATA") {
+                    readInitialStatusIfNeeded()
+                }
             }
             
             if (message.startsWith("OK:")) {
@@ -785,13 +829,66 @@ class AmuletBleManagerImpl @Inject constructor(
             _notifications.emit(message)
         }
     }
+
+    private suspend fun readInitialStatusIfNeeded() {
+        if (_deviceStatus.value != null) return
+
+        val gatt = bluetoothGatt ?: return
+        val statusChar = deviceStatusCharacteristic
+        val batteryChar = batteryCharacteristic
+
+        withContext(Dispatchers.Main) {
+            var readStarted = false
+            if (statusChar != null) {
+                readStarted = gatt.readCharacteristic(statusChar)
+                Logger.d("readInitialStatusIfNeeded: read statusChar started=$readStarted", tag = TAG)
+            }
+            if (!readStarted && batteryChar != null) {
+                val batteryRead = gatt.readCharacteristic(batteryChar)
+                Logger.d("readInitialStatusIfNeeded: read batteryChar started=$batteryRead", tag = TAG)
+            }
+        }
+    }
     
     private fun parseDeviceStatus(statusData: String) {
         // Парсинг формата: "SERIAL:xxx;FIRMWARE:xxx;HARDWARE:xxx;BATTERY:xx"
         try {
-            val parts = statusData.split(";").associate {
-                val (key, value) = it.split(":")
-                key to value
+            val raw = statusData.trim()
+
+            // Некоторые прошивки могут отправлять укороченный статус, например "READY"
+            if (raw.equals("READY", ignoreCase = true)) {
+                val previous = _deviceStatus.value
+                val status = previous?.copy(
+                    isOnline = true,
+                    lastSeen = System.currentTimeMillis()
+                ) ?: DeviceStatus(
+                    firmwareVersion = "",
+                    hardwareVersion = 0,
+                    batteryLevel = 0,
+                    isCharging = false,
+                    isOnline = true,
+                    lastSeen = System.currentTimeMillis()
+                )
+
+                Logger.d("parseDeviceStatus: READY shorthand, using status=$status from '$statusData'", tag = TAG)
+                _deviceStatus.value = status
+                return
+            }
+
+            val parts = raw
+                .split(";")
+                .mapNotNull { token ->
+                    val idx = token.indexOf(":")
+                    if (idx <= 0 || idx == token.lastIndex) return@mapNotNull null
+                    val key = token.substring(0, idx)
+                    val value = token.substring(idx + 1)
+                    key to value
+                }
+                .toMap()
+
+            if (parts.isEmpty()) {
+                Logger.w("parseDeviceStatus: unsupported format '$statusData'", null, tag = TAG)
+                return
             }
             
             val status = DeviceStatus(

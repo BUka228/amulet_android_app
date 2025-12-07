@@ -113,12 +113,8 @@ class PatternPlaybackService(
     ): AppResult<Unit> = withContext(dispatcher) {
         try {
             Logger.d("playOnConnectedDevice: start specType=${spec.type} intensity=$intensity", tag = TAG)
-            val status = observeConnectedDeviceStatus().firstOrNull()
-                ?: return@withContext Err(AppError.BleError.DeviceNotFound)
-
-            if (!status.isOnline) {
-                return@withContext Err(AppError.BleError.DeviceDisconnected)
-            }
+            val status = awaitConnectedDeviceStatus()
+                ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
             // 1. Берём канонический таймлайн прямо из PatternSpec
             val timeline = spec.timeline
@@ -164,9 +160,8 @@ class PatternPlaybackService(
         patternIds: List<PatternId>,
         intensity: Double = 1.0,
     ): AppResult<Unit> = withContext(dispatcher) {
-        val status = observeConnectedDeviceStatus().firstOrNull()
-            ?: return@withContext Err(AppError.BleError.DeviceNotFound)
-        if (!status.isOnline) return@withContext Err(AppError.BleError.DeviceDisconnected)
+        val status = awaitConnectedDeviceStatus()
+            ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
         val uniqueIds = patternIds.distinct()
         for (patternId in uniqueIds) {
@@ -201,9 +196,8 @@ class PatternPlaybackService(
         spec: PatternSpec,
         intensity: Double = 1.0,
     ): AppResult<Unit> = withContext(dispatcher) {
-        val status = observeConnectedDeviceStatus().firstOrNull()
-            ?: return@withContext Err(AppError.BleError.DeviceNotFound)
-        if (!status.isOnline) return@withContext Err(AppError.BleError.DeviceDisconnected)
+        val status = awaitConnectedDeviceStatus()
+            ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
         val hasPlanOnDevice = try {
             val result = devicesRepository.sendCommand(
@@ -297,12 +291,8 @@ class PatternPlaybackService(
     suspend fun clearCurrentDevice(): AppResult<Unit> = withContext(dispatcher) {
         try {
             Logger.d("clearCurrentDevice: start", tag = TAG)
-            val status = observeConnectedDeviceStatus().firstOrNull()
-                ?: return@withContext Err(AppError.BleError.DeviceNotFound)
-
-            if (!status.isOnline) {
-                return@withContext Err(AppError.BleError.DeviceDisconnected)
-            }
+            val status = awaitConnectedDeviceStatus()
+                ?: return@withContext Err(AppError.BleError.DeviceDisconnected)
 
             // Отправляем одиночную команду ClearAll через репозиторий устройств.
             devicesRepository.sendCommand(AmuletCommand.ClearAll)
@@ -311,7 +301,19 @@ class PatternPlaybackService(
             Err(AppError.Unknown)
         }
     }
+
+    private suspend fun awaitConnectedDeviceStatus(): com.example.amulet.shared.domain.devices.model.DeviceLiveStatus? {
+        return try {
+            withTimeout(DEFAULT_DEVICE_STATUS_TIMEOUT_MS) {
+                observeConnectedDeviceStatus().first { it != null }
+            }
+        } catch (e: Exception) {
+            Logger.d("awaitConnectedDeviceStatus: timeout or error while waiting for device status: $e", tag = TAG)
+            null
+        }
+    }
 }
 
 private const val TAG = "PatternPlaybackService"
 private const val DEFAULT_PLAY_TIMEOUT_MS = 5_000L
+private const val DEFAULT_DEVICE_STATUS_TIMEOUT_MS = 5_000L
