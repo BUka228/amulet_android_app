@@ -157,6 +157,7 @@
 
     <string name="practice_session_action_start">Начать</string>
     <string name="practice_session_action_finish">Завершить</string>
+    <string name="practice_session_action_loading_device">Загрузка на устройство…</string>
 
     <!-- Planning screen -->
     <string name="planning_title">Добавить в план</string>

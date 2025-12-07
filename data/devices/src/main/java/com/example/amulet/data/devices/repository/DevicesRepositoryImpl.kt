@@ -270,7 +270,8 @@ class DevicesRepositoryImpl @Inject constructor(
             id = plan.id,
             payload = payload,
             totalDurationMs = plan.totalDurationMs,
-            hardwareVersion = hardwareVersion
+            hardwareVersion = hardwareVersion,
+            isPreview = plan.isPreview
         )
 
         return bleDataSource.uploadAnimation(blePlan)

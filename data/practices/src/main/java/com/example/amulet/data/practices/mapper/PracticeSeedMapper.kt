@@ -2,6 +2,7 @@ package com.example.amulet.data.practices.mapper
 
 import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeEntity
+import com.example.amulet.data.practices.seed.PracticeScriptSeedData
 import com.example.amulet.data.practices.seed.PracticeSeed
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -28,7 +29,8 @@ fun PracticeSeed.toEntity(): PracticeEntity = PracticeEntity(
     createdAt = createdAt,
     updatedAt = updatedAt,
     stepsJson = if (steps.isEmpty()) null else steps.toJsonArrayString(),
-    safetyNotesJson = if (safetyNotes.isEmpty()) null else safetyNotes.toJsonArrayString()
+    safetyNotesJson = if (safetyNotes.isEmpty()) null else safetyNotes.toJsonArrayString(),
+    scriptJson = PracticeScriptSeedData.getScriptForPractice(id, durationSec)?.let { Json.encodeToString(it) }
 )
 
 fun PracticeSeed.toCategoryEntity(): PracticeCategoryEntity = PracticeCategoryEntity(

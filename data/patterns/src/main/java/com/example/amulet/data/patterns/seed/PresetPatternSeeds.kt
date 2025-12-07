@@ -55,62 +55,7 @@ object PresetPatternSeeds {
             description = "Зелёное свечение - сигнал о начале отдыха"
         ),
         
-        // === ПРАЗДНИК И РАДОСТЬ ===
-        createCelebration(
-            id = "preset_celebration_party",
-            title = "Вечеринка",
-            description = "Радужная смена цветов для праздничного настроения"
-        ),
-        createCelebration(
-            id = "preset_celebration_achievement",
-            title = "Достижение",
-            description = "Золотая вспышка для отметки успехов"
-        ),
-        createCelebration(
-            id = "preset_celebration_birthday",
-            title = "День рождения",
-            description = "Весёлое мерцание свечей на торте"
-        ),
-        
-        // === НАСТРОЕНИЕ ===
-        createMood(
-            id = "preset_mood_calm",
-            title = "Спокойствие",
-            description = "Мягкое голубое свечение для умиротворения"
-        ),
-        createMood(
-            id = "preset_mood_energetic",
-            title = "Энергия",
-            description = "Яркое оранжевое свечение для бодрости"
-        ),
-        createMood(
-            id = "preset_mood_romantic",
-            title = "Романтика",
-            description = "Нежное розовое свечение для романтических моментов"
-        ),
-        createMood(
-            id = "preset_mood_mysterious",
-            title = "Мистика",
-            description = "Фиолетовое мерцание для загадочной атмосферы"
-        ),
-        
-        // === СОН ===
-        createSleep(
-            id = "preset_sleep_bedtime",
-            title = "Время спать",
-            description = "Постепенно угасающее тёплое свечение"
-        ),
-        createSleep(
-            id = "preset_sleep_night_light",
-            title = "Ночник",
-            description = "Очень тусклое постоянное свечение на всю ночь"
-        ),
-        createSleep(
-            id = "preset_sleep_wake_up",
-            title = "Пробуждение",
-            description = "Плавно нарастающий рассвет для естественного пробуждения"
-        ),
-        
+    
         // === ТАЙМЕРЫ ===
         createTimer(
             id = "preset_timer_countdown",
@@ -122,42 +67,7 @@ object PresetPatternSeeds {
             title = "Секундомер",
             description = "Пульсация на каждую минуту"
         ),
-        
-        // === СОЦИАЛЬНОЕ ===
-        createSocial(
-            id = "preset_social_meeting",
-            title = "Встреча",
-            description = "Напоминание о встрече или событии"
-        ),
-        createSocial(
-            id = "preset_social_message",
-            title = "Новое сообщение",
-            description = "Быстрая вспышка при получении сообщения"
-        ),
-        
-        // === ЗДОРОВЬЕ ===
-        createHealth(
-            id = "preset_health_drink_water",
-            title = "Выпить воды",
-            description = "Голубая пульсация - напоминание о гидратации"
-        ),
-        createHealth(
-            id = "preset_health_stretch",
-            title = "Размяться",
-            description = "Зелёные волны - пора подвигаться"
-        ),
-        
-        // === КРЕАТИВНОСТЬ ===
-        createCreative(
-            id = "preset_creative_inspiration",
-            title = "Вдохновение",
-            description = "Плавно меняющиеся цвета для креативного потока"
-        ),
-        createCreative(
-            id = "preset_creative_flow",
-            title = "Творческий поток",
-            description = "Динамичные волны для погружения в творчество"
-        )
+
     )
     
     // === NOTIFICATION PATTERNS ===

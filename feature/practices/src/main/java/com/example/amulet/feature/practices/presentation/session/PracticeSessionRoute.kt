@@ -124,20 +124,24 @@ fun PracticeSessionRoute(
                                     Text(text = stringResource(id = R.string.practice_session_action_start))
                                 }
                             } else {
+                                val isLoadingDevice = state.isPatternPreloading
                                 Button(
                                     onClick = {
-                                        if (isActive) {
-                                            viewModel.handleIntent(PracticeSessionIntent.Stop(completed = false))
-                                        } else {
-                                            viewModel.handleIntent(PracticeSessionIntent.Start)
+                                        if (!isLoadingDevice) {
+                                            if (isActive) {
+                                                viewModel.handleIntent(PracticeSessionIntent.Stop(completed = false))
+                                            } else {
+                                                viewModel.handleIntent(PracticeSessionIntent.Start)
+                                            }
                                         }
                                     },
+                                    enabled = !isLoadingDevice,
                                     modifier = Modifier.fillMaxWidth(),
                                 ) {
-                                    val label = if (isActive) {
-                                        stringResource(id = R.string.practice_session_action_finish)
-                                    } else {
-                                        stringResource(id = R.string.practice_session_action_start)
+                                    val label = when {
+                                        isLoadingDevice -> stringResource(id = R.string.practice_session_action_loading_device)
+                                        isActive -> stringResource(id = R.string.practice_session_action_finish)
+                                        else -> stringResource(id = R.string.practice_session_action_start)
                                     }
                                     Text(text = label)
                                 }

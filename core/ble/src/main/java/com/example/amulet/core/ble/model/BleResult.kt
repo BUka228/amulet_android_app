@@ -55,7 +55,8 @@ data class AnimationPlan(
     val id: String,
     val payload: ByteArray,
     val totalDurationMs: Long,
-    val hardwareVersion: Int
+    val hardwareVersion: Int,
+    val isPreview: Boolean = false
 )
 
 /**

@@ -13,14 +13,26 @@ object PracticeScriptSeedData {
     /**
      * Скрипт для практики "Дыхание 4-7-8"
      * Классическая техника: вдох 4 сек, задержка 7 сек, выдох 8 сек.
-     * Общая длительность одного цикла: 4 + 7 + 8 = 19 секунд
-     * За 5 минут (300 сек) = примерно 15-16 циклов
+     * Общая длительность одного цикла: 4 + 7 + 8 = 19 секунд.
+     * Если передана целевая длительность практики, количество циклов подстраивается под неё.
      */
-    fun getBreathing478Script(): PracticeScript {
-        val cycles = 16 // Количество полных циклов
+    fun getBreathing478Script(
+        totalDurationSec: Int? = null,
+        cyclesOverride: Int? = null,
+    ): PracticeScript {
+        val introSec = 5
+        val outroSec = 5
+        val cycleSec = 4 + 7 + 8 // 19 секунд на один цикл
+
+        val computedCycles = when {
+            totalDurationSec == null || totalDurationSec <= introSec + outroSec + cycleSec -> 16
+            else -> ((totalDurationSec - introSec - outroSec) / cycleSec).coerceAtLeast(1)
+        }
+
+        val cycles = (cyclesOverride ?: computedCycles).coerceAtLeast(1)
         val steps = mutableListOf<PracticeStep>()
         
-        // Добавляем вступительный шаг
+        // Добавляем вступительный шаг (отдельный паттерн подготовки под 4-7-8)
         steps.add(
             PracticeStep(
                 order = 0,
@@ -28,7 +40,7 @@ object PracticeScriptSeedData {
                 title = "Подготовка",
                 description = "Устройтесь удобно, закройте глаза. Следуйте за светом амулета.",
                 durationSec = 5,
-                patternId = "pattern_breathing_calm"
+                patternId = "pattern_breathing_478_prepare"
             )
         )
         
@@ -36,7 +48,7 @@ object PracticeScriptSeedData {
         repeat(cycles) { cycleIndex ->
             val baseOrder = 1 + (cycleIndex * 3)
             
-            // Вдох - 4 секунды
+            // Вдох - 4 секунды (отдельный паттерн вдоха)
             steps.add(
                 PracticeStep(
                     order = baseOrder,
@@ -44,11 +56,11 @@ object PracticeScriptSeedData {
                     title = "Вдох",
                     description = "Медленно вдохните через нос",
                     durationSec = 4,
-                    patternId = "pattern_breathing_calm"
+                    patternId = "pattern_breathing_478_inhale"
                 )
             )
-            
-            // Задержка - 7 секунд
+
+            // Задержка - 7 секунд (отдельный паттерн задержки)
             steps.add(
                 PracticeStep(
                     order = baseOrder + 1,
@@ -56,11 +68,11 @@ object PracticeScriptSeedData {
                     title = "Задержка",
                     description = "Задержите дыхание",
                     durationSec = 7,
-                    patternId = "pattern_breathing_calm"
+                    patternId = "pattern_breathing_478_hold"
                 )
             )
-            
-            // Выдох - 8 секунд
+
+            // Выдох - 8 секунд (отдельный паттерн выдоха)
             steps.add(
                 PracticeStep(
                     order = baseOrder + 2,
@@ -68,12 +80,12 @@ object PracticeScriptSeedData {
                     title = "Выдох",
                     description = "Медленно выдохните через рот",
                     durationSec = 8,
-                    patternId = "pattern_breathing_calm"
+                    patternId = "pattern_breathing_478_exhale"
                 )
             )
         }
         
-        // Завершающий шаг
+        // Завершающий шаг (мягкий выход из практики)
         steps.add(
             PracticeStep(
                 order = steps.size,
@@ -81,7 +93,7 @@ object PracticeScriptSeedData {
                 title = "Завершение",
                 description = "Отлично! Сделайте несколько свободных вдохов.",
                 durationSec = 5,
-                patternId = "pattern_breathing_calm"
+                patternId = "pattern_breathing_478_finish"
             )
         )
         
@@ -233,11 +245,14 @@ object PracticeScriptSeedData {
     }
     
     /**
-     * Получить скрипт практики по её ID
+     * Получить скрипт практики по её ID (с учётом общей длительности практики, если она известна).
      */
-    fun getScriptForPractice(practiceId: String): PracticeScript? {
+    fun getScriptForPractice(
+        practiceId: String,
+        totalDurationSec: Int? = null,
+    ): PracticeScript? {
         return when (practiceId) {
-            "practice_breathing_478" -> getBreathing478Script()
+            "practice_breathing_478" -> getBreathing478Script(totalDurationSec = totalDurationSec)
             "practice_breathing_box" -> getBoxBreathingScript()
             "practice_breathing_energizing" -> getEnergizingBreathingScript()
             else -> null

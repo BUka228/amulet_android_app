@@ -13,8 +13,14 @@ import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStream
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
+import com.example.amulet.shared.domain.practices.usecase.UploadPracticeScriptToDeviceUseCase
+import com.example.amulet.shared.domain.practices.usecase.PlayPracticeScriptOnDeviceUseCase
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.onSuccess
+import com.github.michaelbull.result.onFailure
+import com.example.amulet.shared.core.logging.Logger
+import com.example.amulet.shared.domain.patterns.PatternPlaybackService
+import com.example.amulet.shared.domain.patterns.model.PatternId
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +46,9 @@ class PracticeSessionManagerImpl(
     private val stopSessionUseCase: StopSessionUseCase,
     private val getActiveSessionStreamUseCase: GetActiveSessionStreamUseCase,
     private val getPracticeById: GetPracticeByIdUseCase,
-    private val scriptOrchestrator: PracticeScriptOrchestrator,
+    private val patternPlaybackService: PatternPlaybackService,
+    private val uploadPracticeScriptToDevice: UploadPracticeScriptToDeviceUseCase,
+    private val playPracticeScriptOnDevice: PlayPracticeScriptOnDeviceUseCase,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val tickerIntervalMs: Long = 1000L
 ) : PracticeSessionManager {
@@ -54,27 +62,92 @@ class PracticeSessionManagerImpl(
             if (session == null) flowOf(null) else buildProgressFlow(session)
         }
 
-    init {
-        scope.launch {
-            activeSession.collect { session ->
-                if (session != null && session.status == PracticeSessionStatus.ACTIVE) {
-                    val practice = getPracticeById(session.practiceId).firstOrNull()
-                    if (practice != null) {
-                        scriptOrchestrator.start(practice, session)
-                    }
-                } else {
-                    scriptOrchestrator.stop()
-                }
-            }
-        }
-    }
-
     override suspend fun startSession(
         practiceId: PracticeId,
         source: PracticeSessionSource?,
         initialIntensity: Double?,
         initialBrightness: Double?
     ): AppResult<PracticeSession> = withContext(dispatcher) {
+        val practice = getPracticeById(practiceId).firstOrNull()
+        var patternToPlay: PatternId? = null
+        var shouldPlayPracticeScript: Boolean = false
+        if (practice != null) {
+            val scriptSteps = practice.script?.steps?.sortedBy { it.order }.orEmpty()
+            val intensityForPreload = initialIntensity ?: 1.0
+
+            if (scriptSteps.isNotEmpty()) {
+                val patternIdsToPreload = scriptSteps.mapNotNull { it.patternId?.let(::PatternId) }
+                val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
+                if (uniquePatternIdsToPreload.isNotEmpty()) {
+                    val preloadStart = System.currentTimeMillis()
+                    Logger.d(
+                        "startSession: preloading step patterns=$uniquePatternIdsToPreload intensity=$intensityForPreload",
+                        tag = TAG
+                    )
+                    val preloadResult = patternPlaybackService.preloadPatterns(uniquePatternIdsToPreload, intensityForPreload)
+                    preloadResult.onFailure { error ->
+                        val duration = System.currentTimeMillis() - preloadStart
+                        Logger.d(
+                            "startSession: preload FAILED patterns=$uniquePatternIdsToPreload durationMs=$duration error=$error",
+                            tag = TAG
+                        )
+                        return@withContext Err(error)
+                    }
+                    val duration = System.currentTimeMillis() - preloadStart
+                    Logger.d(
+                        "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
+                        tag = TAG
+                    )
+                }
+
+                val uploadStart = System.currentTimeMillis()
+                Logger.d(
+                    "startSession: uploading practice script practiceId=${'$'}{practice.id}",
+                    tag = TAG
+                )
+                val uploadResult = uploadPracticeScriptToDevice(practice)
+                uploadResult.onFailure { error ->
+                    val duration = System.currentTimeMillis() - uploadStart
+                    Logger.d(
+                        "startSession: upload practice script FAILED practiceId=${'$'}{practice.id} durationMs=$duration error=$error",
+                        tag = TAG
+                    )
+                    return@withContext Err(error)
+                }
+                val uploadDuration = System.currentTimeMillis() - uploadStart
+                Logger.d(
+                    "startSession: upload practice script SUCCESS practiceId=${'$'}{practice.id} durationMs=$uploadDuration",
+                    tag = TAG
+                )
+                shouldPlayPracticeScript = true
+            } else {
+                val patternIdsToPreload = practice.patternId?.let { listOf(it) } ?: emptyList()
+                val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
+                if (uniquePatternIdsToPreload.isNotEmpty()) {
+                    val preloadStart = System.currentTimeMillis()
+                    Logger.d(
+                        "startSession: preloading patterns=$uniquePatternIdsToPreload intensity=$intensityForPreload",
+                        tag = TAG
+                    )
+                    val preloadResult = patternPlaybackService.preloadPatterns(uniquePatternIdsToPreload, intensityForPreload)
+                    preloadResult.onFailure { error ->
+                        val duration = System.currentTimeMillis() - preloadStart
+                        Logger.d(
+                            "startSession: preload FAILED patterns=$uniquePatternIdsToPreload durationMs=$duration error=$error",
+                            tag = TAG
+                        )
+                        return@withContext Err(error)
+                    }
+                    val duration = System.currentTimeMillis() - preloadStart
+                    Logger.d(
+                        "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
+                        tag = TAG
+                    )
+                    patternToPlay = practice.patternId
+                }
+            }
+        }
+
         val result = startPractice(
             practiceId = practiceId,
             intensity = initialIntensity,
@@ -83,7 +156,32 @@ class PracticeSessionManagerImpl(
             audioMode = null,
             source = source,
         )
-        // Оркестратор запустится автоматически через activeSession.collect
+
+        result.onSuccess { session ->
+            scope.launch {
+                if (shouldPlayPracticeScript) {
+                    val playResult = playPracticeScriptOnDevice(session.practiceId)
+                    playResult.onFailure { error ->
+                        Logger.d(
+                            "startSession: PlayPracticeScriptOnDeviceUseCase FAILED practiceId=${'$'}{session.practiceId} error=$error",
+                            tag = TAG
+                        )
+                    }
+                } else {
+                    val patternId = patternToPlay
+                    if (patternId != null) {
+                        val playResult = patternPlaybackService.playAndAwaitStart(patternId)
+                        playResult.onFailure { error ->
+                            Logger.d(
+                                "startSession: playAndAwaitStart FAILED pattern=$patternId error=$error",
+                                tag = TAG
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         result
     }
 
@@ -91,11 +189,19 @@ class PracticeSessionManagerImpl(
         val session = activeSession.firstOrNull()
         val sessionId = session?.id ?: return@withContext Err(AppError.NotFound)
         val result = stopSessionUseCase(sessionId, completed)
-        // Оркестратор остановится автоматически через activeSession.collect
-        // Но для мгновенной реакции можно и тут дернуть, хотя не обязательно.
-        // Оставим только очистку, если вдруг что-то пойдет не так с реактивностью,
-        // но вообще clearCurrentDevicePattern вызывается и в orchestrator.stop().
-        // Поэтому здесь просто возвращаем результат.
+
+        result.onSuccess {
+            scope.launch {
+                val clearResult = patternPlaybackService.clearCurrentDevice()
+                clearResult.onFailure { error ->
+                    Logger.d(
+                        "stopSession: clearCurrentDevice FAILED error=$error",
+                        tag = TAG
+                    )
+                }
+            }
+        }
+
         result
     }
 
@@ -122,20 +228,7 @@ class PracticeSessionManagerImpl(
                     (session.actualDurationSec ?: session.durationSec ?: 0).coerceAtLeast(0)
                 else -> 0
             }
-
-            val orchestratorIndex = scriptOrchestrator.currentStepIndex.value
-
-            val effectiveIndex: Int?
-            val effectiveStep: PracticeStep?
-
-            if (orchestratorIndex != null && orchestratorIndex in scriptSteps.indices) {
-                effectiveIndex = orchestratorIndex
-                effectiveStep = scriptSteps[orchestratorIndex]
-            } else {
-                val fallback = computeCurrentStep(scriptSteps, elapsed)
-                effectiveIndex = fallback?.first
-                effectiveStep = fallback?.second
-            }
+            val (effectiveIndex, effectiveStep) = computeCurrentStep(scriptSteps, elapsed) ?: (null to null)
 
             emit(
                 PracticeProgress(
@@ -177,3 +270,5 @@ class PracticeSessionManagerImpl(
         return (steps.lastIndex) to steps.last()
     }
 }
+
+private const val TAG = "PracticeSessionManager"

@@ -87,5 +87,6 @@ data class DeviceTimelineSegment(
 data class DeviceAnimationPlan(
     val id: String,
     val totalDurationMs: Long,
-    val segments: List<ByteArray>
+    val segments: List<ByteArray>,
+    val isPreview: Boolean = false
 )

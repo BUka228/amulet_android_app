@@ -39,7 +39,8 @@
     <string name="practices_home_menu_reschedule">Перенести</string>
     <string name="practices_home_menu_cancel_reminder">Отменить напоминание</string>
     <string name="practices_home_menu_details">Practice details</string>
-    
+    <string name="practice_session_action_loading_device">Loading to device…</string>
+
     <!-- Search screen -->
     <string name="practices_search_title">Search</string>
     <string name="practices_search_hint">Search practices...</string>

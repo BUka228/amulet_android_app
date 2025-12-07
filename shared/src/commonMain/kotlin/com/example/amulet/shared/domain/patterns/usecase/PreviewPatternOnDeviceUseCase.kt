@@ -27,7 +27,12 @@ class PreviewPatternOnDeviceUseCase(
         emit(PreviewProgress.Compiling)
         try {
             // Через сервис воспроизведения паттернов
-            val result = playbackService.playOnDevice(spec, deviceId)
+            val result = playbackService.playOnDevice(
+                spec = spec,
+                deviceId = deviceId,
+                intensity = 1.0,
+                isPreview = true,
+            )
             result
                 .onSuccess {
                     Logger.d("invoke: playbackService.playOnDevice success", tag = TAG)

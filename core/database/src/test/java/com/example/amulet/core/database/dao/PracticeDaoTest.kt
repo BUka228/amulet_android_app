@@ -33,11 +33,19 @@ class PracticeDaoTest : BaseDatabaseTest() {
             title = "Breathing",
             description = null,
             durationSec = 300,
+            level = null,
+            goal = null,
+            tagsJson = "[]",
+            contraindicationsJson = "[]",
             patternId = null,
             audioUrl = null,
+            usageCount = 0,
             localesJson = "{}",
             createdAt = null,
-            updatedAt = null
+            updatedAt = null,
+            stepsJson = null,
+            safetyNotesJson = null,
+            scriptJson = null
         )
         val device = DeviceEntity(
             id = "device",
@@ -87,11 +95,19 @@ class PracticeDaoTest : BaseDatabaseTest() {
             title = "Meditation",
             description = null,
             durationSec = null,
+            level = null,
+            goal = null,
+            tagsJson = "[]",
+            contraindicationsJson = "[]",
             patternId = null,
             audioUrl = null,
+            usageCount = 0,
             localesJson = "{}",
             createdAt = null,
-            updatedAt = null
+            updatedAt = null,
+            stepsJson = null,
+            safetyNotesJson = null,
+            scriptJson = null
         )
         val session = PracticeSessionEntity(
             id = "session-old",

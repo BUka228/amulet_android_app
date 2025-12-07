@@ -46,6 +46,7 @@ class PatternPlaybackService(
         spec: PatternSpec,
         deviceId: DeviceId,
         intensity: Double = 1.0,
+        isPreview: Boolean = false,
     ): AppResult<Unit> = withContext(dispatcher) {
         try {
             Logger.d("playOnDevice: start deviceId=$deviceId specType=${spec.type} intensity=$intensity", tag = TAG)
@@ -66,10 +67,16 @@ class PatternPlaybackService(
                     )
 
                     // 3. Собираем DeviceAnimationPlan с готовыми байтовыми сегментами
+                    val planId = if (isPreview) {
+                        "preview-${System.currentTimeMillis()}"
+                    } else {
+                        "pattern-${System.currentTimeMillis()}"
+                    }
                     val devicePlan = DeviceAnimationPlan(
-                        id = "preview-${System.currentTimeMillis()}",
+                        id = planId,
                         totalDurationMs = timeline.durationMs.toLong(),
-                        segments = segments.map { it.toByteArray() }
+                        segments = segments.map { it.toByteArray() },
+                        isPreview = isPreview
                     )
 
                     Logger.d(
@@ -102,6 +109,7 @@ class PatternPlaybackService(
     suspend fun playOnConnectedDevice(
         spec: PatternSpec,
         intensity: Double = 1.0,
+        isPreview: Boolean = false,
     ): AppResult<Unit> = withContext(dispatcher) {
         try {
             Logger.d("playOnConnectedDevice: start specType=${spec.type} intensity=$intensity", tag = TAG)
@@ -124,10 +132,16 @@ class PatternPlaybackService(
             )
 
             // 3. План для устройства
+            val planId = if (isPreview) {
+                "preview-${System.currentTimeMillis()}"
+            } else {
+                "pattern-${System.currentTimeMillis()}"
+            }
             val devicePlan = DeviceAnimationPlan(
-                id = "preview-${System.currentTimeMillis()}",
+                id = planId,
                 totalDurationMs = timeline.durationMs.toLong(),
-                segments = segments.map { it.toByteArray() }
+                segments = segments.map { it.toByteArray() },
+                isPreview = isPreview
             )
 
             var lastProgress: Int? = null
@@ -175,6 +189,63 @@ class PatternPlaybackService(
             )
             devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
         }
+        Ok(Unit)
+    }
+
+    /**
+     * Предзагрузить произвольный таймлайновый план на текущее устройство с заданным идентификатором.
+     * Используется, например, для агрегированных паттернов практик (id = practiceId).
+     */
+    suspend fun preloadTimelinePlan(
+        planId: String,
+        spec: PatternSpec,
+        intensity: Double = 1.0,
+    ): AppResult<Unit> = withContext(dispatcher) {
+        val status = observeConnectedDeviceStatus().firstOrNull()
+            ?: return@withContext Err(AppError.BleError.DeviceNotFound)
+        if (!status.isOnline) return@withContext Err(AppError.BleError.DeviceDisconnected)
+
+        val hasPlanOnDevice = try {
+            val result = devicesRepository.sendCommand(
+                AmuletCommand.HasPlan(patternId = planId)
+            )
+            var exists = false
+            result.fold(
+                success = { exists = true },
+                failure = { }
+            )
+            exists
+        } catch (e: Exception) {
+            Logger.d("preloadTimelinePlan: HAS_PLAN command failed, fallback to upload error=${'$'}e", tag = TAG)
+            false
+        }
+
+        if (hasPlanOnDevice) {
+            Logger.d(
+                "preloadTimelinePlan: plan already exists on device, skipping upload id=${'$'}planId",
+                tag = TAG
+            )
+            return@withContext Ok(Unit)
+        }
+
+        val timeline = spec.timeline
+        val segments = deviceTimelineCompiler.compile(
+            timeline = timeline,
+            hardwareVersion = status.hardwareVersion,
+            firmwareVersion = status.firmwareVersion,
+            intensity = intensity
+        )
+        val totalDurationMs = (spec.durationMs ?: timeline.durationMs).toLong()
+        val plan = DeviceAnimationPlan(
+            id = planId,
+            totalDurationMs = totalDurationMs,
+            segments = segments.map { it.toByteArray() },
+        )
+        Logger.d(
+            "preloadTimelinePlan: uploading plan id=${'$'}planId segments=${'$'}{plan.segments.size} duration=${'$'}{plan.totalDurationMs}",
+            tag = TAG
+        )
+        devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
         Ok(Unit)
     }
 

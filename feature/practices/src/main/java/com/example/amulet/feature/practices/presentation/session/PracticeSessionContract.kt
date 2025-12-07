@@ -10,6 +10,7 @@ import com.example.amulet.shared.domain.devices.model.BleConnectionState
 
 data class PracticeSessionState(
     val isLoading: Boolean = true,
+    val isPatternPreloading: Boolean = false,
     val error: AppError? = null,
     val practiceId: String? = null,
     val session: PracticeSession? = null,

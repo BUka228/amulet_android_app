@@ -268,10 +268,17 @@ class AmuletBleManagerImpl @Inject constructor(
 
         try {
             // BEGIN_PLAN:pattern_id:total_duration_ms
+            val beginPlanParameters = buildList {
+                add(plan.id)
+                add(plan.totalDurationMs.toString())
+                if (plan.isPreview) {
+                    add("PREVIEW")
+                }
+            }
             sendCommandInternal(
                 AmuletCommand.Custom(
                     command = "BEGIN_PLAN",
-                    parameters = listOf(plan.id, plan.totalDurationMs.toString())
+                    parameters = beginPlanParameters
                 )
             )
             flowControlManager.waitForReady()

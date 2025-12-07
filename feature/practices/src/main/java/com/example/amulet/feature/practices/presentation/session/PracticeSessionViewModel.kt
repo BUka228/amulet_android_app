@@ -3,6 +3,7 @@ package com.example.amulet.feature.practices.presentation.session
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.core.foreground.PracticeForegroundLauncher
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.devices.model.DeviceSessionStatus
 import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
@@ -15,6 +16,7 @@ import com.example.amulet.shared.domain.practices.usecase.UpdateSessionFeedbackU
 import com.example.amulet.shared.domain.practices.usecase.UpdateSessionMoodBeforeUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,6 +87,7 @@ class PracticeSessionViewModel @Inject constructor(
     }
 
     fun handleIntent(intent: PracticeSessionIntent) {
+        Logger.d("handleIntent: $intent", tag = TAG)
         when (intent) {
             PracticeSessionIntent.Start -> start()
             is PracticeSessionIntent.Stop -> stop(intent.completed)
@@ -98,6 +101,7 @@ class PracticeSessionViewModel @Inject constructor(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeSession() {
         viewModelScope.launch {
             val sessionAndProgressFlow = combine(
@@ -183,22 +187,38 @@ class PracticeSessionViewModel @Inject constructor(
 
     private fun start() {
         val current = _state.value.session
+        Logger.d("start: requested, currentSession=$current", tag = TAG)
         if (current?.status == com.example.amulet.shared.domain.practices.model.PracticeSessionStatus.ACTIVE) {
             // Уже есть активная сессия — не создаём новую.
+            Logger.d("start: session already ACTIVE, ignoring", tag = TAG)
             return
         }
 
-        val id = _state.value.practiceId ?: return
+        val id = _state.value.practiceId ?: run {
+            Logger.d("start: practiceId is null, abort", tag = TAG)
+            return
+        }
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            val result = practiceSessionManager.startSession(id)
+            _state.update { it.copy(isLoading = true, isPatternPreloading = true) }
+            val currentState = _state.value
+            Logger.d(
+                "start: calling startSession practiceId=$id intensity=${currentState.vibrationLevel} brightness=${currentState.brightnessLevel}",
+                tag = TAG
+            )
+            val result = practiceSessionManager.startSession(
+                practiceId = id,
+                initialIntensity = currentState.vibrationLevel,
+                initialBrightness = currentState.brightnessLevel,
+            )
             val error = result.component2()
             if (error != null) {
-                _state.update { it.copy(isLoading = false, error = error) }
+                Logger.d("start: startSession failed error=$error", tag = TAG)
+                _state.update { it.copy(isLoading = false, isPatternPreloading = false, error = error) }
                 emitEffect(PracticeSessionEffect.ShowError(error))
             } else {
                 val session = result.component1()
-                _state.update { it.copy(isLoading = false, session = session, error = null) }
+                Logger.d("start: startSession success session=$session", tag = TAG)
+                _state.update { it.copy(isLoading = false, isPatternPreloading = false, session = session, error = null) }
 
                 // Если пользователь выбрал настроение до практики, сохраняем его на сессию
                 val moodBefore = _state.value.moodBefore
@@ -213,12 +233,15 @@ class PracticeSessionViewModel @Inject constructor(
     }
 
     private fun stop(completed: Boolean) {
+        Logger.d("stop: requested completed=$completed", tag = TAG)
         viewModelScope.launch {
             val result = practiceSessionManager.stopSession(completed)
             val error = result.component2()
             if (error != null) {
+                Logger.d("stop: stopSession failed error=$error", tag = TAG)
                 emitEffect(PracticeSessionEffect.ShowError(error))
             } else {
+                Logger.d("stop: stopSession success completed=$completed", tag = TAG)
                 if (!completed) {
                     _state.update { it.copy(session = null, progress = null, currentStepIndex = null) }
                     emitEffect(PracticeSessionEffect.NavigateBack)
@@ -296,8 +319,13 @@ class PracticeSessionViewModel @Inject constructor(
     }
 
     private fun emitEffect(effect: PracticeSessionEffect) {
+        Logger.d("emitEffect: effect=$effect", tag = TAG)
         viewModelScope.launch {
             _effects.emit(effect)
         }
+    }
+
+    companion object {
+        private const val TAG = "PracticeSessionViewModel"
     }
 }

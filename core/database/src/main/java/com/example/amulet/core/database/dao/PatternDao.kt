@@ -29,14 +29,45 @@ interface PatternDao {
     fun observeByOwner(ownerId: String): Flow<List<PatternEntity>>
 
     @Transaction
-    @Query("SELECT * FROM patterns WHERE public = 1")
+    @Query(
+        """
+        SELECT * FROM patterns p
+        WHERE p.public = 1
+          AND NOT EXISTS (
+              SELECT 1 FROM pattern_tags pt
+              INNER JOIN tags t ON t.id = pt.tagId
+              WHERE pt.patternId = p.id AND t.name = 'internal_step'
+          )
+        """
+    )
     fun observePublic(): Flow<List<PatternEntity>>
     
-    @Query("SELECT * FROM patterns WHERE ownerId IS NULL")
+    @Query(
+        """
+        SELECT * FROM patterns p
+        WHERE p.ownerId IS NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM pattern_tags pt
+              INNER JOIN tags t ON t.id = pt.tagId
+              WHERE pt.patternId = p.id AND t.name = 'internal_step'
+          )
+        """
+    )
     fun observePresets(): Flow<List<PatternEntity>>
     
     @Transaction
-    @Query("SELECT * FROM patterns WHERE public = 1 ORDER BY createdAt DESC")
+    @Query(
+        """
+        SELECT * FROM patterns p
+        WHERE p.public = 1
+          AND NOT EXISTS (
+              SELECT 1 FROM pattern_tags pt
+              INNER JOIN tags t ON t.id = pt.tagId
+              WHERE pt.patternId = p.id AND t.name = 'internal_step'
+          )
+        ORDER BY p.createdAt DESC
+        """
+    )
     fun pagingPublic(): PagingSource<Int, PatternWithRelations>
     
     @Transaction

@@ -22,7 +22,7 @@ object PracticePatternSeeds {
     private const val HARDWARE_VERSION = 100
 
     fun getPatterns(): List<Pattern> = listOf(
-        // Дыхательные практики
+        // Дыхательные практики (базовые циклические паттерны)
         createBreathingPattern(
             id = "pattern_breathing_calm",
             title = "Спокойное дыхание",
@@ -33,6 +33,13 @@ object PracticePatternSeeds {
             title = "Энергичное дыхание",
             description = "Яркие пульсации для бодрящих дыхательных практик"
         ),
+
+        // Дыхание 4-7-8: шаговые паттерны под каждый этап скрипта практики
+        createBreathing478PreparePattern(),
+        createBreathing478InhalePattern(),
+        createBreathing478HoldPattern(),
+        createBreathing478ExhalePattern(),
+        createBreathing478FinishPattern(),
         
         // Медитации
         createMeditationPattern(
@@ -236,6 +243,291 @@ object PracticePatternSeeds {
             title = title,
             description = description,
             tags = listOf("дыхание", "практика"),
+            usageCount = 0,
+            sharedWith = emptyList(),
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+    private fun createBreathing478PreparePattern(): Pattern =
+        Pattern(
+            id = PatternId("pattern_breathing_478_prepare"),
+            version = 1,
+            ownerId = null,
+            kind = PatternKind.LIGHT,
+            spec = PatternSpec(
+                type = "BREATHING_478",
+                hardwareVersion = HARDWARE_VERSION,
+                durationMs = 5_000,
+                loop = false,
+                timeline = PatternTimeline(
+                    durationMs = 5_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 5_000,
+                                    color = "#37474F",
+                                    fadeInMs = 1_500,
+                                    fadeOutMs = 1_500
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            public = true,
+            reviewStatus = ReviewStatus.APPROVED,
+            hardwareVersion = HARDWARE_VERSION,
+            title = "Подготовка к дыханию 4-7-8",
+            description = "Мягкое приглушённое свечение для настройки перед практикой",
+            tags = listOf("internal_step"),
+            usageCount = 0,
+            sharedWith = emptyList(),
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+    private fun createBreathing478InhalePattern(): Pattern =
+        Pattern(
+            id = PatternId("pattern_breathing_478_inhale"),
+            version = 1,
+            ownerId = null,
+            kind = PatternKind.LIGHT,
+            spec = PatternSpec(
+                type = "BREATHING_478",
+                hardwareVersion = HARDWARE_VERSION,
+                durationMs = 4_000,
+                loop = false,
+                timeline = PatternTimeline(
+                    durationMs = 4_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 4_000,
+                                    color = "#4CAF50",
+                                    fadeInMs = 3_700,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            public = true,
+            reviewStatus = ReviewStatus.APPROVED,
+            hardwareVersion = HARDWARE_VERSION,
+            title = "Дыхание 4-7-8: вдох",
+            description = "Медленное нарастание яркости по кольцу на фазе вдоха",
+            tags = listOf("internal_step"),
+            usageCount = 0,
+            sharedWith = emptyList(),
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+    private fun createBreathing478HoldPattern(): Pattern =
+        Pattern(
+            id = PatternId("pattern_breathing_478_hold"),
+            version = 1,
+            ownerId = null,
+            kind = PatternKind.LIGHT,
+            spec = PatternSpec(
+                type = "BREATHING_478",
+                hardwareVersion = HARDWARE_VERSION,
+                durationMs = 7_000,
+                loop = false,
+                timeline = PatternTimeline(
+                    durationMs = 7_000,
+                    tracks = listOf(
+                        // индикатор задержки: поочерёдное зажигание диодов за 7 секунд
+                        TimelineTrack(
+                            target = TargetLed(index = 0),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 1),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 1_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 2),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 2_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 3),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 3_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 4),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 4_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 5),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 5_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        ),
+                        TimelineTrack(
+                            target = TargetLed(index = 6),
+                            priority = 1,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 6_000,
+                                    durationMs = 1_000,
+                                    color = "#FFC107",
+                                    fadeInMs = 200,
+                                    fadeOutMs = 300
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            public = true,
+            reviewStatus = ReviewStatus.APPROVED,
+            hardwareVersion = HARDWARE_VERSION,
+            title = "Дыхание 4-7-8: задержка",
+            description = "Поочерёдное зажигание диодов в фазе задержки дыхания",
+            tags = listOf("internal_step"),
+            usageCount = 0,
+            sharedWith = emptyList(),
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+    private fun createBreathing478ExhalePattern(): Pattern =
+        Pattern(
+            id = PatternId("pattern_breathing_478_exhale"),
+            version = 1,
+            ownerId = null,
+            kind = PatternKind.LIGHT,
+            spec = PatternSpec(
+                type = "BREATHING_478",
+                hardwareVersion = HARDWARE_VERSION,
+                durationMs = 8_000,
+                loop = false,
+                timeline = PatternTimeline(
+                    durationMs = 8_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 8_000,
+                                    color = "#2196F3",
+                                    fadeInMs = 300,
+                                    fadeOutMs = 7_700
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            public = true,
+            reviewStatus = ReviewStatus.APPROVED,
+            hardwareVersion = HARDWARE_VERSION,
+            title = "Дыхание 4-7-8: выдох",
+            description = "Плавное затухание света в фазе выдоха",
+            tags = listOf("internal_step"),
+            usageCount = 0,
+            sharedWith = emptyList(),
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+
+    private fun createBreathing478FinishPattern(): Pattern =
+        Pattern(
+            id = PatternId("pattern_breathing_478_finish"),
+            version = 1,
+            ownerId = null,
+            kind = PatternKind.LIGHT,
+            spec = PatternSpec(
+                type = "BREATHING_478",
+                hardwareVersion = HARDWARE_VERSION,
+                durationMs = 5_000,
+                loop = false,
+                timeline = PatternTimeline(
+                    durationMs = 5_000,
+                    tracks = listOf(
+                        TimelineTrack(
+                            target = TargetRing,
+                            clips = listOf(
+                                TimelineClip(
+                                    startMs = 0,
+                                    durationMs = 5_000,
+                                    color = "#607D8B",
+                                    fadeInMs = 500,
+                                    fadeOutMs = 2_000
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            public = true,
+            reviewStatus = ReviewStatus.APPROVED,
+            hardwareVersion = HARDWARE_VERSION,
+            title = "Дыхание 4-7-8: завершение",
+            description = "Мягкое угасание свечения для выхода из практики",
+            tags = listOf("internal_step"),
             usageCount = 0,
             sharedWith = emptyList(),
             createdAt = System.currentTimeMillis(),

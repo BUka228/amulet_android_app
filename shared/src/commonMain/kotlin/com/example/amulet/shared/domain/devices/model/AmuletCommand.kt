@@ -28,6 +28,33 @@ sealed interface AmuletCommand {
         val patternId: String
     ) : AmuletCommand
     
+    data class HasPlan(
+        val patternId: String
+    ) : AmuletCommand
+    
+    // Скрипты практик (PRACTICE_SCRIPT)
+    data class BeginPracticeScript(
+        val practiceId: String
+    ) : AmuletCommand
+
+    data class AddPracticeStep(
+        val practiceId: String,
+        val order: Int,
+        val patternId: String,
+    ) : AmuletCommand
+
+    data class CommitPracticeScript(
+        val practiceId: String
+    ) : AmuletCommand
+
+    data class HasPracticeScript(
+        val practiceId: String
+    ) : AmuletCommand
+
+    data class PlayPracticeScript(
+        val practiceId: String
+    ) : AmuletCommand
+    
     // Wi-Fi OTA команды
     data class SetWifiCred(
         val ssidBase64: String,

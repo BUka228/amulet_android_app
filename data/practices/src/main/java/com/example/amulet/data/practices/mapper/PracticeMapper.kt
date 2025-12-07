@@ -4,7 +4,6 @@ import com.example.amulet.core.database.entity.PracticeCategoryEntity
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.UserPreferencesEntity
-import com.example.amulet.data.practices.seed.PracticeScriptSeedData
 import com.example.amulet.shared.domain.practices.model.MoodKind
 import com.example.amulet.shared.domain.practices.model.Practice
 import com.example.amulet.shared.domain.practices.model.PracticeAudioMode
@@ -57,45 +56,49 @@ fun PracticeEntity.toDomain(): Practice {
 
     val practiceType = PracticeType.valueOf(type)
 
-    val seededScript = PracticeScriptSeedData.getScriptForPractice(id)
+    val scriptJsonLocal = scriptJson
+    val scriptFromDb = try {
+        if (scriptJsonLocal.isNullOrBlank()) null
+        else kotlinx.serialization.json.Json.decodeFromString<PracticeScript>(scriptJsonLocal)
+    } catch (e: Exception) { null }
 
-    val script = if (seededScript != null) {
-        seededScript
-    } else if (steps.isEmpty()) {
-        null
-    } else {
-        val perStepDurationSec: Int? = when (practiceType) {
-            PracticeType.BREATH, PracticeType.SOUND ->
-                durationSec?.takeIf { it > 0 && steps.isNotEmpty() }?.let { total ->
-                    (total / steps.size).coerceAtLeast(1)
-                }
-            else -> null
-        }
-
-        PracticeScript(
-            steps = steps.mapIndexed { index, text ->
-                val stepType = when (practiceType) {
-                    PracticeType.BREATH -> PracticeStepType.BREATH_STEP
-                    PracticeType.SOUND -> PracticeStepType.SOUND_SCAPE
-                    PracticeType.MEDITATION -> if (title.contains("сканирование тела", ignoreCase = true)) {
-                        PracticeStepType.BODY_SCAN
-                    } else {
-                        PracticeStepType.TEXT_HINT
+    val script = scriptFromDb
+        ?: if (steps.isEmpty()) {
+            null
+        } else {
+            val perStepDurationSec: Int? = when (practiceType) {
+                PracticeType.BREATH, PracticeType.SOUND ->
+                    durationSec?.takeIf { it > 0 && steps.isNotEmpty() }?.let { total ->
+                        (total / steps.size).coerceAtLeast(1)
                     }
-                }
-                PracticeStep(
-                    order = index,
-                    type = stepType,
-                    title = null,
-                    description = text,
-                    durationSec = perStepDurationSec,
-                    patternId = null,
-                    audioUrl = null,
-                    extra = emptyMap()
-                )
+
+                else -> null
             }
-        )
-    }
+
+            PracticeScript(
+                steps = steps.mapIndexed { index, text ->
+                    val stepType = when (practiceType) {
+                        PracticeType.BREATH -> BREATH_STEP
+                        PracticeType.SOUND -> SOUND_SCAPE
+                        PracticeType.MEDITATION -> if (title.contains("сканирование тела", ignoreCase = true)) {
+                            BODY_SCAN
+                        } else {
+                            TEXT_HINT
+                        }
+                    }
+                    PracticeStep(
+                        order = index,
+                        type = stepType,
+                        title = null,
+                        description = text,
+                        durationSec = perStepDurationSec,
+                        patternId = null,
+                        audioUrl = null,
+                        extra = emptyMap()
+                    )
+                }
+            )
+        }
     
     return Practice(
         id = id,

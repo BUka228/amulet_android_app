@@ -41,8 +41,6 @@ import com.example.amulet.shared.domain.patterns.compiler.DeviceTimelineCompiler
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
 import com.example.amulet.shared.domain.practices.PracticeSessionManagerImpl
-import com.example.amulet.shared.domain.practices.PracticeScriptOrchestrator
-import com.example.amulet.shared.domain.practices.PracticeScriptOrchestratorImpl
 import com.example.amulet.shared.domain.practices.usecase.*
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet.shared.domain.user.usecase.UpdateUserProfileUseCase
@@ -178,9 +176,8 @@ private val sharedModule = module {
     factory { UpdateSessionFeedbackUseCase(get(), get()) }
     factory { UpdateSessionMoodBeforeUseCase(get(), get()) }
     factory { GetDashboardDailyStatsUseCase(get(), get(), get(), get()) }
-
-    // Practice script orchestrator
-    factory<PracticeScriptOrchestrator> { PracticeScriptOrchestratorImpl(get(), get()) }
+    factory { UploadPracticeScriptToDeviceUseCase(get()) }
+    factory { PlayPracticeScriptOnDeviceUseCase(get()) }
 
     // Practices Manager
     factory<PracticeSessionManager> {
@@ -189,7 +186,9 @@ private val sharedModule = module {
             stopSessionUseCase = get(),
             getActiveSessionStreamUseCase = get(),
             getPracticeById = get(),
-            scriptOrchestrator = get(),
+            patternPlaybackService = get(),
+            uploadPracticeScriptToDevice = get(),
+            playPracticeScriptOnDevice = get(),
         )
     }
 
