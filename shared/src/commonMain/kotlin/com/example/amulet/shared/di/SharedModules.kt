@@ -191,6 +191,7 @@ private val sharedModule = module {
             uploadPracticeScriptToDevice = get(),
             playPracticeScriptOnDevice = get(),
             hasPracticeScriptOnDevice = get(),
+            observeConnectionStateUseCase = get()
         )
     }
 

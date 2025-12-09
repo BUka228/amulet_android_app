@@ -49,12 +49,13 @@ class DeviceDetailsViewModel @Inject constructor(
     private fun observeDeviceSession() {
         viewModelScope.launch {
             observeDeviceSessionStatusUseCase().collect { sessionStatus ->
-                val isOnline = sessionStatus.connection is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected ||
-                    (sessionStatus.liveStatus?.isOnline == true)
+                val isBleConnected = sessionStatus.connection is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected
+                val isOnline = isBleConnected || (sessionStatus.liveStatus?.isOnline == true)
+                val batteryLevel = if (isBleConnected) sessionStatus.liveStatus?.batteryLevel else null
                 _uiState.update { state ->
                     state.copy(
                         isDeviceOnline = isOnline,
-                        batteryLevel = sessionStatus.liveStatus?.batteryLevel
+                        batteryLevel = batteryLevel
                     )
                 }
             }

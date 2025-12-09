@@ -138,6 +138,7 @@ class PracticeSessionViewModel @Inject constructor(
             ) { sessionAndProgress, practice, deviceSession, prefs, pattern ->
                 val (session, progress) = sessionAndProgress
                 val deviceStatus: DeviceSessionStatus = deviceSession
+                val isBleConnected = deviceStatus.connection is com.example.amulet.shared.domain.devices.model.BleConnectionState.Connected
                 val previousState = _state.value
                 val previousAudioMode = previousState.audioMode
                 val previousSession = previousState.session
@@ -163,8 +164,8 @@ class PracticeSessionViewModel @Inject constructor(
                         vibrationLevel = prefs.defaultIntensity,
                         audioMode = previousAudioMode ?: prefs.defaultAudioMode ?: session?.audioMode,
                         connectionState = deviceStatus.connection,
-                        batteryLevel = deviceStatus.liveStatus?.batteryLevel,
-                        isCharging = deviceStatus.liveStatus?.isCharging ?: false,
+                        batteryLevel = if (isBleConnected) deviceStatus.liveStatus?.batteryLevel else null,
+                        isCharging = if (isBleConnected) deviceStatus.liveStatus?.isCharging ?: false else false,
                         isDeviceOnline = deviceStatus.liveStatus?.isOnline ?: false,
                         patternName = pattern?.title ?: previousState.patternName,
                     )

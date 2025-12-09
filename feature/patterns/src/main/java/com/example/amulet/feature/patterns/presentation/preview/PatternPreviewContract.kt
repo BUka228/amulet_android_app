@@ -20,6 +20,8 @@ data class PatternPreviewState(
     val isLooping: Boolean = true,
     val isSendingToDevice: Boolean = false,
     val progress: PreviewProgress? = null,
+    val isDeviceConnected: Boolean = false,
+    val batteryLevel: Int? = null,
     val error: AppError? = null
 )
 

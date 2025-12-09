@@ -2,17 +2,25 @@ package com.example.amulet.feature.devices.presentation.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DevicesListViewModel @Inject constructor(
     private val observeDevicesUseCase: ObserveDevicesUseCase,
-    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase
+    private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DevicesListState())
@@ -23,7 +31,7 @@ class DevicesListViewModel @Inject constructor(
 
     init {
         observeDevices()
-        observeConnectionState()
+        observeDeviceSession()
     }
 
     fun handleEvent(event: DevicesListEvent) {
@@ -62,10 +70,10 @@ class DevicesListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun observeConnectionState() {
-        observeConnectionStateUseCase()
-            .onEach { connectionStatus ->
-                _uiState.update { it.copy(connectionStatus = connectionStatus) }
+    private fun observeDeviceSession() {
+        observeDeviceSessionStatusUseCase()
+            .onEach { sessionStatus ->
+                _uiState.update { it.copy(connectionStatus = sessionStatus.connection) }
             }
             .launchIn(viewModelScope)
     }

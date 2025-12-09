@@ -4,7 +4,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.core.logging.Logger
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
 import com.example.amulet.shared.domain.devices.usecase.ObserveDevicesUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import com.example.amulet.shared.domain.patterns.PreviewCache
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase
@@ -27,6 +29,7 @@ import javax.inject.Inject
 class PatternPreviewViewModel @Inject constructor(
     private val getPatternByIdUseCase: GetPatternByIdUseCase,
     private val observeDevicesUseCase: ObserveDevicesUseCase,
+    private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase,
     private val previewPatternOnDeviceUseCase: PreviewPatternOnDeviceUseCase,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -47,6 +50,7 @@ class PatternPreviewViewModel @Inject constructor(
             else -> _uiState.update { it.copy(isLoading = false, pattern = null) }
         }
         loadDevices()
+        observeDeviceSession()
     }
 
     fun handleEvent(event: PatternPreviewEvent) {
@@ -102,6 +106,20 @@ class PatternPreviewViewModel @Inject constructor(
                     it.copy(
                         devices = devices,
                         selectedDevice = devices.firstOrNull()
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeDeviceSession() {
+        observeDeviceSessionStatusUseCase()
+            .onEach { sessionStatus ->
+                val isConnected = sessionStatus.connection is BleConnectionState.Connected
+                _uiState.update {
+                    it.copy(
+                        isDeviceConnected = isConnected,
+                        batteryLevel = if (isConnected) sessionStatus.liveStatus?.batteryLevel else null
                     )
                 }
             }

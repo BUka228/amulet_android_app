@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import com.example.amulet.feature.practices.presentation.home.PracticesHomeRoute
 import com.example.amulet.feature.practices.presentation.course.CourseDetailsRoute
@@ -88,7 +89,13 @@ fun NavGraphBuilder.practicesGraph(
                 onNavigateToSession = { practiceIdForSession -> navController.navigateToPracticeSession(practiceIdForSession) }
             )
         }
-        composable(route = PracticesDestination.practiceSession) { backStackEntry ->
+        composable(
+            route = PracticesDestination.practiceSession,
+            deepLinks = listOf(
+                navDeepLink { uriPattern = "amulet://practices/session/{practiceId}" },
+                navDeepLink { uriPattern = "https://amulet.app/practices/session/{practiceId}" },
+            ),
+        ) { backStackEntry ->
             val id = backStackEntry.arguments?.getString("practiceId") ?: return@composable
             PracticeSessionRoute(
                 practiceId = id,

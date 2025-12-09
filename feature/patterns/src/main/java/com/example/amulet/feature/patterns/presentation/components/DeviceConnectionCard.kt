@@ -43,9 +43,11 @@ fun DeviceConnectionCard(
     device: Device,
     isSending: Boolean,
     onSendToDevice: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isConnectedOverride: Boolean? = null,
+    batteryOverride: Int? = null,
 ) {
-    val isConnected = device.status == DeviceStatus.ONLINE
+    val isConnected = isConnectedOverride ?: (device.status == DeviceStatus.ONLINE)
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -119,7 +121,8 @@ fun DeviceConnectionCard(
                 }
                 
                 // Батарея
-                device.batteryLevel?.let { battery ->
+                val battery: Int? = batteryOverride ?: device.batteryLevel?.toInt()
+                battery?.let { batteryValue ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -131,20 +134,20 @@ fun DeviceConnectionCard(
                         ) {
                             Icon(
                                 when {
-                                    battery > 80 -> Icons.Default.BatteryFull
-                                    battery > 50 -> Icons.Default.Battery6Bar
-                                    battery > 20 -> Icons.Default.Battery3Bar
+                                    batteryValue > 80 -> Icons.Default.BatteryFull
+                                    batteryValue > 50 -> Icons.Default.Battery6Bar
+                                    batteryValue > 20 -> Icons.Default.Battery3Bar
                                     else -> Icons.Default.Battery1Bar
                                 },
                                 contentDescription = stringResource(R.string.cd_battery_level),
                                 modifier = Modifier.size(20.dp),
                                 tint = when {
-                                    battery > 20 -> MaterialTheme.colorScheme.onPrimaryContainer
+                                    batteryValue > 20 -> MaterialTheme.colorScheme.onPrimaryContainer
                                     else -> MaterialTheme.colorScheme.error
                                 }
                             )
                             Text(
-                                text = stringResource(R.string.pattern_preview_device_battery, battery),
+                                text = stringResource(R.string.pattern_preview_device_battery, batteryValue),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -185,7 +188,7 @@ fun DeviceConnectionCard(
             Button(
                 onClick = onSendToDevice,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isSending
+                enabled = !isSending && isConnected
             ) {
                 if (isSending) {
                     CircularProgressIndicator(

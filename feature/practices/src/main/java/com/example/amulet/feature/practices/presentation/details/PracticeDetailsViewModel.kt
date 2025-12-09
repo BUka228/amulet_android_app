@@ -9,7 +9,7 @@ import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUseCase
 import com.example.amulet.shared.domain.courses.usecase.GetCoursesByPracticeIdUseCase
 import com.example.amulet.shared.domain.practices.model.PracticeId
-import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
+import com.example.amulet.shared.domain.devices.usecase.ObserveDeviceSessionStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +28,7 @@ class PracticeDetailsViewModel @Inject constructor(
     private val getPatternByIdUseCase: com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase,
     private val setFavoritePracticeUseCase: SetFavoritePracticeUseCase,
     private val getCoursesByPracticeIdUseCase: GetCoursesByPracticeIdUseCase,
-    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase
+    private val observeDeviceSessionStatusUseCase: ObserveDeviceSessionStatusUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PracticeDetailsState())
@@ -95,10 +95,10 @@ class PracticeDetailsViewModel @Inject constructor(
     }
 
     private fun observeConnectionState() {
-        observeConnectionStateUseCase()
-            .onEach { status ->
-                Log.d(TAG, "observeConnectionState: status=$status")
-                _uiState.update { it.copy(connectionStatus = status) }
+        observeDeviceSessionStatusUseCase()
+            .onEach { sessionStatus ->
+                Log.d(TAG, "observeConnectionState: status=${'$'}{sessionStatus.connection}")
+                _uiState.update { it.copy(connectionStatus = sessionStatus.connection) }
             }
             .launchIn(viewModelScope)
     }

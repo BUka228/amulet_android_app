@@ -169,6 +169,9 @@ class AmuletBleManagerImpl @Inject constructor(
         bluetoothGatt?.close()
         bluetoothGatt = null
         _connectionState.value = ConnectionState.Disconnected
+        // При явном дисконнекте помечаем live-статус устройства как оффлайн,
+        // чтобы UI не продолжал считать его online, но сохраняем последний уровень батареи.
+        _deviceStatus.value = _deviceStatus.value?.copy(isOnline = false)
         flowControlManager.reset()
         Logger.d("disconnect: completed", tag = TAG)
     }
@@ -550,6 +553,9 @@ class AmuletBleManagerImpl @Inject constructor(
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     _connectionState.value = ConnectionState.Disconnected
+                    // При любом разрыве подключения помечаем live-статус как оффлайн,
+                    // сохраняя последний известный уровень батареи.
+                    _deviceStatus.value = _deviceStatus.value?.copy(isOnline = false)
                     if (!connectContinuationCompleted && continuation != null) {
                         connectContinuationCompleted = true
                         val exception = Exception("Disconnected while connecting")

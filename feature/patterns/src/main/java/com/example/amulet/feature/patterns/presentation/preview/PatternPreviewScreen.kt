@@ -198,7 +198,9 @@ fun PatternPreviewScreen(
             DeviceConnectionCard(
                 device = device,
                 isSending = state.isSendingToDevice,
-                onSendToDevice = { onEvent(PatternPreviewEvent.SendToDevice) }
+                onSendToDevice = { onEvent(PatternPreviewEvent.SendToDevice) },
+                isConnectedOverride = state.isDeviceConnected,
+                batteryOverride = state.batteryLevel
             )
         }
 

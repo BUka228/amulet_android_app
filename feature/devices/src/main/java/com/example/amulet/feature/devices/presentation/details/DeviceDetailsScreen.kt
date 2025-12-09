@@ -140,7 +140,6 @@ fun DeviceDetailsScreen(
                             }
 
                             val batteryToShow: Int? = state.batteryLevel
-                                ?: device.batteryLevel?.toInt()
 
                             batteryToShow?.let { level ->
                                 Row(
@@ -161,7 +160,7 @@ fun DeviceDetailsScreen(
                                 val statusForChip = if (state.isDeviceOnline) {
                                     com.example.amulet.shared.domain.devices.model.DeviceStatus.ONLINE
                                 } else {
-                                    device.status
+                                    com.example.amulet.shared.domain.devices.model.DeviceStatus.OFFLINE
                                 }
                                 DeviceStatusChip(status = statusForChip)
                             }

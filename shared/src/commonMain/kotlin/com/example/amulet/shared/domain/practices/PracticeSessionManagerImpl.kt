@@ -9,6 +9,8 @@ import com.example.amulet.shared.domain.practices.model.PracticeSessionId
 import com.example.amulet.shared.domain.practices.model.PracticeSessionSource
 import com.example.amulet.shared.domain.practices.model.PracticeSessionStatus
 import com.example.amulet.shared.domain.practices.model.PracticeStep
+import com.example.amulet.shared.domain.devices.model.BleConnectionState
+import com.example.amulet.shared.domain.devices.usecase.ObserveConnectionStateUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetActiveSessionStreamUseCase
 import com.example.amulet.shared.domain.practices.usecase.GetPracticeByIdUseCase
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
@@ -51,6 +53,7 @@ class PracticeSessionManagerImpl(
     private val uploadPracticeScriptToDevice: UploadPracticeScriptToDeviceUseCase,
     private val playPracticeScriptOnDevice: PlayPracticeScriptOnDeviceUseCase,
     private val hasPracticeScriptOnDevice: HasPracticeScriptOnDeviceUseCase,
+    private val observeConnectionStateUseCase: ObserveConnectionStateUseCase,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val tickerIntervalMs: Long = 1000L
 ) : PracticeSessionManager {
@@ -70,9 +73,11 @@ class PracticeSessionManagerImpl(
         initialIntensity: Double?,
         initialBrightness: Double?
     ): AppResult<PracticeSession> = withContext(dispatcher) {
+        val connectionState = observeConnectionStateUseCase().firstOrNull()
         val practice = getPracticeById(practiceId).firstOrNull()
         var patternToPlay: PatternId? = null
         var shouldPlayPracticeScript: Boolean = false
+        var isDeviceConnected: Boolean = connectionState == BleConnectionState.Connected
         if (practice != null) {
             val scriptSteps = practice.script?.steps?.sortedBy { it.order }.orEmpty()
             val intensityForPreload = initialIntensity ?: 1.0
@@ -80,7 +85,7 @@ class PracticeSessionManagerImpl(
             if (scriptSteps.isNotEmpty()) {
                 val patternIdsToPreload = scriptSteps.mapNotNull { it.patternId?.let(::PatternId) }
                 val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
-                if (uniquePatternIdsToPreload.isNotEmpty()) {
+                if (uniquePatternIdsToPreload.isNotEmpty() && isDeviceConnected) {
                     val preloadStart = System.currentTimeMillis()
                     Logger.d(
                         "startSession: preloading step patterns=$uniquePatternIdsToPreload intensity=$intensityForPreload",
@@ -93,48 +98,64 @@ class PracticeSessionManagerImpl(
                             "startSession: preload FAILED patterns=$uniquePatternIdsToPreload durationMs=$duration error=$error",
                             tag = TAG
                         )
-                        return@withContext Err(error)
+                        if (error is AppError.BleError.DeviceDisconnected) {
+                            Logger.d("startSession: device disconnected, starting offline session without device", tag = TAG)
+                            isDeviceConnected = false
+                        } else {
+                            return@withContext Err(error)
+                        }
                     }
-                    val duration = System.currentTimeMillis() - preloadStart
-                    Logger.d(
-                        "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
-                        tag = TAG
-                    )
-                }
-
-                val hasScriptOnDevice = hasPracticeScriptOnDevice(practice.id)
-                if (hasScriptOnDevice) {
-                    Logger.d(
-                        "startSession: practice script already exists on device practiceId=${'$'}{practice.id}, skipping upload",
-                        tag = TAG
-                    )
-                    shouldPlayPracticeScript = true
-                } else {
-                    val uploadStart = System.currentTimeMillis()
-                    Logger.d(
-                        "startSession: uploading practice script practiceId=${'$'}{practice.id}",
-                        tag = TAG
-                    )
-                    val uploadResult = uploadPracticeScriptToDevice(practice)
-                    uploadResult.onFailure { error ->
-                        val duration = System.currentTimeMillis() - uploadStart
+                    if (isDeviceConnected) {
+                        val duration = System.currentTimeMillis() - preloadStart
                         Logger.d(
-                            "startSession: upload practice script FAILED practiceId=${'$'}{practice.id} durationMs=$duration error=$error",
+                            "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
                             tag = TAG
                         )
-                        return@withContext Err(error)
                     }
-                    val uploadDuration = System.currentTimeMillis() - uploadStart
-                    Logger.d(
-                        "startSession: upload practice script SUCCESS practiceId=${'$'}{practice.id} durationMs=$uploadDuration",
-                        tag = TAG
-                    )
-                    shouldPlayPracticeScript = true
+                }
+
+                if (isDeviceConnected) {
+                    val hasScriptOnDevice = hasPracticeScriptOnDevice(practice.id)
+                    if (hasScriptOnDevice) {
+                        Logger.d(
+                            "startSession: practice script already exists on device practiceId=${'$'}{practice.id}, skipping upload",
+                            tag = TAG
+                        )
+                        shouldPlayPracticeScript = true
+                    } else {
+                        val uploadStart = System.currentTimeMillis()
+                        Logger.d(
+                            "startSession: uploading practice script practiceId=${'$'}{practice.id}",
+                            tag = TAG
+                        )
+                        val uploadResult = uploadPracticeScriptToDevice(practice)
+                        uploadResult.onFailure { error ->
+                            val duration = System.currentTimeMillis() - uploadStart
+                            Logger.d(
+                                "startSession: upload practice script FAILED practiceId=${'$'}{practice.id} durationMs=$duration error=$error",
+                                tag = TAG
+                            )
+                            if (error is AppError.BleError.DeviceDisconnected) {
+                                Logger.d("startSession: device disconnected during script upload, continuing offline session", tag = TAG)
+                                isDeviceConnected = false
+                            } else {
+                                return@withContext Err(error)
+                            }
+                        }
+                        if (isDeviceConnected) {
+                            val uploadDuration = System.currentTimeMillis() - uploadStart
+                            Logger.d(
+                                "startSession: upload practice script SUCCESS practiceId=${'$'}{practice.id} durationMs=$uploadDuration",
+                                tag = TAG
+                            )
+                            shouldPlayPracticeScript = true
+                        }
+                    }
                 }
             } else {
                 val patternIdsToPreload = practice.patternId?.let { listOf(it) } ?: emptyList()
                 val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
-                if (uniquePatternIdsToPreload.isNotEmpty()) {
+                if (uniquePatternIdsToPreload.isNotEmpty() && isDeviceConnected) {
                     val preloadStart = System.currentTimeMillis()
                     Logger.d(
                         "startSession: preloading patterns=$uniquePatternIdsToPreload intensity=$intensityForPreload",
@@ -147,14 +168,21 @@ class PracticeSessionManagerImpl(
                             "startSession: preload FAILED patterns=$uniquePatternIdsToPreload durationMs=$duration error=$error",
                             tag = TAG
                         )
-                        return@withContext Err(error)
+                        if (error is AppError.BleError.DeviceDisconnected) {
+                            Logger.d("startSession: device disconnected, starting offline session without device", tag = TAG)
+                            isDeviceConnected = false
+                        } else {
+                            return@withContext Err(error)
+                        }
                     }
-                    val duration = System.currentTimeMillis() - preloadStart
-                    Logger.d(
-                        "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
-                        tag = TAG
-                    )
-                    patternToPlay = practice.patternId
+                    if (isDeviceConnected) {
+                        val duration = System.currentTimeMillis() - preloadStart
+                        Logger.d(
+                            "startSession: preload SUCCESS patterns=$uniquePatternIdsToPreload durationMs=$duration",
+                            tag = TAG
+                        )
+                        patternToPlay = practice.patternId
+                    }
                 }
             }
         }
@@ -170,23 +198,25 @@ class PracticeSessionManagerImpl(
 
         result.onSuccess { session ->
             scope.launch {
-                if (shouldPlayPracticeScript) {
-                    val playResult = playPracticeScriptOnDevice(session.practiceId)
-                    playResult.onFailure { error ->
-                        Logger.d(
-                            "startSession: PlayPracticeScriptOnDeviceUseCase FAILED practiceId=${'$'}{session.practiceId} error=$error",
-                            tag = TAG
-                        )
-                    }
-                } else {
-                    val patternId = patternToPlay
-                    if (patternId != null) {
-                        val playResult = patternPlaybackService.playAndAwaitStart(patternId)
+                if (isDeviceConnected) {
+                    if (shouldPlayPracticeScript) {
+                        val playResult = playPracticeScriptOnDevice(session.practiceId)
                         playResult.onFailure { error ->
                             Logger.d(
-                                "startSession: playAndAwaitStart FAILED pattern=$patternId error=$error",
+                                "startSession: PlayPracticeScriptOnDeviceUseCase FAILED practiceId=${'$'}{session.practiceId} error=$error",
                                 tag = TAG
                             )
+                        }
+                    } else {
+                        val patternId = patternToPlay
+                        if (patternId != null) {
+                            val playResult = patternPlaybackService.playAndAwaitStart(patternId)
+                            playResult.onFailure { error ->
+                                Logger.d(
+                                    "startSession: playAndAwaitStart FAILED pattern=$patternId error=$error",
+                                    tag = TAG
+                                )
+                            }
                         }
                     }
                 }

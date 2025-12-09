@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.Manifest
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import com.example.amulet.core.foreground.AmuletForegroundOrchestrator
 import com.example.amulet.shared.core.logging.Logger
@@ -170,22 +171,36 @@ class PracticeForegroundController @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val openIntent = PendingIntent.getService(
-            service,
-            3,
-            Intent(service, AmuletForegroundService::class.java).setAction(ACTION_PRACTICE_OPEN),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val openActivityIntent = if (session?.practiceId != null) {
+            val uri = Uri.parse("amulet://practices/session/${session.practiceId}")
+            Intent(Intent.ACTION_VIEW, uri).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+        } else {
+            service.packageManager.getLaunchIntentForPackage(service.packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+        }
 
         val builder = NotificationCompat.Builder(service, PRACTICES_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(contentText)
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setOngoing(true)
-            .setContentIntent(openIntent)
+
+        if (openActivityIntent != null) {
+            val openPendingIntent = PendingIntent.getActivity(
+                service,
+                3,
+                openActivityIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            builder.setContentIntent(openPendingIntent)
+            builder.addAction(0, "Открыть", openPendingIntent)
+        }
 
         builder.addAction(0, "Завершить", stopIntent)
-        builder.addAction(0, "Открыть", openIntent)
 
         return builder.build()
     }
