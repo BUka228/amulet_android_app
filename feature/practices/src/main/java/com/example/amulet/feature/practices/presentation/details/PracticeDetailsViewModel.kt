@@ -163,12 +163,6 @@ class PracticeDetailsViewModel @Inject constructor(
         viewModelScope.launch { _effect.send(PracticeDetailsEffect.NavigateToEditor(practiceId)) }
     }
 
-    private fun openEditor() {
-        val practiceId = _uiState.value.practiceId ?: return
-        Log.d(TAG, "openEditor: practiceId=$practiceId")
-        viewModelScope.launch { _effect.send(PracticeDetailsEffect.NavigateToEditor(practiceId)) }
-    }
-
     private companion object {
         const val TAG = "PracticeDetailsVM"
     }

@@ -98,7 +98,8 @@ fun NavGraphBuilder.practicesGraph(
                 onNavigateToPlan = { practiceIdForPlan -> navController.navigateToPracticeSchedule(practiceIdForPlan) },
                 onNavigateToCourse = { courseId -> navController.navigateToCourseDetails(courseId) },
                 onNavigateToPairing = onNavigateToPairing,
-                onNavigateToSession = { practiceIdForSession -> navController.navigateToPracticeSession(practiceIdForSession) }
+                onNavigateToSession = { practiceIdForSession -> navController.navigateToPracticeSession(practiceIdForSession) },
+                onNavigateToEdit = { practiceIdForEdit -> navController.navigateToPracticeEditor(practiceIdForEdit) },
             )
         }
         composable(

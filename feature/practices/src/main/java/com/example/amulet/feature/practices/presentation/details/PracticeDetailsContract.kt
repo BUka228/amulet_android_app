@@ -26,7 +26,6 @@ sealed class PracticeDetailsIntent {
     object OpenPairing : PracticeDetailsIntent()
     object NavigateBack : PracticeDetailsIntent()
     object OpenEditor : PracticeDetailsIntent()
-    object NavigateToEditor : PracticeDetailsIntent()
 }
 
 sealed class PracticeDetailsEffect {

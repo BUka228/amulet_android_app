@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
@@ -59,6 +60,7 @@ fun PracticeDetailsRoute(
     onNavigateToCourse: (String) -> Unit,
     onNavigateToPairing: () -> Unit,
     onNavigateToSession: (String) -> Unit,
+    onNavigateToEdit: (String) -> Unit,
     viewModel: PracticeDetailsViewModel = hiltViewModel()
 ) {
     viewModel.setIdIfEmpty(practiceId)
@@ -73,6 +75,7 @@ fun PracticeDetailsRoute(
                 is PracticeDetailsEffect.NavigateToCourse -> onNavigateToCourse(effect.courseId)
                 is PracticeDetailsEffect.NavigateToSession -> onNavigateToSession(effect.practiceId)
                 is PracticeDetailsEffect.NavigateToPairing -> onNavigateToPairing()
+                is PracticeDetailsEffect.NavigateToEditor -> onNavigateToEdit(effect.practiceId)
             }
         }
     }
@@ -94,6 +97,15 @@ fun PracticeDetailsRoute(
                         },
                         actions = {
                             val isFavorite = state.isFavorite
+                            IconButton(
+                                onClick = { viewModel.handleIntent(PracticeDetailsIntent.OpenEditor) },
+                                enabled = state.practiceId != null && !state.isLoading,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Edit,
+                                    contentDescription = null,
+                                )
+                            }
                             IconButton(onClick = { viewModel.handleIntent(PracticeDetailsIntent.ToggleFavorite) }) {
                                 Icon(
                                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
