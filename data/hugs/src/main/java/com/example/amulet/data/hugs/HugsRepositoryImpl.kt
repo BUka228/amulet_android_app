@@ -1,6 +1,10 @@
 package com.example.amulet.data.hugs
 
 import com.example.amulet.core.database.entity.HugEntity
+import com.example.amulet.core.database.entity.OutboxActionEntity
+import com.example.amulet.core.database.entity.OutboxActionStatus
+import com.example.amulet.core.database.entity.OutboxActionType
+import com.example.amulet.core.sync.scheduler.OutboxScheduler
 import com.example.amulet.data.hugs.datasource.local.HugsLocalDataSource
 import com.example.amulet.data.hugs.datasource.remote.HugsRemoteDataSource
 import com.example.amulet.core.network.dto.hug.HugEmotionDto
@@ -8,12 +12,11 @@ import com.example.amulet.core.network.dto.hug.HugSendRequestDto
 import com.example.amulet.shared.core.AppResult
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.domain.hugs.HugsRepository
-import com.example.amulet.shared.domain.hugs.PairsRepository
+import com.example.amulet.shared.domain.hugs.model.Emotion
 import com.example.amulet.shared.domain.hugs.model.Hug
 import com.example.amulet.shared.domain.hugs.model.HugId
 import com.example.amulet.shared.domain.hugs.model.HugStatus
 import com.example.amulet.shared.domain.hugs.model.PairId
-import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Err
@@ -24,44 +27,35 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import java.util.UUID
 
 @Singleton
 class HugsRepositoryImpl @Inject constructor(
     private val localDataSource: HugsLocalDataSource,
     private val remoteDataSource: HugsRemoteDataSource,
-    private val pairsRepository: PairsRepository,
+    private val outboxScheduler: OutboxScheduler,
+    private val json: Json,
 ) : HugsRepository {
 
     override suspend fun sendHug(
         pairId: PairId?,
         fromUserId: UserId,
         toUserId: UserId?,
-        quickReply: PairQuickReply?,
+        emotion: Emotion,
         payload: Map<String, Any?>?
     ): AppResult<Unit> {
-        // Для отправки через quick reply нам нужен привязанный PairEmotion.
-        val emotion = quickReply?.let { reply ->
-            if (pairId == null) {
-                return Err(AppError.Validation(mapOf("pairId" to "pairId is required for quick reply")))
-            }
-
-            val emotions = pairsRepository.observePairEmotions(pairId).first()
-            val boundEmotion = emotions.firstOrNull { it.id == reply.emotionId }
-                ?: return Err(AppError.Validation(mapOf("emotionId" to "Unknown emotion for quick reply")))
-
-            HugEmotionDto(
-                color = boundEmotion.colorHex,
-                patternId = boundEmotion.patternId?.value
-            )
-        } ?: return Err(AppError.Validation(mapOf("emotion" to "Hug emotion must not be null: use quick reply or explicit emotion support")))
+        val emotionDto = HugEmotionDto(
+            color = emotion.colorHex,
+            patternId = emotion.patternId?.value,
+        )
 
         val request = HugSendRequestDto(
             toUserId = toUserId?.value,
             pairId = pairId?.value,
-            emotion = requireNotNull(emotion) {
-                "Hug emotion must not be null: use quick reply or explicit emotion support"
-            },
-            payload = null,
+            emotion = emotionDto,
+            payload = null, // TODO: маппинг payload, когда он появится в контракте API
             inReplyToHugId = null
         )
 
@@ -74,9 +68,9 @@ class HugsRepositoryImpl @Inject constructor(
                     fromUserId = fromUserId.value,
                     toUserId = toUserId?.value,
                     pairId = pairId?.value,
-                    emotionColor = emotion.color,
-                    emotionPatternId = emotion.patternId,
-                    payloadJson = null,
+                    emotionColor = emotion.colorHex,
+                    emotionPatternId = emotion.patternId?.value,
+                    payloadJson = null, // TODO: сериализовать payload, когда оно будет поддержано
                     inReplyToHugId = null,
                     deliveredAt = null,
                     status = HugStatus.SENT.name,
@@ -85,7 +79,29 @@ class HugsRepositoryImpl @Inject constructor(
                 localDataSource.upsert(entity)
                 Ok(Unit)
             },
-            failure = { error ->
+            failure = { _ ->
+                // При сетевой ошибке ставим отправку hug в Outbox для гарантированной доставки.
+                val payloadJson = json.encodeToString(HugSendRequestDto.serializer(), request)
+                val nowMillis = System.currentTimeMillis()
+
+                val action = OutboxActionEntity(
+                    id = UUID.randomUUID().toString(),
+                    type = OutboxActionType.HUG_SEND,
+                    payloadJson = payloadJson,
+                    status = OutboxActionStatus.PENDING,
+                    retryCount = 0,
+                    lastError = null,
+                    idempotencyKey = null,
+                    createdAt = nowMillis,
+                    updatedAt = nowMillis,
+                    availableAt = nowMillis,
+                    priority = 2,
+                    targetEntityId = null,
+                )
+
+                localDataSource.enqueueOutboxAction(action)
+                outboxScheduler.scheduleSync()
+
                 Ok(Unit)
             }
         )

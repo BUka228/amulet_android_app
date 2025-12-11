@@ -278,7 +278,7 @@ fun PatternCard(
                 // Теги: фиксированная высота даже при отсутствии тегов,
                 // чтобы карточка была одинаковой высоты
                 Box(
-                    modifier = Modifier.height(32.dp),
+                    modifier = Modifier.height(52.dp),
                     contentAlignment = Alignment.CenterEnd
                 ) {
                     if (pattern.tags.isNotEmpty()) {

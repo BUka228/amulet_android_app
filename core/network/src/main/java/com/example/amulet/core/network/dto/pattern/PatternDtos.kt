@@ -21,7 +21,11 @@ data class PatternDto(
     val usageCount: Int? = null,
     val sharedWith: List<String>? = null,
     val createdAt: ApiTimestamp? = null,
-    val updatedAt: ApiTimestamp? = null
+    val updatedAt: ApiTimestamp? = null,
+    val parentPatternId: String? = null,
+    val segmentIndex: Int? = null,
+    val segmentStartMs: Int? = null,
+    val segmentEndMs: Int? = null
 )
 
 @Serializable
@@ -83,6 +87,12 @@ data class PatternPreviewResponseDto(
 @Serializable
 data class PatternDeleteResponseDto(
     val ok: Boolean
+)
+
+@Serializable
+data class PatternMarkersDto(
+    val patternId: String,
+    val markersMs: List<Int> = emptyList()
 )
 
 @Serializable

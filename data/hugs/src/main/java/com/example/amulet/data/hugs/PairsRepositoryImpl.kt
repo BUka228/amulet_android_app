@@ -191,7 +191,7 @@ class PairsRepositoryImpl @Inject constructor(
                 pairId = it.pairId.value,
                 userId = it.userId.value,
                 gestureType = it.gestureType.name,
-                emotionId = requireNotNull(it.emotionId) { "emotionId must not be null when updating quick replies" }
+                emotionId = it.emotionId
             )
         }
 

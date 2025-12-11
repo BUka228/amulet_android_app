@@ -83,7 +83,7 @@ data class PairQuickReplyDto(
     val pairId: String,
     val userId: String,
     val gestureType: String,
-    val emotionId: String
+    val emotionId: String?
 )
 
 @Serializable

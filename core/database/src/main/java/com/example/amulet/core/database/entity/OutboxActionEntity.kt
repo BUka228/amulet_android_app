@@ -23,6 +23,8 @@ enum class OutboxActionType(val apiEndpoint: String) {
     PATTERN_UPDATE("/patterns/{id}"),
     PATTERN_DELETE("/patterns/{id}"),
     PATTERN_SHARE("/patterns/{patternId}/share"),
+    PATTERN_SEGMENTS_UPDATE("/patterns/{id}/segments"),
+    PATTERN_MARKERS_UPDATE("/patterns/{id}/markers"),
     PRACTICE_START("/practices/{practiceId}/start"),
     PRACTICE_STOP("/practices.session/{sessionId}/stop"),
     FCM_TOKEN_ADD("/notifications.tokens"),

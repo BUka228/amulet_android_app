@@ -4,6 +4,7 @@ import com.example.amulet.core.database.entity.OutboxActionType
 import com.example.amulet.core.sync.processing.ActionProcessor
 import com.example.amulet.core.sync.processing.ActionProcessorKey
 import com.example.amulet.data.hugs.HugDevicePlayActionProcessor
+import com.example.amulet.data.hugs.HugSendActionProcessor
 import com.example.amulet.data.hugs.PairSettingsUpdateActionProcessor
 import com.example.amulet.data.hugs.HugsRepositoryImpl
 import com.example.amulet.data.hugs.PairsRepositoryImpl
@@ -63,4 +64,9 @@ interface HugsDataModule {
     @IntoMap
     @ActionProcessorKey(OutboxActionType.PAIR_SETTINGS_UPDATE)
     fun bindPairSettingsUpdateActionProcessor(impl: PairSettingsUpdateActionProcessor): ActionProcessor
+
+    @Binds
+    @IntoMap
+    @ActionProcessorKey(OutboxActionType.HUG_SEND)
+    fun bindHugSendActionProcessor(impl: HugSendActionProcessor): ActionProcessor
 }

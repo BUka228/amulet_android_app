@@ -33,7 +33,6 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
 
     @Inject lateinit var orchestrator: AmuletForegroundOrchestrator
     @Inject lateinit var practiceController: PracticeForegroundController
-    @Inject lateinit var hugsForegroundController: HugsForegroundController
 
     override fun onBind(intent: Intent?): IBinder = binder
 
@@ -42,7 +41,6 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
         Logger.d("AmuletForegroundService.onCreate", tag = TAG)
         orchestrator.attachHost(this)
         practiceController.onCreate(this)
-        hugsForegroundController.onCreate(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -55,11 +53,6 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
             PracticeForegroundController.ACTION_PRACTICE_OPEN -> {
                 practiceController.handleIntent(intent.action)
             }
-            ACTION_HUG_FROM_PUSH -> {
-                @Suppress("UNCHECKED_CAST")
-                val payload = intent.getSerializableExtra(EXTRA_HUG_PAYLOAD) as? Map<String, String>
-                hugsForegroundController.handleHugFromPush(payload)
-            }
             else -> {
                 practiceController.handleIntent(intent?.action)
             }
@@ -71,7 +64,6 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
         super.onDestroy()
         Logger.d("AmuletForegroundService.onDestroy", tag = TAG)
         practiceController.onDestroy()
-        hugsForegroundController.onDestroy()
     }
 
     override fun stopService() {
@@ -117,9 +109,6 @@ class AmuletForegroundService : Service(), AmuletForegroundOrchestrator.Host {
         private const val ACTION_PRACTICE_RESUME = "com.example.amulet.action.PRACTICE_RESUME"
         private const val ACTION_PRACTICE_STOP = "com.example.amulet.action.PRACTICE_STOP"
         private const val ACTION_PRACTICE_OPEN = "com.example.amulet.action.PRACTICE_OPEN"
-
-        const val ACTION_HUG_FROM_PUSH = "com.example.amulet.action.HUG_FROM_PUSH"
-        const val EXTRA_HUG_PAYLOAD = "extra_hug_payload"
     }
 }
 

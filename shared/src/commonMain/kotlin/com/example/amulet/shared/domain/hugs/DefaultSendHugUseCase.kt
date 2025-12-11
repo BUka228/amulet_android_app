@@ -2,6 +2,7 @@ package com.example.amulet.shared.domain.hugs
 
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.hugs.model.Emotion
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.hugs.model.PairStatus
@@ -61,11 +62,31 @@ class DefaultSendHugUseCase(
             }
         }
 
+        // На этом уровне домена выбираем эмоцию по quick reply и паре.
+        val emotion = quickReply?.let { reply ->
+            if (pairId == null) {
+                return Err(AppError.Validation(mapOf("pairId" to "pairId is required for quick reply")))
+            }
+
+            val emotions = pairsRepository.observePairEmotions(pairId).first()
+            val boundEmotion = emotions.firstOrNull { it.id == reply.emotionId }
+                ?: return Err(AppError.Validation(mapOf("emotionId" to "Unknown emotion for quick reply")))
+
+            Emotion(
+                colorHex = boundEmotion.colorHex,
+                patternId = boundEmotion.patternId,
+            )
+        } ?: return Err(
+            AppError.Validation(
+                mapOf("emotion" to "Hug emotion must not be null: use quick reply or explicit emotion support"),
+            ),
+        )
+
         return hugsRepository.sendHug(
             pairId = pairId,
             fromUserId = fromUserId,
             toUserId = toUserId,
-            quickReply = quickReply,
+            emotion = emotion,
             payload = payload,
         ).let { result ->
             // На всякий случай маппим ошибку PreconditionFailed (например, пара неактивна)

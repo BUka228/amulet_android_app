@@ -3,6 +3,7 @@ package com.example.amulet.core.network.service
 import com.example.amulet.core.network.dto.pattern.PatternCreateRequestDto
 import com.example.amulet.core.network.dto.pattern.PatternDeleteResponseDto
 import com.example.amulet.core.network.dto.pattern.PatternListResponseDto
+import com.example.amulet.core.network.dto.pattern.PatternMarkersDto
 import com.example.amulet.core.network.dto.pattern.PatternPreviewRequestDto
 import com.example.amulet.core.network.dto.pattern.PatternPreviewResponseDto
 import com.example.amulet.core.network.dto.pattern.PatternResponseDto
@@ -14,6 +15,7 @@ import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PATCH
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -56,4 +58,31 @@ interface PatternsApiService {
     suspend fun previewPattern(
         @Body request: PatternPreviewRequestDto
     ): PatternPreviewResponseDto
+
+    @GET("patterns/{id}/segments")
+    suspend fun getPatternSegments(
+        @Path("id") patternId: String
+    ): PatternListResponseDto
+
+    @PATCH("patterns/{id}/segments")
+    suspend fun upsertPatternSegments(
+        @Path("id") patternId: String,
+        @Body request: PatternListResponseDto
+    ): PatternListResponseDto
+
+    @GET("patterns/{id}/markers")
+    suspend fun getPatternMarkers(
+        @Path("id") patternId: String
+    ): PatternMarkersDto
+
+    @PUT("patterns/{id}/markers")
+    suspend fun upsertPatternMarkers(
+        @Path("id") patternId: String,
+        @Body request: PatternMarkersDto
+    ): PatternMarkersDto
+
+    @DELETE("patterns/{id}/markers")
+    suspend fun deletePatternMarkers(
+        @Path("id") patternId: String
+    ): PatternDeleteResponseDto
 }

@@ -17,6 +17,7 @@ import com.example.amulet.shared.domain.hugs.HugsRepository
 import com.example.amulet.shared.domain.hugs.PairsRepository
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
+import com.example.amulet.shared.domain.hugs.DeviceHugSendListener
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
@@ -166,6 +167,9 @@ object KoinBridgeModule {
                 }
             }
             modules(sharedKoinModules() + bridgeModule)
+        }.also { app ->
+            // Eager-init BLE→Hugs bridge listener, чтобы начать слушать HUG_SEND сразу.
+            app.koin.get<DeviceHugSendListener>()
         }.koin
 
     @Provides

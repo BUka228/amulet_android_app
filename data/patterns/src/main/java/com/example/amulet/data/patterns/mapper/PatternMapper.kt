@@ -113,7 +113,11 @@ fun PatternDto.toDomain(): Pattern {
         usageCount = usageCount,
         sharedWith = sharedWith?.map { UserId(it) } ?: emptyList(),
         createdAt = createdAt?.value,
-        updatedAt = updatedAt?.value
+        updatedAt = updatedAt?.value,
+        parentPatternId = parentPatternId?.let { PatternId(it) },
+        segmentIndex = segmentIndex,
+        segmentStartMs = segmentStartMs,
+        segmentEndMs = segmentEndMs,
     )
 }
 
@@ -226,9 +230,35 @@ fun PatternDto.toEntity(): PatternEntity {
         usageCount = usageCount,
         version = version,
         createdAt = createdAt?.value,
-        updatedAt = updatedAt?.value
+        updatedAt = updatedAt?.value,
+        parentPatternId = parentPatternId,
+        segmentIndex = segmentIndex,
+        segmentStartMs = segmentStartMs,
+        segmentEndMs = segmentEndMs,
     )
 }
+
+fun Pattern.toDtoForSegments(): PatternDto = PatternDto(
+    id = id.value,
+    version = version,
+    ownerId = ownerId?.value,
+    kind = kind.name.lowercase(),
+    spec = spec.toDto(),
+    public = public,
+    reviewStatus = reviewStatus?.name?.lowercase(),
+    hardwareVersion = hardwareVersion,
+    title = title,
+    description = description,
+    tags = tags,
+    usageCount = usageCount,
+    sharedWith = sharedWith.map { it.value },
+    createdAt = null,
+    updatedAt = null,
+    parentPatternId = parentPatternId?.value,
+    segmentIndex = segmentIndex,
+    segmentStartMs = segmentStartMs,
+    segmentEndMs = segmentEndMs,
+)
 
 // ===== Вспомогательные функции =====
 

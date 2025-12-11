@@ -3,6 +3,8 @@ package com.example.amulet.data.patterns.datasource
 import com.example.amulet.core.network.NetworkExceptionMapper
 import com.example.amulet.core.network.dto.pattern.PatternCreateRequestDto
 import com.example.amulet.core.network.dto.pattern.PatternDto
+import com.example.amulet.core.network.dto.pattern.PatternListResponseDto
+import com.example.amulet.core.network.dto.pattern.PatternMarkersDto
 import com.example.amulet.core.network.dto.pattern.PatternShareRequestDto
 import com.example.amulet.core.network.dto.pattern.PatternSpecDto
 import com.example.amulet.core.network.dto.pattern.PatternUpdateRequestDto
@@ -138,6 +140,55 @@ class RemotePatternDataSourceImpl @Inject constructor(
             ) 
         }.map { Unit }
         Logger.d("Шаринг паттерна на сервере завершен: $patternId", "RemotePatternDataSourceImpl")
+        return result
+    }
+
+    override suspend fun getPatternSegments(patternId: String): AppResult<List<PatternDto>> {
+        Logger.d("Получение сегментов паттерна с сервера: $patternId", "RemotePatternDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            apiService.getPatternSegments(patternId)
+        }.map(PatternListResponseDto::items)
+        Logger.d("Получение сегментов паттерна завершено: $patternId", "RemotePatternDataSourceImpl")
+        return result
+    }
+
+    override suspend fun upsertPatternSegments(
+        patternId: String,
+        segments: List<PatternDto>
+    ): AppResult<List<PatternDto>> {
+        Logger.d("Пересохранение сегментов паттерна на сервере: $patternId, count=${segments.size}", "RemotePatternDataSourceImpl")
+        val request = PatternListResponseDto(items = segments)
+        val result = safeApiCall(exceptionMapper) {
+            apiService.upsertPatternSegments(patternId, request)
+        }.map(PatternListResponseDto::items)
+        Logger.d("Пересохранение сегментов паттерна на сервере завершено: $patternId", "RemotePatternDataSourceImpl")
+        return result
+    }
+
+    override suspend fun getPatternMarkers(patternId: String): AppResult<PatternMarkersDto?> {
+        Logger.d("Получение маркеров паттерна с сервера: $patternId", "RemotePatternDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            apiService.getPatternMarkers(patternId)
+        }
+        Logger.d("Получение маркеров паттерна завершено: $patternId", "RemotePatternDataSourceImpl")
+        return result
+    }
+
+    override suspend fun upsertPatternMarkers(markers: PatternMarkersDto): AppResult<PatternMarkersDto> {
+        Logger.d("Сохранение маркеров паттерна на сервере: ${markers.patternId}", "RemotePatternDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            apiService.upsertPatternMarkers(markers.patternId, markers)
+        }
+        Logger.d("Сохранение маркеров паттерна на сервере завершено: ${markers.patternId}", "RemotePatternDataSourceImpl")
+        return result
+    }
+
+    override suspend fun deletePatternMarkers(patternId: String): AppResult<Unit> {
+        Logger.d("Удаление маркеров паттерна на сервере: $patternId", "RemotePatternDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            apiService.deletePatternMarkers(patternId)
+        }.map { Unit }
+        Logger.d("Удаление маркеров паттерна на сервере завершено: $patternId", "RemotePatternDataSourceImpl")
         return result
     }
 }

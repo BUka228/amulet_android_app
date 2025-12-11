@@ -1,6 +1,7 @@
 package com.example.amulet.data.hugs.datasource.local
 
 import com.example.amulet.core.database.entity.HugEntity
+import com.example.amulet.core.database.entity.OutboxActionEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -20,4 +21,6 @@ interface HugsLocalDataSource {
     suspend fun upsert(entities: List<HugEntity>)
 
     suspend fun updateStatus(id: String, status: String)
+
+    suspend fun enqueueOutboxAction(action: OutboxActionEntity)
 }

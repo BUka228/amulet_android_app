@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.delay
 
 /**
  * Сервис воспроизведения паттернов на устройстве.
@@ -140,13 +141,7 @@ class PatternPlaybackService(
                 isPreview = isPreview
             )
 
-            var lastProgress: Int? = null
-            devicesRepository.uploadTimelinePlan(devicePlan, status.hardwareVersion)
-                .collect { percent ->
-                    lastProgress = percent
-                }
-            Logger.d("playOnConnectedDevice: uploadTimelinePlan finished, lastProgress=$lastProgress", tag = TAG)
-            Ok(Unit)
+            uploadPlanWithRetry(devicePlan, status.hardwareVersion)
         } catch (e: Exception) {
             Logger.d("playOnConnectedDevice: exception $e", tag = TAG)
             Err(AppError.Unknown)
@@ -183,7 +178,11 @@ class PatternPlaybackService(
                     "preloadPatterns: uploading plan id=${plan.id} segments=${plan.segments.size} duration=${plan.totalDurationMs}",
                     tag = TAG
                 )
-                devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
+                val uploadResult = uploadPlanWithRetry(plan, status.hardwareVersion)
+                val error = uploadResult.component2()
+                if (error != null) {
+                    return@withContext Err(error)
+                }
             }
             Ok(Unit)
         } catch (e: Exception) {
@@ -245,8 +244,7 @@ class PatternPlaybackService(
                 "preloadTimelinePlan: uploading plan id=${'$'}planId segments=${'$'}{plan.segments.size} duration=${'$'}{plan.totalDurationMs}",
                 tag = TAG
             )
-            devicesRepository.uploadTimelinePlan(plan, status.hardwareVersion).collect { }
-            Ok(Unit)
+            uploadPlanWithRetry(plan, status.hardwareVersion)
         } catch (e: Exception) {
             Logger.d("preloadTimelinePlan: exception $e", tag = TAG)
             Err(AppError.Unknown)
@@ -322,8 +320,47 @@ class PatternPlaybackService(
             null
         }
     }
+
+    private suspend fun uploadPlanWithRetry(
+        plan: DeviceAnimationPlan,
+        hardwareVersion: Int,
+        maxAttempts: Int = DEFAULT_UPLOAD_RETRY_ATTEMPTS,
+        retryDelayMs: Long = DEFAULT_UPLOAD_RETRY_DELAY_MS,
+    ): AppResult<Unit> {
+        var attempt = 0
+        var lastError: AppError? = null
+
+        while (attempt < maxAttempts) {
+            try {
+                var lastProgress: Int? = null
+                devicesRepository.uploadTimelinePlan(plan, hardwareVersion)
+                    .collect { percent -> lastProgress = percent }
+                Logger.d(
+                    "uploadPlanWithRetry: success on attempt=${attempt + 1}, lastProgress=$lastProgress",
+                    tag = TAG
+                )
+                return Ok(Unit)
+            } catch (e: Exception) {
+                lastError = AppError.Unknown
+                Logger.w(
+                    "uploadPlanWithRetry: attempt=${attempt + 1} failed with exception=$e",
+                    e,
+                    tag = TAG
+                )
+            }
+
+            attempt++
+            if (attempt < maxAttempts) {
+                delay(retryDelayMs * attempt)
+            }
+        }
+
+        return Err(lastError ?: AppError.Unknown)
+    }
 }
 
 private const val TAG = "PatternPlaybackService"
 private const val DEFAULT_PLAY_TIMEOUT_MS = 5_000L
 private const val DEFAULT_DEVICE_STATUS_TIMEOUT_MS = 5_000L
+private const val DEFAULT_UPLOAD_RETRY_ATTEMPTS = 3
+private const val DEFAULT_UPLOAD_RETRY_DELAY_MS = 500L

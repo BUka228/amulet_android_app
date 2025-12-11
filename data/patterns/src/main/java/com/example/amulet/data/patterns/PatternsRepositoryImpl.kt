@@ -7,6 +7,7 @@ import com.example.amulet.core.sync.scheduler.OutboxScheduler
 import com.example.amulet.data.patterns.datasource.LocalPatternDataSource
 import com.example.amulet.data.patterns.datasource.RemotePatternDataSource
 import com.example.amulet.data.patterns.mapper.toDomain
+import com.example.amulet.data.patterns.mapper.toDtoForSegments
 import com.example.amulet.data.patterns.mapper.toEntity
 import com.example.amulet.data.patterns.mapper.toTagEntities
 import com.example.amulet.data.patterns.mapper.toTagNames
@@ -235,7 +236,7 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             
             // Планируем синхронизацию
-            //outboxScheduler.scheduleSync()
+            outboxScheduler.scheduleSync()
             
             Logger.d("Паттерн создан успешно: $patternId", "PatternsRepositoryImpl")
             Ok(pattern)
@@ -306,7 +307,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            //outboxScheduler.scheduleSync()
+            outboxScheduler.scheduleSync()
             
             Logger.d("Паттерн обновлен успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(updatedPattern)
@@ -344,7 +345,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            //outboxScheduler.scheduleSync()
+            outboxScheduler.scheduleSync()
             
             Logger.d("Паттерн удален успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(Unit)
@@ -408,7 +409,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 )
             }
             
-            //outboxScheduler.scheduleSync()
+            outboxScheduler.scheduleSync()
             
             Logger.d("Паттерн опубликован успешно: ${id.value}", "PatternsRepositoryImpl")
             Ok(updatedPattern)
@@ -452,7 +453,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 }
             }
             
-            //outboxScheduler.scheduleSync()
+            outboxScheduler.scheduleSync()
             
             Logger.d("Шаринг паттерна завершен: ${id.value}", "PatternsRepositoryImpl")
             Ok(Unit)
@@ -615,6 +616,41 @@ class PatternsRepositoryImpl @Inject constructor(
                     tagIds = tagIds,
                     sharedUserIds = sharedWith
                 )
+
+                // Дополнительно подтягиваем сегменты и маркеры таймлайна с сервера.
+                runCatching {
+                    val segmentsResult = remoteDataSource.getPatternSegments(id.value)
+                    val segmentDtos = segmentsResult.component1().orEmpty()
+                    if (segmentDtos.isNotEmpty()) {
+                        // Перезаписываем локальные сегменты без постановки задач в Outbox.
+                        localDataSource.deleteSegmentsForPattern(id.value)
+                        segmentDtos.forEach { segmentDto ->
+                            val segmentEntity = segmentDto.toEntity()
+                            val segmentTags = segmentDto.tags?.toTagEntities() ?: emptyList()
+                            val segmentTagIds = segmentTags.map { it.id }
+                            localDataSource.upsertPatternWithRelations(
+                                pattern = segmentEntity,
+                                tags = segmentTags,
+                                tagIds = segmentTagIds,
+                                sharedUserIds = emptyList()
+                            )
+                        }
+                    }
+                }
+
+                runCatching {
+                    val markersResult = remoteDataSource.getPatternMarkers(id.value)
+                    val markersDto = markersResult.component1()
+                    if (markersDto != null) {
+                        val markersJson: String = json.encodeToString(markersDto.markersMs)
+                        val entity = com.example.amulet.core.database.entity.PatternMarkersEntity(
+                            patternId = markersDto.patternId,
+                            markersJson = markersJson
+                        )
+                        localDataSource.upsertPatternMarkers(entity)
+                    }
+                }
+
                 Ok(Unit)
             } else {
                 val error = remoteResult.component2() ?: AppError.Unknown
@@ -649,6 +685,32 @@ class PatternsRepositoryImpl @Inject constructor(
     override suspend fun deleteSegmentsForPattern(parentId: PatternId): AppResult<Unit> {
         return try {
             localDataSource.deleteSegmentsForPattern(parentId.value)
+            // Ставим задачу в Outbox для синхронизации удаления сегментов на сервере.
+            val nowMillis = System.currentTimeMillis()
+            val payloadObject = buildJsonObject {
+                put("patternId", parentId.value)
+            }
+            val payloadJson = json.encodeToString(payloadObject)
+
+            localDataSource.enqueueOutboxAction(
+                OutboxActionEntity(
+                    id = UUID.randomUUID().toString(),
+                    type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
+                    payloadJson = payloadJson,
+                    status = OutboxActionStatus.PENDING,
+                    retryCount = 0,
+                    lastError = null,
+                    idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
+                    createdAt = nowMillis,
+                    updatedAt = nowMillis,
+                    availableAt = nowMillis,
+                    priority = 1,
+                    targetEntityId = parentId.value
+                )
+            )
+
+            outboxScheduler.scheduleSync()
+
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка удаления сегментов паттерна: $parentId", throwable = e, tag = "PatternsRepositoryImpl")
@@ -682,6 +744,32 @@ class PatternsRepositoryImpl @Inject constructor(
                     )
                 }
             }
+            // Ставим задачу в Outbox для синхронизации сегментов на сервере.
+            val nowMillis = System.currentTimeMillis()
+            val payloadObject = buildJsonObject {
+                put("patternId", parentId.value)
+            }
+            val payloadJson = json.encodeToString(payloadObject)
+
+            localDataSource.enqueueOutboxAction(
+                OutboxActionEntity(
+                    id = UUID.randomUUID().toString(),
+                    type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
+                    payloadJson = payloadJson,
+                    status = OutboxActionStatus.PENDING,
+                    retryCount = 0,
+                    lastError = null,
+                    idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
+                    createdAt = nowMillis,
+                    updatedAt = nowMillis,
+                    availableAt = nowMillis,
+                    priority = 1,
+                    targetEntityId = parentId.value
+                )
+            )
+
+            outboxScheduler.scheduleSync()
+
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка пересохранения сегментов паттерна: $parentId", throwable = e, tag = "PatternsRepositoryImpl")
@@ -712,6 +800,40 @@ class PatternsRepositoryImpl @Inject constructor(
                 markersJson = markersJson
             )
             localDataSource.upsertPatternMarkers(entity)
+            // Ставим задачу в Outbox для синхронизации маркеров на сервере.
+            val nowMillis = System.currentTimeMillis()
+            val payloadObject = buildJsonObject {
+                put("patternId", markers.patternId.value)
+                put(
+                    "markersMs",
+                    buildJsonArray {
+                        markers.markersMs.forEach { value ->
+                            add(JsonPrimitive(value))
+                        }
+                    }
+                )
+            }
+            val payloadJson = json.encodeToString(payloadObject)
+
+            localDataSource.enqueueOutboxAction(
+                OutboxActionEntity(
+                    id = UUID.randomUUID().toString(),
+                    type = OutboxActionType.PATTERN_MARKERS_UPDATE,
+                    payloadJson = payloadJson,
+                    status = OutboxActionStatus.PENDING,
+                    retryCount = 0,
+                    lastError = null,
+                    idempotencyKey = "pattern_markers_${markers.patternId.value}_$nowMillis",
+                    createdAt = nowMillis,
+                    updatedAt = nowMillis,
+                    availableAt = nowMillis,
+                    priority = 1,
+                    targetEntityId = markers.patternId.value
+                )
+            )
+
+            outboxScheduler.scheduleSync()
+
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка сохранения маркеров паттерна: ${markers.patternId}", throwable = e, tag = "PatternsRepositoryImpl")
@@ -722,6 +844,33 @@ class PatternsRepositoryImpl @Inject constructor(
     override suspend fun deletePatternMarkers(patternId: PatternId): AppResult<Unit> {
         return try {
             localDataSource.deletePatternMarkers(patternId.value)
+            // Ставим задачу в Outbox для удаления маркеров на сервере.
+            val nowMillis = System.currentTimeMillis()
+            val payloadObject = buildJsonObject {
+                put("patternId", patternId.value)
+                put("markersMs", buildJsonArray { })
+            }
+            val payloadJson = json.encodeToString(payloadObject)
+
+            localDataSource.enqueueOutboxAction(
+                OutboxActionEntity(
+                    id = UUID.randomUUID().toString(),
+                    type = OutboxActionType.PATTERN_MARKERS_UPDATE,
+                    payloadJson = payloadJson,
+                    status = OutboxActionStatus.PENDING,
+                    retryCount = 0,
+                    lastError = null,
+                    idempotencyKey = "pattern_markers_${patternId.value}_$nowMillis",
+                    createdAt = nowMillis,
+                    updatedAt = nowMillis,
+                    availableAt = nowMillis,
+                    priority = 1,
+                    targetEntityId = patternId.value
+                )
+            )
+            
+            outboxScheduler.scheduleSync()
+
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка удаления маркеров паттерна: $patternId", throwable = e, tag = "PatternsRepositoryImpl")

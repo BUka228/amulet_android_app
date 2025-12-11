@@ -8,6 +8,7 @@ import com.example.amulet.shared.domain.auth.usecase.SignUpUseCase
 import com.example.amulet.shared.domain.courses.usecase.*
 import com.example.amulet.shared.domain.devices.usecase.*
 import com.example.amulet.shared.domain.hugs.DefaultSendHugUseCase
+import com.example.amulet.shared.domain.hugs.DeviceHugSendListener
 import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
 import com.example.amulet.shared.domain.hugs.ObserveHugsForUserUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairEmotionsUseCase
@@ -89,6 +90,9 @@ private val sharedModule = module {
     factory { InvitePairUseCase(get()) }
     factory { AcceptPairUseCase(get()) }
     factory { SyncPairsUseCase(get()) }
+
+    // Hugs BLE bridge listener
+    single { DeviceHugSendListener(get(), get(), get(), get()) }
 
     // Notifications UseCases
     factory { SyncPushTokenUseCase(get(), get()) }

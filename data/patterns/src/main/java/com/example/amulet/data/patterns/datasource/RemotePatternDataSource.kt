@@ -1,6 +1,7 @@
 package com.example.amulet.data.patterns.datasource
 
 import com.example.amulet.core.network.dto.pattern.PatternDto
+import com.example.amulet.core.network.dto.pattern.PatternMarkersDto
 import com.example.amulet.shared.core.AppResult
 
 /**
@@ -68,4 +69,32 @@ interface RemotePatternDataSource {
         toUserId: String?,
         pairId: String?
     ): AppResult<Unit>
+
+    /**
+     * Получить сегменты паттерна по parentPatternId с сервера.
+     */
+    suspend fun getPatternSegments(patternId: String): AppResult<List<PatternDto>>
+
+    /**
+     * Пересохранить сегменты паттерна на сервере.
+     */
+    suspend fun upsertPatternSegments(
+        patternId: String,
+        segments: List<PatternDto>
+    ): AppResult<List<PatternDto>>
+
+    /**
+     * Получить маркеры таймлайна для паттерна с сервера.
+     */
+    suspend fun getPatternMarkers(patternId: String): AppResult<PatternMarkersDto?>
+
+    /**
+     * Сохранить или обновить маркеры таймлайна паттерна на сервере.
+     */
+    suspend fun upsertPatternMarkers(markers: PatternMarkersDto): AppResult<PatternMarkersDto>
+
+    /**
+     * Удалить маркеры таймлайна паттерна на сервере.
+     */
+    suspend fun deletePatternMarkers(patternId: String): AppResult<Unit>
 }
