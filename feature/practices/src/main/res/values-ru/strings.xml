@@ -247,4 +247,41 @@
     <string name="weekday_fri">Пт</string>
     <string name="weekday_sat">Сб</string>
     <string name="weekday_sun">Вс</string>
+
+    <!-- Practice Editor -->
+    <string name="practice_editor_title_new">Новая практика</string>
+    <string name="practice_editor_title_edit">Редактирование практики</string>
+    <string name="practice_editor_title_label">Название практики</string>
+    <string name="practice_editor_type_label">Тип</string>
+    <string name="practice_editor_duration_label">Целевая длительность, сек</string>
+    <string name="practice_editor_base_pattern_label">Базовый паттерн</string>
+    <string name="practice_editor_base_pattern_placeholder">Не выбран</string>
+    <string name="practice_editor_segments_count">%1$d сегментов</string>
+    <string name="practice_editor_generate_steps">Сгенерировать шаги из сегментов</string>
+    <string name="practice_editor_segment_item">Сегмент %1$d · %2$d с</string>
+    <string name="practice_editor_no_segments">Для этого паттерна нет загруженных сегментов.</string>
+    <string name="practice_editor_steps_title">Шаги</string>
+    <string name="practice_editor_step_title_format">Шаг %1$d</string>
+    <string name="practice_editor_step_title_label">Название шага</string>
+    <string name="practice_editor_step_description_label">Описание</string>
+    <string name="practice_editor_step_duration_label">Длительность, с</string>
+    <string name="practice_editor_step_binding_none">Без паттерна</string>
+    <string name="practice_editor_step_binding_single_pattern">Паттерн %1$s ×%2$d</string>
+    <string name="practice_editor_step_binding_segment_group">Паттерн %1$s, сегменты %2$s</string>
+    <string name="practice_editor_step_repeat_label">Повтор ×%1$d</string>
+    <string name="practice_editor_step_merge_next">Объединить со следующим</string>
+    <string name="practice_editor_step_delete">Удалить</string>
+    <string name="practice_editor_save">Сохранить</string>
+    <string name="practice_editor_add_intro">Добавить вступительный шаг</string>
+    <string name="practice_editor_add_outro">Добавить завершающий шаг</string>
+    <string name="practice_editor_add_step">Добавить шаг</string>
+    <string name="practice_editor_choose_pattern">Выбрать паттерн</string>
+    <string name="practice_editor_pattern_sheet_title">Выберите базовый паттерн</string>
+    <string name="practice_editor_pattern_sheet_empty">Пока нет доступных паттернов.</string>
+    <string name="practice_editor_pattern_search_hint">Поиск паттернов...</string>
+    <string name="practice_editor_segments_hint_select_step">Выберите шаг, чтобы настроить его сегменты.</string>
+    <string name="practice_editor_segments_hint_for_step">Редактирование сегментов для шага %1$d.</string>
+
+    <!-- Home FAB -->
+    <string name="practices_home_fab_create_practice">Создать свою практику</string>
 </resources>

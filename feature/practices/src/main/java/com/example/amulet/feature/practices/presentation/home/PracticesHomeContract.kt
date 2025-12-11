@@ -70,6 +70,7 @@ sealed class PracticesHomeIntent {
     object OpenSchedule : PracticesHomeIntent()
     object OpenStats : PracticesHomeIntent()
     object OpenSearch : PracticesHomeIntent()
+    object OpenPracticeEditor : PracticesHomeIntent()
     object CreateDayRitual : PracticesHomeIntent()
 
     data class RescheduleSession(val sessionId: String) : PracticesHomeIntent()
@@ -87,6 +88,7 @@ sealed class PracticesHomeEffect {
     object NavigateToSchedule : PracticesHomeEffect()
     object NavigateToStats : PracticesHomeEffect()
     object NavigateToSearch : PracticesHomeEffect()
+    object NavigateToPracticeEditor : PracticesHomeEffect()
 
     data class ShowError(val error: AppError) : PracticesHomeEffect()
 }

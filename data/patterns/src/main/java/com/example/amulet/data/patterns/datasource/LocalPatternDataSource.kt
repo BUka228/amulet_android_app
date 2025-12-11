@@ -3,6 +3,7 @@ package com.example.amulet.data.patterns.datasource
 import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
+import com.example.amulet.core.database.entity.PatternMarkersEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.shared.domain.patterns.model.Pattern
 import kotlinx.coroutines.flow.Flow
@@ -102,6 +103,31 @@ interface LocalPatternDataSource {
      * Удалить все паттерны.
      */
     suspend fun clearAll()
+
+    /**
+     * Получить маркеры таймлайна для паттерна.
+     */
+    suspend fun getPatternMarkers(patternId: String): PatternMarkersEntity?
+
+    /**
+     * Сохранить или обновить маркеры таймлайна для паттерна.
+     */
+    suspend fun upsertPatternMarkers(entity: PatternMarkersEntity)
+
+    /**
+     * Удалить маркеры таймлайна для паттерна.
+     */
+    suspend fun deletePatternMarkers(patternId: String)
+
+    /**
+     * Получить сегменты паттерна по parentPatternId.
+     */
+    suspend fun getSegmentsForPattern(parentPatternId: String): List<PatternEntity>
+
+    /**
+     * Удалить все сегменты паттерна по parentPatternId.
+     */
+    suspend fun deleteSegmentsForPattern(parentPatternId: String)
     
     /**
      * Добавить действие в Outbox.

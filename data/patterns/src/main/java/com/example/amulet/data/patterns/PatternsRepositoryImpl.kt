@@ -23,6 +23,7 @@ import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.domain.patterns.model.PatternDraft
 import com.example.amulet.shared.domain.patterns.model.PatternFilter
 import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.model.PatternMarkers
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.model.PatternUpdate
 import com.example.amulet.shared.domain.patterns.model.PublishMetadata
@@ -35,6 +36,8 @@ import com.github.michaelbull.result.getOrElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
@@ -625,6 +628,104 @@ class PatternsRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Logger.e("Ошибка ensurePatternLoaded: $e", throwable = e, tag = "PatternsRepositoryImpl")
             Err(AppError.Unknown)
+        }
+    }
+
+    override suspend fun getSegmentsForPattern(parentId: PatternId): AppResult<List<Pattern>> {
+        return try {
+            val entities = localDataSource.getSegmentsForPattern(parentId.value)
+            val patterns = entities.map { entity ->
+                val tags = localDataSource.getTagsForPattern(entity.id).toTagNames()
+                val sharedWith = localDataSource.getSharesForPattern(entity.id).toUserIds()
+                entity.toDomain(tags, sharedWith)
+            }
+            Ok(patterns)
+        } catch (e: Exception) {
+            Logger.e("Ошибка чтения сегментов паттерна: $parentId", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun deleteSegmentsForPattern(parentId: PatternId): AppResult<Unit> {
+        return try {
+            localDataSource.deleteSegmentsForPattern(parentId.value)
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка удаления сегментов паттерна: $parentId", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun upsertSegmentsForPattern(parentId: PatternId, segments: List<Pattern>): AppResult<Unit> {
+        Logger.d("Пересохранение сегментов паттерна: $parentId, всего: ${segments.size}", "PatternsRepositoryImpl")
+        return try {
+            localDataSource.withPatternTransaction {
+                // Удаляем старые сегменты
+                localDataSource.deleteSegmentsForPattern(parentId.value)
+
+                // Для каждого сегмента создаём/обновляем записи и связи с тегами
+                segments.forEach { segment ->
+                    val entity = segment.toEntity()
+                    val tagNames = segment.tags
+                    val existing = localDataSource.getTagsByNames(tagNames)
+                    val existingNames = existing.map { it.name }.toSet()
+                    val newNames = tagNames.filter { it !in existingNames }
+                    val newEntities = newNames.toTagEntities()
+                    val combined = existing + newEntities
+                    val tagIds = combined.map { it.id }
+
+                    localDataSource.upsertPatternWithRelations(
+                        pattern = entity,
+                        tags = combined,
+                        tagIds = tagIds,
+                        sharedUserIds = emptyList()
+                    )
+                }
+            }
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка пересохранения сегментов паттерна: $parentId", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun getPatternMarkers(patternId: PatternId): AppResult<PatternMarkers?> {
+        return try {
+            val entity = localDataSource.getPatternMarkers(patternId.value)
+            if (entity == null) {
+                Ok(null)
+            } else {
+                val markers: List<Int> = json.decodeFromString(entity.markersJson)
+                Ok(PatternMarkers(patternId = patternId, markersMs = markers))
+            }
+        } catch (e: Exception) {
+            Logger.e("Ошибка чтения маркеров паттерна: $patternId", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun upsertPatternMarkers(markers: PatternMarkers): AppResult<Unit> {
+        return try {
+            val markersJson: String = json.encodeToString(markers.markersMs)
+            val entity = com.example.amulet.core.database.entity.PatternMarkersEntity(
+                patternId = markers.patternId.value,
+                markersJson = markersJson
+            )
+            localDataSource.upsertPatternMarkers(entity)
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка сохранения маркеров паттерна: ${markers.patternId}", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
+        }
+    }
+
+    override suspend fun deletePatternMarkers(patternId: PatternId): AppResult<Unit> {
+        return try {
+            localDataSource.deletePatternMarkers(patternId.value)
+            Ok(Unit)
+        } catch (e: Exception) {
+            Logger.e("Ошибка удаления маркеров паттерна: $patternId", throwable = e, tag = "PatternsRepositoryImpl")
+            Err(AppError.DatabaseError)
         }
     }
 }

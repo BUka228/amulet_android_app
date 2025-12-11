@@ -20,5 +20,6 @@ data class Practice(
     val updatedAt: Long?,
     val steps: List<String> = emptyList(),
     val safetyNotes: List<String> = emptyList(),
-    val script: PracticeScript? = null
+    val script: PracticeScript? = null,
+    val hasDeviceScript: Boolean = false,
 )

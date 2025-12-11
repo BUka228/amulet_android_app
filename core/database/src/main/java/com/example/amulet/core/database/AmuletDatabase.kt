@@ -30,6 +30,7 @@ import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.PatternTagCrossRef
+import com.example.amulet.core.database.entity.PatternMarkersEntity
 import com.example.amulet.core.database.entity.PracticeEntity
 import com.example.amulet.core.database.entity.PracticeSessionEntity
 import com.example.amulet.core.database.entity.PracticeCategoryEntity
@@ -64,6 +65,7 @@ import com.example.amulet.core.database.entity.UserPracticeStatsEntity
         TagEntity::class,
         PatternTagCrossRef::class,
         PatternShareEntity::class,
+        PatternMarkersEntity::class,
         PairEntity::class,
         PairMemberEntity::class,
         PairEmotionEntity::class,
@@ -93,7 +95,7 @@ import com.example.amulet.core.database.entity.UserPracticeStatsEntity
         RemoteKeyEntity::class,
         UserMoodEntryEntity::class
     ],
-    version = 10,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(DatabaseTypeConverters::class, UserConverters::class, InstantConverters::class)

@@ -21,6 +21,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Book
@@ -38,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.Icon
@@ -86,6 +88,7 @@ fun PracticesHomeRoute(
     onOpenCourse: (String) -> Unit,
     onOpenSchedule: () -> Unit,
     onOpenSearch: () -> Unit,
+    onOpenPracticeEditor: () -> Unit,
     viewModel: PracticesHomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -99,6 +102,7 @@ fun PracticesHomeRoute(
                 PracticesHomeEffect.NavigateToSchedule -> onOpenSchedule()
                 PracticesHomeEffect.NavigateToStats -> Unit
                 PracticesHomeEffect.NavigateToSearch -> onOpenSearch()
+                PracticesHomeEffect.NavigateToPracticeEditor -> onOpenPracticeEditor()
                 is PracticesHomeEffect.ShowError -> Unit
             }
         }
@@ -150,7 +154,16 @@ private fun PracticesHomeScreen(
                         }
                     )
                 },
-                floatingActionButton = {}
+                floatingActionButton = {
+                    FloatingActionButton(
+                        onClick = { onIntent(PracticesHomeIntent.OpenPracticeEditor) },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = stringResource(id = R.string.practices_home_fab_create_practice),
+                        )
+                    }
+                }
             )
         }
     }

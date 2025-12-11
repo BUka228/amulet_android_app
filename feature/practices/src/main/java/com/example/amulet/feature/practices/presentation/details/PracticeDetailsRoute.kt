@@ -104,6 +104,7 @@ fun PracticeDetailsRoute(
                         }
                     )
                 },
+                floatingActionButton = {},
                 bottomBar = {
                     PracticeDetailsBottomBar(
                         isEnabled = state.practice != null && !state.isLoading,

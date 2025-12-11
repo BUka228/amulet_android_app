@@ -189,6 +189,7 @@ class PracticesHomeViewModel @Inject constructor(
             PracticesHomeIntent.OpenSchedule -> emitEffect(PracticesHomeEffect.NavigateToSchedule)
             PracticesHomeIntent.OpenStats -> emitEffect(PracticesHomeEffect.NavigateToStats)
             PracticesHomeIntent.OpenSearch -> emitEffect(PracticesHomeEffect.NavigateToSearch)
+            PracticesHomeIntent.OpenPracticeEditor -> emitEffect(PracticesHomeEffect.NavigateToPracticeEditor)
             PracticesHomeIntent.CreateDayRitual -> emitEffect(PracticesHomeEffect.NavigateToSchedule)
             is PracticesHomeIntent.RescheduleSession -> emitEffect(PracticesHomeEffect.NavigateToSchedule) // Placeholder
             is PracticesHomeIntent.CancelSession -> { /* TODO: Implement cancel session logic */ }

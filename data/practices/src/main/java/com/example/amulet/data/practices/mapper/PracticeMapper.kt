@@ -99,6 +99,8 @@ fun PracticeEntity.toDomain(): Practice {
                 }
             )
         }
+
+    val hasDeviceScript = script?.steps?.any { it.patternId != null } == true
     
     return Practice(
         id = id,
@@ -118,7 +120,8 @@ fun PracticeEntity.toDomain(): Practice {
         updatedAt = updatedAt,
         steps = steps,
         safetyNotes = safetyNotes,
-        script = script
+        script = script,
+        hasDeviceScript = hasDeviceScript,
     )
 }
 

@@ -25,6 +25,8 @@ sealed class PracticeDetailsIntent {
     data class OpenCourse(val courseId: String) : PracticeDetailsIntent()
     object OpenPairing : PracticeDetailsIntent()
     object NavigateBack : PracticeDetailsIntent()
+    object OpenEditor : PracticeDetailsIntent()
+    object NavigateToEditor : PracticeDetailsIntent()
 }
 
 sealed class PracticeDetailsEffect {
@@ -34,4 +36,5 @@ sealed class PracticeDetailsEffect {
     data class NavigateToCourse(val courseId: String) : PracticeDetailsEffect()
     data class NavigateToSession(val practiceId: String) : PracticeDetailsEffect()
     object NavigateToPairing : PracticeDetailsEffect()
+    data class NavigateToEditor(val practiceId: String) : PracticeDetailsEffect()
 }

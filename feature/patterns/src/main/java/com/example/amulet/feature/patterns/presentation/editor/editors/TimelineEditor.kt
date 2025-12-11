@@ -24,6 +24,9 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenu
@@ -64,6 +67,8 @@ private enum class DurationUnit { MS, S }
 fun TimelineEditor(
     timeline: PatternTimeline,
     tickMs: Int,
+    markersMs: List<Int>,
+    onMarkersChange: (List<Int>) -> Unit,
     onUpdate: (PatternTimeline) -> Unit
 ) {
     val vm: TimelineEditorViewModel = hiltViewModel()
@@ -237,7 +242,10 @@ fun TimelineEditor(
             onSelect = { led, t -> vm.onAction(TimelineAction.Select(led, t)) },
             onDragStart = { led, t -> vm.onAction(TimelineAction.DragStart(led, t)) },
             onDragOver = { led, t -> vm.onAction(TimelineAction.DragOver(led, t)) },
-            onDragEnd = { vm.onAction(TimelineAction.DragEnd) }
+            onDragEnd = { vm.onAction(TimelineAction.DragEnd) },
+            markersMs = markersMs,
+            tickMs = tickMs,
+            onMarkersChange = onMarkersChange
         )
         // Clip parameters editor (always visible; controls disabled if no colored cell selected)
         val selectedRow = s.gridColors.getOrNull(s.selectedLed)
@@ -554,7 +562,10 @@ private fun TimelineGrid(
     onSelect: (led: Int, tick: Int) -> Unit,
     onDragStart: (led: Int, tick: Int) -> Unit,
     onDragOver: (led: Int, tick: Int) -> Unit,
-    onDragEnd: () -> Unit
+    onDragEnd: () -> Unit,
+    markersMs: List<Int>,
+    tickMs: Int,
+    onMarkersChange: (List<Int>) -> Unit,
 ) {
     val scrollState = rememberScrollState()
     var containerWidthPx by remember { mutableIntStateOf(0) }
@@ -632,47 +643,97 @@ private fun TimelineGrid(
     Column(
         verticalArrangement = Arrangement.spacedBy(gap),
         modifier = baseModifier
-            .then(dragModifier)
     ) {
-        repeat(ledCount) { led ->
+        Box(
+            modifier = dragModifier
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                repeat(ledCount) { led ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = (led + 1).toString(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.width(24.dp)
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(gap),
+                            modifier = Modifier
+                                .weight(1f)
+                                // measure viewport width on the scrollable row itself for accurate right-edge detection
+                                .onSizeChanged { containerWidthPx = it.width }
+                                .horizontalScroll(scrollState)
+                        ) {
+                            repeat(ticks) { t ->
+                                val colorStr = if (t in 0 until grid[led].size) grid[led][t] else null
+                                val bg = if (colorStr != null) {
+                                    try {
+                                        val c = android.graphics.Color.parseColor(colorStr)
+                                        androidx.compose.ui.graphics.Color(c)
+                                    } catch (_: Throwable) {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+                                } else MaterialTheme.colorScheme.surfaceVariant
+                                val border = if (selected.first == led && selected.second == t) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                Box(
+                                    modifier = Modifier
+                                        .size(cellSize)
+                                        .clip(CircleShape)
+                                        .background(bg, shape = CircleShape)
+                                        .border(width = 1.dp, color = border, shape = CircleShape)
+                                        .clickable { onToggle(led, t) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Marker toggles under each tick column
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(modifier = Modifier.width(24.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gap),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(scrollState)
             ) {
-                Text(
-                    text = (led + 1).toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(24.dp)
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(gap),
-                    modifier = Modifier
-                        .weight(1f)
-                        // measure viewport width on the scrollable row itself for accurate right-edge detection
-                        .onSizeChanged { containerWidthPx = it.width }
-                        .horizontalScroll(scrollState)
-                ) {
-                    repeat(ticks) { t ->
-                        val colorStr = if (t in 0 until grid[led].size) grid[led][t] else null
-                        val bg = if (colorStr != null) {
-                            try {
-                                val c = android.graphics.Color.parseColor(colorStr)
-                                androidx.compose.ui.graphics.Color(c)
-                            } catch (_: Throwable) {
-                                MaterialTheme.colorScheme.primary
+                repeat(ticks) { t ->
+                    val ms = t * tickMs
+                    val hasMarker = markersMs.contains(ms)
+                    val bg = if (hasMarker) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface
+                    val borderColor = if (hasMarker) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(cellSize)
+                            .clip(CircleShape)
+                            .background(bg, shape = CircleShape)
+                            .border(width = 1.dp, color = borderColor, shape = CircleShape)
+                            .clickable {
+                                val updated = if (hasMarker) {
+                                    markersMs.filterNot { it == ms }
+                                } else {
+                                    (markersMs + ms).distinct()
+                                }.sorted()
+                                onMarkersChange(updated)
                             }
-                        } else MaterialTheme.colorScheme.surfaceVariant
-                        val border = if (selected.first == led && selected.second == t) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
-                        Box(
-                            modifier = Modifier
-                                .size(cellSize)
-                                .clip(CircleShape)
-                                .background(bg, shape = CircleShape)
-                                .border(width = 1.dp, color = border, shape = CircleShape)
-                                .clickable { onToggle(led, t) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.KeyboardArrowUp,
+                            contentDescription = stringResource(R.string.pattern_timeline_add_marker),
+                            tint = if (hasMarker) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

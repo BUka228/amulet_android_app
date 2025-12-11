@@ -78,6 +78,10 @@ fun PatternElementEditorRoute(
         TimelineEditor(
             timeline = timeline,
             tickMs = uiState.timelineTickMs,
+            markersMs = uiState.markersMs,
+            onMarkersChange = { markers ->
+                viewModel.handleEvent(PatternEditorEvent.UpdateMarkers(markers))
+            },
             onUpdate = { updated ->
                 viewModel.handleEvent(PatternEditorEvent.UpdateTimeline(updated))
             }

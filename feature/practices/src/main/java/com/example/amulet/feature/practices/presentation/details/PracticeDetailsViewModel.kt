@@ -62,6 +62,7 @@ class PracticeDetailsViewModel @Inject constructor(
             is PracticeDetailsIntent.OpenCourse -> openCourse(intent.courseId)
             is PracticeDetailsIntent.OpenPairing -> openPairing()
             is PracticeDetailsIntent.NavigateBack -> navigateBack()
+            is PracticeDetailsIntent.OpenEditor -> openEditor()
         }
     }
 
@@ -154,6 +155,18 @@ class PracticeDetailsViewModel @Inject constructor(
     private fun navigateBack() {
         Log.d(TAG, "navigateBack")
         viewModelScope.launch { _effect.send(PracticeDetailsEffect.NavigateBack) }
+    }
+
+    private fun openEditor() {
+        val practiceId = _uiState.value.practiceId ?: return
+        Log.d(TAG, "openEditor: practiceId=$practiceId")
+        viewModelScope.launch { _effect.send(PracticeDetailsEffect.NavigateToEditor(practiceId)) }
+    }
+
+    private fun openEditor() {
+        val practiceId = _uiState.value.practiceId ?: return
+        Log.d(TAG, "openEditor: practiceId=$practiceId")
+        viewModelScope.launch { _effect.send(PracticeDetailsEffect.NavigateToEditor(practiceId)) }
     }
 
     private companion object {

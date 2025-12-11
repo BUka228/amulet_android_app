@@ -21,5 +21,9 @@ data class Pattern(
     val usageCount: Int? = null,
     val sharedWith: List<UserId> = emptyList(),
     val createdAt: Long?,
-    val updatedAt: Long?
+    val updatedAt: Long?,
+    val parentPatternId: PatternId? = null,
+    val segmentIndex: Int? = null,
+    val segmentStartMs: Int? = null,
+    val segmentEndMs: Int? = null,
 )

@@ -58,6 +58,7 @@ import com.example.amulet.shared.domain.practices.usecase.SetFavoritePracticeUse
 import com.example.amulet.shared.domain.practices.usecase.StartPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.StopSessionUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdateUserPreferencesUseCase
+import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpdatePracticeDefaultsUseCase
 import com.example.amulet.shared.domain.practices.usecase.UpsertPracticeScheduleUseCase
 import com.example.amulet.shared.domain.practices.usecase.DeletePracticeScheduleUseCase
@@ -365,6 +366,12 @@ object KoinBridgeModule {
 
     @Provides fun providePreviewPatternOnDeviceUseCase(koin: Koin): PreviewPatternOnDeviceUseCase = koin.get()
     @Provides fun provideClearCurrentDevicePatternUseCase(koin: Koin): ClearCurrentDevicePatternUseCase = koin.get()
+    @Provides fun provideSlicePatternIntoSegmentsUseCase(koin: Koin): SlicePatternIntoSegmentsUseCase = koin.get()
+    @Provides fun provideApplyPatternSegmentationUseCase(koin: Koin): ApplyPatternSegmentationUseCase = koin.get()
+    @Provides fun provideGetPatternMarkersUseCase(koin: Koin): GetPatternMarkersUseCase = koin.get()
+    @Provides fun provideUpsertPatternMarkersUseCase(koin: Koin): UpsertPatternMarkersUseCase = koin.get()
+    @Provides fun provideGetPatternSegmentsUseCase(koin: Koin): GetPatternSegmentsUseCase = koin.get()
+    @Provides fun providePatternEditorFacade(koin: Koin): PatternEditorFacade = koin.get()
 
     // Practices UseCases
     @Provides fun provideGetPracticesStreamUseCase(koin: Koin): GetPracticesStreamUseCase = koin.get()
@@ -373,6 +380,7 @@ object KoinBridgeModule {
     @Provides fun provideGetFavoritesStreamUseCase(koin: Koin): GetFavoritesStreamUseCase = koin.get()
     @Provides fun provideSearchPracticesUseCase(koin: Koin): SearchPracticesUseCase = koin.get()
     @Provides fun provideRefreshPracticesUseCase(koin: Koin): RefreshPracticesUseCase = koin.get()
+    @Provides fun provideUpsertPracticeUseCase(koin: Koin): UpsertPracticeUseCase = koin.get()
     @Provides fun provideSetFavoritePracticeUseCase(koin: Koin): SetFavoritePracticeUseCase = koin.get()
     @Provides fun provideGetActiveSessionStreamUseCase(koin: Koin): GetActiveSessionStreamUseCase = koin.get()
     @Provides fun provideGetSessionsHistoryStreamUseCase(koin: Koin): GetSessionsHistoryStreamUseCase = koin.get()

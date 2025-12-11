@@ -292,6 +292,12 @@ class AmuletBleManagerImpl @Inject constructor(
             chunks.forEachIndexed { index, chunk ->
                 flowControlManager.executeWithFlowControl(GattConstants.COMMAND_TIMEOUT_MS) {
                     val base64 = chunk.toBase64()
+                    if (plan.id.contains("_seg_")) {
+                        Logger.d(
+                            "uploadAnimation: SEG_DEBUG planId=${plan.id} chunkIndex=${index + 1}/${chunks.size} chunkBytes=${chunk.size} base64Len=${base64.length}",
+                            tag = TAG
+                        )
+                    }
                     val addSegmentsCommand = AmuletCommand.Custom(
                         command = "ADD_SEGMENTS",
                         parameters = listOf(plan.id, (index + 1).toString(), base64)

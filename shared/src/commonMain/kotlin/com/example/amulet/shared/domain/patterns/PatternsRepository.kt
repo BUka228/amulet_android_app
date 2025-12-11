@@ -5,6 +5,7 @@ import com.example.amulet.shared.domain.patterns.model.Pattern
 import com.example.amulet.shared.domain.patterns.model.PatternDraft
 import com.example.amulet.shared.domain.patterns.model.PatternFilter
 import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.model.PatternMarkers
 import com.example.amulet.shared.domain.patterns.model.PatternUpdate
 import com.example.amulet.shared.domain.patterns.model.PublishMetadata
 import com.example.amulet.shared.domain.patterns.model.SyncResult
@@ -88,4 +89,34 @@ interface PatternsRepository {
      * Если паттерна нет в БД, пробуем загрузить его с сервера по id и сохранить.
      */
     suspend fun ensurePatternLoaded(id: PatternId): AppResult<Unit>
+
+    /**
+     * Получить сегменты паттерна по parentPatternId (локально).
+     */
+    suspend fun getSegmentsForPattern(parentId: PatternId): AppResult<List<Pattern>>
+
+    /**
+     * Удалить все сегменты паттерна по parentPatternId (локально).
+     */
+    suspend fun deleteSegmentsForPattern(parentId: PatternId): AppResult<Unit>
+
+    /**
+     * Пересохранить сегменты паттерна: удалить старые и записать новые (локально).
+     */
+    suspend fun upsertSegmentsForPattern(parentId: PatternId, segments: List<Pattern>): AppResult<Unit>
+
+    /**
+     * Получить маркеры таймлайна для паттерна.
+     */
+    suspend fun getPatternMarkers(patternId: PatternId): AppResult<PatternMarkers?>
+
+    /**
+     * Сохранить или обновить маркеры таймлайна для паттерна.
+     */
+    suspend fun upsertPatternMarkers(markers: PatternMarkers): AppResult<Unit>
+
+    /**
+     * Удалить маркеры таймлайна для паттерна.
+     */
+    suspend fun deletePatternMarkers(patternId: PatternId): AppResult<Unit>
 }

@@ -469,10 +469,12 @@ fun PatternEditorScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = stringResource(R.string.pattern_element_timeline),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.pattern_element_timeline),
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
                                 IconButton(onClick = onOpenTimelineEditor) {
                                     Icon(
                                         imageVector = Icons.Default.Settings,

@@ -248,4 +248,41 @@
     <string name="weekday_fri">Fri</string>
     <string name="weekday_sat">Sat</string>
     <string name="weekday_sun">Sun</string>
+
+    <!-- Practice Editor -->
+    <string name="practice_editor_title_new">New practice</string>
+    <string name="practice_editor_title_edit">Edit practice</string>
+    <string name="practice_editor_title_label">Practice title</string>
+    <string name="practice_editor_type_label">Type</string>
+    <string name="practice_editor_duration_label">Target duration, sec</string>
+    <string name="practice_editor_base_pattern_label">Base pattern</string>
+    <string name="practice_editor_base_pattern_placeholder">Not selected</string>
+    <string name="practice_editor_segments_count">%1$d segments</string>
+    <string name="practice_editor_generate_steps">Generate steps from segments</string>
+    <string name="practice_editor_segment_item">Segment %1$d · %2$d s</string>
+    <string name="practice_editor_no_segments">No segments loaded for this pattern.</string>
+    <string name="practice_editor_steps_title">Steps</string>
+    <string name="practice_editor_step_title_format">Step %1$d</string>
+    <string name="practice_editor_step_title_label">Step title</string>
+    <string name="practice_editor_step_description_label">Description</string>
+    <string name="practice_editor_step_duration_label">Duration, sec</string>
+    <string name="practice_editor_step_binding_none">No pattern</string>
+    <string name="practice_editor_step_binding_single_pattern">Pattern %1$s ×%2$d</string>
+    <string name="practice_editor_step_binding_segment_group">Pattern %1$s, segments %2$s</string>
+    <string name="practice_editor_step_repeat_label">Repeat ×%1$d</string>
+    <string name="practice_editor_step_merge_next">Merge with next</string>
+    <string name="practice_editor_step_delete">Delete</string>
+    <string name="practice_editor_save">Save</string>
+    <string name="practice_editor_add_intro">Add intro step</string>
+    <string name="practice_editor_add_outro">Add outro step</string>
+    <string name="practice_editor_add_step">Add step</string>
+    <string name="practice_editor_choose_pattern">Choose pattern</string>
+    <string name="practice_editor_pattern_sheet_title">Select base pattern</string>
+    <string name="practice_editor_pattern_sheet_empty">No patterns available yet.</string>
+    <string name="practice_editor_pattern_search_hint">Search patterns...</string>
+    <string name="practice_editor_segments_hint_select_step">Select a step to edit its segments.</string>
+    <string name="practice_editor_segments_hint_for_step">Editing segments for step %1$d.</string>
+
+    <!-- Home FAB -->
+    <string name="practices_home_fab_create_practice">Create custom practice</string>
 </resources>

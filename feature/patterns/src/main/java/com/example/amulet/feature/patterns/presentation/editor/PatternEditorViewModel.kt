@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.patterns.model.PatternDraft
 import com.example.amulet.shared.domain.patterns.model.PatternId
 import com.example.amulet.shared.domain.patterns.model.PatternKind
+import com.example.amulet.shared.domain.patterns.model.PatternMarkers
 import com.example.amulet.shared.domain.patterns.model.PatternSpec
 import com.example.amulet.shared.domain.patterns.model.PatternTimeline
 import com.example.amulet.shared.domain.patterns.model.PatternUpdate
@@ -28,6 +29,10 @@ class PatternEditorViewModel @Inject constructor(
     private val createTagsUseCase: CreateTagsUseCase,
     private val setPatternTagsUseCase: SetPatternTagsUseCase,
     private val deleteTagsUseCase: DeleteTagsUseCase,
+    private val getPatternMarkersUseCase: GetPatternMarkersUseCase,
+    private val upsertPatternMarkersUseCase: UpsertPatternMarkersUseCase,
+    private val getPatternSegmentsUseCase: GetPatternSegmentsUseCase,
+    private val applyPatternSegmentationUseCase: ApplyPatternSegmentationUseCase,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -57,6 +62,20 @@ class PatternEditorViewModel @Inject constructor(
         }
     }
 
+    private suspend fun autoSliceSegmentsAfterSave(patternId: PatternId, markersMs: List<Int>) {
+        if (markersMs.isEmpty()) return
+
+        applyPatternSegmentationUseCase(patternId, markersMs)
+            .onSuccess {
+                getPatternSegmentsUseCase(patternId)
+                    .onSuccess { segments ->
+                        _uiState.update { state ->
+                            state.copy(segmentsCount = segments.size, segmentsOutdated = false)
+                        }
+                    }
+            }
+    }
+
     fun handleEvent(event: PatternEditorEvent) {
         when (event) {
             is PatternEditorEvent.LoadPattern -> loadPattern()
@@ -68,6 +87,7 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.ToggleLoop -> toggleLoop()
             is PatternEditorEvent.RestartPreview -> restartPreview()
             is PatternEditorEvent.UpdateTimeline -> updateTimeline(event.timeline)
+            is PatternEditorEvent.UpdateMarkers -> updateMarkers(event.markersMs)
             is PatternEditorEvent.SavePattern -> savePattern()
             is PatternEditorEvent.PublishPattern -> publishPattern()
             is PatternEditorEvent.ConfirmPublish -> confirmPublish(event.data)
@@ -82,6 +102,7 @@ class PatternEditorViewModel @Inject constructor(
             is PatternEditorEvent.AddNewTag -> addNewTag(event.tag)
             is PatternEditorEvent.DeleteSelectedTags -> deleteSelectedTags()
             is PatternEditorEvent.SetPendingDeleteTags -> _uiState.update { it.copy(pendingDeleteTags = event.tags) }
+            is PatternEditorEvent.SliceIntoSegments -> sliceIntoSegments()
         }
     }
 
@@ -109,6 +130,18 @@ class PatternEditorViewModel @Inject constructor(
                                 spec = it.spec,
                                 selectedTags = it.tags.toSet()
                             )
+                        }
+
+                        // Загрузим маркеры и количество сегментов для этого паттерна
+                        getPatternMarkersUseCase(it.id).onSuccess { markers ->
+                            _uiState.update { state ->
+                                state.copy(markersMs = markers?.markersMs ?: emptyList())
+                            }
+                        }
+                        getPatternSegmentsUseCase(it.id).onSuccess { segments ->
+                            _uiState.update { state ->
+                                state.copy(segmentsCount = segments.size)
+                            }
                         }
                     } ?: run {
                         _uiState.update { it.copy(isLoading = false) }
@@ -236,10 +269,33 @@ class PatternEditorViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 timeline = timeline,
-                hasUnsavedChanges = true
+                hasUnsavedChanges = true,
+                segmentsOutdated = it.segmentsCount > 0 || it.segmentsOutdated,
             )
         }
         updateSpec()
+    }
+
+    private fun updateMarkers(markersMs: List<Int>) {
+        val timeline = _uiState.value.timeline ?: DEFAULT_TIMELINE
+        val durationMs = timeline.durationMs
+        val normalized = markersMs
+            .filter { it >= 0 && it <= durationMs }
+            .sorted()
+            .distinct()
+        _uiState.update {
+            it.copy(markersMs = normalized)
+        }
+
+        val pattern = _uiState.value.pattern ?: return
+        viewModelScope.launch {
+            upsertPatternMarkersUseCase(
+                PatternMarkers(
+                    patternId = pattern.id,
+                    markersMs = normalized
+                )
+            )
+        }
     }
 
     private fun savePattern() {
@@ -272,13 +328,18 @@ class PatternEditorViewModel @Inject constructor(
                     spec = spec
                 )
 
+                val existingPatternId = currentState.pattern.id
+
                 updatePatternUseCase(
-                    PatternId(currentState.pattern.id.value),
+                    PatternId(existingPatternId.value),
                     currentState.pattern.version,
                     update
                 ).onSuccess {
+                    // после успешного сохранения тихо обновляем сегменты, если заданы маркеры
+                    autoSliceSegmentsAfterSave(existingPatternId, currentState.markersMs)
+
                     // применяем связи тегов
-                    setPatternTagsUseCase(currentState.pattern.id, currentState.selectedTags.toList())
+                    setPatternTagsUseCase(existingPatternId, currentState.selectedTags.toList())
                         .onSuccess {
                             _uiState.update { it.copy(isSaving = false, hasUnsavedChanges = false) }
                             _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Паттерн сохранён"))
@@ -304,6 +365,9 @@ class PatternEditorViewModel @Inject constructor(
 
                 createPatternUseCase(draft)
                     .onSuccess { created ->
+                        // после успешного создания тихо нарезаем сегменты, если заданы маркеры
+                        autoSliceSegmentsAfterSave(created.id, currentState.markersMs)
+
                         // применяем связи тегов для нового паттерна
                         setPatternTagsUseCase(created.id, currentState.selectedTags.toList())
                             .onSuccess {
@@ -418,6 +482,80 @@ class PatternEditorViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
+    private fun sliceIntoSegments() {
+        val currentState = _uiState.value
+        val pattern = currentState.pattern
+        if (pattern == null) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Сначала сохраните паттерн"))
+            }
+            return
+        }
+
+        if (currentState.hasUnsavedChanges) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Сначала сохраните изменения паттерна"))
+            }
+            return
+        }
+
+        if (currentState.markersMs.isEmpty()) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Сначала добавьте маркеры"))
+            }
+            return
+        }
+
+        // Предварительная валидация длины сегментов на уровне UI
+        val timeline = pattern.spec.timeline
+        val totalDuration = timeline.durationMs
+        val raw = currentState.markersMs.sorted()
+        if (raw.first() < 0 || raw.last() > totalDuration) {
+            viewModelScope.launch {
+                _sideEffect.emit(PatternEditorSideEffect.ShowSnackbar("Маркеры должны быть в пределах [0, ${'$'}totalDuration] мс"))
+            }
+            return
+        }
+
+        val distinct = raw.distinct()
+        val normalized = buildList {
+            if (distinct.first() != 0) add(0)
+            addAll(distinct)
+            if (last() != totalDuration) add(totalDuration)
+        }
+
+        for (i in 0 until normalized.lastIndex) {
+            val segDuration = normalized[i + 1] - normalized[i]
+            if (segDuration < MIN_SEGMENT_DURATION_MS) {
+                viewModelScope.launch {
+                    _sideEffect.emit(
+                        PatternEditorSideEffect.ShowSnackbar(
+                            "Длительность сегмента должна быть не менее ${'$'}MIN_SEGMENT_DURATION_MS мс"
+                        )
+                    )
+                }
+                return
+            }
+        }
+
+        viewModelScope.launch {
+            applyPatternSegmentationUseCase(pattern.id, currentState.markersMs)
+                .onSuccess {
+                    getPatternSegmentsUseCase(pattern.id)
+                        .onSuccess { segments ->
+                            _uiState.update { state ->
+                                state.copy(segmentsCount = segments.size, segmentsOutdated = false)
+                            }
+                            _sideEffect.emit(
+                                PatternEditorSideEffect.ShowSnackbar(
+                                    "Создано шагов: ${'$'}{segments.size}"
+                                )
+                            )
+                        }
+                }
+        }
+    }
+
     private companion object {
         val DEFAULT_TIMELINE = PatternTimeline(
             durationMs = 3000,
@@ -431,5 +569,7 @@ class PatternEditorViewModel @Inject constructor(
             loop = false,
             timeline = timeline
         )
+
+        private const val MIN_SEGMENT_DURATION_MS: Int = 300
     }
 }

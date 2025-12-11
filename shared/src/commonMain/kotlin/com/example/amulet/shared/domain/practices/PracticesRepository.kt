@@ -39,6 +39,8 @@ interface PracticesRepository {
         filter: PracticeFilter
     ): AppResult<List<Practice>>
 
+    suspend fun upsertPractice(practice: Practice): AppResult<Unit>
+
     suspend fun refreshCatalog(): AppResult<Unit>
 
     suspend fun seedLocalData(): AppResult<Unit>

@@ -5,6 +5,7 @@ import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.database.dao.PatternDao
 import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PatternEntity
+import com.example.amulet.core.database.entity.PatternMarkersEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.shared.domain.patterns.model.Pattern
@@ -98,6 +99,31 @@ class LocalPatternDataSourceImpl @Inject constructor(
     override suspend fun clearAll() {
         Logger.d("Очистка всех паттернов из БД", "LocalPatternDataSourceImpl")
         patternDao.clear()
+    }
+
+    override suspend fun getPatternMarkers(patternId: String): PatternMarkersEntity? {
+        Logger.d("Загрузка маркеров паттерна: $patternId", "LocalPatternDataSourceImpl")
+        return patternDao.getPatternMarkers(patternId)
+    }
+
+    override suspend fun upsertPatternMarkers(entity: PatternMarkersEntity) {
+        Logger.d("Сохранение маркеров паттерна: ${entity.patternId}", "LocalPatternDataSourceImpl")
+        patternDao.upsertPatternMarkers(entity)
+    }
+
+    override suspend fun deletePatternMarkers(patternId: String) {
+        Logger.d("Удаление маркеров паттерна: $patternId", "LocalPatternDataSourceImpl")
+        patternDao.deletePatternMarkers(patternId)
+    }
+
+    override suspend fun getSegmentsForPattern(parentPatternId: String): List<PatternEntity> {
+        Logger.d("Загрузка сегментов паттерна: $parentPatternId", "LocalPatternDataSourceImpl")
+        return patternDao.getSegmentsByParent(parentPatternId)
+    }
+
+    override suspend fun deleteSegmentsForPattern(parentPatternId: String) {
+        Logger.d("Удаление сегментов паттерна: $parentPatternId", "LocalPatternDataSourceImpl")
+        patternDao.deleteSegmentsByParent(parentPatternId)
     }
     
     override suspend fun enqueueOutboxAction(action: OutboxActionEntity) {

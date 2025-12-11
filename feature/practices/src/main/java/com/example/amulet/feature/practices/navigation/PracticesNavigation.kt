@@ -12,6 +12,7 @@ import com.example.amulet.feature.practices.presentation.details.PracticeDetails
 import com.example.amulet.feature.practices.presentation.search.PracticesSearchRoute
 import com.example.amulet.feature.practices.presentation.session.PracticeSessionRoute
 import com.example.amulet.feature.practices.presentation.calendar.CalendarRoute
+import com.example.amulet.feature.practices.presentation.editor.PracticeEditorRoute
 
 object PracticesGraph {
     const val route: String = "practices_graph"
@@ -24,6 +25,7 @@ object PracticesDestination {
     const val search: String = "practices/search"
     const val calendar: String = "practices/calendar"
     const val practiceSession: String = "practices/session/{practiceId}"
+    const val practiceEditor: String = "practices/editor?practiceId={practiceId}"
 }
 
 fun NavController.navigateToPracticesHome(popUpToInclusive: Boolean = false) {
@@ -41,6 +43,15 @@ fun NavController.navigateToPracticeDetails(practiceId: String) {
 
 fun NavController.navigateToPracticeSession(practiceId: String) {
     navigate("practices/session/$practiceId") { launchSingleTop = true }
+}
+
+fun NavController.navigateToPracticeEditor(practiceId: String? = null) {
+    val route = if (practiceId != null) {
+        "practices/editor?practiceId=$practiceId"
+    } else {
+        "practices/editor"
+    }
+    navigate(route) { launchSingleTop = true }
 }
 
 fun NavController.navigateToCourseDetails(courseId: String) {
@@ -74,7 +85,8 @@ fun NavGraphBuilder.practicesGraph(
                 onOpenSession = { id -> navController.navigateToPracticeSession(id) },
                 onOpenCourse = { id -> navController.navigateToCourseDetails(id) },
                 onOpenSchedule = { navController.navigateToCalendar() },
-                onOpenSearch = { navController.navigateToPracticesSearch() }
+                onOpenSearch = { navController.navigateToPracticesSearch() },
+                onOpenPracticeEditor = { navController.navigateToPracticeEditor() },
             )
         }
         composable(route = PracticesDestination.practiceDetails) { backStackEntry ->
@@ -87,6 +99,21 @@ fun NavGraphBuilder.practicesGraph(
                 onNavigateToCourse = { courseId -> navController.navigateToCourseDetails(courseId) },
                 onNavigateToPairing = onNavigateToPairing,
                 onNavigateToSession = { practiceIdForSession -> navController.navigateToPracticeSession(practiceIdForSession) }
+            )
+        }
+        composable(
+            route = PracticesDestination.practiceEditor,
+            arguments = listOf(
+                navArgument("practiceId") {
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("practiceId")
+            PracticeEditorRoute(
+                practiceId = id,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         composable(

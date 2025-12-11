@@ -267,6 +267,13 @@ class DevicesRepositoryImpl @Inject constructor(
             tag = TAG
         )
 
+        if (plan.id.contains("_seg_")) {
+            Logger.d(
+                "uploadTimelinePlan: SEG_DEBUG id=${plan.id} segments=${plan.segments.size} payloadSize=${payload.size}",
+                tag = TAG
+            )
+        }
+
         val blePlan = AnimationPlan(
             id = plan.id,
             payload = payload,

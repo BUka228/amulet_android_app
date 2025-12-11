@@ -60,7 +60,11 @@ fun PatternEntity.toDomain(
         usageCount = usageCount,
         sharedWith = sharedWith.map { UserId(it) },
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        parentPatternId = parentPatternId?.let(::PatternId),
+        segmentIndex = segmentIndex,
+        segmentStartMs = segmentStartMs,
+        segmentEndMs = segmentEndMs,
     )
 }
 
@@ -82,7 +86,11 @@ fun Pattern.toEntity(): PatternEntity {
         usageCount = usageCount,
         version = version,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        parentPatternId = parentPatternId?.value,
+        segmentIndex = segmentIndex,
+        segmentStartMs = segmentStartMs,
+        segmentEndMs = segmentEndMs,
     )
 }
 

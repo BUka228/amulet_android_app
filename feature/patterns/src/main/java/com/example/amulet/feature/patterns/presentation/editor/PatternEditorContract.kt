@@ -20,6 +20,9 @@ data class PatternEditorState(
     val loop: Boolean = false,
     val timeline: PatternTimeline? = null,
     val timelineTickMs: Int = 100,
+    val markersMs: List<Int> = emptyList(),
+    val segmentsCount: Int = 0,
+    val segmentsOutdated: Boolean = false,
     val isEditing: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
@@ -49,6 +52,7 @@ sealed interface PatternEditorEvent {
     data object ToggleLoop: PatternEditorEvent
     data object RestartPreview : PatternEditorEvent
     data class UpdateTimeline(val timeline: PatternTimeline) : PatternEditorEvent
+    data class UpdateMarkers(val markersMs: List<Int>) : PatternEditorEvent
     data object SavePattern : PatternEditorEvent
     data object PublishPattern : PatternEditorEvent
     data class ConfirmPublish(val data: com.example.amulet.feature.patterns.presentation.components.PublishPatternData) : PatternEditorEvent
@@ -64,6 +68,7 @@ sealed interface PatternEditorEvent {
     data class SetPendingDeleteTags(val tags: Set<String>) : PatternEditorEvent
     data object DeleteSelectedTags : PatternEditorEvent
     data class UpdateTagSearch(val query: String) : PatternEditorEvent
+    data object SliceIntoSegments : PatternEditorEvent
 }
 
 sealed interface PatternEditorSideEffect {

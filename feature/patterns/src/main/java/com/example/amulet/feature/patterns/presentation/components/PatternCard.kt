@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -242,7 +243,9 @@ fun PatternCard(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Зацикливание (иконка с цветом вместо текста)
@@ -272,18 +275,23 @@ fun PatternCard(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-
-                // Теги
-                if (pattern.tags.isNotEmpty()) {
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        maxLines = 1
-                    ) {
-                        pattern.tags.forEach { tag ->
-                            AssistChip(
-                                onClick = { onTagClick(tag) },
-                                label = { Text(tag) },
-                            )
+                // Теги: фиксированная высота даже при отсутствии тегов,
+                // чтобы карточка была одинаковой высоты
+                Box(
+                    modifier = Modifier.height(32.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    if (pattern.tags.isNotEmpty()) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            maxLines = 1
+                        ) {
+                            pattern.tags.forEach { tag ->
+                                AssistChip(
+                                    onClick = { onTagClick(tag) },
+                                    label = { Text(tag) },
+                                )
+                            }
                         }
                     }
                 }

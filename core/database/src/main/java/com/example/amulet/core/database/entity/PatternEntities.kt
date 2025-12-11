@@ -33,7 +33,11 @@ data class PatternEntity(
     val usageCount: Int?,
     val version: Int = 1,
     val createdAt: Long?,
-    val updatedAt: Long?
+    val updatedAt: Long?,
+    val parentPatternId: String? = null,
+    val segmentIndex: Int? = null,
+    val segmentStartMs: Int? = null,
+    val segmentEndMs: Int? = null,
 )
 
 @Entity(
@@ -91,4 +95,21 @@ data class PatternTagCrossRef(
 data class PatternShareEntity(
     val patternId: String,
     val userId: String
+)
+
+@Entity(
+    tableName = "pattern_markers",
+    foreignKeys = [
+        ForeignKey(
+            entity = PatternEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["patternId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["patternId"], unique = true)]
+)
+data class PatternMarkersEntity(
+    @PrimaryKey val patternId: String,
+    val markersJson: String
 )

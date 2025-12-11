@@ -80,9 +80,11 @@ class PracticeSessionManagerImpl(
         var isDeviceConnected: Boolean = connectionState == BleConnectionState.Connected
         if (practice != null) {
             val scriptSteps = practice.script?.steps?.sortedBy { it.order }.orEmpty()
+            val hasDeviceScript = practice.hasDeviceScript || scriptSteps.any { it.patternId != null }
             val intensityForPreload = initialIntensity ?: 1.0
 
-            if (scriptSteps.isNotEmpty()) {
+            if (hasDeviceScript && scriptSteps.isNotEmpty()) {
+                // Script-mode: практика использует device script (шаги со ссылками на паттерны)
                 val patternIdsToPreload = scriptSteps.mapNotNull { it.patternId?.let(::PatternId) }
                 val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
                 if (uniquePatternIdsToPreload.isNotEmpty() && isDeviceConnected) {
@@ -153,6 +155,7 @@ class PracticeSessionManagerImpl(
                     }
                 }
             } else {
+                // Pattern-mode или script только для UI: устройство играет один patternId (если задан)
                 val patternIdsToPreload = practice.patternId?.let { listOf(it) } ?: emptyList()
                 val uniquePatternIdsToPreload = patternIdsToPreload.distinct()
                 if (uniquePatternIdsToPreload.isNotEmpty() && isDeviceConnected) {

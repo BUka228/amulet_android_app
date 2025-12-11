@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import com.example.amulet.core.database.entity.PatternEntity
 import com.example.amulet.core.database.entity.PatternShareEntity
 import com.example.amulet.core.database.entity.PatternTagCrossRef
+import com.example.amulet.core.database.entity.PatternMarkersEntity
 import com.example.amulet.core.database.entity.TagEntity
 import com.example.amulet.core.database.relation.PatternWithRelations
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +26,18 @@ interface PatternDao {
     fun observeByIdWithRelations(id: String): Flow<PatternWithRelations?>
 
     @Transaction
-    @Query("SELECT * FROM patterns WHERE ownerId = :ownerId ORDER BY updatedAt DESC, createdAt DESC")
+    @Query(
+        """
+        SELECT * FROM patterns p
+        WHERE p.ownerId = :ownerId
+          AND NOT EXISTS (
+              SELECT 1 FROM pattern_tags pt
+              INNER JOIN tags t ON t.id = pt.tagId
+              WHERE pt.patternId = p.id AND t.name = 'internal_step'
+          )
+        ORDER BY p.updatedAt DESC, p.createdAt DESC
+        """
+    )
     fun observeByOwner(ownerId: String): Flow<List<PatternEntity>>
 
     @Transaction
@@ -75,6 +87,11 @@ interface PatternDao {
         SELECT p.* FROM patterns p
         INNER JOIN pattern_shares ps ON p.id = ps.patternId
         WHERE ps.userId = :userId
+          AND NOT EXISTS (
+              SELECT 1 FROM pattern_tags pt
+              INNER JOIN tags t ON t.id = pt.tagId
+              WHERE pt.patternId = p.id AND t.name = 'internal_step'
+          )
         ORDER BY p.updatedAt DESC, p.createdAt DESC
     """)
     fun observeSharedWith(userId: String): Flow<List<PatternEntity>>
@@ -146,5 +163,20 @@ interface PatternDao {
 
     @Query("DELETE FROM tags WHERE name IN (:names)")
     suspend fun deleteTagsByNames(names: List<String>)
+
+    @Query("SELECT * FROM pattern_markers WHERE patternId = :patternId LIMIT 1")
+    suspend fun getPatternMarkers(patternId: String): PatternMarkersEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPatternMarkers(entity: PatternMarkersEntity)
+
+    @Query("DELETE FROM pattern_markers WHERE patternId = :patternId")
+    suspend fun deletePatternMarkers(patternId: String)
+
+    @Query("SELECT * FROM patterns WHERE parentPatternId = :parentId ORDER BY segmentIndex ASC")
+    suspend fun getSegmentsByParent(parentId: String): List<PatternEntity>
+
+    @Query("DELETE FROM patterns WHERE parentPatternId = :parentId")
+    suspend fun deleteSegmentsByParent(parentId: String)
 }
 

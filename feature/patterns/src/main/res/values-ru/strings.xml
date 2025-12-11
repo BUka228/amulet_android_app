@@ -99,6 +99,15 @@
     <string name="pattern_element_intensity_label">Интенсивность</string>
     <string name="pattern_element_sequence_steps">Последовательность из %d шагов</string>
     <string name="pattern_element_sequence_editor_wip">Редактирование последовательностей в разработке</string>
+
+    <!-- Маркеры и сегменты таймлайна -->
+    <string name="pattern_timeline_markers_title">Маркеры</string>
+    <string name="pattern_timeline_markers_count">%1$d маркеров</string>
+    <string name="pattern_timeline_add_marker">Маркер на этом тике</string>
+    <string name="pattern_timeline_remove_marker">Удалить ближайший маркер</string>
+    <string name="pattern_timeline_slice_button">Нарезать на шаги</string>
+    <string name="pattern_timeline_segments_badge">%1$d шагов</string>
+    <string name="pattern_timeline_segments_outdated">Сегменты устарели, нарежьте заново</string>
     
     <!-- Color Picker -->
     <string name="color_picker_preset_colors">Готовые цвета</string>
@@ -382,6 +391,8 @@
     <string name="timeline_autoscroll_acceleration">Коэф. ускорения</string>
     <string name="duration_unit_ms">мс</string>
     <string name="duration_unit_s">с</string>
+    <string name="timeline_undo">Отменить</string>
+    <string name="timeline_redo">Повторить</string>
     <string name="timeline_settings">Настройки</string>
     <string name="timeline_settings_show">Показать настройки</string>
     <string name="timeline_settings_hide">Скрыть настройки</string>

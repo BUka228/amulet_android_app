@@ -146,6 +146,12 @@ private val sharedModule = module {
     factory { DeleteTagsUseCase(get()) }
     factory { PreviewPatternOnDeviceUseCase(get()) }
     factory { ClearCurrentDevicePatternUseCase(get()) }
+    factory { SlicePatternIntoSegmentsUseCase() }
+    factory { ApplyPatternSegmentationUseCase(get(), get()) }
+    factory { GetPatternMarkersUseCase(get()) }
+    factory { UpsertPatternMarkersUseCase(get()) }
+    factory { GetPatternSegmentsUseCase(get()) }
+    factory { PatternEditorFacade(get(), get(), get(), get()) }
 
     // Practices UseCases
     factory { GetPracticesStreamUseCase(get()) }
@@ -154,6 +160,7 @@ private val sharedModule = module {
     factory { GetFavoritesStreamUseCase(get()) }
     factory { SearchPracticesUseCase(get()) }
     factory { RefreshPracticesUseCase(get()) }
+    factory { UpsertPracticeUseCase(get()) }
     factory { SetFavoritePracticeUseCase(get()) }
     factory { GetActiveSessionStreamUseCase(get()) }
     factory { GetSessionsHistoryStreamUseCase(get()) }

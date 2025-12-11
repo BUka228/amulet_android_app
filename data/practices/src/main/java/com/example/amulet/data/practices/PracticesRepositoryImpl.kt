@@ -125,6 +125,38 @@ class PracticesRepositoryImpl @Inject constructor(
         return Ok(list.filter { it.title.contains(query, true) || (it.description?.contains(query, true) == true) })
     }
 
+    override suspend fun upsertPractice(practice: Practice): AppResult<Unit> {
+        val tagsJson = json.encodeToString(json.encodeToJsonElement(practice.tags))
+        val contraindicationsJson = json.encodeToString(json.encodeToJsonElement(practice.contraindications))
+        val stepsJson = practice.steps.takeIf { it.isNotEmpty() }?.let { json.encodeToString(it) }
+        val safetyNotesJson = practice.safetyNotes.takeIf { it.isNotEmpty() }?.let { json.encodeToString(it) }
+        val scriptJson = practice.script?.let { json.encodeToString(it) }
+
+        val entity = com.example.amulet.core.database.entity.PracticeEntity(
+            id = practice.id,
+            type = practice.type.name,
+            title = practice.title,
+            description = practice.description,
+            durationSec = practice.durationSec,
+            level = practice.level?.name,
+            goal = practice.goal?.name,
+            tagsJson = tagsJson,
+            contraindicationsJson = contraindicationsJson,
+            patternId = practice.patternId?.value,
+            audioUrl = practice.audioUrl,
+            usageCount = practice.usageCount,
+            localesJson = "[]",
+            createdAt = practice.createdAt,
+            updatedAt = practice.updatedAt,
+            stepsJson = stepsJson,
+            safetyNotesJson = safetyNotesJson,
+            scriptJson = scriptJson,
+        )
+
+        local.upsertPractices(listOf(entity))
+        return Ok(Unit)
+    }
+
     override suspend fun refreshCatalog(): AppResult<Unit> {
         Logger.d("Начало обновления каталога практик", "PracticesRepositoryImpl")
         return try {
