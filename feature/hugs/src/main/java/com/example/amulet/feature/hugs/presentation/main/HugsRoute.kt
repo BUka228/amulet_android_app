@@ -29,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -151,6 +152,34 @@ private fun HugsHomeScreen(
                 RecentHugsSection(hugs = state.hugs)
             }
         }
+
+        // Карточка управления заблокированной парой
+        if (state.activePair?.status == PairStatus.BLOCKED) {
+            item {
+                AmuletCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.hugs_home_blocked_pair_title),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = stringResource(R.string.hugs_home_blocked_pair_message),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        OutlinedButton(
+                            onClick = { onIntent(HugsHomeIntent.UnblockPair) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(R.string.hugs_home_unblock_button))
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -231,19 +260,7 @@ private fun PairHeaderSection(
                 )
             }
 
-            if (hasPair) {
-                Text(
-                    text = stringResource(R.string.hugs_home_pair_active_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.hugs_home_pair_inactive_message),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
+            if (!hasPair) {
                 Button(
                     onClick = { onIntent(HugsHomeIntent.OpenPairing) },
                     modifier = Modifier.fillMaxWidth()
@@ -252,9 +269,11 @@ private fun PairHeaderSection(
                 }
             }
 
+            val canSendHug = hasPair && state.activePair?.status == PairStatus.ACTIVE && !state.isSending
+
             Button(
                 onClick = { onIntent(HugsHomeIntent.SendHug) },
-                enabled = hasPair && !state.isSending,
+                enabled = canSendHug,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(

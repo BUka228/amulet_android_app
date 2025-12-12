@@ -23,6 +23,8 @@ import com.example.amulet.shared.domain.hugs.UpdatePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.ExecuteRemoteHugCommandUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
+import com.example.amulet.shared.domain.hugs.DeletePairUseCase
+import com.example.amulet.shared.domain.hugs.UnblockPairUseCase
 import com.example.amulet.shared.domain.hugs.SendQuickReplyByGestureUseCase
 import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
@@ -82,6 +84,8 @@ private val sharedModule = module {
     factory { ExecuteRemoteHugCommandUseCase(get(), get(), get(), get(), get(), get()) }
     factory { SetHugsDndEnabledUseCase(get(), get()) }
     factory { BlockPairUseCase(get()) }
+    factory { UnblockPairUseCase(get()) }
+    factory { DeletePairUseCase(get()) }
     factory { SendQuickReplyByGestureUseCase(get(), get()) }
     factory { GetSecretCodesUseCase(get()) }
     factory { ObservePairsUseCase(get()) }

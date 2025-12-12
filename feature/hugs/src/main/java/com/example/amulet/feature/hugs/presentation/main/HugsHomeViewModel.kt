@@ -7,11 +7,14 @@ import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.UnblockPairUseCase
 import com.example.amulet.shared.domain.hugs.model.PairStatus
 import com.example.amulet.shared.domain.user.model.UserId
 import com.example.amulet.shared.domain.user.usecase.FetchUserProfileUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveUserByIdUseCase
+import com.example.amulet.shared.core.logging.Logger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,6 +39,8 @@ class HugsHomeViewModel @Inject constructor(
     private val observePairQuickRepliesUseCase: ObservePairQuickRepliesUseCase,
     private val sendHugUseCase: SendHugUseCase,
     private val syncHugsUseCase: SyncHugsUseCase,
+    private val syncPairsUseCase: SyncPairsUseCase,
+    private val unblockPairUseCase: UnblockPairUseCase,
     private val observeUserByIdUseCase: ObserveUserByIdUseCase,
     private val fetchUserProfileUseCase: FetchUserProfileUseCase,
 ) : ViewModel() {
@@ -134,25 +139,47 @@ class HugsHomeViewModel @Inject constructor(
             HugsHomeIntent.OpenEmotions -> emitEffect(HugsHomeEffect.NavigateToEmotions)
             HugsHomeIntent.OpenSecretCodes -> emitEffect(HugsHomeEffect.NavigateToSecretCodes)
             HugsHomeIntent.OpenPairing -> emitEffect(HugsHomeEffect.NavigateToPairing)
+            HugsHomeIntent.UnblockPair -> unblockPair()
         }
     }
 
     private fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            val result = syncHugsUseCase(direction = "all")
-            val error = result.component2()
-            if (error != null) {
-                emitEffect(HugsHomeEffect.ShowError(error))
+            val pairsResult = syncPairsUseCase()
+            val pairsError = pairsResult.component2()
+            if (pairsError != null) {
+                emitEffect(HugsHomeEffect.ShowError(pairsError))
+            }
+
+            val hugsResult = syncHugsUseCase(direction = "all")
+            val hugsError = hugsResult.component2()
+            if (hugsError != null) {
+                emitEffect(HugsHomeEffect.ShowError(hugsError))
             }
             _state.update { it.copy(isRefreshing = false) }
         }
     }
 
     private fun sendHug() {
-        val pair = _state.value.activePair ?: return
-        val currentUser = _state.value.currentUser ?: return
+        val pair = _state.value.activePair ?: run {
+            Logger.d("HugsHomeViewModel.sendHug: skip (no activePair)", "HugsHomeViewModel")
+            return
+        }
+        if (pair.status == PairStatus.BLOCKED) {
+            Logger.d("HugsHomeViewModel.sendHug: skip (pair BLOCKED) pairId=${pair.id.value}", "HugsHomeViewModel")
+            return
+        }
+        val currentUser = _state.value.currentUser ?: run {
+            Logger.d("HugsHomeViewModel.sendHug: skip (no currentUser)", "HugsHomeViewModel")
+            return
+        }
         val toUserId = pair.members.firstOrNull { it.userId != currentUser.id }?.userId
+
+        Logger.d(
+            "HugsHomeViewModel.sendHug: start pairId=${pair.id.value} from=${currentUser.id.value} to=${toUserId?.value}",
+            "HugsHomeViewModel"
+        )
 
         viewModelScope.launch {
             _state.update { it.copy(isSending = true) }
@@ -163,9 +190,30 @@ class HugsHomeViewModel @Inject constructor(
             )
             val error = result.component2()
             if (error != null) {
+                Logger.e(
+                    "HugsHomeViewModel.sendHug: failed pairId=${pair.id.value} error=$error",
+                    throwable = Exception(error.toString()),
+                    tag = "HugsHomeViewModel"
+                )
                 emitEffect(HugsHomeEffect.ShowError(error))
+            } else {
+                Logger.d("HugsHomeViewModel.sendHug: success pairId=${pair.id.value}", "HugsHomeViewModel")
             }
             _state.update { it.copy(isSending = false) }
+        }
+    }
+
+    private fun unblockPair() {
+        val pair = _state.value.activePair ?: return
+
+        viewModelScope.launch {
+            val result = unblockPairUseCase(pair.id)
+            val error = result.component2()
+            if (error != null) {
+                emitEffect(HugsHomeEffect.ShowError(error))
+            } else {
+                syncPairsUseCase()
+            }
         }
     }
 

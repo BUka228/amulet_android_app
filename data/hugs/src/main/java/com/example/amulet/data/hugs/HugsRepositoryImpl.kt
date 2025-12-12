@@ -21,6 +21,7 @@ import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.fold
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
@@ -46,6 +47,10 @@ class HugsRepositoryImpl @Inject constructor(
         emotion: Emotion,
         payload: Map<String, Any?>?
     ): AppResult<Unit> {
+        Logger.d(
+            "HugsRepositoryImpl.sendHug: start pairId=${pairId?.value} from=${fromUserId.value} to=${toUserId?.value} emotionColor=${emotion.colorHex} patternId=${emotion.patternId?.value}",
+            "HugsRepositoryImpl"
+        )
         val emotionDto = HugEmotionDto(
             color = emotion.colorHex,
             patternId = emotion.patternId?.value,
@@ -61,8 +66,20 @@ class HugsRepositoryImpl @Inject constructor(
 
         val remoteResult = remoteDataSource.sendHug(request)
 
+        remoteResult.component2()?.let { error ->
+            Logger.e(
+                "HugsRepositoryImpl.sendHug: remote failed -> will enqueue outbox error=$error",
+                throwable = Exception(error.toString()),
+                tag = "HugsRepositoryImpl"
+            )
+        }
+
         return remoteResult.fold(
             success = { hugId ->
+                Logger.d(
+                    "HugsRepositoryImpl.sendHug: remote success hugId=$hugId",
+                    "HugsRepositoryImpl"
+                )
                 val entity = HugEntity(
                     id = hugId,
                     fromUserId = fromUserId.value,
@@ -101,6 +118,11 @@ class HugsRepositoryImpl @Inject constructor(
 
                 localDataSource.enqueueOutboxAction(action)
                 outboxScheduler.scheduleSync()
+
+                Logger.d(
+                    "HugsRepositoryImpl.sendHug: enqueued outbox actionId=${action.id} type=${action.type}",
+                    "HugsRepositoryImpl"
+                )
 
                 Ok(Unit)
             }

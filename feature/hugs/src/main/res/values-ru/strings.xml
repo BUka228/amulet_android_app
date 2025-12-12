@@ -53,6 +53,18 @@
     <string name="hugs_settings_disconnect_confirm">Разорвать</string>
     <string name="hugs_settings_cancel">Отмена</string>
 
+    <!-- Blocked pair management (ru) -->
+    <string name="hugs_home_blocked_pair_title">Пара заблокирована</string>
+    <string name="hugs_home_blocked_pair_message">Вы заблокировали эту пару. Можно разблокировать её или создать новую.</string>
+    <string name="hugs_home_unblock_button">Разблокировать пару</string>
+    <string name="hugs_settings_unblock_button">Разблокировать пару</string>
+
+    <string name="hugs_settings_delete_pair_hint">Чтобы полностью удалить пару из аккаунта, вы можете удалить её.</string>
+    <string name="hugs_settings_delete_pair_button">Удалить пару</string>
+    <string name="hugs_settings_delete_pair_dialog_title">Удалить пару безвозвратно?</string>
+    <string name="hugs_settings_delete_pair_dialog_message">Пара и все связанные данные будут удалены. Это действие нельзя отменить.</string>
+    <string name="hugs_settings_delete_pair_confirm">Удалить</string>
+
     <!-- Hug Details Screen (ru) -->
     <string name="hug_details_title">Детали объятия</string>
     <string name="hug_details_error_loading">Ошибка загрузки объятия</string>

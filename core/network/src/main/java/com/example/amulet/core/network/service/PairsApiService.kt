@@ -34,6 +34,9 @@ interface PairsApiService {
     @POST("pairs/{pairId}/unblock")
     suspend fun unblockPair(@Path("pairId") pairId: String): PairResponseDto
 
+    @POST("pairs/{pairId}/delete")
+    suspend fun deletePair(@Path("pairId") pairId: String)
+
     @GET("pairs/{pairId}/emotions")
     suspend fun getPairEmotions(
         @Path("pairId") pairId: String

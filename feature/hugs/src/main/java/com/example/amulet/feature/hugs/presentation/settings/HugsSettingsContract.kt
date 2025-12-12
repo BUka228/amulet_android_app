@@ -28,8 +28,11 @@ sealed class HugsSettingsIntent {
     data class ToggleMuted(val enabled: Boolean) : HugsSettingsIntent()
     object SavePairSettings : HugsSettingsIntent()
     object DisconnectPair : HugsSettingsIntent()
+    object UnblockPair : HugsSettingsIntent()
+    object DeletePair : HugsSettingsIntent()
 }
 
 sealed class HugsSettingsEffect {
     data class ShowError(val error: AppError) : HugsSettingsEffect()
+    object Close : HugsSettingsEffect()
 }

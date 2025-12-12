@@ -259,6 +259,17 @@ class PairsRepositoryImpl @Inject constructor(
     override suspend fun unblockPair(pairId: PairId): AppResult<Unit> =
         remoteDataSource.unblockPair(pairId.value).map { Unit }
 
+    override suspend fun deletePair(pairId: PairId): AppResult<Unit> {
+        val remoteResult = remoteDataSource.deletePair(pairId.value)
+        return remoteResult.fold(
+            success = {
+                localDataSource.deletePair(pairId.value)
+                Ok(Unit)
+            },
+            failure = { error -> Err(error) }
+        )
+    }
+
     override fun observeQuickReplies(
         pairId: PairId,
         userId: UserId

@@ -31,6 +31,8 @@ import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
 import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
+import com.example.amulet.shared.domain.hugs.DeletePairUseCase
+import com.example.amulet.shared.domain.hugs.UnblockPairUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.patterns.PatternPlaybackService
 import com.example.amulet.shared.domain.patterns.PatternsRepository
@@ -217,6 +219,12 @@ object KoinBridgeModule {
 
     @Provides
     fun provideBlockPairUseCase(koin: Koin): BlockPairUseCase = koin.get()
+
+    @Provides
+    fun provideUnblockPairUseCase(koin: Koin): UnblockPairUseCase = koin.get()
+
+    @Provides
+    fun provideDeletePairUseCase(koin: Koin): DeletePairUseCase = koin.get()
 
     @Provides
     fun provideSetHugsDndEnabledUseCase(koin: Koin): SetHugsDndEnabledUseCase = koin.get()

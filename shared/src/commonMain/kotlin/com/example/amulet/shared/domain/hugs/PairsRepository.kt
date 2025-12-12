@@ -39,6 +39,8 @@ interface PairsRepository {
 
     suspend fun unblockPair(pairId: PairId): AppResult<Unit>
 
+    suspend fun deletePair(pairId: PairId): AppResult<Unit>
+
     fun observeQuickReplies(
         pairId: PairId,
         userId: UserId

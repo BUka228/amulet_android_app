@@ -46,6 +46,8 @@ interface PairsRemoteDataSource {
     suspend fun blockPair(pairId: String): AppResult<PairResponseDto>
 
     suspend fun unblockPair(pairId: String): AppResult<PairResponseDto>
+
+    suspend fun deletePair(pairId: String): AppResult<Unit>
 }
 
 @Singleton
@@ -148,5 +150,10 @@ class PairsRemoteDataSourceImpl @Inject constructor(
     override suspend fun unblockPair(pairId: String): AppResult<PairResponseDto> =
         safeApiCall(exceptionMapper) {
             apiService.unblockPair(pairId)
+        }
+
+    override suspend fun deletePair(pairId: String): AppResult<Unit> =
+        safeApiCall(exceptionMapper) {
+            apiService.deletePair(pairId)
         }
 }

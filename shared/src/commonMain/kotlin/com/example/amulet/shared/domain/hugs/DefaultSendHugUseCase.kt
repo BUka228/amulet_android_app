@@ -6,6 +6,7 @@ import com.example.amulet.shared.domain.hugs.model.Emotion
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.hugs.model.PairStatus
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -31,12 +32,20 @@ class DefaultSendHugUseCase(
         quickReply: PairQuickReply?,
         payload: Map<String, Any?>?
     ): AppResult<Unit> {
+        Logger.d(
+            "DefaultSendHugUseCase: start pairId=${pairId?.value} from=${fromUserId.value} to=${toUserId?.value} quickReply=${quickReply?.pairId}",
+            "DefaultSendHugUseCase"
+        )
         // Если нет пары, отправляем без pair-level ограничений.
         if (pairId != null) {
             val pair = pairsRepository.observePair(pairId).firstOrNull()
 
             // Блокируем отправку, если пара заблокирована.
             if (pair != null && pair.status == PairStatus.BLOCKED) {
+                Logger.d(
+                    "DefaultSendHugUseCase: blocked by pair status BLOCKED pairId=${pairId.value}",
+                    "DefaultSendHugUseCase"
+                )
                 return Err(AppError.Forbidden)
             }
 
@@ -57,6 +66,10 @@ class DefaultSendHugUseCase(
                 }
 
                 if (sentToPairLastHour >= maxPerHour) {
+                    Logger.d(
+                        "DefaultSendHugUseCase: rate limited maxPerHour=$maxPerHour sentLastHour=$sentToPairLastHour pairId=${pairId.value}",
+                        "DefaultSendHugUseCase"
+                    )
                     return Err(AppError.RateLimited)
                 }
             }
@@ -65,6 +78,11 @@ class DefaultSendHugUseCase(
         // На этом уровне домена выбираем эмоцию по quick reply и паре.
         val emotion = quickReply?.let { reply ->
             if (pairId == null) {
+                Logger.e(
+                    "DefaultSendHugUseCase: validation error (pairId is required for quick reply)",
+                    throwable = IllegalArgumentException("pairId is required for quick reply"),
+                    tag = "DefaultSendHugUseCase"
+                )
                 return Err(AppError.Validation(mapOf("pairId" to "pairId is required for quick reply")))
             }
 
@@ -76,11 +94,18 @@ class DefaultSendHugUseCase(
                 colorHex = boundEmotion.colorHex,
                 patternId = boundEmotion.patternId,
             )
-        } ?: return Err(
-            AppError.Validation(
-                mapOf("emotion" to "Hug emotion must not be null: use quick reply or explicit emotion support"),
-            ),
-        )
+        } ?: run {
+            Logger.e(
+                "DefaultSendHugUseCase: validation error (emotion is null). quickReply is null -> request will NOT reach repository/network",
+                throwable = IllegalStateException("emotion is null"),
+                tag = "DefaultSendHugUseCase"
+            )
+            return Err(
+                AppError.Validation(
+                    mapOf("emotion" to "Hug emotion must not be null: use quick reply or explicit emotion support"),
+                ),
+            )
+        }
 
         return hugsRepository.sendHug(
             pairId = pairId,
@@ -89,6 +114,16 @@ class DefaultSendHugUseCase(
             emotion = emotion,
             payload = payload,
         ).let { result ->
+            result.component2()?.let { error ->
+                Logger.e(
+                    "DefaultSendHugUseCase: repository sendHug failed pairId=${pairId?.value} error=$error",
+                    throwable = Exception(error.toString()),
+                    tag = "DefaultSendHugUseCase"
+                )
+            } ?: Logger.d(
+                "DefaultSendHugUseCase: repository sendHug success pairId=${pairId?.value}",
+                "DefaultSendHugUseCase"
+            )
             // На всякий случай маппим ошибку PreconditionFailed (например, пара неактивна)
             // в более специфичный Forbidden, если нужно.
             when (val error = result.component2()) {

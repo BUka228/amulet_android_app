@@ -52,6 +52,18 @@
     <string name="hugs_settings_disconnect_confirm">Disconnect</string>
     <string name="hugs_settings_cancel">Cancel</string>
 
+    <!-- Blocked pair management (en) -->
+    <string name="hugs_home_blocked_pair_title">Pair is blocked</string>
+    <string name="hugs_home_blocked_pair_message">You have blocked this pair. You can unblock it or create a new one.</string>
+    <string name="hugs_home_unblock_button">Unblock pair</string>
+    <string name="hugs_settings_unblock_button">Unblock pair</string>
+
+    <string name="hugs_settings_delete_pair_hint">To completely remove the pair from your account, you can delete it.</string>
+    <string name="hugs_settings_delete_pair_button">Delete pair</string>
+    <string name="hugs_settings_delete_pair_dialog_title">Delete pair permanently?</string>
+    <string name="hugs_settings_delete_pair_dialog_message">The pair and all related data will be removed. This action cannot be undone.</string>
+    <string name="hugs_settings_delete_pair_confirm">Delete</string>
+
     <!-- Hug Details Screen (en) -->
     <string name="hug_details_title">Hug details</string>
     <string name="hug_details_error_loading">Failed to load hug</string>

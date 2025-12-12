@@ -3,9 +3,11 @@ package com.example.amulet.feature.hugs.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
+import com.example.amulet.shared.domain.hugs.DeletePairUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.UnblockPairUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairMemberSettings
@@ -35,6 +37,8 @@ class HugsSettingsViewModel @Inject constructor(
     private val updatePairMemberSettingsUseCase: UpdatePairMemberSettingsUseCase,
     private val blockPairUseCase: BlockPairUseCase,
     private val syncPairsUseCase: SyncPairsUseCase,
+    private val unblockPairUseCase: UnblockPairUseCase,
+    private val deletePairUseCase: DeletePairUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HugsSettingsState())
@@ -114,6 +118,24 @@ class HugsSettingsViewModel @Inject constructor(
         }
     }
 
+    private fun deletePair() {
+        val current = _state.value
+        val pair = current.activePair ?: return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true) }
+            val result = deletePairUseCase(pair.id)
+            val error = result.component2()
+            if (error != null) {
+                _state.update { it.copy(isSaving = false, error = error) }
+                _effects.emit(HugsSettingsEffect.ShowError(error))
+            } else {
+                _state.update { it.copy(isSaving = false) }
+                _effects.emit(HugsSettingsEffect.Close)
+            }
+        }
+    }
+
     fun onIntent(intent: HugsSettingsIntent) {
         when (intent) {
             HugsSettingsIntent.Refresh -> observeData()
@@ -132,6 +154,8 @@ class HugsSettingsViewModel @Inject constructor(
             }
             HugsSettingsIntent.SavePairSettings -> savePairSettings()
             HugsSettingsIntent.DisconnectPair -> disconnectPair()
+            HugsSettingsIntent.UnblockPair -> unblockPair()
+            HugsSettingsIntent.DeletePair -> deletePair()
         }
     }
 
@@ -196,6 +220,25 @@ class HugsSettingsViewModel @Inject constructor(
             } else {
                 // После успешной отвязки пары синхронизируем список пар,
                 // чтобы локальная БД и UI сразу отразили изменения.
+                syncPairsUseCase()
+                _state.update { it.copy(isSaving = false) }
+                _effects.emit(HugsSettingsEffect.Close)
+            }
+        }
+    }
+
+    private fun unblockPair() {
+        val current = _state.value
+        val pair = current.activePair ?: return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true) }
+            val result = unblockPairUseCase(pair.id)
+            val error = result.component2()
+            if (error != null) {
+                _state.update { it.copy(isSaving = false, error = error) }
+                _effects.emit(HugsSettingsEffect.ShowError(error))
+            } else {
                 syncPairsUseCase()
                 _state.update { it.copy(isSaving = false) }
             }

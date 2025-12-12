@@ -26,6 +26,7 @@ sealed class HugsHomeIntent {
     object OpenEmotions : HugsHomeIntent()
     object OpenSecretCodes : HugsHomeIntent()
     object OpenPairing : HugsHomeIntent()
+    object UnblockPair : HugsHomeIntent()
 }
 
 sealed class HugsHomeEffect {

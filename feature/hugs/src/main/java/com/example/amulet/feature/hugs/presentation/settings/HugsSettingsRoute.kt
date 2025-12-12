@@ -120,6 +120,7 @@ fun HugsSettingsRoute(
                         duration = SnackbarDuration.Long
                     )
                 }
+                HugsSettingsEffect.Close -> onNavigateBack()
             }
         }
     }
@@ -137,6 +138,7 @@ private fun HugsSettingsScreen(
     onIntent: (HugsSettingsIntent) -> Unit,
 ) {
     var showDisconnectDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     var showStartTimePickerDialog by remember { mutableStateOf(false) }
     var showEndTimePickerDialog by remember { mutableStateOf(false) }
 
@@ -389,10 +391,12 @@ private fun HugsSettingsScreen(
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
 
-                    // Кнопка разрыва связи
+                    val pairStatus = state.activePair?.status
+
+                    // Кнопка разрыва связи (только если пара не заблокирована)
                     Button(
                         onClick = { showDisconnectDialog = true },
-                        enabled = state.activePair != null,
+                        enabled = state.activePair != null && pairStatus != com.example.amulet.shared.domain.hugs.model.PairStatus.BLOCKED,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -406,6 +410,37 @@ private fun HugsSettingsScreen(
                         )
                         Spacer(modifier = Modifier.size(8.dp))
                         Text(text = stringResource(R.string.hugs_settings_disconnect_button))
+                    }
+
+                    // Кнопка разблокировки пары (если пара заблокирована)
+                    if (pairStatus == com.example.amulet.shared.domain.hugs.model.PairStatus.BLOCKED) {
+                        OutlinedButton(
+                            onClick = { onIntent(HugsSettingsIntent.UnblockPair) },
+                            enabled = !state.isSaving,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(R.string.hugs_settings_unblock_button))
+                        }
+                    }
+
+                    // Кнопка полного удаления пары (доступна когда пара заблокирована)
+                    if (pairStatus == com.example.amulet.shared.domain.hugs.model.PairStatus.BLOCKED) {
+                        Text(
+                            text = stringResource(R.string.hugs_settings_delete_pair_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(
+                            onClick = { showDeleteDialog = true },
+                            enabled = !state.isSaving,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
+                            Text(text = stringResource(R.string.hugs_settings_delete_pair_button))
+                        }
                     }
                 }
             }
@@ -446,6 +481,46 @@ private fun HugsSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDisconnectDialog = false }) {
+                    Text(text = stringResource(R.string.hugs_settings_cancel))
+                }
+            }
+        )
+    }
+
+    // Диалог подтверждения полного удаления пары
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.LinkOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            },
+            title = { Text(text = stringResource(R.string.hugs_settings_delete_pair_dialog_title)) },
+            text = {
+                Text(
+                    text = stringResource(R.string.hugs_settings_delete_pair_dialog_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        onIntent(HugsSettingsIntent.DeletePair)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(text = stringResource(R.string.hugs_settings_delete_pair_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
                     Text(text = stringResource(R.string.hugs_settings_cancel))
                 }
             }

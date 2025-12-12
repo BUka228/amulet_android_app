@@ -39,4 +39,6 @@ interface PairsLocalDataSource {
     suspend fun <R> withPairTransaction(block: suspend () -> R): R
 
     suspend fun replaceAllPairs(pairs: List<PairEntity>, members: List<PairMemberEntity>)
+
+    suspend fun deletePair(pairId: String)
 }
