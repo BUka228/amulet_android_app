@@ -83,7 +83,8 @@ fun NavGraphBuilder.hugsGraph(
             route = HugsDestination.main,
             deepLinks = listOf(
                 navDeepLink { uriPattern = "amulet://hugs" },
-                navDeepLink { uriPattern = "https://amulet.app/hugs" }
+                navDeepLink { uriPattern = "https://amulet.app/hugs" },
+                navDeepLink { uriPattern = "https://amuletinvite.vercel.app/hugs" }
             )
         ) {
             HugsRoute(
@@ -135,6 +136,7 @@ fun NavGraphBuilder.hugsGraph(
             deepLinks = listOf(
                 navDeepLink { uriPattern = "amulet://hugs/pair?code={code}&inviterName={inviterName}" },
                 navDeepLink { uriPattern = "https://amulet.app/hugs/pair?code={code}&inviterName={inviterName}" },
+                navDeepLink { uriPattern = "https://amuletinvite.vercel.app/hugs/pair?code={code}&inviterName={inviterName}" },
             )
         ) {
             HugsPairingRoute(

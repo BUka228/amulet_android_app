@@ -59,6 +59,7 @@ class RemotePatternDataSourceImpl @Inject constructor(
     }
     
     override suspend fun createPattern(
+        id: String?,
         kind: String,
         specJson: String,
         title: String?,
@@ -72,6 +73,7 @@ class RemotePatternDataSourceImpl @Inject constructor(
             val spec = json.decodeFromString<PatternSpecDto>(specJson)
             apiService.createPattern(
                 PatternCreateRequestDto(
+                    id = id,
                     kind = kind,
                     spec = spec,
                     title = title,

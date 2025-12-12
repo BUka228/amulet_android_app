@@ -2,6 +2,8 @@ package com.example.amulet.data.hugs.datasource.local
 
 import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PairEmotionEntity
+import com.example.amulet.core.database.entity.PairEntity
+import com.example.amulet.core.database.entity.PairMemberEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
 import kotlinx.coroutines.flow.Flow
@@ -35,4 +37,6 @@ interface PairsLocalDataSource {
     suspend fun enqueueOutboxAction(action: OutboxActionEntity)
 
     suspend fun <R> withPairTransaction(block: suspend () -> R): R
+
+    suspend fun replaceAllPairs(pairs: List<PairEntity>, members: List<PairMemberEntity>)
 }

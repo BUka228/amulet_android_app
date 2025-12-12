@@ -26,18 +26,19 @@ data class PairListResponseDto(
 @Serializable
 data class PairInviteRequestDto(
     val method: String,
-    val target: String? = null
+    val userId: String? = null,
+    val pairId: String? = null
 )
 
 @Serializable
 data class PairInviteResponseDto(
-    val inviteId: String,
-    val url: String? = null
+    val pairId: String,
+    val status: String
 )
 
 @Serializable
 data class PairAcceptRequestDto(
-    val inviteId: String
+    val pairId: String
 )
 
 @Serializable

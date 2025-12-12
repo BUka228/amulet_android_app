@@ -8,7 +8,10 @@ import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
 import com.example.amulet.shared.domain.hugs.model.PairStatus
+import com.example.amulet.shared.domain.user.model.UserId
+import com.example.amulet.shared.domain.user.usecase.FetchUserProfileUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.user.usecase.ObserveUserByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,6 +36,8 @@ class HugsHomeViewModel @Inject constructor(
     private val observePairQuickRepliesUseCase: ObservePairQuickRepliesUseCase,
     private val sendHugUseCase: SendHugUseCase,
     private val syncHugsUseCase: SyncHugsUseCase,
+    private val observeUserByIdUseCase: ObserveUserByIdUseCase,
+    private val fetchUserProfileUseCase: FetchUserProfileUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HugsHomeState())
@@ -44,6 +49,8 @@ class HugsHomeViewModel @Inject constructor(
     init {
         observeData()
     }
+
+    private val requestedPartnerUserIds = mutableSetOf<String>()
 
     private fun observeData() {
         viewModelScope.launch {
@@ -60,21 +67,36 @@ class HugsHomeViewModel @Inject constructor(
                 .flatMapLatest { base ->
                     val pair = base.pair
                     val user = base.user
+
                     if (pair == null || user == null) {
-                        flowOf(FullData(base, emptyList(), emptyList()))
+                        flowOf(FullData(base, partnerUser = null, hugs = emptyList(), quickReplies = emptyList()))
                     } else {
-                        combine(
-                            observeHugsForPairUseCase(pair.id),
-                            observePairQuickRepliesUseCase(pair.id, user.id)
-                        ) { hugs, quickReplies ->
-                            FullData(base, hugs, quickReplies)
+                        val partnerUserId = pair.members
+                            .map { it.userId }
+                            .firstOrNull { it != user.id }
+
+                        val hugsFlow = observeHugsForPairUseCase(pair.id)
+                        val quickRepliesFlow = observePairQuickRepliesUseCase(pair.id, user.id)
+                        val partnerUserFlow = if (partnerUserId != null) {
+                            observeUserByIdUseCase(partnerUserId)
+                        } else {
+                            flowOf(null)
+                        }
+
+                        combine(hugsFlow, quickRepliesFlow, partnerUserFlow) { hugs, quickReplies, partnerUser ->
+                            FullData(base, partnerUser, hugs, quickReplies)
                         }
                     }
                 }
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5000),
-                    initialValue = FullData(BaseData(null, null), emptyList(), emptyList())
+                    initialValue = FullData(
+                        base = BaseData(null, null),
+                        partnerUser = null,
+                        hugs = emptyList(),
+                        quickReplies = emptyList()
+                    )
                 )
                 .collect { data ->
                     _state.update {
@@ -82,9 +104,22 @@ class HugsHomeViewModel @Inject constructor(
                             isLoading = false,
                             currentUser = data.base.user,
                             activePair = data.base.pair,
+                            partnerUser = data.partnerUser,
                             hugs = data.hugs.sortedByDescending { hug -> hug.createdAt }.take(20),
                             quickReplies = data.quickReplies,
                         )
+                    }
+
+                    val partnerUserId = data.base.pair?.members
+                        ?.map { it.userId }
+                        ?.firstOrNull { it != data.base.user?.id }
+
+                    if (partnerUserId != null && data.partnerUser == null &&
+                        requestedPartnerUserIds.add(partnerUserId.value)
+                    ) {
+                        viewModelScope.launch {
+                            fetchUserProfileUseCase(UserId(partnerUserId.value))
+                        }
                     }
                 }
         }
@@ -147,6 +182,7 @@ class HugsHomeViewModel @Inject constructor(
 
     private data class FullData(
         val base: BaseData,
+        val partnerUser: com.example.amulet.shared.domain.user.model.User?,
         val hugs: List<com.example.amulet.shared.domain.hugs.model.Hug>,
         val quickReplies: List<com.example.amulet.shared.domain.hugs.model.PairQuickReply>,
     )

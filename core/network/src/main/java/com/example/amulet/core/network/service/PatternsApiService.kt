@@ -33,7 +33,7 @@ interface PatternsApiService {
     @POST("patterns")
     suspend fun createPattern(@Body request: PatternCreateRequestDto): PatternResponseDto
 
-    @GET("patterns.mine")
+    @GET("patterns/mine")
     suspend fun getOwnPatterns(): PatternListResponseDto
 
     @GET("patterns/{id}")
@@ -46,7 +46,7 @@ interface PatternsApiService {
     ): PatternResponseDto
 
     @DELETE("patterns/{id}")
-    suspend fun deletePattern(@Path("id") patternId: String): PatternDeleteResponseDto
+    suspend fun deletePattern(@Path("id") patternId: String): Unit
 
     @POST("patterns/{patternId}/share")
     suspend fun sharePattern(
@@ -84,5 +84,5 @@ interface PatternsApiService {
     @DELETE("patterns/{id}/markers")
     suspend fun deletePatternMarkers(
         @Path("id") patternId: String
-    ): PatternDeleteResponseDto
+    ): Unit
 }

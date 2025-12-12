@@ -12,6 +12,8 @@ import javax.inject.Singleton
 interface UserRemoteDataSource {
     suspend fun fetchCurrentUser(): AppResult<UserDto>
 
+    suspend fun fetchUser(userId: String): AppResult<UserDto>
+
     /**
      * Отправляет на backend запрос на обновление текущего пользователя.
      */
@@ -26,6 +28,9 @@ class UserRemoteDataSourceImpl @Inject constructor(
 
     override suspend fun fetchCurrentUser(): AppResult<UserDto> =
         safeApiCall(exceptionMapper) { apiService.getCurrentUser().user }
+
+    override suspend fun fetchUser(userId: String): AppResult<UserDto> =
+        safeApiCall(exceptionMapper) { apiService.getUserById(userId).user }
 
     override suspend fun updateCurrentUser(request: UserUpdateRequestDto): AppResult<UserDto> =
         safeApiCall(exceptionMapper) { apiService.updateCurrentUser(request = request).user }

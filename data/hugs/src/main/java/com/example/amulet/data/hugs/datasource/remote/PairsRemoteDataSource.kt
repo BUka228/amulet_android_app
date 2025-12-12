@@ -17,6 +17,7 @@ import com.example.amulet.core.network.dto.pair.PairResponseDto
 import com.example.amulet.core.network.safeApiCall
 import com.example.amulet.core.network.service.PairsApiService
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.core.logging.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -52,15 +53,55 @@ class PairsRemoteDataSourceImpl @Inject constructor(
     private val apiService: PairsApiService,
     private val exceptionMapper: NetworkExceptionMapper
 ) : PairsRemoteDataSource {
-    override suspend fun invitePair(method: String, target: String?): AppResult<PairInviteResponseDto> =
-        safeApiCall(exceptionMapper) {
-            apiService.invitePair(PairInviteRequestDto(method = method, target = target))
+    override suspend fun invitePair(method: String, target: String?): AppResult<PairInviteResponseDto> {
+        Logger.d("PairsRemoteDataSourceImpl.invitePair(method=$method, target=$target)", "PairsRemoteDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            // target сейчас не маппится напрямую в DTO, бэкенд берёт текущего пользователя из контекста
+            apiService.invitePair(
+                PairInviteRequestDto(
+                    method = method,
+                    userId = null,
+                    pairId = null,
+                )
+            )
         }
+        result.component1()?.let { dto ->
+            Logger.d(
+                "PairsRemoteDataSourceImpl.invitePair: success pairId=${dto.pairId} status=${dto.status}",
+                "PairsRemoteDataSourceImpl"
+            )
+        }
+        result.component2()?.let { error ->
+            Logger.e(
+                "PairsRemoteDataSourceImpl.invitePair: failure error=$error",
+                throwable = Exception(error.toString()),
+                tag = "PairsRemoteDataSourceImpl"
+            )
+        }
+        return result
+    }
 
-    override suspend fun acceptPair(inviteId: String): AppResult<PairResponseDto> =
-        safeApiCall(exceptionMapper) {
-            apiService.acceptPair(PairAcceptRequestDto(inviteId = inviteId))
+    override suspend fun acceptPair(inviteId: String): AppResult<PairResponseDto> {
+        Logger.d("PairsRemoteDataSourceImpl.acceptPair(inviteId=$inviteId)", "PairsRemoteDataSourceImpl")
+        val result = safeApiCall(exceptionMapper) {
+            // inviteId на уровне домена теперь соответствует pairId в API
+            apiService.acceptPair(PairAcceptRequestDto(pairId = inviteId))
         }
+        result.component1()?.let { dto ->
+            Logger.d(
+                "PairsRemoteDataSourceImpl.acceptPair: success pairId=${dto.pair.id} status=${dto.pair.status}",
+                "PairsRemoteDataSourceImpl"
+            )
+        }
+        result.component2()?.let { error ->
+            Logger.e(
+                "PairsRemoteDataSourceImpl.acceptPair: failure error=$error",
+                throwable = Exception(error.toString()),
+                tag = "PairsRemoteDataSourceImpl"
+            )
+        }
+        return result
+    }
 
     override suspend fun getPairs(): AppResult<PairListResponseDto> =
         safeApiCall(exceptionMapper) { apiService.getPairs() }

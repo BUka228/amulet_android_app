@@ -2,6 +2,7 @@ package com.example.amulet.core.network
 
 import com.example.amulet.shared.core.AppError
 import com.example.amulet.shared.core.ExceptionMapper
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -26,7 +27,15 @@ class NetworkExceptionMapper(
         is SocketTimeoutException -> AppError.Timeout
         is UnknownHostException, is ConnectException -> AppError.Network
         is IOException -> AppError.Network
-        else -> AppError.Unknown
+        else -> {
+            // Временное подробное логирование для отладки Unknown-ошибок сети/HTTP.
+            Logger.e(
+                "NetworkExceptionMapper: необработанное исключение ${throwable::class.java.name}",
+                throwable = throwable,
+                tag = TAG
+            )
+            AppError.Unknown
+        }
     }
 
     /**
@@ -47,7 +56,15 @@ class NetworkExceptionMapper(
             429 -> AppError.RateLimited
             in 400..499 -> parseValidation(payload)
             in 500..599 -> AppError.Server(code, exception.message())
-            else -> AppError.Unknown
+            else -> {
+                // Временное логирование для нестандартных HTTP-кодов.
+                Logger.e(
+                    "NetworkExceptionMapper: неожиданный HTTP код $code, payload=$payload",
+                    throwable = exception,
+                    tag = TAG
+                )
+                AppError.Unknown
+            }
         }
     }
 
@@ -150,6 +167,8 @@ class NetworkExceptionMapper(
     private fun JsonObject.jsonObject(key: String): JsonObject? =
         this[key] as? JsonObject
 }
+
+private const val TAG = "NetworkExceptionMapper"
 
 /**
  * Преобразует содержимое примитива в `Int`, возвращая `null` при неудаче.

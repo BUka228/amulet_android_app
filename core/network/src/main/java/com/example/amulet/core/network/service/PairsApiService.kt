@@ -19,10 +19,10 @@ import retrofit2.http.Query
 
 interface PairsApiService {
 
-    @POST("pairs.invite")
+    @POST("pairs/invite")
     suspend fun invitePair(@Body request: PairInviteRequestDto): PairInviteResponseDto
 
-    @POST("pairs.accept")
+    @POST("pairs/accept")
     suspend fun acceptPair(@Body request: PairAcceptRequestDto): PairResponseDto
 
     @GET("pairs")

@@ -23,6 +23,11 @@ interface UsersApiService {
         @Path("route") route: String = "users.me"
     ): UserResponseDto
 
+    @GET("users/by-id/{userId}")
+    suspend fun getUserById(
+        @Path("userId") userId: String
+    ): UserResponseDto
+
     @PATCH("users/{route}")
     suspend fun updateCurrentUser(
         @Path("route") route: String = "users.me",

@@ -41,6 +41,7 @@ data class PatternListResponseDto(
 
 @Serializable
 data class PatternCreateRequestDto(
+    val id: String? = null,
     val kind: String,
     val spec: PatternSpecDto,
     val title: String? = null,

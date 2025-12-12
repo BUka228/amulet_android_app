@@ -5,6 +5,8 @@ import com.example.amulet.core.database.dao.OutboxActionDao
 import com.example.amulet.core.database.dao.PairDao
 import com.example.amulet.core.database.entity.OutboxActionEntity
 import com.example.amulet.core.database.entity.PairEmotionEntity
+import com.example.amulet.core.database.entity.PairEntity
+import com.example.amulet.core.database.entity.PairMemberEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
 import kotlinx.coroutines.flow.Flow
@@ -53,5 +55,22 @@ class PairsLocalDataSourceImpl @Inject constructor(
 
     override suspend fun <R> withPairTransaction(block: suspend () -> R): R {
         return transactionRunner.runInTransaction(block)
+    }
+
+    override suspend fun replaceAllPairs(pairs: List<PairEntity>, members: List<PairMemberEntity>) {
+        transactionRunner.runInTransaction {
+            pairDao.deleteAllMembers()
+            pairDao.deleteAllPairs()
+
+            if (pairs.isEmpty()) return@runInTransaction
+
+            val membersByPairId: Map<String, List<PairMemberEntity>> =
+                members.groupBy { it.pairId }
+
+            for (pair in pairs) {
+                val pairMembers = membersByPairId[pair.id].orEmpty()
+                pairDao.upsertPairWithMembers(pair, pairMembers)
+            }
+        }
     }
 }

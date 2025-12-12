@@ -222,10 +222,11 @@ private fun PairHeaderSection(
                 }
 
                 PairMemberCard(
-                    title = if (hasPair) stringResource(R.string.hugs_home_partner_title) else stringResource(R.string.hugs_home_no_partner_title),
+                    title = state.partnerUser?.displayName
+                        ?: if (hasPair) stringResource(R.string.hugs_home_partner_title) else stringResource(R.string.hugs_home_no_partner_title),
                     subtitle = partnerSubtitle,
                     highlight = hasPair,
-                    avatarUrl = null,
+                    avatarUrl = state.partnerUser?.avatarUrl,
                     modifier = Modifier.weight(1f)
                 )
             }

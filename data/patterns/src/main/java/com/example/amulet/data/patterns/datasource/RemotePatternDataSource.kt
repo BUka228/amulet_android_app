@@ -33,6 +33,7 @@ interface RemotePatternDataSource {
      * Создать паттерн на сервере.
      */
     suspend fun createPattern(
+        id: String? = null,
         kind: String,
         specJson: String,
         title: String?,

@@ -11,6 +11,7 @@ data class HugsHomeState(
     val error: AppError? = null,
     val currentUser: User? = null,
     val activePair: Pair? = null,
+    val partnerUser: User? = null,
     val hugs: List<Hug> = emptyList(),
     val quickReplies: List<PairQuickReply> = emptyList(),
     val isRefreshing: Boolean = false,

@@ -3,6 +3,7 @@ package com.example.amulet.data.patterns.di
 import com.example.amulet.core.database.entity.OutboxActionType
 import com.example.amulet.core.sync.processing.ActionProcessor
 import com.example.amulet.core.sync.processing.ActionProcessorKey
+import com.example.amulet.data.patterns.PatternCrudActionProcessor
 import com.example.amulet.data.patterns.PatternMarkersActionProcessor
 import com.example.amulet.data.patterns.PatternSegmentsActionProcessor
 import com.example.amulet.data.patterns.PatternsRepositoryImpl
@@ -33,6 +34,26 @@ interface PatternsDataModule {
     @Binds
     @Singleton
     fun bindRemotePatternDataSource(impl: RemotePatternDataSourceImpl): RemotePatternDataSource
+
+    @Binds
+    @IntoMap
+    @ActionProcessorKey(OutboxActionType.PATTERN_CREATE)
+    fun bindPatternCreateActionProcessor(impl: PatternCrudActionProcessor): ActionProcessor
+
+    @Binds
+    @IntoMap
+    @ActionProcessorKey(OutboxActionType.PATTERN_UPDATE)
+    fun bindPatternUpdateActionProcessor(impl: PatternCrudActionProcessor): ActionProcessor
+
+    @Binds
+    @IntoMap
+    @ActionProcessorKey(OutboxActionType.PATTERN_DELETE)
+    fun bindPatternDeleteActionProcessor(impl: PatternCrudActionProcessor): ActionProcessor
+
+    @Binds
+    @IntoMap
+    @ActionProcessorKey(OutboxActionType.PATTERN_SHARE)
+    fun bindPatternShareActionProcessor(impl: PatternCrudActionProcessor): ActionProcessor
 
     @Binds
     @IntoMap

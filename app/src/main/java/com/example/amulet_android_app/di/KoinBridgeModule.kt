@@ -32,6 +32,7 @@ import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
+import com.example.amulet.shared.domain.patterns.PatternPlaybackService
 import com.example.amulet.shared.domain.patterns.PatternsRepository
 import com.example.amulet.shared.domain.patterns.usecase.*
 import com.example.amulet.shared.domain.practices.PracticeSessionManager
@@ -71,7 +72,9 @@ import com.example.amulet.shared.domain.privacy.PrivacyRepository
 import com.example.amulet.shared.domain.rules.RulesRepository
 import com.example.amulet.shared.domain.notifications.NotificationsRepository
 import com.example.amulet.shared.domain.user.repository.UserRepository
+import com.example.amulet.shared.domain.user.usecase.FetchUserProfileUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
+import com.example.amulet.shared.domain.user.usecase.ObserveUserByIdUseCase
 import com.example.amulet.shared.domain.user.usecase.UpdateUserProfileUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
 import com.example.amulet.shared.domain.privacy.usecase.GetUserConsentsUseCase
@@ -243,6 +246,12 @@ object KoinBridgeModule {
     @Provides
     fun provideUpdateUserProfileUseCase(koin: Koin): UpdateUserProfileUseCase = koin.get()
 
+    @Provides
+    fun provideObserveUserByIdUseCase(koin: Koin): ObserveUserByIdUseCase = koin.get()
+
+    @Provides
+    fun provideFetchUserProfileUseCase(koin: Koin): FetchUserProfileUseCase = koin.get()
+
     // Notifications UseCases
     @Provides
     fun provideSyncPushTokenUseCase(koin: Koin): SyncPushTokenUseCase = koin.get()
@@ -376,6 +385,7 @@ object KoinBridgeModule {
     @Provides fun provideUpsertPatternMarkersUseCase(koin: Koin): UpsertPatternMarkersUseCase = koin.get()
     @Provides fun provideGetPatternSegmentsUseCase(koin: Koin): GetPatternSegmentsUseCase = koin.get()
     @Provides fun providePatternEditorFacade(koin: Koin): PatternEditorFacade = koin.get()
+    @Provides fun providePatternPlaybackService(koin: Koin): PatternPlaybackService = koin.get()
 
     // Practices UseCases
     @Provides fun provideGetPracticesStreamUseCase(koin: Koin): GetPracticesStreamUseCase = koin.get()

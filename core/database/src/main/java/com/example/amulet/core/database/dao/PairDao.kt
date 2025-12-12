@@ -63,6 +63,12 @@ interface PairDao {
     @Query("DELETE FROM pairs WHERE id = :pairId")
     suspend fun deletePair(pairId: String)
 
+    @Query("DELETE FROM pair_members")
+    suspend fun deleteAllMembers()
+
+    @Query("DELETE FROM pairs")
+    suspend fun deleteAllPairs()
+
     // Palette (pair_emotions)
 
     @Query("SELECT * FROM pair_emotions WHERE pairId = :pairId ORDER BY `order` ASC")

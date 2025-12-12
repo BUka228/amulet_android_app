@@ -27,7 +27,7 @@ class UserRepositoryImpl @Inject constructor(
 ) : UserRepository {
 
     override suspend fun fetchProfile(userId: UserId): AppResult<User> {
-        val remoteResult = remoteDataSource.fetchCurrentUser()
+        val remoteResult = remoteDataSource.fetchUser(userId.value)
         return remoteResult.fold(
             success = { dto ->
                 val existing = localDataSource.findById(dto.id)

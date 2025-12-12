@@ -210,7 +210,7 @@ class PatternsRepositoryImpl @Inject constructor(
                 
                 val payloadObject = buildJsonObject {
                     put("kind", draft.kind.name.lowercase())
-                    put("spec", json.encodeToString(PatternSpec.serializer(), draft.spec))
+                    put("spec", json.encodeToJsonElement(PatternSpec.serializer(), draft.spec))
                     put("title", draft.title)
                     draft.description?.let { put("description", it) } ?: put("description", JsonNull)
                     put("hardwareVersion", draft.hardwareVersion)
@@ -479,13 +479,47 @@ class PatternsRepositoryImpl @Inject constructor(
             val tagEntities = updatedTags.toTagEntities()
             
             Logger.d("Обновление тегов паттерна: ${patternId.value}", "PatternsRepositoryImpl")
-            localDataSource.upsertPatternWithRelations(
-                pattern = entity,
-                tags = tagEntities,
-                tagIds = tagEntities.map { it.id },
-                sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
-            )
-            
+
+            val nowMillis = System.currentTimeMillis()
+            localDataSource.withPatternTransaction {
+                // Обновляем связи тегов локально.
+                localDataSource.upsertPatternWithRelations(
+                    pattern = entity,
+                    tags = tagEntities,
+                    tagIds = tagEntities.map { it.id },
+                    sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
+                )
+
+                // Ставим Outbox-задачу PATTERN_UPDATE для синхронизации тегов на сервере.
+                val payloadObject = buildJsonObject {
+                    put("version", entity.version)
+                    put("title", JsonNull)
+                    put("description", JsonNull)
+                    put("spec", JsonNull)
+                    put("tags", buildJsonArray { updatedTags.forEach { add(JsonPrimitive(it)) } })
+                }
+                val payloadJson = json.encodeToString(payloadObject)
+
+                localDataSource.enqueueOutboxAction(
+                    OutboxActionEntity(
+                        id = UUID.randomUUID().toString(),
+                        type = OutboxActionType.PATTERN_UPDATE,
+                        payloadJson = payloadJson,
+                        status = OutboxActionStatus.PENDING,
+                        retryCount = 0,
+                        lastError = null,
+                        idempotencyKey = "pattern_tags_${patternId.value}_$nowMillis",
+                        createdAt = nowMillis,
+                        updatedAt = nowMillis,
+                        availableAt = nowMillis,
+                        priority = 1,
+                        targetEntityId = patternId.value
+                    )
+                )
+            }
+
+            outboxScheduler.scheduleSync()
+
             Logger.d("Тег добавлен успешно: $tag", "PatternsRepositoryImpl")
             Ok(Unit)
         } catch (e: Exception) {
@@ -505,13 +539,47 @@ class PatternsRepositoryImpl @Inject constructor(
             val tagEntities = updatedTags.toTagEntities()
             
             Logger.d("Обновление тегов паттерна: ${patternId.value}", "PatternsRepositoryImpl")
-            localDataSource.upsertPatternWithRelations(
-                pattern = entity,
-                tags = tagEntities,
-                tagIds = tagEntities.map { it.id },
-                sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
-            )
-            
+
+            val nowMillis = System.currentTimeMillis()
+            localDataSource.withPatternTransaction {
+                // Обновляем связи тегов локально.
+                localDataSource.upsertPatternWithRelations(
+                    pattern = entity,
+                    tags = tagEntities,
+                    tagIds = tagEntities.map { it.id },
+                    sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
+                )
+
+                // Ставим Outbox-задачу PATTERN_UPDATE для синхронизации тегов на сервере.
+                val payloadObject = buildJsonObject {
+                    put("version", entity.version)
+                    put("title", JsonNull)
+                    put("description", JsonNull)
+                    put("spec", JsonNull)
+                    put("tags", buildJsonArray { updatedTags.forEach { add(JsonPrimitive(it)) } })
+                }
+                val payloadJson = json.encodeToString(payloadObject)
+
+                localDataSource.enqueueOutboxAction(
+                    OutboxActionEntity(
+                        id = UUID.randomUUID().toString(),
+                        type = OutboxActionType.PATTERN_UPDATE,
+                        payloadJson = payloadJson,
+                        status = OutboxActionStatus.PENDING,
+                        retryCount = 0,
+                        lastError = null,
+                        idempotencyKey = "pattern_tags_${patternId.value}_$nowMillis",
+                        createdAt = nowMillis,
+                        updatedAt = nowMillis,
+                        availableAt = nowMillis,
+                        priority = 1,
+                        targetEntityId = patternId.value
+                    )
+                )
+            }
+
+            outboxScheduler.scheduleSync()
+
             Logger.d("Тег удален успешно: $tag", "PatternsRepositoryImpl")
             Ok(Unit)
         } catch (e: Exception) {
@@ -568,12 +636,47 @@ class PatternsRepositoryImpl @Inject constructor(
             val tagIds = combined.map { it.id }
 
             Logger.d("Обновление связей тегов для паттерна: ${patternId.value}", "PatternsRepositoryImpl")
-            localDataSource.upsertPatternWithRelations(
-                pattern = entity,
-                tags = combined, // insertTags(IGNORE) создаст новые, существующие проигнорируются
-                tagIds = tagIds, // использовать реальные IDs (для новых сгенерированы нами)
-                sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
-            )
+
+            val nowMillis = System.currentTimeMillis()
+            localDataSource.withPatternTransaction {
+                // Обновляем связи тегов локально.
+                localDataSource.upsertPatternWithRelations(
+                    pattern = entity,
+                    tags = combined, // insertTags(IGNORE) создаст новые, существующие проигнорируются
+                    tagIds = tagIds, // использовать реальные IDs (для новых сгенерированы нами)
+                    sharedUserIds = localDataSource.getSharesForPattern(patternId.value).toUserIds()
+                )
+
+                // Ставим Outbox-задачу PATTERN_UPDATE для синхронизации тегов на сервере.
+                val payloadObject = buildJsonObject {
+                    put("version", entity.version)
+                    put("title", JsonNull)
+                    put("description", JsonNull)
+                    put("spec", JsonNull)
+                    put("tags", buildJsonArray { tags.forEach { add(JsonPrimitive(it)) } })
+                }
+                val payloadJson = json.encodeToString(payloadObject)
+
+                localDataSource.enqueueOutboxAction(
+                    OutboxActionEntity(
+                        id = UUID.randomUUID().toString(),
+                        type = OutboxActionType.PATTERN_UPDATE,
+                        payloadJson = payloadJson,
+                        status = OutboxActionStatus.PENDING,
+                        retryCount = 0,
+                        lastError = null,
+                        idempotencyKey = "pattern_tags_${patternId.value}_$nowMillis",
+                        createdAt = nowMillis,
+                        updatedAt = nowMillis,
+                        availableAt = nowMillis,
+                        priority = 1,
+                        targetEntityId = patternId.value
+                    )
+                )
+            }
+
+            outboxScheduler.scheduleSync()
+
             Ok(Unit)
         } catch (e: Exception) {
             Logger.e("Ошибка перезаписи тегов: $e", throwable = e, tag = "PatternsRepositoryImpl")
@@ -684,6 +787,7 @@ class PatternsRepositoryImpl @Inject constructor(
 
     override suspend fun deleteSegmentsForPattern(parentId: PatternId): AppResult<Unit> {
         return try {
+            Logger.d("Удаление сегментов паттерна (локально): $parentId", "PatternsRepositoryImpl")
             localDataSource.deleteSegmentsForPattern(parentId.value)
             // Ставим задачу в Outbox для синхронизации удаления сегментов на сервере.
             val nowMillis = System.currentTimeMillis()
@@ -692,22 +796,26 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             val payloadJson = json.encodeToString(payloadObject)
 
-            localDataSource.enqueueOutboxAction(
-                OutboxActionEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
-                    payloadJson = payloadJson,
-                    status = OutboxActionStatus.PENDING,
-                    retryCount = 0,
-                    lastError = null,
-                    idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
-                    createdAt = nowMillis,
-                    updatedAt = nowMillis,
-                    availableAt = nowMillis,
-                    priority = 1,
-                    targetEntityId = parentId.value
-                )
+            val action = OutboxActionEntity(
+                id = UUID.randomUUID().toString(),
+                type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
+                payloadJson = payloadJson,
+                status = OutboxActionStatus.PENDING,
+                retryCount = 0,
+                lastError = null,
+                idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
+                createdAt = nowMillis,
+                updatedAt = nowMillis,
+                availableAt = nowMillis,
+                priority = 1,
+                targetEntityId = parentId.value
             )
+
+            Logger.d(
+                "Постановка Outbox-задачи PATTERN_SEGMENTS_UPDATE (удаление) id=${action.id} patternId=${parentId.value}",
+                "PatternsRepositoryImpl"
+            )
+            localDataSource.enqueueOutboxAction(action)
 
             outboxScheduler.scheduleSync()
 
@@ -751,22 +859,26 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             val payloadJson = json.encodeToString(payloadObject)
 
-            localDataSource.enqueueOutboxAction(
-                OutboxActionEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
-                    payloadJson = payloadJson,
-                    status = OutboxActionStatus.PENDING,
-                    retryCount = 0,
-                    lastError = null,
-                    idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
-                    createdAt = nowMillis,
-                    updatedAt = nowMillis,
-                    availableAt = nowMillis,
-                    priority = 1,
-                    targetEntityId = parentId.value
-                )
+            val action = OutboxActionEntity(
+                id = UUID.randomUUID().toString(),
+                type = OutboxActionType.PATTERN_SEGMENTS_UPDATE,
+                payloadJson = payloadJson,
+                status = OutboxActionStatus.PENDING,
+                retryCount = 0,
+                lastError = null,
+                idempotencyKey = "pattern_segments_${parentId.value}_$nowMillis",
+                createdAt = nowMillis,
+                updatedAt = nowMillis,
+                availableAt = nowMillis,
+                priority = 1,
+                targetEntityId = parentId.value
             )
+
+            Logger.d(
+                "Постановка Outbox-задачи PATTERN_SEGMENTS_UPDATE (upsert) id=${action.id} patternId=${parentId.value} segmentsCount=${segments.size}",
+                "PatternsRepositoryImpl"
+            )
+            localDataSource.enqueueOutboxAction(action)
 
             outboxScheduler.scheduleSync()
 
@@ -794,6 +906,10 @@ class PatternsRepositoryImpl @Inject constructor(
 
     override suspend fun upsertPatternMarkers(markers: PatternMarkers): AppResult<Unit> {
         return try {
+            Logger.d(
+                "Обновление маркеров паттерна: ${markers.patternId}, всего маркеров=${markers.markersMs.size}",
+                "PatternsRepositoryImpl"
+            )
             val markersJson: String = json.encodeToString(markers.markersMs)
             val entity = com.example.amulet.core.database.entity.PatternMarkersEntity(
                 patternId = markers.patternId.value,
@@ -815,22 +931,26 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             val payloadJson = json.encodeToString(payloadObject)
 
-            localDataSource.enqueueOutboxAction(
-                OutboxActionEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = OutboxActionType.PATTERN_MARKERS_UPDATE,
-                    payloadJson = payloadJson,
-                    status = OutboxActionStatus.PENDING,
-                    retryCount = 0,
-                    lastError = null,
-                    idempotencyKey = "pattern_markers_${markers.patternId.value}_$nowMillis",
-                    createdAt = nowMillis,
-                    updatedAt = nowMillis,
-                    availableAt = nowMillis,
-                    priority = 1,
-                    targetEntityId = markers.patternId.value
-                )
+            val action = OutboxActionEntity(
+                id = UUID.randomUUID().toString(),
+                type = OutboxActionType.PATTERN_MARKERS_UPDATE,
+                payloadJson = payloadJson,
+                status = OutboxActionStatus.PENDING,
+                retryCount = 0,
+                lastError = null,
+                idempotencyKey = "pattern_markers_${markers.patternId.value}_$nowMillis",
+                createdAt = nowMillis,
+                updatedAt = nowMillis,
+                availableAt = nowMillis,
+                priority = 1,
+                targetEntityId = markers.patternId.value
             )
+
+            Logger.d(
+                "Постановка Outbox-задачи PATTERN_MARKERS_UPDATE (upsert) id=${action.id} patternId=${markers.patternId.value} markersCount=${markers.markersMs.size}",
+                "PatternsRepositoryImpl"
+            )
+            localDataSource.enqueueOutboxAction(action)
 
             outboxScheduler.scheduleSync()
 
@@ -852,22 +972,26 @@ class PatternsRepositoryImpl @Inject constructor(
             }
             val payloadJson = json.encodeToString(payloadObject)
 
-            localDataSource.enqueueOutboxAction(
-                OutboxActionEntity(
-                    id = UUID.randomUUID().toString(),
-                    type = OutboxActionType.PATTERN_MARKERS_UPDATE,
-                    payloadJson = payloadJson,
-                    status = OutboxActionStatus.PENDING,
-                    retryCount = 0,
-                    lastError = null,
-                    idempotencyKey = "pattern_markers_${patternId.value}_$nowMillis",
-                    createdAt = nowMillis,
-                    updatedAt = nowMillis,
-                    availableAt = nowMillis,
-                    priority = 1,
-                    targetEntityId = patternId.value
-                )
+            val action = OutboxActionEntity(
+                id = UUID.randomUUID().toString(),
+                type = OutboxActionType.PATTERN_MARKERS_UPDATE,
+                payloadJson = payloadJson,
+                status = OutboxActionStatus.PENDING,
+                retryCount = 0,
+                lastError = null,
+                idempotencyKey = "pattern_markers_${patternId.value}_$nowMillis",
+                createdAt = nowMillis,
+                updatedAt = nowMillis,
+                availableAt = nowMillis,
+                priority = 1,
+                targetEntityId = patternId.value
             )
+
+            Logger.d(
+                "Постановка Outbox-задачи PATTERN_MARKERS_UPDATE (delete) id=${action.id} patternId=${patternId.value}",
+                "PatternsRepositoryImpl"
+            )
+            localDataSource.enqueueOutboxAction(action)
             
             outboxScheduler.scheduleSync()
 

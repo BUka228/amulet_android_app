@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairMemberSettings
@@ -33,6 +34,7 @@ class HugsSettingsViewModel @Inject constructor(
     private val setHugsDndEnabledUseCase: SetHugsDndEnabledUseCase,
     private val updatePairMemberSettingsUseCase: UpdatePairMemberSettingsUseCase,
     private val blockPairUseCase: BlockPairUseCase,
+    private val syncPairsUseCase: SyncPairsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HugsSettingsState())
@@ -192,6 +194,9 @@ class HugsSettingsViewModel @Inject constructor(
                 _state.update { it.copy(isSaving = false, error = error) }
                 _effects.emit(HugsSettingsEffect.ShowError(error))
             } else {
+                // После успешной отвязки пары синхронизируем список пар,
+                // чтобы локальная БД и UI сразу отразили изменения.
+                syncPairsUseCase()
                 _state.update { it.copy(isSaving = false) }
             }
         }

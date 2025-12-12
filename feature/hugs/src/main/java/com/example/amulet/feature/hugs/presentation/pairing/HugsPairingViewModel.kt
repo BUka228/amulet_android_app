@@ -3,6 +3,7 @@ package com.example.amulet.feature.hugs.presentation.pairing
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.amulet.shared.core.logging.Logger
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.InvitePairUseCase
 import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
@@ -13,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.github.michaelbull.result.onFailure
 import com.github.michaelbull.result.onSuccess
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -40,22 +43,30 @@ class HugsPairingViewModel @Inject constructor(
     private val _effects = MutableSharedFlow<HugsPairingEffect>()
     val effects = _effects.asSharedFlow()
 
+    private var waitingSyncJob: Job? = null
+
     init {
         val inviterName = savedStateHandle.get<String>("inviterName")
         val inviteCode = savedStateHandle.get<String>("code")
-        
+
         _state.update { current ->
             current.copy(
                 inviterName = inviterName,
                 inviteCode = inviteCode ?: current.inviteCode,
-                step = if (inviterName != null) HugsPairingStep.CONFIRM_INVITE else HugsPairingStep.SHARE_LINK
+                // Если пришли по deeplink с кодом, сразу показываем экран подтверждения,
+                // даже если имени пригласившего нет.
+                step = if (inviteCode != null) {
+                    HugsPairingStep.CONFIRM_INVITE
+                } else {
+                    HugsPairingStep.SHARE_LINK
+                }
             )
         }
-        
+
         observeData()
-        
-        // Автоматически генерируем ссылку, если мы не принимаем приглашение
-        if (inviterName == null) {
+
+        // Автоматически генерируем ссылку, только если мы не принимаем приглашение
+        if (inviterName == null && inviteCode == null) {
             generateInvite()
         }
     }
@@ -85,8 +96,14 @@ class HugsPairingViewModel @Inject constructor(
                             activePair = data.activePair,
                         )
                     }
-                    // Если имя пользователя загрузилось и ссылки еще нет, перегенерируем (чтобы имя попало в ссылку)
-                    if (data.userName != null && _state.value.inviteLink == null && _state.value.inviterName == null) {
+                    // Если имя пользователя загрузилось и ссылки еще нет, перегенерируем (чтобы имя попало в ссылку),
+                    // но только в режиме инициатора (когда у нас ещё нет кода приглашения).
+                    if (
+                        data.userName != null &&
+                        _state.value.inviteLink == null &&
+                        _state.value.inviterName == null &&
+                        _state.value.inviteCode == null
+                    ) {
                         generateInvite()
                     }
                 }
@@ -115,6 +132,7 @@ class HugsPairingViewModel @Inject constructor(
         if (_state.value.inviteLink != null) return
 
         val inviterName = _state.value.currentUser?.displayName ?: ""
+        Logger.d("generateInvite: start, inviterName='$inviterName'", "HugsPairingViewModel")
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             invitePairUseCase()
@@ -126,10 +144,15 @@ class HugsPairingViewModel @Inject constructor(
                         inviterName
                     }
                     val link = if (encodedName.isNotBlank()) {
-                        "https://amulet.app/hugs/pair?code=$code&inviterName=$encodedName"
+                        "https://amuletinvite.vercel.app/hugs/pair?code=$code&inviterName=$encodedName"
                     } else {
-                        "https://amulet.app/hugs/pair?code=$code"
+                        "https://amuletinvite.vercel.app/hugs/pair?code=$code"
                     }
+
+                    Logger.d(
+                        "generateInvite: success, inviteId=$code, link=$link",
+                        "HugsPairingViewModel"
+                    )
                     
                     val qrCode = QrCodeUtils.generateQrCode(link)
 
@@ -146,6 +169,11 @@ class HugsPairingViewModel @Inject constructor(
                     }
                 }
                 .onFailure { error ->
+                    Logger.e(
+                        "generateInvite: error=$error",
+                        throwable = Exception(error.toString()),
+                        tag = "HugsPairingViewModel"
+                    )
                     _state.update { it.copy(isLoading = false, error = error) }
                     _effects.emit(HugsPairingEffect.ShowError(error))
                 }
@@ -175,9 +203,37 @@ class HugsPairingViewModel @Inject constructor(
                 isWaitingConfirmation = true,
             )
         }
+
+        // Запускаем периодическую синхронизацию пар, пока ждём подтверждения.
+        waitingSyncJob?.cancel()
+        waitingSyncJob = viewModelScope.launch {
+            while (true) {
+                val current = state.value
+
+                // Если пользователь вышел из экрана ожидания или отменил приглашение — выходим из цикла.
+                if (!current.isWaitingConfirmation || current.step != HugsPairingStep.WAITING_CONFIRMATION) {
+                    break
+                }
+
+                // Как только появилась активная пара — закрываем экран паринга.
+                val activePair = current.activePair
+                if (activePair != null && activePair.status == PairStatus.ACTIVE) {
+                    _effects.emit(HugsPairingEffect.Close)
+                    break
+                }
+
+                // Делаем запрос на синхронизацию списка пар.
+                syncPairsUseCase()
+
+                // Ждём немного перед следующей попыткой.
+                delay(5_000)
+            }
+        }
     }
 
     private fun cancelInvite() {
+        waitingSyncJob?.cancel()
+        waitingSyncJob = null
         _state.update {
             it.copy(
                 isWaitingConfirmation = false,
@@ -189,16 +245,25 @@ class HugsPairingViewModel @Inject constructor(
 
     private fun acceptInvite() {
         val inviteId = _state.value.inviteCode ?: return
+        Logger.d("acceptInvite: start, inviteId=$inviteId", "HugsPairingViewModel")
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             acceptPairUseCase(inviteId)
                 .onSuccess {
+                    Logger.d("acceptInvite: success, inviteId=$inviteId", "HugsPairingViewModel")
                     // После успешного подтверждения пары пробуем синхронизировать список пар
                     syncPairsUseCase()
                     _state.update { it.copy(isLoading = false, isConfirmed = true) }
+                    waitingSyncJob?.cancel()
+                    waitingSyncJob = null
                     _effects.emit(HugsPairingEffect.Close)
                 }
                 .onFailure { error ->
+                    Logger.e(
+                        "acceptInvite: error=$error",
+                        throwable = Exception(error.toString()),
+                        tag = "HugsPairingViewModel"
+                    )
                     _state.update { it.copy(isLoading = false, error = error) }
                     _effects.emit(HugsPairingEffect.ShowError(error))
                 }
@@ -207,6 +272,8 @@ class HugsPairingViewModel @Inject constructor(
 
     private fun declineInvite() {
         viewModelScope.launch {
+            waitingSyncJob?.cancel()
+            waitingSyncJob = null
             _effects.emit(HugsPairingEffect.Close)
         }
     }
