@@ -19,6 +19,7 @@ enum class OutboxActionType(val apiEndpoint: String) {
     PAIR_BLOCK("/pairs/{pairId}/block"),
     PAIR_UNBLOCK("/pairs/{pairId}/unblock"),
     PAIR_SETTINGS_UPDATE("/pairs/{pairId}/members/{userId}/settings"),
+    PAIR_EMOTIONS_UPDATE("/pairs/{pairId}/emotions"),
     PATTERN_CREATE("/patterns"),
     PATTERN_UPDATE("/patterns/{id}"),
     PATTERN_DELETE("/patterns/{id}"),

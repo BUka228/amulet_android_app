@@ -165,7 +165,8 @@ fun UserPreferencesEntity.toDomain(
     goals = goals,
     interests = interests,
     preferredDurationsSec = durations,
-    hugsDndEnabled = hugsDndEnabled ?: false
+    hugsDndEnabled = hugsDndEnabled ?: false,
+    defaultHugEmotionId = defaultHugEmotionId,
 )
 
 fun UserPreferencesEntity?.toDomain(json: Json): UserPreferences {
@@ -215,5 +216,8 @@ fun UserPreferences.toEntity(
         preferredDurationsJson = durationsJson,
         defaultAudioMode = defaultAudioMode?.name,
         hugsDndEnabled = hugsDndEnabled,
+        defaultHugColorHex = null,
+        defaultHugPatternId = null,
+        defaultHugEmotionId = defaultHugEmotionId,
     )
 }

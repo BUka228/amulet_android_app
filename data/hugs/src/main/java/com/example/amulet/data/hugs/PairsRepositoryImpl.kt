@@ -9,6 +9,7 @@ import com.example.amulet.core.database.entity.PairMemberEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
 import com.example.amulet.core.network.dto.pair.PairEmotionDto
+import com.example.amulet.core.network.dto.pair.PairEmotionUpdateRequestDto
 import com.example.amulet.core.network.dto.pair.PairMemberSettingsDto
 import com.example.amulet.core.network.dto.pair.PairQuickReplyDto
 import com.example.amulet.core.sync.scheduler.OutboxScheduler
@@ -32,6 +33,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.buildJsonObject
@@ -92,6 +94,14 @@ class PairsRepositoryImpl @Inject constructor(
             success = { response ->
                 val pairs = response.pairs
 
+                pairs.forEach { dto ->
+                    val resolved = dto.memberIds.ifEmpty { dto.memberIdsSnake }
+                    Logger.d(
+                        "PairsRepositoryImpl.syncPairs: dto pairId=${dto.id} memberIds=${dto.memberIds} member_ids=${dto.memberIdsSnake} resolved=$resolved",
+                        "PairsRepositoryImpl"
+                    )
+                }
+
                 val pairEntities = pairs.map { dto ->
                     PairEntity(
                         id = dto.id,
@@ -104,7 +114,8 @@ class PairsRepositoryImpl @Inject constructor(
 
                 val memberEntities = pairs.flatMap { dto ->
                     val joinedAt = dto.createdAt?.value ?: System.currentTimeMillis()
-                    dto.memberIds.map { userId ->
+                    val memberIds = dto.memberIds.ifEmpty { dto.memberIdsSnake }
+                    memberIds.map { userId ->
                         PairMemberEntity(
                             pairId = dto.id,
                             userId = userId,
@@ -117,7 +128,64 @@ class PairsRepositoryImpl @Inject constructor(
                     }
                 }
 
+                Logger.d(
+                    "PairsRepositoryImpl.syncPairs: mapped memberEntitiesCount=${memberEntities.size}",
+                    "PairsRepositoryImpl"
+                )
+
                 localDataSource.replaceAllPairs(pairEntities, memberEntities)
+
+                // Best-effort: подгружаем эмоции пары с сервера и сохраняем в Room.
+                // Важно: replaceAllPairs() удаляет пары (и каскадно их эмоции), поэтому
+                // эмоции нужно заливать после синка пар.
+                for (pairDto in pairs) {
+                    val pairId = pairDto.id
+                    Logger.d(
+                        "PairsRepositoryImpl.syncPairs: syncing emotions from server pairId=$pairId",
+                        "PairsRepositoryImpl"
+                    )
+                    val emotionsResult = remoteDataSource.getPairEmotions(pairId)
+                    emotionsResult.fold(
+                        success = { emotionsResponse ->
+                            val entities = emotionsResponse.emotions
+                                .map { dto ->
+                                    PairEmotionEntity(
+                                        id = dto.id,
+                                        pairId = dto.pairId ?: pairId,
+                                        name = dto.name,
+                                        colorHex = dto.colorHex,
+                                        patternId = dto.patternId,
+                                        order = dto.order,
+                                    )
+                                }
+                                .sortedBy { it.order }
+
+                            Logger.d(
+                                "PairsRepositoryImpl.syncPairs: emotions from server pairId=$pairId count=${entities.size} ids=${entities.take(10).joinToString { it.id }}",
+                                "PairsRepositoryImpl"
+                            )
+
+                            localDataSource.withPairTransaction {
+                                if (entities.isNotEmpty()) {
+                                    localDataSource.upsertEmotions(entities)
+                                } else {
+                                    Logger.e(
+                                        "PairsRepositoryImpl.syncPairs: emotions empty from server pairId=$pairId -> keep local as-is",
+                                        throwable = IllegalStateException("emotions empty"),
+                                        tag = "PairsRepositoryImpl"
+                                    )
+                                }
+                            }
+                        },
+                        failure = { error ->
+                            Logger.e(
+                                "PairsRepositoryImpl.syncPairs: failed to sync emotions pairId=$pairId error=$error",
+                                throwable = Exception(error.toString()),
+                                tag = "PairsRepositoryImpl"
+                            )
+                        }
+                    )
+                }
 
                 Logger.d(
                     "PairsRepositoryImpl.syncPairs: success, pairsCount=${pairs.size}",
@@ -153,38 +221,71 @@ class PairsRepositoryImpl @Inject constructor(
         pairId: PairId,
         emotions: List<PairEmotion>
     ): AppResult<Unit> {
-        val dtos = emotions.map {
-            PairEmotionDto(
-                id = it.id,
-                pairId = it.pairId.value,
-                name = it.name,
-                colorHex = it.colorHex,
-                patternId = it.patternId?.value,
-                order = it.order
-            )
+        // Local-first: всегда сохраняем актуальный список в Room.
+        // Это позволяет создавать/редактировать эмоции офлайн и сразу видеть результат в UI.
+        localDataSource.withPairTransaction {
+            // Полная замена набора для пары: удаляем старые и кладём новые.
+            // Здесь важно, что order хранится в сущности и сохраняется стабильно.
+            val entities = emotions
+                .sortedBy { it.order }
+                .map { it.toEntity() }
+            if (entities.isEmpty()) {
+                localDataSource.deleteEmotions(pairId.value)
+            } else {
+                localDataSource.deleteEmotionsNotIn(pairId.value, entities.map { it.id })
+                localDataSource.upsertEmotions(entities)
+            }
         }
 
-        val remoteResult = remoteDataSource.updatePairEmotions(pairId.value, dtos)
-
-        return remoteResult.fold(
-            success = { response ->
-                val entities = response.emotions.map { dto ->
-                    PairEmotionEntity(
-                        id = dto.id,
-                        pairId = dto.pairId,
-                        name = dto.name,
-                        colorHex = dto.colorHex,
-                        patternId = dto.patternId,
-                        order = dto.order
-                    )
-                }
-                localDataSource.upsertEmotions(entities)
-                Ok(Unit)
-            },
-            failure = { error ->
-                Ok(Unit)
+        val dtos = emotions
+            .sortedBy { it.order }
+            .map { emotion ->
+                PairEmotionDto(
+                    id = emotion.id,
+                    pairId = null,
+                    name = emotion.name,
+                    colorHex = emotion.colorHex,
+                    patternId = emotion.patternId?.value,
+                    order = emotion.order,
+                )
             }
-        )
+
+        val remoteResult = remoteDataSource.updatePairEmotions(pairId.value, dtos)
+        val remoteError = remoteResult.component2()
+        if (remoteError != null) {
+            Logger.e(
+                "PairsRepositoryImpl.updatePairEmotions: remote failed -> will enqueue outbox error=$remoteError",
+                throwable = Exception(remoteError.toString()),
+                tag = "PairsRepositoryImpl"
+            )
+
+            val nowMillis = System.currentTimeMillis()
+            val payload = json.encodeToString(PairEmotionUpdateRequestDto.serializer(), PairEmotionUpdateRequestDto(dtos))
+
+            val action = OutboxActionEntity(
+                id = UUID.randomUUID().toString(),
+                type = OutboxActionType.PAIR_EMOTIONS_UPDATE,
+                payloadJson = payload,
+                status = OutboxActionStatus.PENDING,
+                retryCount = 0,
+                lastError = null,
+                // последняя версия эмоций для пары должна заменять предыдущую
+                idempotencyKey = "pair_emotions_${pairId.value}",
+                createdAt = nowMillis,
+                updatedAt = nowMillis,
+                availableAt = nowMillis,
+                priority = 1,
+                targetEntityId = pairId.value,
+            )
+
+            localDataSource.enqueueOutboxAction(action)
+            outboxScheduler.scheduleSync()
+
+            // best-effort: локальные изменения уже применены, возвращаем Ok
+            return Ok(Unit)
+        }
+
+        return Ok(Unit)
     }
 
     override suspend fun updateMemberSettings(
@@ -282,6 +383,24 @@ class PairsRepositoryImpl @Inject constructor(
         userId: UserId,
         replies: List<PairQuickReply>
     ): AppResult<Unit> {
+        Logger.d(
+            "PairsRepositoryImpl.updateQuickReplies: start pairId=${pairId.value} userId=${userId.value} replies=${replies.joinToString { it.gestureType.name + ':' + (it.emotionId ?: "null") }}",
+            "PairsRepositoryImpl"
+        )
+        // Local-first: сразу сохраняем актуальные биндинги в Room,
+        // чтобы UI мгновенно отобразил выбранную эмоцию после подтверждения.
+        localDataSource.withPairTransaction {
+            val entities = replies
+                .map { it.toEntity() }
+            localDataSource.deleteQuickReplies(pairId.value, userId.value)
+            localDataSource.upsertQuickReplies(entities)
+        }
+
+        Logger.d(
+            "PairsRepositoryImpl.updateQuickReplies: saved to db pairId=${pairId.value} userId=${userId.value} entities=${replies.size}",
+            "PairsRepositoryImpl"
+        )
+
         val dtos = replies.map {
             PairQuickReplyDto(
                 pairId = it.pairId.value,
@@ -292,23 +411,13 @@ class PairsRepositoryImpl @Inject constructor(
         }
 
         val remoteResult = remoteDataSource.updateQuickReplies(pairId.value, dtos)
-
-        return remoteResult.fold(
-            success = { response ->
-                val entities = response.replies.map { dto ->
-                    PairQuickReplyEntity(
-                        pairId = dto.pairId,
-                        userId = dto.userId,
-                        gestureType = dto.gestureType,
-                        emotionId = dto.emotionId
-                    )
-                }
-                localDataSource.upsertQuickReplies(entities)
-                Ok(Unit)
-            },
-            failure = { error ->
-                Ok(Unit)
-            }
-        )
+        remoteResult.component2()?.let { error ->
+            Logger.e(
+                "PairsRepositoryImpl.updateQuickReplies: remote failed pairId=${pairId.value} userId=${userId.value} error=$error",
+                throwable = Exception(error.toString()),
+                tag = "PairsRepositoryImpl"
+            )
+        }
+        return remoteResult.map { }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.amulet.feature.patterns.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,10 +66,169 @@ fun PatternCard(
     onDelete: () -> Unit,
     onShare: (() -> Unit)? = null,
     onShowDetails: () -> Unit = {},
-    onTagClick: (String) -> Unit = {}
+    onTagClick: (String) -> Unit = {},
+    onClick: (() -> Unit)? = null,
+    swipeEnabled: Boolean = true,
 ) {
     val haptic = LocalHapticFeedback.current
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (!swipeEnabled) {
+        AmuletCard(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable { onClick() }
+                    } else {
+                        Modifier
+                    }
+                ),
+            elevation = CardElevation.Low
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Основная информация (всегда видна)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Иконка типа паттерна с цветом
+                    Icon(
+                        imageVector = when (pattern.kind) {
+                            PatternKind.LIGHT -> Icons.Default.Lightbulb
+                            PatternKind.HAPTIC -> Icons.Default.SettingsInputComponent
+                            PatternKind.COMBO -> Icons.Default.Star
+                        },
+                        contentDescription = stringResource(
+                            when (pattern.kind) {
+                                PatternKind.LIGHT -> R.string.pattern_kind_light
+                                PatternKind.HAPTIC -> R.string.pattern_kind_haptic
+                                PatternKind.COMBO -> R.string.pattern_kind_combo
+                            }
+                        ),
+                        modifier = Modifier.size(24.dp),
+                        tint = when (pattern.kind) {
+                            PatternKind.LIGHT -> MaterialTheme.colorScheme.primary
+                            PatternKind.HAPTIC -> MaterialTheme.colorScheme.secondary
+                            PatternKind.COMBO -> MaterialTheme.colorScheme.tertiary
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = pattern.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val durationText = if (pattern.spec.loop) {
+                            stringResource(R.string.pattern_preview_looped)
+                        } else {
+                            formatDuration(pattern.spec.timeline.durationMs.toLong())
+                        }
+                        Text(
+                            text = durationText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = onPreview,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = stringResource(R.string.cd_pattern_preview),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        IconButton(
+                            onClick = onShowDetails,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = stringResource(R.string.pattern_card_details),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                HorizontalDivider()
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Repeat,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = if (pattern.spec.loop) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (!pattern.spec.loop) {
+                        val totalDuration = pattern.spec.timeline.durationMs.toLong()
+                        Row {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .padding(end = 4.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = formatDuration(totalDuration),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Box(
+                        modifier = Modifier.height(52.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        if (pattern.tags.isNotEmpty()) {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                maxLines = 1
+                            ) {
+                                pattern.tags.forEach { tag ->
+                                    AssistChip(
+                                        onClick = { onTagClick(tag) },
+                                        label = { Text(tag) },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return
+    }
 
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->

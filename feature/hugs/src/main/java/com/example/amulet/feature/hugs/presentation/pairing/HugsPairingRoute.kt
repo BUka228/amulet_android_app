@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -144,12 +146,20 @@ private fun HugsPairingStepHeader(step: HugsPairingStep) {
         HugsPairingStep.WAITING_CONFIRMATION -> stringResource(R.string.hugs_pairing_step_waiting_confirmation)
         HugsPairingStep.CONFIRM_INVITE -> stringResource(R.string.hugs_pairing_step_confirm_invite)
     }
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Start
-    )
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Start,
+            modifier = Modifier.padding(16.dp)
+        )
+    }
 }
 
 @Composable

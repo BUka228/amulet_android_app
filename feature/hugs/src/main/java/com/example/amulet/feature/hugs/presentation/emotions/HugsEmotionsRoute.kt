@@ -1,8 +1,10 @@
 package com.example.amulet.feature.hugs.presentation.emotions
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Label
@@ -27,6 +31,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,54 +60,76 @@ import com.example.amulet.core.design.components.card.AmuletCard
 import com.example.amulet.core.design.scaffold.LocalScaffoldState
 import com.example.amulet.feature.hugs.R
 import com.example.amulet.shared.core.AppError
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HugsEmotionsRoute(
     onNavigateBack: () -> Unit = {},
-    onOpenPatternEditor: (String?) -> Unit = {},
+    onOpenEmotionEditor: (String?) -> Unit = {},
     viewModel: HugsEmotionsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scaffoldState = LocalScaffoldState.current
+
+    val selectionCount = state.selectedEmotionIds.size
+    val isSelectionMode = selectionCount > 0
 
     SideEffect {
         scaffoldState.updateConfig {
             copy(
                 topBar = {
                     TopAppBar(
-                        title = { Text(text = stringResource(R.string.hugs_emotions_title)) },
+                        title = {
+                            Text(
+                                text = if (isSelectionMode) selectionCount.toString() else stringResource(R.string.hugs_emotions_title)
+                            )
+                        },
                         navigationIcon = {
-                            IconButton(onClick = onNavigateBack) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = null
-                                )
+                            if (isSelectionMode) {
+                                IconButton(onClick = { viewModel.onIntent(HugsEmotionsIntent.ClearSelection) }) {
+                                    Icon(imageVector = Icons.Filled.Close, contentDescription = null)
+                                }
+                            } else {
+                                IconButton(onClick = onNavigateBack) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = null
+                                    )
+                                }
+                            }
+                        },
+                        actions = {
+                            if (isSelectionMode) {
+                                IconButton(
+                                    onClick = { viewModel.onIntent(HugsEmotionsIntent.DeleteSelected) },
+                                    enabled = !state.isDeleting,
+                                ) {
+                                    Icon(imageVector = Icons.Filled.Delete, contentDescription = null)
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors()
                     )
                 },
-                floatingActionButton = {}
+                floatingActionButton = {
+                    if (!isSelectionMode) {
+                        FloatingActionButton(
+                            onClick = { onOpenEmotionEditor(null) },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ) {
+                            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                        }
+                    }
+                }
             )
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is HugsEmotionsEffect.ShowError -> {
-                    // пока просто оставляем обработку на карточку ошибки внизу экрана
-                }
-                is HugsEmotionsEffect.OpenPatternEditor -> {
-                    onOpenPatternEditor(effect.patternId)
-                }
-            }
         }
     }
 
     HugsEmotionsScreen(
         state = state,
+        onOpenEmotionEditor = onOpenEmotionEditor,
         onIntent = viewModel::onIntent,
     )
 }
@@ -108,52 +137,97 @@ fun HugsEmotionsRoute(
 @Composable
 private fun HugsEmotionsScreen(
     state: HugsEmotionsState,
+    onOpenEmotionEditor: (String?) -> Unit,
     onIntent: (HugsEmotionsIntent) -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val isSelectionMode = state.selectedEmotionIds.isNotEmpty()
+    val isEmpty = !state.isLoading && state.emotions.isEmpty()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Заголовок палитры с иконкой
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Palette,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = stringResource(R.string.hugs_emotions_palette_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
+        if (isEmpty) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Palette,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
 
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(state.emotions, key = { it.id }) { emotion ->
-                EmotionItem(emotion = emotion) {
-                    onIntent(HugsEmotionsIntent.EditEmotion(emotion.id))
+                    Text(
+                        text = stringResource(R.string.hugs_emotions_empty_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = stringResource(R.string.hugs_emotions_empty_desc),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Button(onClick = { onOpenEmotionEditor(null) }) {
+                        Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text(text = stringResource(R.string.hugs_emotions_empty_cta))
+                    }
                 }
             }
-        }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(state.emotions, key = { it.id }) { emotion ->
+                    val isSelected = state.selectedEmotionIds.contains(emotion.id)
+                    val patternTitle = emotion.patternId?.let { pid ->
+                        state.patternTitles[pid.value] ?: pid.value
+                    }
 
-        state.editingEmotion?.let { editing ->
-            EmotionEditorCard(
-                state = state,
-                emotion = editing,
-                onIntent = onIntent,
-            )
+                    EmotionItem(
+                        emotion = emotion,
+                        isSelected = isSelected,
+                        patternTitle = patternTitle,
+                        onClick = {
+                            if (isSelectionMode) {
+                                onIntent(HugsEmotionsIntent.ToggleSelection(emotion.id))
+                            } else {
+                                onOpenEmotionEditor(emotion.id)
+                            }
+                        },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onIntent(HugsEmotionsIntent.ToggleSelection(emotion.id))
+                        },
+                    )
+                }
+            }
         }
 
         state.error?.let { error ->
@@ -163,17 +237,39 @@ private fun HugsEmotionsScreen(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun EmotionItem(
     emotion: com.example.amulet.shared.domain.hugs.model.PairEmotion,
+    isSelected: Boolean,
+    patternTitle: String?,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
-    val color = runCatching { Color(android.graphics.Color.parseColor(emotion.colorHex)) }
+    val color = runCatching { Color(emotion.colorHex.toColorInt()) }
         .getOrElse { MaterialTheme.colorScheme.primary }
+
+    val backgroundColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    val border = if (isSelected) {
+        BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+    } else {
+        null
+    }
 
     AmuletCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clip(MaterialTheme.shapes.medium)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            ),
+        backgroundColor = backgroundColor,
+        border = border,
     ) {
         Row(
             modifier = Modifier
@@ -196,7 +292,7 @@ private fun EmotionItem(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(text = emotion.name, style = MaterialTheme.typography.bodyLarge)
-                emotion.patternId?.let {
+                patternTitle?.let {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -208,7 +304,7 @@ private fun EmotionItem(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = stringResource(R.string.hugs_emotions_pattern_prefix, it.value),
+                            text = stringResource(R.string.hugs_emotions_pattern_prefix, it),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -224,126 +320,6 @@ private fun EmotionItem(
                     .background(color)
                     .border(2.dp, MaterialTheme.colorScheme.outline, CircleShape)
             )
-        }
-    }
-}
-
-@Composable
-private fun EmotionEditorCard(
-    state: HugsEmotionsState,
-    emotion: com.example.amulet.shared.domain.hugs.model.PairEmotion,
-    onIntent: (HugsEmotionsIntent) -> Unit,
-) {
-    val previewColor = runCatching { Color(android.graphics.Color.parseColor(emotion.colorHex)) }
-        .getOrElse { MaterialTheme.colorScheme.primary }
-
-    AmuletCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Заголовок с иконкой
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Edit,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = stringResource(R.string.hugs_emotions_editor_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-
-            // Большое превью цвета
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(previewColor)
-                    .border(3.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    .align(Alignment.CenterHorizontally)
-            )
-
-            OutlinedTextField(
-                value = emotion.name,
-                onValueChange = { onIntent(HugsEmotionsIntent.ChangeEditingName(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = stringResource(R.string.hugs_emotions_name_label)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Label,
-                        contentDescription = null
-                    )
-                }
-            )
-
-            OutlinedTextField(
-                value = emotion.colorHex,
-                onValueChange = { onIntent(HugsEmotionsIntent.ChangeEditingColor(it)) },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = stringResource(R.string.hugs_emotions_color_label)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Palette,
-                        contentDescription = null
-                    )
-                }
-            )
-
-            OutlinedButton(
-                onClick = { onIntent(HugsEmotionsIntent.OpenPatternEditor(emotion.patternId?.value)) },
-                enabled = !state.isSaving,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Brush,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                Text(text = stringResource(R.string.hugs_emotions_select_pattern_button))
-            }
-
-            // Кнопки действий
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = { onIntent(HugsEmotionsIntent.SaveEditing) },
-                    enabled = !state.isSaving,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Save,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(text = stringResource(R.string.hugs_emotions_save_button))
-                }
-
-                TextButton(
-                    onClick = { onIntent(HugsEmotionsIntent.CancelEdit) },
-                    enabled = !state.isSaving,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(text = stringResource(R.string.hugs_emotions_cancel_button))
-                }
-            }
         }
     }
 }

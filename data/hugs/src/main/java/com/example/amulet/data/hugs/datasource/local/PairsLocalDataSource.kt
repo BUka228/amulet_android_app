@@ -21,6 +21,10 @@ interface PairsLocalDataSource {
 
     suspend fun upsertEmotions(entities: List<PairEmotionEntity>)
 
+     suspend fun deleteEmotions(pairId: String)
+
+    suspend fun deleteEmotionsNotIn(pairId: String, emotionIds: List<String>)
+
     suspend fun updateMemberSettings(
         pairId: String,
         userId: String,
@@ -33,6 +37,8 @@ interface PairsLocalDataSource {
     fun observeQuickReplies(pairId: String, userId: String): Flow<List<PairQuickReplyEntity>>
 
     suspend fun upsertQuickReplies(entities: List<PairQuickReplyEntity>)
+
+    suspend fun deleteQuickReplies(pairId: String, userId: String)
 
     suspend fun enqueueOutboxAction(action: OutboxActionEntity)
 

@@ -76,7 +76,10 @@ data class UserPreferencesEntity(
     val interestsJson: String,
     val preferredDurationsJson: String,
     val defaultAudioMode: String?,
-    val hugsDndEnabled: Boolean?
+    val hugsDndEnabled: Boolean?,
+    val defaultHugColorHex: String?,
+    val defaultHugPatternId: String?,
+    val defaultHugEmotionId: String?,
 )
 
 @Entity(

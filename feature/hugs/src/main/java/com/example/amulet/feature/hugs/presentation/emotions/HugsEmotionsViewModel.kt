@@ -8,14 +8,14 @@ import com.example.amulet.shared.domain.hugs.UpdatePairEmotionsUseCase
 import com.example.amulet.shared.domain.hugs.model.PairEmotion
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairStatus
+import com.example.amulet.shared.domain.patterns.model.PatternId
+import com.example.amulet.shared.domain.patterns.usecase.GetPatternByIdUseCase
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @HiltViewModel
 class HugsEmotionsViewModel @Inject constructor(
@@ -31,16 +33,26 @@ class HugsEmotionsViewModel @Inject constructor(
     private val observePairsUseCase: ObservePairsUseCase,
     private val observePairEmotionsUseCase: ObservePairEmotionsUseCase,
     private val updatePairEmotionsUseCase: UpdatePairEmotionsUseCase,
+    private val getPatternByIdUseCase: GetPatternByIdUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HugsEmotionsState())
     val state: StateFlow<HugsEmotionsState> = _state.asStateFlow()
 
-    private val _effects = MutableSharedFlow<HugsEmotionsEffect>()
-    val effects = _effects.asSharedFlow()
+    private var activePairId: String? = null
+    private var currentEmotions: List<PairEmotion> = emptyList()
+    private var patternsJob: Job? = null
 
     init {
         observeData()
+    }
+
+    fun onIntent(intent: HugsEmotionsIntent) {
+        when (intent) {
+            is HugsEmotionsIntent.ToggleSelection -> toggleSelection(intent.emotionId)
+            HugsEmotionsIntent.ClearSelection -> clearSelection()
+            HugsEmotionsIntent.DeleteSelected -> deleteSelected()
+        }
     }
 
     private fun observeData() {
@@ -73,73 +85,84 @@ class HugsEmotionsViewModel @Inject constructor(
                     )
                 )
                 .collect { data ->
+                    activePairId = data.base.activePair?.id?.value
+                    currentEmotions = data.emotions
+
+                    observePatternTitles(data.emotions)
+
                     _state.update { current ->
                         current.copy(
                             isLoading = false,
                             currentUser = data.base.userNameUser,
                             activePair = data.base.activePair,
                             emotions = data.emotions.sortedBy { it.order },
+                            selectedEmotionIds = current.selectedEmotionIds.intersect(data.emotions.map { it.id }.toSet()),
                         )
                     }
                 }
         }
     }
 
-    private fun openPatternEditor(patternId: String?) {
-        viewModelScope.launch {
-            _effects.emit(HugsEmotionsEffect.OpenPatternEditor(patternId))
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observePatternTitles(emotions: List<PairEmotion>) {
+        patternsJob?.cancel()
+
+        val ids = emotions.mapNotNull { it.patternId?.value }.distinct()
+        if (ids.isEmpty()) {
+            _state.update { it.copy(patternTitles = emptyMap()) }
+            return
         }
-    }
 
-    fun onIntent(intent: HugsEmotionsIntent) {
-        when (intent) {
-            is HugsEmotionsIntent.EditEmotion -> startEdit(intent.emotionId)
-            HugsEmotionsIntent.CancelEdit -> cancelEdit()
-            is HugsEmotionsIntent.ChangeEditingName -> changeEditingName(intent.value)
-            is HugsEmotionsIntent.ChangeEditingColor -> changeEditingColor(intent.colorHex)
-            HugsEmotionsIntent.SaveEditing -> saveEditing()
-            is HugsEmotionsIntent.OpenPatternEditor -> openPatternEditor(intent.patternId)
-        }
-    }
-
-    private fun startEdit(emotionId: String) {
-        val target = _state.value.emotions.firstOrNull { it.id == emotionId } ?: return
-        _state.update { it.copy(editingEmotion = target) }
-    }
-
-    private fun cancelEdit() {
-        _state.update { it.copy(editingEmotion = null) }
-    }
-
-    private fun changeEditingName(value: String) {
-        val editing = _state.value.editingEmotion ?: return
-        _state.update { it.copy(editingEmotion = editing.copy(name = value)) }
-    }
-
-    private fun changeEditingColor(colorHex: String) {
-        val editing = _state.value.editingEmotion ?: return
-        _state.update { it.copy(editingEmotion = editing.copy(colorHex = colorHex)) }
-    }
-
-    private fun saveEditing() {
-        val editing = _state.value.editingEmotion ?: return
-        val pair = _state.value.activePair ?: return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isSaving = true) }
-
-            val updatedList = _state.value.emotions.map { emotion ->
-                if (emotion.id == editing.id) editing else emotion
+        patternsJob = viewModelScope.launch {
+            combine(ids.map { id ->
+                getPatternByIdUseCase(PatternId(id)).map { pattern ->
+                    id to pattern?.title
+                }
+            }) { pairs ->
+                pairs
+                    .mapNotNull { (id, title) -> title?.let { id to it } }
+                    .toMap()
+            }.collect { titles ->
+                _state.update { it.copy(patternTitles = titles) }
             }
+        }
+    }
 
-            val result = updatePairEmotionsUseCase(PairId(pair.id.value), updatedList)
+    private fun toggleSelection(emotionId: String) {
+        _state.update { current ->
+            val selected = current.selectedEmotionIds
+            val next = if (selected.contains(emotionId)) {
+                selected - emotionId
+            } else {
+                selected + emotionId
+            }
+            current.copy(selectedEmotionIds = next)
+        }
+    }
+
+    private fun clearSelection() {
+        _state.update { it.copy(selectedEmotionIds = emptySet()) }
+    }
+
+    private fun deleteSelected() {
+        val pairId = activePairId ?: return
+        val selectedIds = _state.value.selectedEmotionIds
+        if (selectedIds.isEmpty()) return
+
+        viewModelScope.launch {
+            _state.update { it.copy(isDeleting = true, error = null) }
+
+            val updated = currentEmotions
+                .filterNot { selectedIds.contains(it.id) }
+                .sortedBy { it.order }
+
+            val result = updatePairEmotionsUseCase(PairId(pairId), updated)
             val error = result.component2()
 
             if (error != null) {
-                _state.update { it.copy(isSaving = false, error = error) }
-                _effects.emit(HugsEmotionsEffect.ShowError(error))
+                _state.update { it.copy(isDeleting = false, error = error) }
             } else {
-                _state.update { it.copy(isSaving = false, editingEmotion = null) }
+                _state.update { it.copy(isDeleting = false, selectedEmotionIds = emptySet()) }
             }
         }
     }

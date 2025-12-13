@@ -37,6 +37,7 @@ class SendQuickReplyByGestureUseCase(
             pairId = pairId,
             fromUserId = fromUserId,
             toUserId = toUserId,
+            emotion = null,
             quickReply = reply,
             payload = null,
         )

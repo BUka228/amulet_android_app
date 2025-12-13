@@ -7,14 +7,6 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "pairs",
-    foreignKeys = [
-        ForeignKey(
-            entity = UserEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["blockedBy"],
-            onDelete = ForeignKey.SET_NULL
-        )
-    ],
     indices = [
         Index(value = ["status"]),
         Index(value = ["createdAt"], orders = [Index.Order.DESC]),
@@ -37,12 +29,6 @@ data class PairEntity(
             entity = PairEntity::class,
             parentColumns = ["id"],
             childColumns = ["pairId"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
-            entity = UserEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["userId"],
             onDelete = ForeignKey.CASCADE
         )
     ],

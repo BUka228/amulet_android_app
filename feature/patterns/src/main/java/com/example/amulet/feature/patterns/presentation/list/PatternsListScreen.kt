@@ -68,6 +68,9 @@ import kotlinx.coroutines.flow.debounce
 @Composable
 fun PatternsListRoute(
     viewModel: PatternsListViewModel = hiltViewModel(),
+    pickerMode: Boolean = false,
+    onNavigateBack: () -> Unit = {},
+    onPickPattern: (String) -> Unit = {},
     onNavigateToEditor: (String?) -> Unit,
     onNavigateToPreview: (String) -> Unit,
 ) {
@@ -95,6 +98,9 @@ fun PatternsListRoute(
     PatternsListScreen(
         state = uiState,
         onEvent = viewModel::handleEvent,
+        pickerMode = pickerMode,
+        onNavigateBack = onNavigateBack,
+        onPickPattern = onPickPattern,
     )
 }
 
@@ -103,6 +109,9 @@ fun PatternsListRoute(
 fun PatternsListScreen(
     state: PatternsListState,
     onEvent: (PatternsListEvent) -> Unit,
+    pickerMode: Boolean = false,
+    onNavigateBack: () -> Unit = {},
+    onPickPattern: (String) -> Unit = {},
 ) {
     val scaffoldState = LocalScaffoldState.current
     var searchText by remember { mutableStateOf(state.searchQuery) }
@@ -128,6 +137,18 @@ fun PatternsListScreen(
                     } else {
                         TopAppBar(
                             title = { Text(stringResource(R.string.screen_patterns_list)) },
+                            navigationIcon = if (pickerMode) {
+                                {
+                                    IconButton(onClick = onNavigateBack) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+                            } else {
+                                {}
+                            },
                             actions = {
                                 IconButton(
                                     onClick = { onEvent(PatternsListEvent.ToggleFilterSheet) }
@@ -150,13 +171,15 @@ fun PatternsListScreen(
                     }
                 },
                 floatingActionButton = {
-                    FloatingActionButton(
-                        onClick = { onEvent(PatternsListEvent.CreatePatternClicked) }
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.cd_create_pattern)
-                        )
+                    if (!pickerMode) {
+                        FloatingActionButton(
+                            onClick = { onEvent(PatternsListEvent.CreatePatternClicked) }
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(R.string.cd_create_pattern)
+                            )
+                        }
                     }
                 }
             )
@@ -263,7 +286,13 @@ fun PatternsListScreen(
                                 onEdit = { onEvent(PatternsListEvent.PatternClicked(pattern.id.value)) },
                                 onDelete = { onEvent(PatternsListEvent.DeletePattern(pattern.id.value)) },
                                 onShowDetails = { selectedPatternForDetails = pattern },
-                                onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) }
+                                onTagClick = { tag -> onEvent(PatternsListEvent.AddTagFilter(tag)) },
+                                onClick = if (pickerMode) {
+                                    { onPickPattern(pattern.id.value) }
+                                } else {
+                                    null
+                                },
+                                swipeEnabled = !pickerMode,
                             )
                         }
                     }

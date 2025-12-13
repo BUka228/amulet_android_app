@@ -20,8 +20,15 @@ object PatternsGraph {
     const val route: String = "patterns_graph"
 }
 
+fun NavController.navigateToPatternPicker() {
+    navigate(PatternsDestination.picker) {
+        launchSingleTop = true
+    }
+}
+
 object PatternsDestination {
     const val list: String = "patterns/list"
+    const val picker: String = "patterns/picker"
     const val editor: String = "patterns/editor?patternId={patternId}"
     const val preview: String = "patterns/preview/{patternId}"
     const val editorTimeline: String = "patterns/editor/timeline"
@@ -80,6 +87,32 @@ fun NavGraphBuilder.patternsGraph(
                 onNavigateToPreview = { patternId ->
                     navController.navigateToPatternPreview(patternId)
                 }
+            )
+        }
+
+        composable(
+            route = PatternsDestination.picker,
+        ) {
+            PatternsListRoute(
+                pickerMode = true,
+                onNavigateBack = { navController.popBackStack() },
+                onPickPattern = { patternId ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("selectedPatternId", patternId)
+                    navController.popBackStack()
+                },
+                onNavigateToEditor = { patternId ->
+                    if (patternId != null) {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("selectedPatternId", patternId)
+                        navController.popBackStack()
+                    }
+                },
+                onNavigateToPreview = { patternId ->
+                    navController.navigateToPatternPreview(patternId)
+                },
             )
         }
 

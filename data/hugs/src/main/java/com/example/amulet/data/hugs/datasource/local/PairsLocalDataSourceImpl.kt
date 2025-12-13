@@ -9,6 +9,7 @@ import com.example.amulet.core.database.entity.PairEntity
 import com.example.amulet.core.database.entity.PairMemberEntity
 import com.example.amulet.core.database.entity.PairQuickReplyEntity
 import com.example.amulet.core.database.relation.PairWithMemberSettings
+import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -31,6 +32,14 @@ class PairsLocalDataSourceImpl @Inject constructor(
         pairDao.upsertEmotions(entities)
     }
 
+    override suspend fun deleteEmotions(pairId: String) {
+        pairDao.deleteEmotions(pairId)
+    }
+
+    override suspend fun deleteEmotionsNotIn(pairId: String, emotionIds: List<String>) {
+        pairDao.deleteEmotionsNotIn(pairId, emotionIds)
+    }
+
     override suspend fun updateMemberSettings(
         pairId: String,
         userId: String,
@@ -49,6 +58,10 @@ class PairsLocalDataSourceImpl @Inject constructor(
         pairDao.upsertQuickReplies(entities)
     }
 
+    override suspend fun deleteQuickReplies(pairId: String, userId: String) {
+        pairDao.deleteQuickReplies(pairId, userId)
+    }
+
     override suspend fun enqueueOutboxAction(action: OutboxActionEntity) {
         outboxDao.upsert(action)
     }
@@ -59,10 +72,31 @@ class PairsLocalDataSourceImpl @Inject constructor(
 
     override suspend fun replaceAllPairs(pairs: List<PairEntity>, members: List<PairMemberEntity>) {
         transactionRunner.runInTransaction {
-            pairDao.deleteAllMembers()
-            pairDao.deleteAllPairs()
+            Logger.d(
+                "PairsLocalDataSourceImpl.replaceAllPairs: start pairsCount=${pairs.size} membersCount=${members.size}",
+                "PairsLocalDataSourceImpl"
+            )
+            if (pairs.isEmpty()) {
+                Logger.e(
+                    "PairsLocalDataSourceImpl.replaceAllPairs: pairs is empty -> deleting all pairs/members (will cascade)",
+                    throwable = IllegalStateException("pairs is empty"),
+                    tag = "PairsLocalDataSourceImpl"
+                )
+                pairDao.deleteAllMembers()
+                pairDao.deleteAllPairs()
+                return@runInTransaction
+            }
 
-            if (pairs.isEmpty()) return@runInTransaction
+            val pairIds = pairs.map { it.id }
+            Logger.d(
+                "PairsLocalDataSourceImpl.replaceAllPairs: applying pairIds=${pairIds.joinToString()}",
+                "PairsLocalDataSourceImpl"
+            )
+
+            // Удаляем только пары/мемберы, которых больше нет на сервере.
+            // Это важно, чтобы не удалять каскадно pair_emotions для существующих пар.
+            pairDao.deleteMembersNotInPairs(pairIds)
+            pairDao.deletePairsNotIn(pairIds)
 
             val membersByPairId: Map<String, List<PairMemberEntity>> =
                 members.groupBy { it.pairId }
@@ -71,6 +105,11 @@ class PairsLocalDataSourceImpl @Inject constructor(
                 val pairMembers = membersByPairId[pair.id].orEmpty()
                 pairDao.upsertPairWithMembers(pair, pairMembers)
             }
+
+            Logger.d(
+                "PairsLocalDataSourceImpl.replaceAllPairs: done pairsCount=${pairs.size} membersCount=${members.size}",
+                "PairsLocalDataSourceImpl"
+            )
         }
     }
 

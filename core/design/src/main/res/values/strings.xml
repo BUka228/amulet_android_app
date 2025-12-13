@@ -1,0 +1,13 @@
+<resources>
+    <string name="design_color_picker_custom">Custom Color</string>
+    <string name="design_color_picker_hex_label">HEX Color</string>
+    <string name="design_color_picker_hex_hint">#RRGGBB</string>
+    <string name="design_color_picker_hex_error">Must be 6 characters</string>
+    <string name="design_error_invalid_hex_color">Invalid HEX color</string>
+
+    <string name="design_advanced_color_picker_title">Advanced color picker</string>
+    <string name="design_color_picker_hue">Hue</string>
+    <string name="design_color_picker_saturation">Saturation</string>
+    <string name="design_color_picker_value">Value</string>
+    <string name="design_color_picker_advanced">Advanced palette</string>
+</resources>

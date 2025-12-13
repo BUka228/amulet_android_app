@@ -10,4 +10,5 @@ data class UserPreferences(
     val interests: List<String> = emptyList(),
     val preferredDurationsSec: List<Int> = emptyList(),
     val hugsDndEnabled: Boolean = false,
+    val defaultHugEmotionId: String? = null,
 )

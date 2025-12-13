@@ -23,11 +23,13 @@ import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairEmotionsUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairEmotionsUseCase
+import com.example.amulet.shared.domain.hugs.UpdatePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairMemberSettingsUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
 import com.example.amulet.shared.domain.hugs.InvitePairUseCase
 import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsAndFetchMemberProfilesUseCase
 import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.SetHugsDndEnabledUseCase
 import com.example.amulet.shared.domain.hugs.BlockPairUseCase
@@ -194,6 +196,9 @@ object KoinBridgeModule {
     fun provideObservePairQuickRepliesUseCase(koin: Koin): ObservePairQuickRepliesUseCase = koin.get()
 
     @Provides
+    fun provideUpdatePairQuickRepliesUseCase(koin: Koin): UpdatePairQuickRepliesUseCase = koin.get()
+
+    @Provides
     fun provideSyncHugsUseCase(koin: Koin): SyncHugsUseCase = koin.get()
 
     @Provides
@@ -207,6 +212,9 @@ object KoinBridgeModule {
 
     @Provides
     fun provideSyncPairsUseCase(koin: Koin): SyncPairsUseCase = koin.get()
+
+    @Provides
+    fun provideSyncPairsAndFetchMemberProfilesUseCase(koin: Koin): SyncPairsAndFetchMemberProfilesUseCase = koin.get()
 
     @Provides
     fun provideObservePairEmotionsUseCase(koin: Koin): ObservePairEmotionsUseCase = koin.get()

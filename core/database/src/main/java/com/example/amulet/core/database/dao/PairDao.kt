@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import com.example.amulet.core.database.entity.PairEntity
 import com.example.amulet.core.database.entity.PairMemberEntity
 import com.example.amulet.core.database.entity.PairEmotionEntity
@@ -37,8 +38,19 @@ interface PairDao {
     @Query("SELECT * FROM pairs WHERE status = :status ORDER BY createdAt DESC")
     fun pagingByStatus(status: String): PagingSource<Int, PairWithMembers>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertPair(pair: PairEntity)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertPairIgnore(pair: PairEntity): Long
+
+    @Update
+    suspend fun updatePair(pair: PairEntity): Int
+
+    @Transaction
+    suspend fun upsertPair(pair: PairEntity) {
+        val inserted = insertPairIgnore(pair)
+        if (inserted == -1L) {
+            updatePair(pair)
+        }
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMembers(members: List<PairMemberEntity>)
@@ -69,16 +81,34 @@ interface PairDao {
     @Query("DELETE FROM pairs")
     suspend fun deleteAllPairs()
 
+    @Query("DELETE FROM pair_members WHERE pairId NOT IN (:pairIds)")
+    suspend fun deleteMembersNotInPairs(pairIds: List<String>)
+
+    @Query("DELETE FROM pairs WHERE id NOT IN (:pairIds)")
+    suspend fun deletePairsNotIn(pairIds: List<String>)
+
     // Palette (pair_emotions)
 
     @Query("SELECT * FROM pair_emotions WHERE pairId = :pairId ORDER BY `order` ASC")
     fun observeEmotions(pairId: String): Flow<List<PairEmotionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertEmotions(entities: List<PairEmotionEntity>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertEmotionsIgnore(entities: List<PairEmotionEntity>): List<Long>
+
+    @Update
+    suspend fun updateEmotions(entities: List<PairEmotionEntity>): Int
+
+    @Transaction
+    suspend fun upsertEmotions(entities: List<PairEmotionEntity>) {
+        insertEmotionsIgnore(entities)
+        updateEmotions(entities)
+    }
 
     @Query("DELETE FROM pair_emotions WHERE pairId = :pairId")
     suspend fun deleteEmotions(pairId: String)
+
+    @Query("DELETE FROM pair_emotions WHERE pairId = :pairId AND id NOT IN (:emotionIds)")
+    suspend fun deleteEmotionsNotIn(pairId: String, emotionIds: List<String>)
 
     // Quick replies (pair_quick_replies)
 

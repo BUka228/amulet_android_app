@@ -1,0 +1,13 @@
+<resources>
+    <string name="design_color_picker_custom">Пользовательский цвет</string>
+    <string name="design_color_picker_hex_label">HEX цвет</string>
+    <string name="design_color_picker_hex_hint">#RRGGBB</string>
+    <string name="design_color_picker_hex_error">Должно быть 6 символов</string>
+    <string name="design_error_invalid_hex_color">Некорректный HEX цвет</string>
+
+    <string name="design_advanced_color_picker_title">Продвинутый выбор цвета</string>
+    <string name="design_color_picker_hue">Оттенок</string>
+    <string name="design_color_picker_saturation">Насыщенность</string>
+    <string name="design_color_picker_value">Яркость</string>
+    <string name="design_color_picker_advanced">Расширенная политра</string>
+</resources>

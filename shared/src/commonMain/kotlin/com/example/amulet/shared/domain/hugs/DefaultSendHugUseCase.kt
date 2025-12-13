@@ -29,15 +29,25 @@ class DefaultSendHugUseCase(
         pairId: PairId?,
         fromUserId: UserId,
         toUserId: UserId?,
+        emotion: Emotion?,
         quickReply: PairQuickReply?,
         payload: Map<String, Any?>?
     ): AppResult<Unit> {
         Logger.d(
-            "DefaultSendHugUseCase: start pairId=${pairId?.value} from=${fromUserId.value} to=${toUserId?.value} quickReply=${quickReply?.pairId}",
+            "DefaultSendHugUseCase: start pairId=${pairId?.value} from=${fromUserId.value} to=${toUserId?.value} hasEmotion=${emotion != null} hasQuickReply=${quickReply != null}",
             "DefaultSendHugUseCase"
         )
         // Если нет пары, отправляем без pair-level ограничений.
         if (pairId != null) {
+            if (toUserId == null) {
+                Logger.e(
+                    "DefaultSendHugUseCase: validation error (toUserId is required when pairId is set) pairId=${pairId.value}",
+                    throwable = IllegalArgumentException("toUserId is required"),
+                    tag = "DefaultSendHugUseCase"
+                )
+                return Err(AppError.Validation(mapOf("toUserId" to "toUserId is required when pairId is set")))
+            }
+
             val pair = pairsRepository.observePair(pairId).firstOrNull()
 
             // Блокируем отправку, если пара заблокирована.
@@ -75,8 +85,8 @@ class DefaultSendHugUseCase(
             }
         }
 
-        // На этом уровне домена выбираем эмоцию по quick reply и паре.
-        val emotion = quickReply?.let { reply ->
+        // На этом уровне домена выбираем эмоцию: явная emotion (из UI/default) приоритетнее quick reply.
+        val resolvedEmotion: Emotion = emotion ?: quickReply?.let { reply ->
             if (pairId == null) {
                 Logger.e(
                     "DefaultSendHugUseCase: validation error (pairId is required for quick reply)",
@@ -96,13 +106,13 @@ class DefaultSendHugUseCase(
             )
         } ?: run {
             Logger.e(
-                "DefaultSendHugUseCase: validation error (emotion is null). quickReply is null -> request will NOT reach repository/network",
+                "DefaultSendHugUseCase: validation error (emotion is null). emotion and quickReply are null -> request will NOT reach repository/network",
                 throwable = IllegalStateException("emotion is null"),
                 tag = "DefaultSendHugUseCase"
             )
             return Err(
                 AppError.Validation(
-                    mapOf("emotion" to "Hug emotion must not be null: use quick reply or explicit emotion support"),
+                    mapOf("emotion" to "Hug emotion must not be null: use quick reply or provide explicit emotion"),
                 ),
             )
         }
@@ -111,7 +121,7 @@ class DefaultSendHugUseCase(
             pairId = pairId,
             fromUserId = fromUserId,
             toUserId = toUserId,
-            emotion = emotion,
+            emotion = resolvedEmotion,
             payload = payload,
         ).let { result ->
             result.component2()?.let { error ->

@@ -13,7 +13,7 @@ import retrofit2.http.Query
 
 interface HugsApiService {
 
-    @POST("hugs.send")
+    @POST("hugs/send")
     suspend fun sendHug(@Body request: HugSendRequestDto): HugSendResponseDto
 
     @GET("hugs")

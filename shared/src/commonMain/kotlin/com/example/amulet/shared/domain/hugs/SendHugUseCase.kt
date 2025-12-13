@@ -1,6 +1,7 @@
 package com.example.amulet.shared.domain.hugs
 
 import com.example.amulet.shared.core.AppResult
+import com.example.amulet.shared.domain.hugs.model.Emotion
 import com.example.amulet.shared.domain.hugs.model.PairId
 import com.example.amulet.shared.domain.hugs.model.PairQuickReply
 import com.example.amulet.shared.domain.user.model.UserId
@@ -11,6 +12,7 @@ interface SendHugUseCase {
         pairId: PairId?,
         fromUserId: UserId,
         toUserId: UserId?,
+        emotion: Emotion? = null,
         quickReply: PairQuickReply? = null,
         payload: Map<String, Any?>? = null
     ): AppResult<Unit>

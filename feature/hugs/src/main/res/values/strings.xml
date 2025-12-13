@@ -27,6 +27,30 @@
     <string name="hugs_home_status_read">Read</string>
     <string name="hugs_home_status_expired">Expired</string>
 
+    <string name="hugs_home_sync_error_title">Sync problem</string>
+    <string name="hugs_home_sync_error_message">Could not update hugs right now. Try again.</string>
+    <string name="hugs_home_sync_timeout_message">Sync is taking too long. Check connection and try again.</string>
+    <string name="hugs_home_sync_retry">Retry</string>
+
+    <string name="hugs_home_emotion_picker_title">Choose a hug</string>
+    <string name="hugs_home_emotion_picker_color_title">Color</string>
+    <string name="hugs_home_emotion_picker_pattern_title">Pattern</string>
+    <string name="hugs_home_emotion_picker_search_placeholder">Search</string>
+    <string name="hugs_home_emotion_picker_no_patterns">No presets available</string>
+    <string name="hugs_home_emotion_picker_confirm">Confirm</string>
+    <string name="hugs_home_emotion_picker_set_default">Set as default</string>
+    <string name="hugs_home_emotion_picker_cancel">Cancel</string>
+    <string name="hugs_home_emotion_picker_send">Send</string>
+
+    <string name="hugs_home_default_emotion_card_title">Default emotion</string>
+    <string name="hugs_home_default_emotion_card_not_set">Not set</string>
+
+    <string name="hugs_home_quick_reply_card_title">Quick reply</string>
+    <string name="hugs_home_quick_reply_double_tap">Double tap</string>
+    <string name="hugs_home_quick_reply_long_press">Long press</string>
+    <string name="hugs_home_quick_reply_picker_title">Choose quick reply</string>
+    <string name="hugs_home_quick_reply_not_set">Not set</string>
+
     <!-- Hugs Settings Screen (en) -->
     <string name="hugs_settings_title">Hugs settings</string>
     <string name="hugs_settings_work_modes_section_title">Work modes</string>
@@ -77,6 +101,9 @@
     <string name="hugs_emotions_title">Pair emotions</string>
     <string name="hugs_emotions_palette_title">Emotions palette</string>
     <string name="hugs_emotions_pattern_prefix">Pattern: %1$s</string>
+    <string name="hugs_emotions_empty_title">No emotions yet</string>
+    <string name="hugs_emotions_empty_desc">Create a couple of emotions for your pair — they will appear in the palette and in quick replies.</string>
+    <string name="hugs_emotions_empty_cta">Add emotion</string>
     <string name="hugs_emotions_editor_title">Edit emotion</string>
     <string name="hugs_emotions_name_label">Name</string>
     <string name="hugs_emotions_color_label">Color (HEX)</string>

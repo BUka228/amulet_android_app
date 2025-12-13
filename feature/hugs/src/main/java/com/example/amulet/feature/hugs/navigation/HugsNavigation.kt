@@ -7,14 +7,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import com.example.amulet.feature.hugs.presentation.details.HugDetailsRoute
 import com.example.amulet.feature.hugs.presentation.emotions.HugsEmotionsRoute
+import com.example.amulet.feature.hugs.presentation.emotions.editor.HugsEmotionEditorRoute
 import com.example.amulet.feature.hugs.presentation.history.HugsHistoryRoute
 import com.example.amulet.feature.hugs.presentation.main.HugsRoute
 import com.example.amulet.feature.hugs.presentation.pairing.HugsPairingRoute
-import com.example.amulet.feature.hugs.presentation.secretcodes.HugsSecretCodesRoute
 import com.example.amulet.feature.hugs.presentation.settings.HugsSettingsRoute
 import com.example.amulet.feature.patterns.navigation.navigateToPatternEditor
+import com.example.amulet.feature.patterns.navigation.navigateToPatternPicker
 
 object HugsGraph {
     const val route: String = "hugs_graph"
@@ -25,7 +28,7 @@ object HugsDestination {
     const val history: String = "hugs/history"
     const val settings: String = "hugs/settings"
     const val emotions: String = "hugs/emotions"
-    const val secretCodes: String = "hugs/secret_codes"
+    const val emotionEditor: String = "hugs/emotions/editor?emotionId={emotionId}"
     const val pairing: String = "hugs/pairing"
     const val details: String = "hugs/details/{hugId}"
 }
@@ -57,8 +60,13 @@ fun NavController.navigateToHugsEmotions() {
     }
 }
 
-fun NavController.navigateToHugsSecretCodes() {
-    navigate(HugsDestination.secretCodes) {
+fun NavController.navigateToHugsEmotionEditor(emotionId: String? = null) {
+    val route = if (emotionId == null) {
+        "hugs/emotions/editor?emotionId="
+    } else {
+        "hugs/emotions/editor?emotionId=$emotionId"
+    }
+    navigate(route) {
         launchSingleTop = true
     }
 }
@@ -91,7 +99,6 @@ fun NavGraphBuilder.hugsGraph(
                 onOpenHistory = { navController.navigateToHugsHistory() },
                 onOpenSettings = { navController.navigateToHugsSettings() },
                 onOpenEmotions = { navController.navigateToHugsEmotions() },
-                onOpenSecretCodes = { navController.navigateToHugsSecretCodes() },
                 onOpenPairing = { navController.navigateToHugsPairing() },
             )
         }
@@ -112,17 +119,31 @@ fun NavGraphBuilder.hugsGraph(
         composable(route = HugsDestination.emotions) {
             HugsEmotionsRoute(
                 onNavigateBack = { navController.popBackStack() },
-                onOpenPatternEditor = { patternId ->
-                    navController.navigateToPatternEditor(patternId)
-                }
+                onOpenEmotionEditor = { emotionId ->
+                    navController.navigateToHugsEmotionEditor(emotionId)
+                },
             )
         }
 
-        composable(route = HugsDestination.secretCodes) {
-            HugsSecretCodesRoute(
+        composable(
+            route = HugsDestination.emotionEditor,
+            arguments = listOf(
+                navArgument("emotionId") { type = NavType.StringType; nullable = true },
+            )
+        ) { backStackEntry ->
+            val selectedPatternId by backStackEntry
+                .savedStateHandle
+                .getStateFlow<String?>("selectedPatternId", null)
+                .collectAsStateWithLifecycle()
+
+            HugsEmotionEditorRoute(
                 onNavigateBack = { navController.popBackStack() },
-                onOpenPatternDetails = { patternId ->
-                    navController.navigateToPatternEditor(patternId)
+                onOpenPatternPicker = {
+                    navController.navigateToPatternPicker()
+                },
+                selectedPatternId = selectedPatternId,
+                onConsumeSelectedPatternId = {
+                    backStackEntry.savedStateHandle["selectedPatternId"] = null
                 }
             )
         }

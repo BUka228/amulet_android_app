@@ -30,6 +30,7 @@ import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
+import com.example.amulet.shared.domain.hugs.SyncPairsAndFetchMemberProfilesUseCase
 import com.example.amulet.shared.domain.hugs.InvitePairUseCase
 import com.example.amulet.shared.domain.hugs.AcceptPairUseCase
 import com.example.amulet.shared.domain.notifications.SyncPushTokenUseCase
@@ -98,6 +99,7 @@ private val sharedModule = module {
     factory { InvitePairUseCase(get()) }
     factory { AcceptPairUseCase(get()) }
     factory { SyncPairsUseCase(get()) }
+    factory { SyncPairsAndFetchMemberProfilesUseCase(get(), get(), get(), get()) }
 
     // Hugs BLE bridge listener
     single { DeviceHugSendListener(get(), get(), get(), get()) }

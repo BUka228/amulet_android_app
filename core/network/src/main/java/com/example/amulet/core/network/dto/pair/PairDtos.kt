@@ -1,12 +1,15 @@
 package com.example.amulet.core.network.dto.pair
 
 import com.example.amulet.core.network.serialization.ApiTimestamp
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class PairDto(
     val id: String,
     val memberIds: List<String> = emptyList(),
+    @SerialName("member_ids")
+    val memberIdsSnake: List<String> = emptyList(),
     val status: String? = null,
     val createdAt: ApiTimestamp? = null,
     val blockedBy: String? = null,
@@ -49,9 +52,12 @@ data class PairShareResponseDto(
 @Serializable
 data class PairEmotionDto(
     val id: String,
-    val pairId: String,
+    @SerialName("pair_id")
+    val pairId: String? = null,
     val name: String,
+    @SerialName("color_hex")
     val colorHex: String,
+    @SerialName("pattern_id")
     val patternId: String? = null,
     val order: Int
 )

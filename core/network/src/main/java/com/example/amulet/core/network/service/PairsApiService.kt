@@ -14,6 +14,7 @@ import com.example.amulet.core.network.dto.pair.PairResponseDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -42,7 +43,7 @@ interface PairsApiService {
         @Path("pairId") pairId: String
     ): PairEmotionListResponseDto
 
-    @POST("pairs/{pairId}/emotions")
+    @PUT("pairs/{pairId}/emotions")
     suspend fun updatePairEmotions(
         @Path("pairId") pairId: String,
         @Body request: PairEmotionUpdateRequestDto
