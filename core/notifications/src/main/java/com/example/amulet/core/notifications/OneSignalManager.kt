@@ -3,6 +3,7 @@ package com.example.amulet.core.notifications
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import com.example.amulet.shared.core.logging.Logger
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.onesignal.notifications.INotificationClickEvent
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @Singleton
 class OneSignalManager @Inject constructor(
@@ -27,9 +29,14 @@ class OneSignalManager @Inject constructor(
     private val pushNotificationRouter: PushNotificationRouter,
 ) {
 
+    companion object {
+        private const val TAG = "OneSignalManager"
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val playerIdFlow = MutableStateFlow<String?>(null)
     private var isInitialized: Boolean = false
+    private var pendingLoginUserId: String? = null
     private val pushSubscriptionObserver = object : IPushSubscriptionObserver {
         override fun onPushSubscriptionChange(state: PushSubscriptionChangedState) {
             playerIdFlow.value = state.current.id
@@ -37,10 +44,21 @@ class OneSignalManager @Inject constructor(
     }
 
     fun initialize(appId: String, isDebug: Boolean) {
-        if (appId.isBlank()) return
+        Logger.d("OneSignal.initialize called (isDebug=$isDebug, appIdBlank=${appId.isBlank()})", tag = TAG)
+        if (appId.isBlank()) {
+            Logger.w("OneSignal.initialize skipped: blank appId", tag = TAG)
+            return
+        }
         OneSignal.Debug.logLevel = if (isDebug) LogLevel.VERBOSE else LogLevel.NONE
         OneSignal.initWithContext(application, appId)
         isInitialized = true
+        Logger.d("OneSignal.initialize done", tag = TAG)
+
+        pendingLoginUserId?.let { userId ->
+            Logger.d("OneSignal.initialize: applying pending login userId=$userId", tag = TAG)
+            OneSignal.login(userId)
+        }
+        pendingLoginUserId = null
 
         updatePlayerId()
 
@@ -80,9 +98,9 @@ class OneSignalManager @Inject constructor(
                 val hugId = data["hugId"]
 
                 val uri = if (type == "hug" && !hugId.isNullOrBlank()) {
-                    Uri.parse("amulet://hugs/$hugId")
+                    "amulet://hugs/$hugId".toUri()
                 } else {
-                    Uri.parse("amulet://hugs")
+                    "amulet://hugs".toUri()
                 }
 
                 val intent = Intent(Intent.ACTION_VIEW, uri).apply {
@@ -94,19 +112,6 @@ class OneSignalManager @Inject constructor(
         OneSignal.Notifications.addClickListener(clickListener)
     }
 
-    fun refreshPlayerId() {
-        updatePlayerId()
-    }
-
-    fun requestNotificationPermission() {
-        if (!isInitialized) return
-        scope.launch {
-            runCatching {
-                OneSignal.Notifications.requestPermission(true)
-            }
-        }
-    }
-
     fun playerId(): StateFlow<String?> = playerIdFlow.asStateFlow()
 
     /**
@@ -114,7 +119,20 @@ class OneSignalManager @Inject constructor(
      * userId — доменный/бэкенд-идентификатор пользователя.
      */
     fun login(userId: String) {
-        if (!isInitialized || userId.isBlank()) return
+        if (!isInitialized) {
+            if (userId.isBlank()) {
+                Logger.w("OneSignal.login skipped: not initialized + blank userId", tag = TAG)
+                return
+            }
+            pendingLoginUserId = userId
+            Logger.w("OneSignal.login delayed (not initialized) userId=$userId", tag = TAG)
+            return
+        }
+        if (userId.isBlank()) {
+            Logger.w("OneSignal.login skipped: blank userId", tag = TAG)
+            return
+        }
+        Logger.d("OneSignal.login userId=$userId", tag = TAG)
         OneSignal.login(userId)
     }
 
@@ -122,7 +140,12 @@ class OneSignalManager @Inject constructor(
      * Отвязать пользователя от OneSignal (например, при выходе из аккаунта).
      */
     fun logout() {
-        if (!isInitialized) return
+        if (!isInitialized) {
+            Logger.w("OneSignal.logout skipped: not initialized", tag = TAG)
+            pendingLoginUserId = null
+            return
+        }
+        Logger.d("OneSignal.logout", tag = TAG)
         OneSignal.logout()
     }
 

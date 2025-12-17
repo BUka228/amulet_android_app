@@ -29,6 +29,7 @@ import com.example.amulet.shared.domain.hugs.SendQuickReplyByGestureUseCase
 import com.example.amulet.shared.domain.hugs.GetSecretCodesUseCase
 import com.example.amulet.shared.domain.hugs.GetHugByIdUseCase
 import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.SyncHugsAndEnsurePatternsUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsAndFetchMemberProfilesUseCase
 import com.example.amulet.shared.domain.hugs.InvitePairUseCase
@@ -82,6 +83,7 @@ private val sharedModule = module {
     factory { UpdateHugStatusUseCase(get()) }
     factory { GetHugByIdUseCase(get()) }
     factory { SyncHugsUseCase(get()) }
+    factory { SyncHugsAndEnsurePatternsUseCase(get(), get()) }
     factory { ExecuteRemoteHugCommandUseCase(get(), get(), get(), get(), get(), get()) }
     factory { SetHugsDndEnabledUseCase(get(), get()) }
     factory { BlockPairUseCase(get()) }
@@ -99,7 +101,7 @@ private val sharedModule = module {
     factory { InvitePairUseCase(get()) }
     factory { AcceptPairUseCase(get()) }
     factory { SyncPairsUseCase(get()) }
-    factory { SyncPairsAndFetchMemberProfilesUseCase(get(), get(), get(), get()) }
+    factory { SyncPairsAndFetchMemberProfilesUseCase(get(), get(), get(), get(), get(), get()) }
 
     // Hugs BLE bridge listener
     single { DeviceHugSendListener(get(), get(), get(), get()) }

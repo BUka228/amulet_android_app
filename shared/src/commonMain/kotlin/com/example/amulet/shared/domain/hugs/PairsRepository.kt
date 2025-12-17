@@ -18,6 +18,10 @@ interface PairsRepository {
 
     suspend fun syncPairs(): AppResult<Unit>
 
+    suspend fun fetchPairEmotionsFromRemote(pairId: PairId): AppResult<List<PairEmotion>>
+
+    suspend fun upsertPairEmotionsLocal(pairId: PairId, emotions: List<PairEmotion>): AppResult<Unit>
+
     fun observePairs(): Flow<List<Pair>>
 
     fun observePair(pairId: PairId): Flow<Pair?>

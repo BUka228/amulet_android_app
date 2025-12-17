@@ -21,6 +21,7 @@ import com.example.amulet.shared.domain.user.model.UserId
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.fold
+import com.github.michaelbull.result.map
 import com.example.amulet.shared.core.logging.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -261,6 +262,53 @@ class HugsRepositoryImpl @Inject constructor(
             },
             failure = { error -> Err(error) }
         )
+    }
+
+    override suspend fun fetchHugsFromRemote(
+        direction: String,
+        cursor: String?,
+        limit: Int?
+    ): AppResult<List<Hug>> {
+        val remote = remoteDataSource.getHugs(direction = direction, cursor = cursor, limit = limit)
+        return remote.map { listResponse ->
+            listResponse.items.mapNotNull { dto ->
+                val entity = HugEntity(
+                    id = dto.id,
+                    fromUserId = dto.fromUserId,
+                    toUserId = dto.toUserId,
+                    pairId = dto.pairId,
+                    emotionColor = dto.emotion?.color,
+                    emotionPatternId = dto.emotion?.patternId,
+                    payloadJson = dto.payload?.toString(),
+                    inReplyToHugId = dto.inReplyToHugId,
+                    deliveredAt = dto.deliveredAt?.value,
+                    status = dto.status ?: HugStatus.SENT.name,
+                    createdAt = dto.createdAt?.value ?: System.currentTimeMillis(),
+                )
+                entity.toDomainOrNull()
+            }
+        }
+    }
+
+    override suspend fun upsertHugsLocal(hugs: List<Hug>): AppResult<Unit> {
+        if (hugs.isEmpty()) return Ok(Unit)
+        val entities = hugs.map { hug ->
+            HugEntity(
+                id = hug.id.value,
+                fromUserId = hug.fromUserId.value,
+                toUserId = hug.toUserId?.value,
+                pairId = hug.pairId?.value,
+                emotionColor = hug.emotion.colorHex,
+                emotionPatternId = hug.emotion.patternId?.value,
+                payloadJson = hug.payload?.toString(),
+                inReplyToHugId = hug.inReplyToHugId?.value,
+                deliveredAt = hug.deliveredAt?.toEpochMilliseconds(),
+                status = hug.status.name,
+                createdAt = hug.createdAt.toEpochMilliseconds(),
+            )
+        }
+        localDataSource.upsert(entities)
+        return Ok(Unit)
     }
 
     private fun statusOrder(status: HugStatus): Int = when (status) {

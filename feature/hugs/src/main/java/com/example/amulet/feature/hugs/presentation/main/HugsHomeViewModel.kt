@@ -8,7 +8,7 @@ import com.example.amulet.shared.domain.hugs.ObservePairEmotionsUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairQuickRepliesUseCase
 import com.example.amulet.shared.domain.hugs.SendHugUseCase
-import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.SyncHugsAndEnsurePatternsUseCase
 import com.example.amulet.shared.domain.hugs.SyncPairsAndFetchMemberProfilesUseCase
 import com.example.amulet.shared.domain.hugs.UnblockPairUseCase
 import com.example.amulet.shared.domain.hugs.UpdatePairQuickRepliesUseCase
@@ -54,7 +54,7 @@ class HugsHomeViewModel @Inject constructor(
     private val observePairQuickRepliesUseCase: ObservePairQuickRepliesUseCase,
     private val updatePairQuickRepliesUseCase: UpdatePairQuickRepliesUseCase,
     private val sendHugUseCase: SendHugUseCase,
-    private val syncHugsUseCase: SyncHugsUseCase,
+    private val syncHugsAndEnsurePatternsUseCase: SyncHugsAndEnsurePatternsUseCase,
     private val syncPairsAndFetchMemberProfilesUseCase: SyncPairsAndFetchMemberProfilesUseCase,
     private val unblockPairUseCase: UnblockPairUseCase,
     private val observeUserByIdUseCase: ObserveUserByIdUseCase,
@@ -307,7 +307,7 @@ class HugsHomeViewModel @Inject constructor(
             emitEffect(HugsHomeEffect.ShowError(pairsError))
         }
 
-        val hugsResult = syncHugsUseCase(direction = "all")
+        val hugsResult = syncHugsAndEnsurePatternsUseCase(direction = "all")
         val hugsError = hugsResult.component2()
         if (hugsError != null) {
             _state.update { it.copy(error = hugsError) }

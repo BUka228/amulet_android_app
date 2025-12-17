@@ -202,6 +202,11 @@ object KoinBridgeModule {
     fun provideSyncHugsUseCase(koin: Koin): SyncHugsUseCase = koin.get()
 
     @Provides
+    fun provideSyncHugsAndEnsurePatternsUseCase(
+        koin: Koin
+    ): com.example.amulet.shared.domain.hugs.SyncHugsAndEnsurePatternsUseCase = koin.get()
+
+    @Provides
     fun provideGetHugByIdUseCase(koin: Koin): GetHugByIdUseCase = koin.get()
 
     @Provides

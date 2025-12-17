@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.amulet.shared.domain.hugs.ObserveHugsForPairUseCase
 import com.example.amulet.shared.domain.hugs.ObservePairsUseCase
-import com.example.amulet.shared.domain.hugs.SyncHugsUseCase
+import com.example.amulet.shared.domain.hugs.SyncHugsAndEnsurePatternsUseCase
 import com.example.amulet.shared.domain.hugs.model.Hug
 import com.example.amulet.shared.domain.hugs.model.PairStatus
 import com.example.amulet.shared.domain.user.usecase.ObserveCurrentUserUseCase
@@ -29,7 +29,7 @@ class HugsHistoryViewModel @Inject constructor(
     private val observeCurrentUserUseCase: ObserveCurrentUserUseCase,
     private val observePairsUseCase: ObservePairsUseCase,
     private val observeHugsForPairUseCase: ObserveHugsForPairUseCase,
-    private val syncHugsUseCase: SyncHugsUseCase,
+    private val syncHugsAndEnsurePatternsUseCase: SyncHugsAndEnsurePatternsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HugsHistoryState())
@@ -106,7 +106,7 @@ class HugsHistoryViewModel @Inject constructor(
     private fun refresh() {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            val result = syncHugsUseCase(direction = "all")
+            val result = syncHugsAndEnsurePatternsUseCase(direction = "all")
             val error = result.component2()
             if (error != null) {
                 _state.update { it.copy(error = error) }

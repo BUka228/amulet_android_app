@@ -135,58 +135,6 @@ class PairsRepositoryImpl @Inject constructor(
 
                 localDataSource.replaceAllPairs(pairEntities, memberEntities)
 
-                // Best-effort: подгружаем эмоции пары с сервера и сохраняем в Room.
-                // Важно: replaceAllPairs() удаляет пары (и каскадно их эмоции), поэтому
-                // эмоции нужно заливать после синка пар.
-                for (pairDto in pairs) {
-                    val pairId = pairDto.id
-                    Logger.d(
-                        "PairsRepositoryImpl.syncPairs: syncing emotions from server pairId=$pairId",
-                        "PairsRepositoryImpl"
-                    )
-                    val emotionsResult = remoteDataSource.getPairEmotions(pairId)
-                    emotionsResult.fold(
-                        success = { emotionsResponse ->
-                            val entities = emotionsResponse.emotions
-                                .map { dto ->
-                                    PairEmotionEntity(
-                                        id = dto.id,
-                                        pairId = dto.pairId ?: pairId,
-                                        name = dto.name,
-                                        colorHex = dto.colorHex,
-                                        patternId = dto.patternId,
-                                        order = dto.order,
-                                    )
-                                }
-                                .sortedBy { it.order }
-
-                            Logger.d(
-                                "PairsRepositoryImpl.syncPairs: emotions from server pairId=$pairId count=${entities.size} ids=${entities.take(10).joinToString { it.id }}",
-                                "PairsRepositoryImpl"
-                            )
-
-                            localDataSource.withPairTransaction {
-                                if (entities.isNotEmpty()) {
-                                    localDataSource.upsertEmotions(entities)
-                                } else {
-                                    Logger.e(
-                                        "PairsRepositoryImpl.syncPairs: emotions empty from server pairId=$pairId -> keep local as-is",
-                                        throwable = IllegalStateException("emotions empty"),
-                                        tag = "PairsRepositoryImpl"
-                                    )
-                                }
-                            }
-                        },
-                        failure = { error ->
-                            Logger.e(
-                                "PairsRepositoryImpl.syncPairs: failed to sync emotions pairId=$pairId error=$error",
-                                throwable = Exception(error.toString()),
-                                tag = "PairsRepositoryImpl"
-                            )
-                        }
-                    )
-                }
-
                 Logger.d(
                     "PairsRepositoryImpl.syncPairs: success, pairsCount=${pairs.size}",
                     "PairsRepositoryImpl"
@@ -216,6 +164,36 @@ class PairsRepositoryImpl @Inject constructor(
     override fun observePairEmotions(pairId: PairId): Flow<List<PairEmotion>> =
         localDataSource.observeEmotions(pairId.value)
             .map { list -> list.map(PairEmotionEntity::toDomain) }
+
+    override suspend fun fetchPairEmotionsFromRemote(pairId: PairId): AppResult<List<PairEmotion>> {
+        val remoteResult = remoteDataSource.getPairEmotions(pairId.value)
+        return remoteResult.map { response ->
+            response.emotions
+                .map { dto ->
+                    PairEmotion(
+                        id = dto.id,
+                        pairId = PairId(dto.pairId ?: pairId.value),
+                        name = dto.name,
+                        colorHex = dto.colorHex,
+                        patternId = dto.patternId?.let { com.example.amulet.shared.domain.patterns.model.PatternId(it) },
+                        order = dto.order,
+                    )
+                }
+                .sortedBy { it.order }
+        }
+    }
+
+    override suspend fun upsertPairEmotionsLocal(pairId: PairId, emotions: List<PairEmotion>): AppResult<Unit> {
+        localDataSource.withPairTransaction {
+            val entities = emotions
+                .sortedBy { it.order }
+                .map { it.toEntity() }
+            if (entities.isNotEmpty()) {
+                localDataSource.upsertEmotions(entities)
+            }
+        }
+        return Ok(Unit)
+    }
 
     override suspend fun updatePairEmotions(
         pairId: PairId,

@@ -36,4 +36,12 @@ interface HugsRepository {
         cursor: String? = null,
         limit: Int? = null
     ): AppResult<Unit>
+
+    suspend fun fetchHugsFromRemote(
+        direction: String,
+        cursor: String? = null,
+        limit: Int? = null
+    ): AppResult<List<Hug>>
+
+    suspend fun upsertHugsLocal(hugs: List<Hug>): AppResult<Unit>
 }
